@@ -1,0 +1,109 @@
+
+/* ---------- Base ---------- */
+body {
+  font-family: 'Work Sans', sans-serif;
+  background-color: #faf9f6;
+  color: #1a1c1a;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ---------- Material Symbols ---------- */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* ---------- Header glass effect ---------- */
+.glass-header {
+  background: rgba(250, 249, 246, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ---------- Founder philosophy callout ---------- */
+.education-callout {
+  border-left: 4px solid #186777;
+  background: rgba(24, 103, 119, 0.04);
+}
+
+/* ---------- Scrollbars ---------- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #faf9f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e3e2e0;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #dbdad7;
+}
+
+/* ---------- Generic transitions ---------- */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Testimonial carousel track ---------- */
+.slide-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+/* ---------- Booking modal step transitions ---------- */
+.modal-step {
+  display: none;
+}
+
+.modal-step.active {
+  display: block;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Founder "15+ Years" badge ---------- */
+@keyframes bounceSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 3s ease-in-out infinite;
+}

@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@theme {
+  --font-headings: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Work Sans", sans-serif;
+
+  --color-primary: #a83809;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f26d3d;
+  --color-on-primary-container: #581700;
+  --color-inverse-primary: #ffb59c;
+  --color-primary-fixed: #ffdbd0;
+  --color-primary-fixed-dim: #ffb59c;
+  --color-on-primary-fixed: #390c00;
+  --color-on-primary-fixed-variant: #832700;
+
+  --color-secondary: #186777;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #a5eafd;
+  --color-on-secondary-container: #1f6b7b;
+  --color-secondary-fixed: #aaedff;
+  --color-secondary-fixed-dim: #8cd1e3;
+  --color-on-secondary-fixed: #001f26;
+  --color-on-secondary-fixed-variant: #004e5c;
+
+  --color-tertiary: #7c5800;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #c38c00;
+  --color-on-tertiary-container: #3f2a00;
+  --color-tertiary-fixed: #ffdea8;
+  --color-tertiary-fixed-dim: #fdbb2d;
+  --color-on-tertiary-fixed: #271900;
+  --color-on-tertiary-fixed-variant: #5e4200;
+
+  --color-surface: #faf9f6;
+  --color-surface-dim: #dbdad7;
+  --color-surface-bright: #faf9f6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f1;
+  --color-surface-container: #efeeeb;
+  --color-surface-container-high: #e9e8e5;
+  --color-surface-container-highest: #e3e2e0;
+
+  --color-on-surface: #1a1c1a;
+  --color-on-surface-variant: #58423a;
+  --color-inverse-surface: #2f312f;
+  --color-inverse-on-surface: #f2f1ee;
+
+  --color-outline: #8c7169;
+  --color-outline-variant: #e0c0b6;
+  --color-surface-tint: #a83809;
+  --color-background: #faf9f6;
+  --color-on-background: #1a1c1a;
+
+  --spacing-container-max: 1200px;
+  --spacing-gutter: 24px;
+
+  --shadow-premium: 0px 10px 30px rgba(30, 107, 123, 0.08);
+  --shadow-premium-hover: 0px 20px 40px rgba(30, 107, 123, 0.14);
+  --shadow-tactile-btn: inset 0 -2px 0px rgba(0, 0, 0, 0.15);
+  --shadow-glow-secondary: 0 0 15px rgba(24, 103, 119, 0.25);
+  --shadow-glow-primary: 0 0 15px rgba(168, 56, 9, 0.25);
+}
+
+@utility max-w-container-max {
+  max-width: 1200px;
+}
+
+@utility px-gutter {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* ---------- Base ---------- */
+body {
+  font-family: 'Work Sans', sans-serif;
+  background-color: #faf9f6;
+  color: #1a1c1a;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ---------- Material Symbols ---------- */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* ---------- Header glass effect ---------- */
+.glass-header {
+  background: rgba(250, 249, 246, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ---------- Founder philosophy callout ---------- */
+.education-callout {
+  border-left: 4px solid #186777;
+  background: rgba(24, 103, 119, 0.04);
+}
+
+/* ---------- Scrollbars ---------- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #faf9f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e3e2e0;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #dbdad7;
+}
+
+/* ---------- Generic transitions ---------- */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Testimonial carousel track ---------- */
+.slide-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+/* ---------- Booking modal step transitions ---------- */
+.modal-step {
+  display: none;
+}
+
+.modal-step.active {
+  display: block;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Founder "15+ Years" badge ---------- */
+@keyframes bounceSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 3s ease-in-out infinite;
+}
