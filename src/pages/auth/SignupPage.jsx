@@ -121,47 +121,6 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="font-headings font-bold text-on-surface-variant">
-              Account Role *
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole('Student')}
-                className={`py-2 px-3 rounded-full font-headings font-bold border flex items-center justify-center gap-1.5 transition-all text-xs ${
-                  role === 'Student'
-                    ? 'border-secondary bg-secondary text-white shadow-tactile-btn shadow-premium'
-                    : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]">school</span>
-                Student
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('Admin');
-                  addToast('🚫 Public Admin registration is forbidden!', 'warning');
-                }}
-                className={`py-2 px-3 rounded-full font-headings font-bold border flex items-center justify-center gap-1.5 transition-all text-xs ${
-                  role === 'Admin'
-                    ? 'border-rose-500 bg-rose-600 text-white shadow-tactile-btn'
-                    : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
-                Admin
-              </button>
-            </div>
-
-            {role === 'Admin' && (
-              <p className="text-[10px] text-rose-600 font-semibold mt-1 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                ⚠️ Security Restriction: Public Admin registration is strictly prohibited. Admin accounts are restricted to database creation.
-              </p>
-            )}
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
