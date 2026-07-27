@@ -124,12 +124,25 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center border-t border-outline-variant/15 pt-4 flex justify-between text-xs">
+        <div className="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('admin@saumyaa.com');
+              setPassword('admin123');
+              addToast('🔐 Admin credentials filled! Click Sign In.', 'info');
+            }}
+            className="text-tertiary hover:text-tertiary-container font-headings font-bold flex items-center gap-1 bg-tertiary/10 px-2.5 py-1 rounded-lg transition-all"
+          >
+            <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+            Fill Admin Demo
+          </button>
+
           <Link to="/signup" className="text-primary font-headings font-bold hover:underline">
-            New Student? Register Here
+            New Student? Register
           </Link>
           <Link to="/" className="text-secondary font-headings font-bold hover:underline">
-            Public Website
+            Website
           </Link>
         </div>
       </div>
