@@ -45,7 +45,7 @@ export default function Contact() {
       formData.append('_subject', `New Inquiry from ${queryData.name}: ${queryData.subject}`);
       formData.append('_captcha', 'false');
 
-      await fetch('https://formsubmit.co/ajax/anujdhiman1706@gmail.com', {
+      await fetch('https://formsubmit.co/ajax/f785f212ac6d3b7066a696d35d1be84f', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
