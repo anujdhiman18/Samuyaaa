@@ -1,4 +1,9 @@
-// API Client with Express Backend integration & Local Mock Fallback
+import { auth, db } from '../firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword 
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -313,17 +318,10 @@ const setStoredNotifications = (n) => {
   notifyDataUpdate();
 };
 
-// Auth Service
+// Auth Service with Firebase Auth & Firestore Integration
 export const authService = {
   login: async (email, password) => {
-    const remote = await apiCall('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (remote) return remote;
-
-    // Local authentication logic
+    // 1. Demo Admin Quick Login
     if (email === 'admin@saumyaa.com' && password === 'admin123') {
       const mockAdmin = {
         id: 'admin1',
@@ -335,25 +333,59 @@ export const authService = {
       return { success: true, user: mockAdmin, token: 'mock_jwt_token_admin_2026' };
     }
 
-    const students = getStoredStudents();
-    const student = students.find((s) => s.email && s.email.toLowerCase() === email.toLowerCase());
+    // 2. Try Firebase Authentication
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const fbUser = userCredential.user;
 
-    if (student || email === 'rahul.g@gmail.com') {
-      const targetStudent = student || students[0];
-      const mockStudentUser = {
-        id: targetStudent._id,
-        name: targetStudent.fullName,
-        email: targetStudent.email,
-        role: 'Student',
-        rollNumber: targetStudent.rollNumber,
-        className: targetStudent.className,
-        avatar: targetStudent.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-        studentProfile: targetStudent,
+      // Try fetching custom profile from Firestore
+      let userProfile = null;
+      try {
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          userProfile = docSnap.data();
+        }
+      } catch (dbErr) {
+        console.warn('Firestore fetch warning:', dbErr.message);
+      }
+
+      const loggedUser = {
+        id: fbUser.uid,
+        name: userProfile?.fullName || fbUser.displayName || email.split('@')[0],
+        email: fbUser.email,
+        phone: userProfile?.phone || '',
+        role: userProfile?.role || 'Student',
+        rollNumber: userProfile?.rollNumber || `SAU-10-${Math.floor(100 + Math.random() * 900)}`,
+        className: userProfile?.className || '10th',
+        avatar: fbUser.photoURL || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       };
-      return { success: true, user: mockStudentUser, token: 'mock_jwt_token_student_2026' };
-    }
 
-    throw new Error('Invalid credentials. Use demo: admin@saumyaa.com / admin123 or rahul.g@gmail.com / student123');
+      return { success: true, user: loggedUser, token: await fbUser.getIdToken() };
+    } catch (fbError) {
+      console.warn('Firebase Login attempt fallback/check:', fbError.code);
+      
+      // Fallback for local demo student account
+      const students = getStoredStudents();
+      const student = students.find((s) => s.email && s.email.toLowerCase() === email.toLowerCase());
+
+      if (student || email === 'rahul.g@gmail.com') {
+        const targetStudent = student || students[0];
+        const mockStudentUser = {
+          id: targetStudent._id,
+          name: targetStudent.fullName,
+          email: targetStudent.email,
+          role: 'Student',
+          rollNumber: targetStudent.rollNumber,
+          className: targetStudent.className,
+          avatar: targetStudent.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+          studentProfile: targetStudent,
+        };
+        return { success: true, user: mockStudentUser, token: 'mock_jwt_token_student_2026' };
+      }
+
+      throw new Error(fbError.message || 'Invalid login credentials.');
+    }
   },
 
   signup: async (data) => {
@@ -362,49 +394,77 @@ export const authService = {
       throw new Error('Public Admin registration is denied! Only Student accounts can register.');
     }
 
-    const remote = await apiCall('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    if (remote) return remote;
+    // 1. Try Firebase User Registration
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const fbUser = userCredential.user;
 
-    const students = getStoredStudents();
-    if (students.some((s) => s.email && s.email.toLowerCase() === data.email.toLowerCase())) {
-      throw new Error(`Email ${data.email} is already registered.`);
+      const newUserData = {
+        uid: fbUser.uid,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        role: 'Student',
+        rollNumber: `SAU-10-${Math.floor(100 + Math.random() * 900)}`,
+        className: '10th',
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save user record to Firestore DB
+      try {
+        await setDoc(doc(db, 'users', fbUser.uid), newUserData);
+      } catch (fsErr) {
+        console.warn('Firestore setDoc warning:', fsErr.message);
+      }
+
+      // Sync with local student state
+      const students = getStoredStudents();
+      const newStudent = {
+        _id: fbUser.uid,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        parentPhone: data.phone,
+        fatherName: 'Parent of ' + data.fullName,
+        motherName: 'Parent of ' + data.fullName,
+        address: 'Himachal Pradesh, India',
+        className: '10th',
+        rollNumber: newUserData.rollNumber,
+        subjects: ['Mathematics Advanced', 'Integrated Science'],
+        dateOfAdmission: new Date().toISOString().split('T')[0],
+        monthlyFee: 2500,
+        feeDueDate: 5,
+        status: 'Active',
+        paidTillMonth: 'July 2026',
+      };
+      setStoredStudents([newStudent, ...students]);
+
+      const userObj = {
+        id: fbUser.uid,
+        name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        role: 'Student',
+        rollNumber: newUserData.rollNumber,
+        className: '10th',
+        studentProfile: newStudent,
+      };
+
+      return { 
+        success: true, 
+        user: userObj, 
+        token: await fbUser.getIdToken(), 
+        message: 'Account registered successfully on Firebase!' 
+      };
+    } catch (fbError) {
+      if (fbError.code === 'auth/email-already-in-use') {
+        throw new Error(`Email ${data.email} is already registered! Please Sign In instead.`);
+      }
+      if (fbError.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters long.');
+      }
+      throw new Error(fbError.message || 'Registration failed.');
     }
-
-    const newStudent = {
-      _id: 's_' + Date.now(),
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      parentPhone: data.phone,
-      fatherName: 'Parent of ' + data.fullName,
-      motherName: 'Parent of ' + data.fullName,
-      address: 'Himachal Pradesh, India',
-      className: '10th',
-      rollNumber: `SAU-10-00${students.length + 1}`,
-      subjects: ['Mathematics Advanced', 'Integrated Science'],
-      dateOfAdmission: new Date().toISOString().split('T')[0],
-      monthlyFee: 2500,
-      feeDueDate: 5,
-      status: 'Active',
-      paidTillMonth: 'July 2026',
-    };
-
-    setStoredStudents([newStudent, ...students]);
-
-    const mockUser = {
-      id: newStudent._id,
-      name: newStudent.fullName,
-      email: newStudent.email,
-      role: 'Student',
-      rollNumber: newStudent.rollNumber,
-      className: newStudent.className,
-      studentProfile: newStudent,
-    };
-
-    return { success: true, user: mockUser, token: 'mock_jwt_token_student_2026', message: 'Account registered successfully!' };
   },
 };
 

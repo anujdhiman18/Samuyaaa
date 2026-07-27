@@ -2,14 +2,14 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Replace with your Firebase project config from Firebase Console
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+  apiKey: "AIzaSyBwY91EckPyl9OdwSwBiAv7ddz6o5JJtFc",
+  authDomain: "saumya-8e8d4.firebaseapp.com",
+  projectId: "saumya-8e8d4",
+  storageBucket: "saumya-8e8d4.firebasestorage.app",
+  messagingSenderId: "948990834474",
+  appId: "1:948990834474:web:e806d5736b17b1d307d053",
+  measurementId: "G-BMEBQ5YHV2"
 };
 
 // Initialize Firebase
