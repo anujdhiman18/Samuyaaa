@@ -94,6 +94,13 @@ export const getFeeStats = async (req, res) => {
     const currentMonthCollected = currentMonthPayments.reduce((acc, p) => acc + (p.amountPaid || 0), 0);
     const pendingFeePayments = Math.max(0, totalMonthlyTarget - currentMonthCollected);
 
+    const paidStudentIds = new Set(currentMonthPayments.map((p) => String(p.student)));
+    const paidStudentsCount = students.filter((s) => paidStudentIds.has(String(s._id)) || s.paidTillMonth === currentMonth).length;
+    const pendingStudentsCount = Math.max(0, totalStudents - paidStudentsCount);
+
+    const paidPercentage = totalStudents > 0 ? Math.round((paidStudentsCount / totalStudents) * 100) : 0;
+    const pendingPercentage = totalStudents > 0 ? Math.round((pendingStudentsCount / totalStudents) * 100) : 0;
+
     res.json({
       success: true,
       stats: {
@@ -102,8 +109,10 @@ export const getFeeStats = async (req, res) => {
         totalFeesCollected,
         currentMonthCollected,
         pendingFeePayments,
-        paidStudentsCount: currentMonthPayments.length,
-        pendingStudentsCount: Math.max(0, totalStudents - currentMonthPayments.length),
+        paidStudentsCount,
+        pendingStudentsCount,
+        paidPercentage,
+        pendingPercentage,
       },
     });
   } catch (error) {

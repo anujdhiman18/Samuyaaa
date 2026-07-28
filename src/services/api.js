@@ -805,7 +805,7 @@ export const feeService = {
     if (remote) return remote;
 
     const students = getStoredStudents();
-    const student = students.find((s) => s._id === data.studentId);
+    const student = students.find((s) => String(s._id) === String(data.studentId) || String(s.id) === String(data.studentId));
     const count = getStoredPayments().length + 1;
     const id = 'p_' + Date.now();
 
@@ -831,6 +831,17 @@ export const feeService = {
       console.warn('Firestore setDoc fee error:', fsErr.message);
     }
 
+    if (student) {
+      student.paidTillMonth = newPayment.monthYear;
+      const updatedStudents = students.map((s) => (String(s._id) === String(student._id) ? { ...s, paidTillMonth: newPayment.monthYear } : s));
+      setStoredStudents(updatedStudents);
+      try {
+        await setDoc(doc(db, 'students', String(student._id)), { paidTillMonth: newPayment.monthYear }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Firestore update student paidTillMonth warning:', fsErr.message);
+      }
+    }
+
     setStoredPayments([newPayment, ...getStoredPayments()]);
     return { success: true, payment: newPayment, message: 'Fee payment recorded in Firebase DB' };
   },
@@ -841,15 +852,31 @@ export const feeService = {
 
     const students = getStoredStudents();
     const payments = getStoredPayments();
+    const activeStudents = students.filter((s) => s.status === 'Active');
+    const currentMonth = 'July 2026';
+
+    const totalMonthlyTarget = activeStudents.reduce((s, st) => s + (st.monthlyFee || 0), 0);
+    const totalFeesCollected = payments.reduce((s, p) => s + (p.amountPaid || 0), 0);
+    const currentMonthPayments = payments.filter((p) => p.monthYear === currentMonth);
+    const currentMonthCollected = currentMonthPayments.reduce((s, p) => s + (p.amountPaid || 0), 0);
+    const pendingFeePayments = Math.max(0, totalMonthlyTarget - currentMonthCollected);
+
+    const paidStudentIds = new Set(currentMonthPayments.map((p) => String(p.student?._id || p.student)));
+    const paidStudentsCount = activeStudents.filter((s) => paidStudentIds.has(String(s._id)) || s.paidTillMonth === currentMonth).length;
+    const pendingStudentsCount = Math.max(0, activeStudents.length - paidStudentsCount);
 
     return {
       success: true,
       stats: {
         totalStudents: students.length,
-        totalFeesCollected: payments.reduce((s, p) => s + (p.amountPaid || 0), 0),
-        monthlyTarget: 12500,
-        currentMonthCollected: 6700,
-        pendingFeePayments: 5800,
+        totalMonthlyTarget,
+        totalFeesCollected,
+        currentMonthCollected,
+        pendingFeePayments,
+        paidStudentsCount,
+        pendingStudentsCount,
+        paidPercentage: activeStudents.length ? Math.round((paidStudentsCount / activeStudents.length) * 100) : 0,
+        pendingPercentage: activeStudents.length ? Math.round((pendingStudentsCount / activeStudents.length) * 100) : 0,
       },
     };
   },
@@ -953,17 +980,33 @@ export const dashboardService = {
     const students = getStoredStudents();
     const subjects = getStoredSubjects();
     const payments = getStoredPayments();
+    const activeStudents = students.filter((s) => s.status === 'Active');
+    const currentMonth = 'July 2026';
+
+    const totalMonthlyTarget = activeStudents.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
+    const totalFeesCollected = payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+    const thisMonthPayments = payments.filter((p) => p.monthYear === currentMonth);
+    const thisMonthCollected = thisMonthPayments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+    const pendingFeePayments = Math.max(0, totalMonthlyTarget - thisMonthCollected);
+
+    const paidStudentIds = new Set(thisMonthPayments.map((p) => String(p.student?._id || p.student)));
+    const paidStudentsCount = activeStudents.filter((s) => paidStudentIds.has(String(s._id)) || s.paidTillMonth === currentMonth).length;
+    const pendingStudentsCount = Math.max(0, activeStudents.length - paidStudentsCount);
 
     return {
       success: true,
       stats: {
         totalStudents: students.length,
-        activeStudents: students.filter((s) => s.status === 'Active').length,
+        activeStudents: activeStudents.length,
         totalSubjects: subjects.length,
-        totalFeesCollected: payments.reduce((s, p) => s + (p.amountPaid || 0), 0),
-        pendingFeePayments: 5800,
-        thisMonthCollected: 6700,
-        monthlyTarget: 12500,
+        totalFeesCollected,
+        thisMonthCollected,
+        monthlyTarget: totalMonthlyTarget || 12500,
+        pendingFeePayments,
+        paidStudentsCount,
+        pendingStudentsCount,
+        paidPercentage: activeStudents.length ? Math.round((paidStudentsCount / activeStudents.length) * 100) : 0,
+        pendingPercentage: activeStudents.length ? Math.round((pendingStudentsCount / activeStudents.length) * 100) : 0,
       },
       recentRegistrations: students.slice(0, 5),
     };

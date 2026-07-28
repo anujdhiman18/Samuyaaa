@@ -241,10 +241,10 @@ export default function AdminDashboard() {
                   </span>
                   <div>
                     <p className="text-xs font-bold text-on-surface">Paid Fees</p>
-                    <p className="text-[10px] text-on-surface-variant">3 Students cleared</p>
+                    <p className="text-[10px] text-on-surface-variant">{stats?.paidStudentsCount || 0} Student{(stats?.paidStudentsCount === 1 ? '' : 's')} cleared</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-emerald-700">60%</span>
+                <span className="text-xs font-bold text-emerald-700">{stats?.paidPercentage || 0}%</span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15 flex items-center justify-between">
@@ -254,10 +254,10 @@ export default function AdminDashboard() {
                   </span>
                   <div>
                     <p className="text-xs font-bold text-on-surface">Overdue / Pending</p>
-                    <p className="text-[10px] text-on-surface-variant">2 Students due</p>
+                    <p className="text-[10px] text-on-surface-variant">{stats?.pendingStudentsCount || 0} Student{(stats?.pendingStudentsCount === 1 ? '' : 's')} due</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-rose-600">40%</span>
+                <span className="text-xs font-bold text-rose-600">{stats?.pendingPercentage || 0}%</span>
               </div>
             </div>
           </div>

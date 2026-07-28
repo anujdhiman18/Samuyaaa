@@ -6,6 +6,7 @@ import Modal from '../../components/admin/Modal';
 export default function FeeManagement() {
   const [payments, setPayments] = useState([]);
   const [students, setStudents] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Record Payment Modal
@@ -29,6 +30,11 @@ export default function FeeManagement() {
       const payRes = await feeService.getFeePayments();
       if (payRes && payRes.payments) {
         setPayments(payRes.payments);
+      }
+
+      const statsRes = await feeService.getStats();
+      if (statsRes && statsRes.stats) {
+        setStats(statsRes.stats);
       }
 
       const stRes = await studentService.getStudents({ limit: 100 });
@@ -67,7 +73,7 @@ export default function FeeManagement() {
     }
   };
 
-  const totalCollected = payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+  const totalCollected = stats?.totalFeesCollected || payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
 
   return (
     <div className="space-y-6 font-body">
@@ -110,17 +116,17 @@ export default function FeeManagement() {
           <h3 className="font-headings font-extrabold text-3xl text-secondary mt-2">
             {payments.length} Receipts
           </h3>
-          <p className="text-[10px] text-on-surface-variant font-semibold mt-1">Month of July 2026</p>
+          <p className="text-[10px] text-on-surface-variant font-semibold mt-1">Active ledger records</p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
           <p className="font-headings text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-            Standard Monthly Fee
+            Pending Month Fees
           </p>
-          <h3 className="font-headings font-extrabold text-3xl text-primary mt-2">
-            ₹2,500
+          <h3 className="font-headings font-extrabold text-3xl text-rose-600 mt-2">
+            ₹{(stats?.pendingFeePayments || 0).toLocaleString()}
           </h3>
-          <p className="text-[10px] text-on-surface-variant font-semibold mt-1">Due on 5th of every month</p>
+          <p className="text-[10px] text-rose-600 font-semibold mt-1">Due on 5th of every month</p>
         </div>
       </div>
 
