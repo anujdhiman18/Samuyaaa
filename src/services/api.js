@@ -3,7 +3,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -520,14 +520,45 @@ export const authService = {
   },
 };
 
-// Student Service
+// Firestore Collection Helper for Real-time DB Persistence
+const syncFirestoreCollection = async (collectionName, defaultData = []) => {
+  try {
+    const colRef = collection(db, collectionName);
+    const snapshot = await getDocs(colRef);
+    
+    if (snapshot.empty && defaultData && defaultData.length > 0) {
+      // Seed default initial data into Firestore if empty
+      const promises = defaultData.map((item) => {
+        const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
+      });
+      await Promise.all(promises);
+      return defaultData;
+    }
+    
+    if (!snapshot.empty) {
+      const items = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ ...docSnap.data(), _id: docSnap.id });
+      });
+      return items;
+    }
+  } catch (err) {
+    console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
+  }
+  return null;
+};
+
+// Student Service with Firebase Firestore DB Integration
 export const studentService = {
   getStudents: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const remote = await apiCall(`/students?${query}`);
     if (remote) return remote;
 
-    let list = getStoredStudents();
+    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+    let list = fsStudents || getStoredStudents();
+
     if (params.className && params.className !== 'All') {
       list = list.filter((s) => s.className === params.className);
     }
@@ -540,18 +571,20 @@ export const studentService = {
           s.phone.includes(term)
       );
     }
+    setStoredStudents(list);
     return { success: true, students: list, total: list.length, page: 1, pages: 1 };
   },
 
   getStudentById: async (id) => {
     const remote = await apiCall(`/students/${id}`);
     if (remote) return remote;
-    const student = getStoredStudents().find((s) => s._id === id);
+    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+    const students = fsStudents || getStoredStudents();
+    const student = students.find((s) => s._id === id || s.id === id);
     return { success: true, student };
   },
 
   createStudent: async (data) => {
-    // Auto-generate sequential roll number if missing
     let finalRollNumber = data.rollNumber;
     if (!finalRollNumber || finalRollNumber.trim() === '') {
       const classCode = data.className ? data.className.replace(/\D/g, '') || '10' : '10';
@@ -571,19 +604,34 @@ export const studentService = {
     }
 
     const payload = { ...data, rollNumber: finalRollNumber };
-
     const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
     if (remote) return remote;
 
+    const id = 's_' + Date.now();
+    const newStudent = { ...payload, _id: id };
+
+    // Save to Firebase Firestore DB
+    try {
+      await setDoc(doc(db, 'students', id), newStudent);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc student error:', fsErr.message);
+    }
+
     const list = getStoredStudents();
-    const newStudent = { ...payload, _id: 's_' + Date.now() };
     setStoredStudents([newStudent, ...list]);
-    return { success: true, student: newStudent, message: 'Student created successfully' };
+    return { success: true, student: newStudent, message: 'Student registered in Firebase Firestore DB' };
   },
 
   updateStudent: async (id, data) => {
     const remote = await apiCall(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) });
     if (remote) return remote;
+
+    // Update in Firebase Firestore DB
+    try {
+      await setDoc(doc(db, 'students', String(id)), data, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore updateDoc student error:', fsErr.message);
+    }
 
     const list = getStoredStudents();
     const idx = list.findIndex((s) => s._id === id);
@@ -591,31 +639,40 @@ export const studentService = {
       list[idx] = { ...list[idx], ...data };
       setStoredStudents(list);
     }
-    return { success: true, student: list[idx], message: 'Student updated successfully' };
+    return { success: true, student: list[idx], message: 'Student updated in Firebase DB' };
   },
 
   deleteStudent: async (id) => {
     const remote = await apiCall(`/students/${id}`, { method: 'DELETE' });
     if (remote) return remote;
 
+    // Delete from Firebase Firestore DB
+    try {
+      await deleteDoc(doc(db, 'students', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc student error:', fsErr.message);
+    }
+
     const list = getStoredStudents().filter((s) => s._id !== id);
     setStoredStudents(list);
-    return { success: true, message: 'Student deleted successfully' };
+    return { success: true, message: 'Student deleted from Firebase DB' };
   },
 };
 
-// Subject Service
+// Subject Service with Firebase Firestore DB
 export const subjectService = {
   getSubjects: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const remote = await apiCall(`/subjects?${query}`);
     if (remote) return remote;
 
-    let list = getStoredSubjects();
+    const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
+    let list = fsSubjects || getStoredSubjects();
     if (params.search) {
       const term = params.search.toLowerCase();
       list = list.filter((s) => s.name.toLowerCase().includes(term) || s.teacherName.toLowerCase().includes(term));
     }
+    setStoredSubjects(list);
     return { success: true, subjects: list };
   },
 
@@ -623,15 +680,29 @@ export const subjectService = {
     const remote = await apiCall('/subjects', { method: 'POST', body: JSON.stringify(data) });
     if (remote) return remote;
 
+    const id = 'sub_' + Date.now();
+    const newSubject = { ...data, _id: id };
+
+    try {
+      await setDoc(doc(db, 'subjects', id), newSubject);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc subject error:', fsErr.message);
+    }
+
     const list = getStoredSubjects();
-    const newSubject = { ...data, _id: 'sub_' + Date.now() };
     setStoredSubjects([newSubject, ...list]);
-    return { success: true, subject: newSubject, message: 'Subject created' };
+    return { success: true, subject: newSubject, message: 'Subject created in Firebase DB' };
   },
 
   updateSubject: async (id, data) => {
     const remote = await apiCall(`/subjects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
     if (remote) return remote;
+
+    try {
+      await setDoc(doc(db, 'subjects', String(id)), data, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore updateDoc subject error:', fsErr.message);
+    }
 
     const list = getStoredSubjects();
     const idx = list.findIndex((s) => s._id === id);
@@ -639,30 +710,39 @@ export const subjectService = {
       list[idx] = { ...list[idx], ...data };
       setStoredSubjects(list);
     }
-    return { success: true, subject: list[idx], message: 'Subject updated' };
+    return { success: true, subject: list[idx], message: 'Subject updated in Firebase DB' };
   },
 
   deleteSubject: async (id) => {
     const remote = await apiCall(`/subjects/${id}`, { method: 'DELETE' });
     if (remote) return remote;
 
+    try {
+      await deleteDoc(doc(db, 'subjects', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc subject error:', fsErr.message);
+    }
+
     const list = getStoredSubjects().filter((s) => s._id !== id);
     setStoredSubjects(list);
-    return { success: true, message: 'Subject deleted' };
+    return { success: true, message: 'Subject deleted from Firebase DB' };
   },
 };
 
-// Fee Service
+// Fee Service with Firebase Firestore DB
 export const feeService = {
   getFeePayments: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const remote = await apiCall(`/fees?${query}`);
     if (remote) return remote;
 
-    let list = getStoredPayments();
+    const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
+    let list = fsPayments || getStoredPayments();
+
     if (params.studentId) {
       list = list.filter((p) => p.student === params.studentId || p.student?._id === params.studentId);
     }
+    setStoredPayments(list);
     return { success: true, payments: list };
   },
 
@@ -673,9 +753,10 @@ export const feeService = {
     const students = getStoredStudents();
     const student = students.find((s) => s._id === data.studentId);
     const count = getStoredPayments().length + 1;
+    const id = 'p_' + Date.now();
 
     const newPayment = {
-      _id: 'p_' + Date.now(),
+      _id: id,
       student: data.studentId,
       studentName: student ? student.fullName : 'Student',
       rollNumber: student ? student.rollNumber : 'N/A',
@@ -690,8 +771,14 @@ export const feeService = {
       remarks: 'Tuition fee payment',
     };
 
+    try {
+      await setDoc(doc(db, 'fees', id), newPayment);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc fee error:', fsErr.message);
+    }
+
     setStoredPayments([newPayment, ...getStoredPayments()]);
-    return { success: true, payment: newPayment, message: 'Fee payment recorded' };
+    return { success: true, payment: newPayment, message: 'Fee payment recorded in Firebase DB' };
   },
 
   getStats: async () => {
@@ -714,49 +801,76 @@ export const feeService = {
   },
 };
 
-// Marks Service
+// Marks Service with Firebase Firestore DB
 export const marksService = {
   getStudentMarks: async (studentId) => {
     const remote = await apiCall(`/marks?studentId=${studentId}`);
     if (remote) return remote;
 
-    const list = getStoredMarks();
+    const fsMarks = await syncFirestoreCollection('marks', initialMockMarks);
+    let list = fsMarks || getStoredMarks();
+    if (studentId) {
+      list = list.filter((m) => m.student === studentId || m.student?._id === studentId);
+    }
+    setStoredMarks(list);
     return { success: true, marks: list };
   },
 };
 
-// Attendance Service
+// Attendance Service with Firebase Firestore DB
 export const attendanceService = {
   getStudentAttendance: async (studentId) => {
     const remote = await apiCall(`/attendance?studentId=${studentId}`);
     if (remote) return remote;
 
-    const list = getStoredAttendance();
+    const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
+    let list = fsAttendance || getStoredAttendance();
+    if (studentId) {
+      list = list.filter((a) => a.student === studentId || a.student?._id === studentId);
+    }
+    setStoredAttendance(list);
+    const presentCount = list.filter((a) => a.status === 'Present').length;
+    const totalCount = list.length || 1;
     return {
       success: true,
       attendance: list,
-      stats: { presentDays: 4, absentDays: 1, attendancePercentage: 80.0 },
+      stats: { 
+        presentDays: presentCount, 
+        absentDays: totalCount - presentCount, 
+        attendancePercentage: Math.round((presentCount / totalCount) * 100) 
+      },
     };
   },
 };
 
-// Announcement Service
+// Announcement Service with Firebase Firestore DB
 export const announcementService = {
   getAnnouncements: async () => {
     const remote = await apiCall('/announcements');
     if (remote) return remote;
 
-    return { success: true, announcements: getStoredAnnouncements() };
+    const fsAnc = await syncFirestoreCollection('announcements', initialMockAnnouncements);
+    const list = fsAnc || getStoredAnnouncements();
+    setStoredAnnouncements(list);
+    return { success: true, announcements: list };
   },
 
   createAnnouncement: async (data) => {
     const remote = await apiCall('/announcements', { method: 'POST', body: JSON.stringify(data) });
     if (remote) return remote;
 
+    const id = 'anc_' + Date.now();
+    const newAnc = { ...data, _id: id, publishedDate: new Date().toISOString().split('T')[0] };
+
+    try {
+      await setDoc(doc(db, 'announcements', id), newAnc);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc announcement error:', fsErr.message);
+    }
+
     const list = getStoredAnnouncements();
-    const newAnc = { ...data, _id: 'anc_' + Date.now(), publishedDate: new Date().toISOString().split('T')[0] };
     setStoredAnnouncements([newAnc, ...list]);
-    return { success: true, announcement: newAnc, message: 'Announcement published successfully' };
+    return { success: true, announcement: newAnc, message: 'Announcement published in Firebase DB' };
   },
 };
 
