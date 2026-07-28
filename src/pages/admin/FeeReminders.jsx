@@ -64,12 +64,16 @@ export default function FeeReminders() {
     }, 1000);
   };
 
+  const overdueList = (reminders?.overdue || []).filter(Boolean);
+  const todayList = (reminders?.todayDue || []).filter(Boolean);
+  const nextThreeList = (reminders?.nextThreeDaysDue || []).filter(Boolean);
+
   const currentList =
     activeCategory === 'overdue'
-      ? reminders.overdue
+      ? overdueList
       : activeCategory === 'today'
-      ? reminders.todayDue
-      : reminders.nextThreeDaysDue;
+      ? todayList
+      : nextThreeList;
 
   return (
     <div className="space-y-6 font-body">
@@ -113,7 +117,7 @@ export default function FeeReminders() {
               Overdue Fees
             </span>
             <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xs">
-              {reminders.overdue.length}
+              {overdueList.length}
             </span>
           </div>
           <p className="text-xs text-on-surface-variant">
@@ -134,7 +138,7 @@ export default function FeeReminders() {
               Due Today
             </span>
             <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-              {reminders.todayDue.length}
+              {todayList.length}
             </span>
           </div>
           <p className="text-xs text-on-surface-variant">
@@ -155,7 +159,7 @@ export default function FeeReminders() {
               Next 3 Days
             </span>
             <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-              {reminders.nextThreeDaysDue.length}
+              {nextThreeList.length}
             </span>
           </div>
           <p className="text-xs text-on-surface-variant">
@@ -182,48 +186,54 @@ export default function FeeReminders() {
           </div>
         ) : (
           <div className="space-y-3">
-            {currentList.map((st) => (
-              <div
-                key={st._id}
-                className="p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-sm text-on-surface">{st.fullName}</h4>
-                    <span className="font-mono text-xs font-bold text-secondary">
-                      ({st.rollNumber})
-                    </span>
+            {currentList.map((st) => {
+              if (!st) return null;
+              return (
+                <div
+                  key={st._id || st.rollNumber || Math.random()}
+                  className="p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-on-surface">{st.fullName || 'Student'}</h4>
+                      {st.rollNumber && (
+                        <span className="font-mono text-xs font-bold text-secondary">
+                          ({st.rollNumber})
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Father: <strong className="text-on-surface">{st.fatherName || 'N/A'}</strong> &bull; Parent Phone: <strong className="text-primary font-bold">{st.parentPhone || '8894190175'}</strong>
+                    </p>
+                    <p className="text-[11px] text-rose-600 font-semibold mt-0.5">
+                      Monthly Fee: ₹{st.monthlyFee || 2500} &bull; Due Date: {st.feeDueDate || 5}th of month
+                    </p>
                   </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    Father: <strong className="text-on-surface">{st.fatherName}</strong> &bull; Parent Phone: <strong className="text-primary font-bold">{st.parentPhone || '8894190175'}</strong>
-                  </p>
-                  <p className="text-[11px] text-rose-600 font-semibold mt-0.5">
-                    Monthly Fee: ₹{st.monthlyFee} &bull; Due Date: {st.feeDueDate || 5}th of month
-                  </p>
-                </div>
 
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDirectSMS(st)}
-                    className="bg-primary text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary shadow-tactile-btn transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">sms</span>
-                    Send SMS (Direct)
-                  </button>
-                  <button
-                    onClick={() => setReminderModalTarget(st)}
-                    className="border border-secondary text-secondary font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 hover:bg-secondary/10 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">tune</span>
-                    Options
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDirectSMS(st)}
+                      className="bg-primary text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary shadow-tactile-btn transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">sms</span>
+                      Send SMS (Direct)
+                    </button>
+                    <button
+                      onClick={() => setReminderModalTarget(st)}
+                      className="border border-secondary text-secondary font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 hover:bg-secondary/10 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">tune</span>
+                      Options
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
 
       {/* Send Reminder Modal */}
       {reminderModalTarget && (

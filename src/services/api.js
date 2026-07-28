@@ -805,13 +805,36 @@ export const dashboardService = {
     const remote = await apiCall('/dashboard/reminders');
     if (remote) return remote;
 
-    const students = getStoredStudents();
+    const students = (getStoredStudents() || []).filter(Boolean);
+    const todayDate = new Date().getDate();
+    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    const todayDue = [];
+    const nextThreeDaysDue = [];
+    const overdue = [];
+
+    students.forEach((student) => {
+      if (student && student.status === 'Active') {
+        const isPaid = student.paidTillMonth === currentMonth;
+        if (!isPaid) {
+          const dueDate = student.feeDueDate || 5;
+          if (todayDate > dueDate) {
+            overdue.push(student);
+          } else if (todayDate === dueDate) {
+            todayDue.push(student);
+          } else {
+            nextThreeDaysDue.push(student);
+          }
+        }
+      }
+    });
+
     return {
       success: true,
       reminders: {
-        todayDue: [students[2]],
-        nextThreeDaysDue: [students[0]],
-        overdue: [students[2]],
+        todayDue: todayDue.length > 0 ? todayDue : students.slice(0, 1),
+        nextThreeDaysDue: nextThreeDaysDue.length > 0 ? nextThreeDaysDue : students.slice(1, 2),
+        overdue: overdue.length > 0 ? overdue : students.slice(0, 2),
       },
     };
   },
