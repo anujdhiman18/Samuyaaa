@@ -90,7 +90,7 @@ export default function Footer() {
             </p>
             <p className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-[16px] text-primary">mail</span>
-              <span>anujdhiman1706@gmail.com</span>
+              <span>Jitender0585@gmail.com</span>
             </p>
           </div>
         </div>

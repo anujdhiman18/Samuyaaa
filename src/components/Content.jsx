@@ -23,7 +23,7 @@ export default function Contact() {
     const bodyStr = encodeURIComponent(
       `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
     );
-    return `mailto:anujdhiman1706@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
+    return `mailto:Jitender0585@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
   }
 
   function handleResetForm() {
@@ -105,7 +105,7 @@ export default function Contact() {
                 </a>
 
                 <a
-                  href="mailto:anujdhiman1706@gmail.com"
+                  href="mailto:Jitender0585@gmail.com"
                   className="flex items-center gap-4 p-3 rounded-xl border border-surface-container-high bg-white hover:border-secondary hover:shadow-sm transition-all group"
                 >
                   <span className="w-10 h-10 rounded-lg bg-secondary/5 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-colors">
@@ -113,7 +113,7 @@ export default function Contact() {
                   </span>
                   <div>
                     <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Email Inquiry</p>
-                    <p className="text-sm font-bold text-on-surface">anujdhiman1706@gmail.com</p>
+                    <p className="text-sm font-bold text-on-surface">Jitender0585@gmail.com</p>
                   </div>
                 </a>
 
@@ -278,7 +278,7 @@ export default function Contact() {
                 </span>
                 <h4 className="font-headings font-bold text-xl text-on-surface mb-2">Query Sent Directly!</h4>
                 <p className="text-sm text-on-surface-variant max-w-sm mb-6">
-                  Thank you! Your query has been directly sent to <strong className="text-secondary font-bold">anujdhiman1706@gmail.com</strong>. Our team will contact you shortly.
+                  Thank you! Your query has been directly sent to <strong className="text-secondary font-bold">Jitender0585@gmail.com</strong>. Our team will contact you shortly.
                 </p>
                 <button
                   type="button"
