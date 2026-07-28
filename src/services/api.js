@@ -276,7 +276,35 @@ const notifyDataUpdate = () => {
   }
 };
 
-const getStoredStudents = () => JSON.parse(localStorage.getItem('mock_students') || JSON.stringify(initialMockStudents));
+const getDeletedIds = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(`saumyaa_deleted_${key}`) || '[]');
+  } catch (e) {
+    return [];
+  }
+};
+
+const addDeletedId = (key, id) => {
+  if (!id) return;
+  const list = getDeletedIds(key);
+  if (!list.includes(String(id))) {
+    list.push(String(id));
+    localStorage.setItem(`saumyaa_deleted_${key}`, JSON.stringify(list));
+  }
+};
+
+const getStoredStudents = () => {
+  try {
+    const raw = localStorage.getItem('mock_students');
+    const list = raw !== null ? JSON.parse(raw) : initialMockStudents;
+    const deleted = getDeletedIds('students');
+    return list.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)));
+  } catch (e) {
+    const deleted = getDeletedIds('students');
+    return initialMockStudents.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)));
+  }
+};
+
 const setStoredStudents = (s) => {
   localStorage.setItem('mock_students', JSON.stringify(s));
   notifyDataUpdate();
@@ -525,21 +553,28 @@ const syncFirestoreCollection = async (collectionName, defaultData = []) => {
   try {
     const colRef = collection(db, collectionName);
     const snapshot = await getDocs(colRef);
+    const deletedIds = getDeletedIds(collectionName);
     
     if (snapshot.empty && defaultData && defaultData.length > 0) {
+      const validDefaults = defaultData.filter((item) => {
+        const id = item._id || item.id;
+        return !deletedIds.includes(String(id));
+      });
       // Seed default initial data into Firestore if empty
-      const promises = defaultData.map((item) => {
+      const promises = validDefaults.map((item) => {
         const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
         return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
       });
       await Promise.all(promises);
-      return defaultData;
+      return validDefaults;
     }
     
     if (!snapshot.empty) {
       const items = [];
       snapshot.forEach((docSnap) => {
-        items.push({ ...docSnap.data(), _id: docSnap.id });
+        if (!deletedIds.includes(String(docSnap.id))) {
+          items.push({ ...docSnap.data(), _id: docSnap.id });
+        }
       });
       return items;
     }
@@ -571,16 +606,23 @@ export const studentService = {
           s.phone.includes(term)
       );
     }
-    setStoredStudents(list);
     return { success: true, students: list, total: list.length, page: 1, pages: 1 };
   },
 
   getStudentById: async (id) => {
+    const deletedIds = getDeletedIds('students');
+    if (deletedIds.includes(String(id))) {
+      return { success: false, student: null };
+    }
     const remote = await apiCall(`/students/${id}`);
     if (remote) return remote;
+
     const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
     const students = fsStudents || getStoredStudents();
-    const student = students.find((s) => s._id === id || s.id === id);
+    const student = students.find((s) => String(s._id) === String(id) || String(s.id) === String(id));
+    if (!student || deletedIds.includes(String(student._id)) || deletedIds.includes(String(student.id))) {
+      return { success: false, student: null };
+    }
     return { success: true, student };
   },
 
@@ -634,7 +676,7 @@ export const studentService = {
     }
 
     const list = getStoredStudents();
-    const idx = list.findIndex((s) => s._id === id);
+    const idx = list.findIndex((s) => String(s._id) === String(id) || String(s.id) === String(id));
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
       setStoredStudents(list);
@@ -643,8 +685,13 @@ export const studentService = {
   },
 
   deleteStudent: async (id) => {
-    const remote = await apiCall(`/students/${id}`, { method: 'DELETE' });
-    if (remote) return remote;
+    addDeletedId('students', id);
+
+    try {
+      await apiCall(`/students/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Remote delete call failed:', e);
+    }
 
     // Delete from Firebase Firestore DB
     try {
@@ -653,9 +700,16 @@ export const studentService = {
       console.warn('Firestore deleteDoc student error:', fsErr.message);
     }
 
-    const list = getStoredStudents().filter((s) => s._id !== id);
+    const list = getStoredStudents().filter((s) => String(s._id) !== String(id) && String(s.id) !== String(id));
     setStoredStudents(list);
-    return { success: true, message: 'Student deleted from Firebase DB' };
+    return { success: true, message: 'Student deleted successfully' };
+  },
+
+  resetStudentData: () => {
+    localStorage.removeItem('saumyaa_deleted_students');
+    localStorage.removeItem('mock_students');
+    notifyDataUpdate();
+    return { success: true, message: 'Sample student data restored successfully' };
   },
 };
 

@@ -18,7 +18,7 @@ export default function About({ onOpenBooking }) {
           </div>
 
           <div className="absolute -bottom-6 -right-4 bg-tertiary-fixed text-on-tertiary-fixed px-4 py-4 rounded-full shadow-2xl flex flex-col items-center justify-center w-28 h-28 text-center border-4 border-surface-container-lowest animate-bounce-slow">
-            <span className="font-headings font-extrabold text-[28px] leading-none text-tertiary">15+</span>
+            <span className="font-headings font-extrabold text-[28px] leading-none text-tertiary"></span>
             <span className="font-body text-[11px] font-semibold uppercase tracking-wider text-on-tertiary-fixed-variant mt-1">
               Years Exp.
             </span>

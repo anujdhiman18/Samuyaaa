@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { studentService, feeService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
+import ConfirmModal from '../../components/admin/ConfirmModal';
 
 export default function StudentDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [student, setStudent] = useState(null);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,10 @@ export default function StudentDetail() {
 
   // Receipt Modal
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+  // Delete Confirm Modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { addToast } = useToast();
 
@@ -34,6 +40,8 @@ export default function StudentDetail() {
       if (studentRes && studentRes.student) {
         setStudent(studentRes.student);
         setAmountPaid(studentRes.student.monthlyFee || 2500);
+      } else {
+        setStudent(null);
       }
 
       const paymentsRes = await feeService.getFeePayments({ studentId: id });
@@ -44,6 +52,19 @@ export default function StudentDetail() {
       addToast('Error loading student profile details', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteStudent = async () => {
+    setDeleting(true);
+    try {
+      await studentService.deleteStudent(id);
+      addToast(`Student ${student?.fullName || ''} deleted successfully`, 'success');
+      setDeleteModalOpen(false);
+      navigate('/admin/students');
+    } catch (err) {
+      addToast(err.message || 'Failed to delete student', 'error');
+      setDeleting(false);
     }
   };
 
@@ -81,9 +102,15 @@ export default function StudentDetail() {
 
   if (!student) {
     return (
-      <div className="p-12 text-center">
-        <h3 className="font-headings font-bold text-lg text-secondary">Student Not Found</h3>
-        <Link to="/admin/students" className="text-xs text-primary underline mt-2 block">
+      <div className="p-12 text-center bg-white rounded-2xl border border-outline-variant/15 shadow-premium max-w-md mx-auto my-12">
+        <span className="material-symbols-outlined text-[48px] text-rose-500 mb-2">
+          person_off
+        </span>
+        <h3 className="font-headings font-bold text-lg text-secondary">Student Not Found or Deleted</h3>
+        <p className="text-xs text-on-surface-variant mt-1">
+          This student record has been removed or does not exist.
+        </p>
+        <Link to="/admin/students" className="mt-4 inline-block px-5 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors">
           Back to Student Directory
         </Link>
       </div>
@@ -108,7 +135,7 @@ export default function StudentDetail() {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setPayModalOpen(true)}
             className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
@@ -122,6 +149,13 @@ export default function StudentDetail() {
           >
             <span className="material-symbols-outlined text-[18px]">print</span>
             Print Card
+          </button>
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="px-4 py-2.5 rounded-full border border-rose-200 bg-rose-50 text-xs font-headings font-bold text-rose-700 hover:bg-rose-100 transition-colors flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+            Delete Student
           </button>
         </div>
       </div>
@@ -402,6 +436,16 @@ export default function StudentDetail() {
           </div>
         </Modal>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteStudent}
+        loading={deleting}
+        title={`Delete Student ${student?.fullName}?`}
+        message={`Are you sure you want to permanently remove roll number ${student?.rollNumber}? This action cannot be undone.`}
+      />
     </div>
   );
 }

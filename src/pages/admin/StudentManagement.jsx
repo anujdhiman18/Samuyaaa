@@ -277,8 +277,26 @@ export default function StudentManagement() {
               No Students Found
             </h4>
             <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-              No student records matched your search query or class filter parameters.
+              No student records match your filters, or all student records have been deleted.
             </p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={handleOpenAdd}
+                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn"
+              >
+                + Register Student
+              </button>
+              <button
+                onClick={() => {
+                  studentService.resetStudentData();
+                  fetchStudents();
+                  addToast('Sample demo students restored!', 'info');
+                }}
+                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+              >
+                Restore Demo Data
+              </button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
