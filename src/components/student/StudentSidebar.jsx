@@ -38,9 +38,11 @@ export default function StudentSidebar({ mobileOpen, onCloseMobile }) {
           {/* Header */}
           <div className="h-16 px-6 flex items-center justify-between border-b border-outline-variant/15">
             <Link to="/student/dashboard" className="flex items-center gap-2.5 group">
-              <span className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-200">
-                <span className="material-symbols-outlined text-[24px]">school</span>
-              </span>
+              <img
+                src="/logo.jpg"
+                alt="Saumyaa Student Logo"
+                className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
+              />
               <div className="flex flex-col">
                 <span className="font-headings font-extrabold text-[18px] leading-tight text-secondary tracking-tight">
                   Saumyaa Student

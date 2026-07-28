@@ -78,6 +78,14 @@ const studentSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    feesPaid: {
+      type: Boolean,
+      default: false,
+    },
+    paymentDate: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

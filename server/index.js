@@ -12,6 +12,7 @@ import feeRoutes from './routes/feeRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import feedbackRoutes from './routes/feedback.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { initSchedulers } from './jobs/feeScheduler.js';
 
 dotenv.config();
 
@@ -54,12 +55,14 @@ mongoose
   .connect(MONGO_URI)
   .then(() => {
     console.log(`Connected to MongoDB database: ${MONGO_URI}`);
+    initSchedulers();
     app.listen(PORT, () => {
       console.log(`Saumyaa Admin Backend running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
     console.warn(`MongoDB Connection Warning: ${err.message}. Backend running in standalone mode on port ${PORT}.`);
+    initSchedulers();
     app.listen(PORT, () => {
       console.log(`Saumyaa Admin Backend running on http://localhost:${PORT}`);
     });

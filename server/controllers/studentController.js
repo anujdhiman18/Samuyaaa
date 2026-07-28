@@ -136,3 +136,55 @@ export const deleteStudent = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Toggle Student Fee Paid Status (Paid / Unpaid)
+// @route   PUT /api/students/:id/toggle-fee
+export const toggleFeeStatus = async (req, res) => {
+  try {
+    const { feesPaid } = req.body;
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    student.feesPaid = Boolean(feesPaid);
+    student.paymentDate = feesPaid ? new Date() : null;
+    student.paidTillMonth = feesPaid ? currentMonth : '';
+
+    await student.save();
+
+    // If marked Paid, auto-record fee ledger history entry if not present
+    if (feesPaid) {
+      const FeePayment = (await import('../models/FeePayment.js')).default;
+      const existing = await FeePayment.findOne({ student: student._id, monthYear: currentMonth });
+      if (!existing) {
+        const count = await FeePayment.countDocuments();
+        const receiptNumber = `REC-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+        await FeePayment.create({
+          student: student._id,
+          studentName: student.fullName,
+          rollNumber: student.rollNumber,
+          className: student.className,
+          amountPaid: student.monthlyFee || 2500,
+          monthlyFee: student.monthlyFee || 2500,
+          pendingAmount: 0,
+          paymentDate: new Date(),
+          monthYear: currentMonth,
+          paymentMode: 'UPI',
+          receiptNumber,
+          remarks: 'Monthly tuition fee (Toggle Paid)',
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      student,
+      message: `Fee status updated to ${feesPaid ? 'PAID' : 'UNPAID'}`,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

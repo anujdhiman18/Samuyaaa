@@ -4,6 +4,7 @@ import { studentService, subjectService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
 const CLASSES = ['All', '8th', '9th', '10th', '11th', '12th', 'Olympiad'];
 
@@ -72,6 +73,28 @@ export default function StudentManagement() {
       addToast(err.message || 'Failed to fetch students', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFeeToggle = async (studentId, newStatus) => {
+    try {
+      await studentService.toggleFeeStatus(studentId, newStatus);
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (String(s._id) === String(studentId) || String(s.id) === String(studentId)) {
+            return {
+              ...s,
+              feesPaid: newStatus,
+              paymentDate: newStatus ? new Date().toISOString() : null,
+              paidTillMonth: newStatus ? 'July 2026' : '',
+            };
+          }
+          return s;
+        })
+      );
+      addToast(`Fee status updated to ${newStatus ? 'PAID' : 'UNPAID'}`, newStatus ? 'success' : 'info');
+    } catch (err) {
+      addToast(err.message || 'Error updating fee status', 'error');
     }
   };
 
@@ -306,58 +329,65 @@ export default function StudentManagement() {
                   <th className="py-3.5 px-4">Roll No.</th>
                   <th className="py-3.5 px-4">Student Name</th>
                   <th className="py-3.5 px-4">Class</th>
-                  <th className="py-3.5 px-4">Father Name</th>
                   <th className="py-3.5 px-4">Parent Phone</th>
                   <th className="py-3.5 px-4">Monthly Fee</th>
+                  <th className="py-3.5 px-4">Fee Paid Status</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
-                {students.map((student) => (
-                  <tr
-                    key={student._id}
-                    className="hover:bg-surface-container-low transition-colors"
-                  >
-                    <td className="py-3.5 px-4 font-mono font-bold text-secondary">
-                      {student.rollNumber}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-on-surface">
-                      <Link
-                        to={`/admin/students/${student._id}`}
-                        className="hover:text-primary transition-colors"
-                      >
-                        {student.fullName}
-                      </Link>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
-                        {student.className}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant">
-                      {student.fatherName}
-                    </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant">
-                      {student.parentPhone}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-on-surface">
-                      ₹{(student.monthlyFee || 0).toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                          student.status === 'Active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {student.status}
-                      </span>
-                    </td>
+                {students.map((student) => {
+                  const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
+                  return (
+                    <tr
+                      key={student._id || student.id}
+                      className="hover:bg-surface-container-low transition-colors"
+                    >
+                      <td className="py-3.5 px-4 font-mono font-bold text-secondary">
+                        {student.rollNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-on-surface">
+                        <Link
+                          to={`/admin/students/${student._id || student.id}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          {student.fullName}
+                        </Link>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
+                          {student.className}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-on-surface-variant">
+                        {student.parentPhone}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-on-surface">
+                        ₹{(student.monthlyFee || 0).toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <FeeToggleSwitch
+                          checked={isPaid}
+                          onChange={(newStatus) => handleFeeToggle(student._id || student.id, newStatus)}
+                          paymentDate={student.paymentDate}
+                          size="sm"
+                        />
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                            student.status === 'Active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {student.status}
+                        </span>
+                      </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <Link
-                        to={`/admin/students/${student._id}`}
+                        to={`/admin/students/${student._id || student.id}`}
                         className="p-1.5 rounded-lg text-secondary hover:bg-secondary/10 inline-block"
                         title="View Full Profile"
                       >
@@ -379,7 +409,8 @@ export default function StudentManagement() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

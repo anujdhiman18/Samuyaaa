@@ -19,9 +19,11 @@ export default function Footer() {
       <div className="max-w-container-max mx-auto px-gutter py-12 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 flex flex-col justify-start">
           <a href="#" className="flex items-center gap-2 mb-4">
-            <span className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-white shadow-md">
-              <span className="material-symbols-outlined text-[20px]">school</span>
-            </span>
+            <img
+              src="/logo.jpg"
+              alt="Saumyaa Studies Logo"
+              className="w-10 h-10 object-contain rounded-xl shadow-sm bg-white p-0.5"
+            />
             <span className="font-headings font-extrabold text-lg text-secondary">Saumyaa Studies</span>
           </a>
           <p className="text-xs text-on-surface-variant leading-relaxed mb-6 font-medium">

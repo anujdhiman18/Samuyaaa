@@ -119,3 +119,28 @@ export const getFeeStats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get Student Fee History per month
+// @route   GET /api/fees/history/:studentId
+export const getStudentFeeHistory = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const history = await FeePayment.find({ student: student._id }).sort({ paymentDate: -1 });
+
+    res.json({
+      success: true,
+      studentId: student._id,
+      studentName: student.fullName,
+      rollNumber: student.rollNumber,
+      feesPaid: Boolean(student.feesPaid),
+      paymentDate: student.paymentDate,
+      history,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

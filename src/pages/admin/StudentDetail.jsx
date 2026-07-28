@@ -4,6 +4,7 @@ import { studentService, feeService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -52,6 +53,26 @@ export default function StudentDetail() {
       addToast('Error loading student profile details', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleFeeStatus = async (newStatus) => {
+    try {
+      await studentService.toggleFeeStatus(id, newStatus);
+      setStudent((prev) =>
+        prev
+          ? {
+              ...prev,
+              feesPaid: newStatus,
+              paymentDate: newStatus ? new Date().toISOString() : null,
+              paidTillMonth: newStatus ? 'July 2026' : '',
+            }
+          : null
+      );
+      fetchStudentData();
+      addToast(`Student fee status updated to ${newStatus ? 'PAID' : 'UNPAID'}`, newStatus ? 'success' : 'info');
+    } catch (err) {
+      addToast(err.message || 'Error updating fee status', 'error');
     }
   };
 
@@ -184,16 +205,27 @@ export default function StudentDetail() {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 text-left md:text-right min-w-[200px]">
-          <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-            Monthly Fee Structure
-          </span>
-          <span className="font-headings font-extrabold text-2xl text-secondary mt-1 block">
-            ₹{(student.monthlyFee || 2500).toLocaleString()}
-          </span>
-          <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-            Paid Till: {student.paidTillMonth || 'July 2026'} ✓
-          </span>
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 text-left md:text-right min-w-[240px] flex flex-col justify-between gap-3">
+          <div>
+            <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
+              Monthly Fee Structure
+            </span>
+            <span className="font-headings font-extrabold text-2xl text-secondary mt-0.5 block">
+              ₹{(student.monthlyFee || 2500).toLocaleString()} / month
+            </span>
+          </div>
+
+          <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold text-on-surface-variant uppercase">
+              Current Month Status:
+            </span>
+            <FeeToggleSwitch
+              checked={Boolean(student.feesPaid || student.paidTillMonth === 'July 2026')}
+              onChange={handleToggleFeeStatus}
+              paymentDate={student.paymentDate}
+              size="sm"
+            />
+          </div>
         </div>
       </div>
 

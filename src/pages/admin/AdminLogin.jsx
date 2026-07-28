@@ -45,9 +45,11 @@ export default function AdminLogin() {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/10 rounded-full blur-2xl -ml-10 -mb-10" />
 
         <div className="relative z-10 text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
-            <span className="material-symbols-outlined text-[32px]">admin_panel_settings</span>
-          </div>
+          <img
+            src="/logo.jpg"
+            alt="Saumyaa Studies Logo"
+            className="w-16 h-16 object-contain rounded-2xl mx-auto mb-4 shadow-lg bg-white p-1"
+          />
           <h2 className="font-headings font-extrabold text-2xl text-secondary dark:text-teal-400">
             Saumyaa Admin Portal
           </h2>

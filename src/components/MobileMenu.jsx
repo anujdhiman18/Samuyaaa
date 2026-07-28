@@ -44,10 +44,12 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
         <div className="w-80 bg-surface shadow-2xl flex flex-col py-6 px-6 relative">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-md">
-                <span className="material-symbols-outlined text-[20px]">school</span>
-              </span>
-              <span className="font-headings font-extrabold text-lg text-secondary">Saumyaa</span>
+              <img
+                src="/logo.jpg"
+                alt="Saumyaa Studies Logo"
+                className="w-9 h-9 object-contain rounded-xl shadow-sm bg-white p-0.5"
+              />
+              <span className="font-headings font-extrabold text-lg text-secondary">Saumyaa Studies</span>
             </div>
             <button
               onClick={onClose}

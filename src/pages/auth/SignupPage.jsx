@@ -56,9 +56,11 @@ export default function SignupPage() {
       <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-premium border border-outline-variant/15 relative overflow-hidden">
         <div className="relative z-10 text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
-            <span className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-200">
-              <span className="material-symbols-outlined text-[24px]">school</span>
-            </span>
+            <img
+              src="/logo.jpg"
+              alt="Saumyaa Studies Logo"
+              className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
+            />
             <div className="flex flex-col text-left">
               <span className="font-headings font-extrabold text-[20px] leading-tight text-secondary tracking-tight">
                 Samuyaa

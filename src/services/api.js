@@ -711,6 +711,71 @@ export const studentService = {
     notifyDataUpdate();
     return { success: true, message: 'Sample student data restored successfully' };
   },
+
+  toggleFeeStatus: async (id, feesPaid) => {
+    const payload = { feesPaid };
+    const remote = await apiCall(`/students/${id}/toggle-fee`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (remote) return remote;
+
+    const currentMonth = 'July 2026';
+    const paymentDate = feesPaid ? new Date().toISOString() : null;
+    const paidTillMonth = feesPaid ? currentMonth : '';
+
+    const list = getStoredStudents();
+    const idx = list.findIndex((s) => String(s._id) === String(id) || String(s.id) === String(id));
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        feesPaid: Boolean(feesPaid),
+        paymentDate,
+        paidTillMonth,
+      };
+      setStoredStudents(list);
+    }
+
+    try {
+      await setDoc(
+        doc(db, 'students', String(id)),
+        { feesPaid: Boolean(feesPaid), paymentDate, paidTillMonth },
+        { merge: true }
+      );
+    } catch (fsErr) {
+      console.warn('Firestore update fee status warning:', fsErr.message);
+    }
+
+    if (feesPaid && idx !== -1) {
+      const student = list[idx];
+      const count = getStoredPayments().length + 1;
+      const paymentId = 'p_' + Date.now();
+      const newPayment = {
+        _id: paymentId,
+        student: id,
+        studentName: student.fullName,
+        rollNumber: student.rollNumber,
+        className: student.className,
+        amountPaid: Number(student.monthlyFee || 2500),
+        monthlyFee: Number(student.monthlyFee || 2500),
+        pendingAmount: 0,
+        paymentDate: new Date().toISOString().split('T')[0],
+        monthYear: currentMonth,
+        paymentMode: 'UPI',
+        receiptNumber: `REC-2026-000${count}`,
+        remarks: 'Monthly tuition fee (Toggle Paid)',
+      };
+      setStoredPayments([newPayment, ...getStoredPayments()]);
+      try {
+        await setDoc(doc(db, 'fees', paymentId), newPayment);
+      } catch (e) {
+        console.warn('Firestore setDoc fee error:', e);
+      }
+    }
+
+    return {
+      success: true,
+      student: list[idx],
+      message: `Fee status updated to ${feesPaid ? 'PAID' : 'UNPAID'}`,
+    };
+  },
 };
 
 // Subject Service with Firebase Firestore DB
@@ -879,6 +944,16 @@ export const feeService = {
         pendingPercentage: activeStudents.length ? Math.round((pendingStudentsCount / activeStudents.length) * 100) : 0,
       },
     };
+  },
+
+  getFeeHistory: async (studentId) => {
+    const remote = await apiCall(`/fees/history/${studentId}`);
+    if (remote) return remote;
+
+    const payments = getStoredPayments().filter(
+      (p) => String(p.student) === String(studentId) || String(p.student?._id) === String(studentId)
+    );
+    return { success: true, history: payments };
   },
 };
 
