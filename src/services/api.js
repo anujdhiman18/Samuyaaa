@@ -551,11 +551,32 @@ export const studentService = {
   },
 
   createStudent: async (data) => {
-    const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(data) });
+    // Auto-generate sequential roll number if missing
+    let finalRollNumber = data.rollNumber;
+    if (!finalRollNumber || finalRollNumber.trim() === '') {
+      const classCode = data.className ? data.className.replace(/\D/g, '') || '10' : '10';
+      const prefix = `SAU-${classCode.padStart(2, '0')}-`;
+      const list = getStoredStudents();
+      let maxSeq = 0;
+      list.forEach((s) => {
+        if (s.rollNumber) {
+          const match = s.rollNumber.match(/(\d+)$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxSeq) maxSeq = num;
+          }
+        }
+      });
+      finalRollNumber = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+    }
+
+    const payload = { ...data, rollNumber: finalRollNumber };
+
+    const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
     if (remote) return remote;
 
     const list = getStoredStudents();
-    const newStudent = { ...data, _id: 's_' + Date.now() };
+    const newStudent = { ...payload, _id: 's_' + Date.now() };
     setStoredStudents([newStudent, ...list]);
     return { success: true, student: newStudent, message: 'Student created successfully' };
   },

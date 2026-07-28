@@ -63,12 +63,31 @@ export const getStudentById = async (req, res) => {
 // @route   POST /api/students
 export const createStudent = async (req, res) => {
   try {
-    const { rollNumber } = req.body;
+    let { rollNumber, className } = req.body;
 
-    // Check duplicate roll number
-    const existing = await Student.findOne({ rollNumber });
-    if (existing) {
-      return res.status(400).json({ success: false, message: `Roll number ${rollNumber} already exists` });
+    // Auto-generate sequential Roll Number if missing or blank
+    if (!rollNumber || rollNumber.trim() === '') {
+      const classCode = className ? className.replace(/\D/g, '') || '10' : '10';
+      const prefix = `SAU-${classCode.padStart(2, '0')}-`;
+      const allClassStudents = await Student.find({ rollNumber: new RegExp(`^${prefix}`) });
+      
+      let maxSeq = 0;
+      allClassStudents.forEach((s) => {
+        const match = s.rollNumber.match(/(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxSeq) maxSeq = num;
+        }
+      });
+
+      rollNumber = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
+      req.body.rollNumber = rollNumber;
+    } else {
+      // Check duplicate roll number
+      const existing = await Student.findOne({ rollNumber });
+      if (existing) {
+        return res.status(400).json({ success: false, message: `Roll number ${rollNumber} already exists` });
+      }
     }
 
     const student = await Student.create(req.body);

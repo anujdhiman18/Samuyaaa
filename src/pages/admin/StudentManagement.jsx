@@ -86,15 +86,40 @@ export default function StudentManagement() {
     }
   };
 
+  const generateAutoRollNumber = (targetClass = '10th', existingStudents = []) => {
+    const classCode = targetClass ? targetClass.replace(/\D/g, '') || '10' : '10';
+    const prefix = `SAU-${classCode.padStart(2, '0')}-`;
+    let maxSeq = 0;
+    existingStudents.forEach((s) => {
+      if (s.rollNumber) {
+        const match = s.rollNumber.match(/(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+    const nextSeq = (maxSeq + 1).toString().padStart(3, '0');
+    return `${prefix}${nextSeq}`;
+  };
+
   const handleOpenAdd = () => {
     setEditingStudent(null);
+    const autoRoll = generateAutoRollNumber('10th', students);
     setForm({
       ...initialStudentForm,
-      rollNumber: `SAU-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(
-        100 + Math.random() * 900
-      )}`,
+      rollNumber: autoRoll,
     });
     setIsModalOpen(true);
+  };
+
+  const handleClassChange = (newClass) => {
+    if (!editingStudent) {
+      const autoRoll = generateAutoRollNumber(newClass, students);
+      setForm({ ...form, className: newClass, rollNumber: autoRoll });
+    } else {
+      setForm({ ...form, className: newClass });
+    }
   };
 
   const handleOpenEdit = (student) => {
@@ -366,9 +391,25 @@ export default function StudentManagement() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Roll Number *
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="font-headings font-bold text-on-surface-variant flex items-center gap-1.5">
+                  Roll Number *
+                  <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    Auto-Assigned
+                  </span>
+                </label>
+                {!editingStudent && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, rollNumber: generateAutoRollNumber(form.className, students) })}
+                    className="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
+                    title="Recalculate next sequential roll number"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">refresh</span>
+                    Auto-Generate
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 required
@@ -377,6 +418,9 @@ export default function StudentManagement() {
                 placeholder="SAU-10-001"
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono font-bold"
               />
+              <span className="text-[10px] text-on-surface-variant/70">
+                Sequential ID automatically assigned based on Class. You can customize if needed.
+              </span>
             </div>
           </div>
 
@@ -458,7 +502,7 @@ export default function StudentManagement() {
               <select
                 required
                 value={form.className}
-                onChange={(e) => setForm({ ...form, className: e.target.value })}
+                onChange={(e) => handleClassChange(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               >
                 {CLASSES.filter((c) => c !== 'All').map((c) => (
