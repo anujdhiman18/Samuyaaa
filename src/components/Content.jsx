@@ -26,6 +26,18 @@ export default function Contact() {
     return `mailto:anujdhiman1706@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
   }
 
+  function handleResetForm() {
+    setForm({
+      name: '',
+      phone: '',
+      email: '',
+      subject: '',
+      message: '',
+    });
+    setSubmitting(false);
+    setSubmitted(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
@@ -171,7 +183,7 @@ export default function Contact() {
                     value={form.name}
                     onChange={(e) => updateField('name', e.target.value)}
                     placeholder="Enter student/parent name"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -185,7 +197,7 @@ export default function Contact() {
                     value={form.phone}
                     onChange={(e) => updateField('phone', e.target.value)}
                     placeholder="10-digit number"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
                   />
                 </div>
               </div>
@@ -201,7 +213,7 @@ export default function Contact() {
                     value={form.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     placeholder="example@email.com"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -213,10 +225,10 @@ export default function Contact() {
                     required
                     value={form.subject}
                     onChange={(e) => updateField('subject', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
                   >
-                    <option value="" disabled>
-                      Select dynamic subject
+                    <option value="">
+                      -- Select Subject --
                     </option>
                     <option value="Admission Inquiry">Admission / Batch Enrollment</option>
                     <option value="Demo Class Request">Demo Class Booking</option>
@@ -237,14 +249,14 @@ export default function Contact() {
                   value={form.message}
                   onChange={(e) => updateField('message', e.target.value)}
                   placeholder="Tell us about the student's current grade, academic goals, or queries..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3.5 rounded-lg text-sm transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3.5 rounded-lg text-sm transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
               >
                 {submitting ? (
                   <>
@@ -261,7 +273,7 @@ export default function Contact() {
             </form>
 
             {submitted && (
-              <div className="absolute inset-0 bg-white/98 rounded-2xl flex flex-col items-center justify-center p-6 text-center z-10 transition-all duration-300">
+              <div className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20 transition-all duration-300">
                 <span className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined text-[36px]">mark_email_read</span>
                 </span>
@@ -270,8 +282,9 @@ export default function Contact() {
                   Thank you! Your query has been directly sent to <strong className="text-secondary font-bold">anujdhiman1706@gmail.com</strong>. Our team will contact you shortly.
                 </p>
                 <button
-                  onClick={() => setSubmitted(false)}
-                  className="bg-secondary text-white font-headings font-bold px-6 py-2.5 rounded-lg text-xs hover:bg-on-secondary-fixed-variant transition-colors shadow-sm"
+                  type="button"
+                  onClick={handleResetForm}
+                  className="bg-secondary text-white font-headings font-bold px-6 py-2.5 rounded-lg text-xs hover:bg-on-secondary-fixed-variant transition-colors shadow-sm cursor-pointer"
                 >
                   Send Another Message
                 </button>
