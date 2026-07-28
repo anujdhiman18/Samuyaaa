@@ -3,7 +3,51 @@ import { dashboardService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
-export default function FeeReminders() {
+class FeeRemindersErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Fee Reminders Error Boundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-12 text-center bg-white rounded-2xl shadow-premium border border-outline-variant/15 font-body">
+          <span className="material-symbols-outlined text-[48px] text-amber-500 mb-2">
+            notifications_active
+          </span>
+          <h3 className="font-headings font-bold text-lg text-secondary">
+            Fee Reminder System
+          </h3>
+          <p className="text-xs text-on-surface-variant mt-1 mb-4">
+            Dashboard reloaded cleanly. Click below to view all fee reminder logs.
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false });
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 bg-primary text-white font-headings font-bold text-xs rounded-full shadow-premium"
+          >
+            Refresh System
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+function FeeRemindersContent() {
   const [reminders, setReminders] = useState({ todayDue: [], nextThreeDaysDue: [], overdue: [] });
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('overdue');
@@ -324,5 +368,13 @@ export default function FeeReminders() {
         </Modal>
       )}
     </div>
+  );
+}
+
+export default function FeeReminders() {
+  return (
+    <FeeRemindersErrorBoundary>
+      <FeeRemindersContent />
+    </FeeRemindersErrorBoundary>
   );
 }
