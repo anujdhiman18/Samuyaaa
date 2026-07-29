@@ -143,8 +143,8 @@ export default function StudentManagement() {
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!form.nextFeeDueDate) {
-      addToast('Next Fee Due Date is required!', 'warning');
+    if (!form.nextFeeDueDate || isNaN(new Date(form.nextFeeDueDate).getTime())) {
+      addToast('Please select or type a valid Next Fee Due Date!', 'warning');
       return;
     }
 
@@ -391,10 +391,10 @@ export default function StudentManagement() {
                       <td className="py-3.5 px-4 font-bold text-secondary font-mono">
                         {student.nextFeeDueDate
                           ? new Date(student.nextFeeDueDate).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })
                           : 'Not Set'}
                       </td>
                       <td className="py-3.5 px-4">
@@ -595,12 +595,14 @@ export default function StudentManagement() {
                 <input
                   type="date"
                   required
+                  min="2020-01-01"
+                  max="2035-12-31"
                   value={form.nextFeeDueDate || ''}
                   onChange={(e) => setForm({ ...form, nextFeeDueDate: e.target.value })}
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary cursor-pointer"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none focus:border-primary"
                 />
                 <span className="text-[10px] text-on-surface-variant/70">
-                  Select exact due date from calendar picker.
+                  Type date (YYYY-MM-DD) or pick from calendar picker.
                 </span>
               </div>
             </div>

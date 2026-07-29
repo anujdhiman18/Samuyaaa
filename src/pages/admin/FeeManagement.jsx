@@ -90,8 +90,8 @@ export default function FeeManagement() {
   const handleSaveFee = async (e) => {
     e.preventDefault();
     if (!editingFeeStudent) return;
-    if (!nextFeeDueDate) {
-      addToast('Next Fee Due Date is required', 'warning');
+    if (!nextFeeDueDate || isNaN(new Date(nextFeeDueDate).getTime())) {
+      addToast('Please select or type a valid Next Fee Due Date!', 'warning');
       return;
     }
     setSavingFee(true);
@@ -446,12 +446,14 @@ export default function FeeManagement() {
               <input
                 type="date"
                 required
+                min="2020-01-01"
+                max="2035-12-31"
                 value={nextFeeDueDate}
                 onChange={(e) => setNextFeeDueDate(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none focus:border-primary"
               />
               <span className="text-[10px] text-on-surface-variant">
-                Select exact due date from calendar picker.
+                Type date (YYYY-MM-DD) or pick from calendar picker.
               </span>
             </div>
 

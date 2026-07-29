@@ -1277,14 +1277,14 @@ export const dashboardService = {
 
     students.forEach((student) => {
       if (student && student.status === 'Active') {
-        const isPaid = student.paidTillMonth === currentMonth;
+        const isPaid = Boolean(student.feesPaid || student.paidTillMonth === currentMonth);
+        const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid);
         if (!isPaid) {
-          const dueDate = student.feeDueDate || 5;
-          if (todayDate > dueDate) {
+          if (dueInfo.code === 'overdue') {
             overdue.push(student);
-          } else if (todayDate === dueDate) {
+          } else if (dueInfo.code === 'due_today') {
             todayDue.push(student);
-          } else {
+          } else if (dueInfo.code === 'due_soon') {
             nextThreeDaysDue.push(student);
           }
         }
@@ -1294,9 +1294,9 @@ export const dashboardService = {
     return {
       success: true,
       reminders: {
-        todayDue: todayDue.length > 0 ? todayDue : students.slice(0, 1),
-        nextThreeDaysDue: nextThreeDaysDue.length > 0 ? nextThreeDaysDue : students.slice(1, 2),
-        overdue: overdue.length > 0 ? overdue : students.slice(0, 2),
+        todayDue,
+        nextThreeDaysDue,
+        overdue,
       },
     };
   },
