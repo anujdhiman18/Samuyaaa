@@ -1,7 +1,7 @@
 import { auth, db } from '../firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
@@ -392,7 +392,7 @@ export const authService = {
       return { success: true, user: loggedUser, token: await fbUser.getIdToken() };
     } catch (fbError) {
       console.warn('Firebase Login attempt code:', fbError.code, fbError.message);
-      
+
       // Local student storage lookup fallback
       const students = getStoredStudents();
       const student = students.find((s) => s.email && s.email.toLowerCase() === email.toLowerCase());
@@ -485,11 +485,11 @@ export const authService = {
         studentProfile: newStudent,
       };
 
-      return { 
-        success: true, 
-        user: userObj, 
-        token: await fbUser.getIdToken(), 
-        message: 'Account registered successfully!' 
+      return {
+        success: true,
+        user: userObj,
+        token: await fbUser.getIdToken(),
+        message: 'Account registered successfully!'
       };
     } catch (fbError) {
       console.warn('Firebase Signup attempt error:', fbError.code, fbError.message);
@@ -538,11 +538,11 @@ export const authService = {
         studentProfile: newStudent,
       };
 
-      return { 
-        success: true, 
-        user: userObj, 
-        token: 'mock_jwt_token_student_2026', 
-        message: 'Account registered successfully!' 
+      return {
+        success: true,
+        user: userObj,
+        token: 'mock_jwt_token_student_2026',
+        message: 'Account registered successfully!'
       };
     }
   },
@@ -554,7 +554,7 @@ const syncFirestoreCollection = async (collectionName, defaultData = []) => {
     const colRef = collection(db, collectionName);
     const snapshot = await getDocs(colRef);
     const deletedIds = getDeletedIds(collectionName);
-    
+
     if (snapshot.empty && defaultData && defaultData.length > 0) {
       const validDefaults = defaultData.filter((item) => {
         const id = item._id || item.id;
@@ -568,7 +568,7 @@ const syncFirestoreCollection = async (collectionName, defaultData = []) => {
       await Promise.all(promises);
       return validDefaults;
     }
-    
+
     if (!snapshot.empty) {
       const items = [];
       snapshot.forEach((docSnap) => {
@@ -990,10 +990,10 @@ export const attendanceService = {
     return {
       success: true,
       attendance: list,
-      stats: { 
-        presentDays: presentCount, 
-        absentDays: totalCount - presentCount, 
-        attendancePercentage: Math.round((presentCount / totalCount) * 100) 
+      stats: {
+        presentDays: presentCount,
+        absentDays: totalCount - presentCount,
+        attendancePercentage: Math.round((presentCount / totalCount) * 100)
       },
     };
   },

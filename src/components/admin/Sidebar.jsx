@@ -44,14 +44,9 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
                 alt="Saumyaa Admin Logo"
                 className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
               />
-              <div className="flex flex-col">
-                <span className="font-headings font-extrabold text-[18px] leading-tight text-secondary tracking-tight">
-                  Saumyaa Admin
-                </span>
-                <span className="font-headings text-[10px] uppercase tracking-[0.2em] font-semibold text-primary -mt-0.5">
-                  Studies Portal
-                </span>
-              </div>
+              <span className="font-headings font-extrabold text-base text-secondary tracking-tight">
+                Saumyaa Admin
+              </span>
             </Link>
             <button
               onClick={onCloseMobile}

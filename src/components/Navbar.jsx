@@ -27,20 +27,15 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
       }`}
     >
       <div className="flex justify-between items-center max-w-container-max mx-auto px-gutter py-4">
-        <a href="#" className="flex items-center gap-2 group">
+        <a href="#" className="flex items-center gap-3 group">
           <img
             src="/logo.jpg"
             alt="Saumyaa Studies Logo"
             className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
           />
-          <div className="flex flex-col">
-            <span className="font-headings font-extrabold text-[20px] leading-tight text-secondary tracking-tight">
-              Samuyaa
-            </span>
-            <span className="font-headings text-[11px] uppercase tracking-[0.2em] font-semibold text-primary -mt-0.5">
-              Studies
-            </span>
-          </div>
+          <span className="font-headings font-extrabold text-xl text-secondary tracking-tight">
+            Saumyaa Studies
+          </span>
         </a>
 
         <div className="hidden md:flex space-x-8 items-center">

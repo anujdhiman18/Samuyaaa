@@ -45,18 +45,15 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/10 rounded-full blur-2xl -ml-10 -mb-10" />
 
         <div className="relative z-10 text-center mb-6">
-          <Link to="/" className="inline-flex items-center gap-2 mb-3 group">
-            <span className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-200">
-              <span className="material-symbols-outlined text-[24px]">school</span>
+          <Link to="/" className="inline-flex items-center gap-3 mb-2 group">
+            <img
+              src="/logo.jpg"
+              alt="Saumyaa Studies Logo"
+              className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
+            />
+            <span className="font-headings font-extrabold text-xl text-secondary tracking-tight">
+              Saumyaa Studies
             </span>
-            <div className="flex flex-col text-left">
-              <span className="font-headings font-extrabold text-[20px] leading-tight text-secondary tracking-tight">
-                Samuyaa
-              </span>
-              <span className="font-headings text-[11px] uppercase tracking-[0.2em] font-semibold text-primary -mt-0.5">
-                Studies
-              </span>
-            </div>
           </Link>
           <h2 className="font-headings font-extrabold text-2xl text-secondary">
             Account Sign In
