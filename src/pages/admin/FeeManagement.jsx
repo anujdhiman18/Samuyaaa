@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { feeService, studentService, getFeeDueDateStatus, getDefaultNextFeeDueDate } from '../../services/api';
+import { feeService, studentService, getFeeStatusInfo } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
@@ -9,7 +9,7 @@ export default function FeeManagement() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Record Payment Modal
+  // Fee Collection Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
@@ -21,7 +21,7 @@ export default function FeeManagement() {
   const [isEditFeeModalOpen, setIsEditFeeModalOpen] = useState(false);
   const [editingFeeStudent, setEditingFeeStudent] = useState(null);
   const [newMonthlyFee, setNewMonthlyFee] = useState('');
-  const [nextFeeDueDate, setNextFeeDueDate] = useState('');
+  const [monthlyDueDay, setMonthlyDueDay] = useState(5);
   const [savingFee, setSavingFee] = useState(false);
 
   const { addToast } = useToast();
@@ -83,22 +83,23 @@ export default function FeeManagement() {
   const openEditFeeModal = (student) => {
     setEditingFeeStudent(student);
     setNewMonthlyFee(student.monthlyFee !== undefined ? student.monthlyFee : 2500);
-    setNextFeeDueDate(student.nextFeeDueDate || getDefaultNextFeeDueDate());
+    setMonthlyDueDay(student.monthlyDueDay || student.feeDueDate || 5);
     setIsEditFeeModalOpen(true);
   };
 
   const handleSaveFee = async (e) => {
     e.preventDefault();
     if (!editingFeeStudent) return;
-    if (!nextFeeDueDate || isNaN(new Date(nextFeeDueDate).getTime())) {
-      addToast('Please select or type a valid Next Fee Due Date!', 'warning');
+    if (!monthlyDueDay || monthlyDueDay < 1 || monthlyDueDay > 31) {
+      addToast('Please select a valid Monthly Fee Due Day (1–31)!', 'warning');
       return;
     }
     setSavingFee(true);
     try {
       await studentService.updateStudent(editingFeeStudent._id || editingFeeStudent.id, {
         monthlyFee: Number(newMonthlyFee),
-        nextFeeDueDate: nextFeeDueDate,
+        monthlyDueDay: Number(monthlyDueDay),
+        feeDueDate: Number(monthlyDueDay),
       });
 
       addToast(`Updated fee structure for ${editingFeeStudent.fullName}`, 'success');
@@ -192,6 +193,7 @@ export default function FeeManagement() {
                   <th className="py-3 px-4">Student Name</th>
                   <th className="py-3 px-4">Class</th>
                   <th className="py-3 px-4">Monthly Fee</th>
+                  <th className="py-3 px-4">Monthly Due Day</th>
                   <th className="py-3 px-4">Next Due Date</th>
                   <th className="py-3 px-4">Fee Status</th>
                   <th className="py-3 px-4 text-right">Fee Edit</th>
@@ -200,7 +202,13 @@ export default function FeeManagement() {
               <tbody className="divide-y divide-outline-variant/15">
                 {students.map((s) => {
                   const isPaid = Boolean(s.feesPaid || s.paidTillMonth === 'July 2026');
-                  const dueInfo = getFeeDueDateStatus(s.nextFeeDueDate, isPaid);
+                  const dueDay = s.monthlyDueDay || s.feeDueDate || 5;
+                  const dueInfo = getFeeStatusInfo(dueDay, isPaid, s.paymentDate, s.nextFeeDueDate);
+                  let suffix = 'th';
+                  if (dueDay === 1 || dueDay === 21 || dueDay === 31) suffix = 'st';
+                  else if (dueDay === 2 || dueDay === 22) suffix = 'nd';
+                  else if (dueDay === 3 || dueDay === 23) suffix = 'rd';
+
                   return (
                     <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-primary">{s.rollNumber}</td>
@@ -209,14 +217,15 @@ export default function FeeManagement() {
                       <td className="py-3 px-4 font-extrabold text-emerald-800">
                         ₹{(s.monthlyFee || 2500).toLocaleString()}/month
                       </td>
+                      <td className="py-3 px-4 font-semibold text-secondary">
+                        {dueDay}{suffix} of every month
+                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-secondary">
-                        {s.nextFeeDueDate
-                          ? new Date(s.nextFeeDueDate).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })
-                          : 'Not Set'}
+                        {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>

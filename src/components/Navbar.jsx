@@ -28,8 +28,8 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
         scrolled ? 'shadow-md bg-surface border-surface-container-high' : 'border-transparent'
       }`}
     >
-      <div className="flex justify-between items-center max-w-container-max mx-auto px-gutter py-4">
-        <a href="#" className="flex items-center gap-3 group">
+      <div className="flex justify-between items-center max-w-container-max mx-auto px-gutter py-4 gap-4">
+        <a href="#" className="flex items-center gap-3 group shrink-0">
           <img
             src="/logo.jpg"
             alt="Saumyaa Studies Logo"
@@ -40,35 +40,35 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
           </span>
         </a>
 
-        <div className="hidden md:flex space-x-8 items-center">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-6 shrink-0">
           {links.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="nav-link font-medium text-on-surface-variant hover:text-primary transition-all duration-200 text-sm relative py-2 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+              className="nav-link font-medium text-on-surface-variant hover:text-primary transition-all duration-200 text-xs xl:text-sm whitespace-nowrap relative py-2 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
             >
               {link.label}
             </a>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
           <button
             onClick={() => onOpenBooking()}
-            className="bg-primary text-white hover:bg-primary-container px-4 py-2 rounded-full font-headings font-bold shadow-premium hover:shadow-glow-primary active:scale-95 transform transition-all duration-150 text-xs shadow-tactile-btn"
+            className="bg-primary text-white hover:bg-primary-container px-3.5 py-2 xl:px-4 rounded-full font-headings font-bold shadow-premium hover:shadow-glow-primary active:scale-95 transform transition-all duration-150 text-xs whitespace-nowrap shadow-tactile-btn"
           >
             Book a Free Demo
           </button>
           <Link
             to="/login"
-            className="border border-secondary text-secondary hover:bg-secondary/10 px-4 py-2 rounded-full font-headings font-bold transition-all text-xs flex items-center gap-1"
+            className="border border-secondary text-secondary hover:bg-secondary/10 px-3.5 py-2 xl:px-4 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">login</span>
             Login
           </Link>
           <Link
             to="/signup"
-            className="bg-secondary text-white hover:bg-on-secondary-fixed-variant px-4 py-2 rounded-full font-headings font-bold transition-all text-xs flex items-center gap-1 shadow-sm"
+            className="bg-secondary text-white hover:bg-on-secondary-fixed-variant px-3.5 py-2 xl:px-4 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1 shadow-sm"
           >
             <span className="material-symbols-outlined text-[16px]">person_add</span>
             Sign Up
@@ -77,7 +77,7 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
 
         <button
           onClick={onOpenMobileMenu}
-          className="md:hidden p-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors"
+          className="lg:hidden p-2 rounded-lg text-on-surface hover:bg-surface-container-high transition-colors"
           aria-label="Toggle Menu"
         >
           <span className="material-symbols-outlined text-[28px]">menu</span>
