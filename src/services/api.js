@@ -744,31 +744,42 @@ export const studentService = {
       console.warn('Firestore update fee status warning:', fsErr.message);
     }
 
+    const existingPayments = getStoredPayments();
     if (feesPaid && idx !== -1) {
       const student = list[idx];
-      const count = getStoredPayments().length + 1;
-      const paymentId = 'p_' + Date.now();
-      const newPayment = {
-        _id: paymentId,
-        student: id,
-        studentName: student.fullName,
-        rollNumber: student.rollNumber,
-        className: student.className,
-        amountPaid: Number(student.monthlyFee || 2500),
-        monthlyFee: Number(student.monthlyFee || 2500),
-        pendingAmount: 0,
-        paymentDate: new Date().toISOString().split('T')[0],
-        monthYear: currentMonth,
-        paymentMode: 'UPI',
-        receiptNumber: `REC-2026-000${count}`,
-        remarks: 'Monthly tuition fee (Toggle Paid)',
-      };
-      setStoredPayments([newPayment, ...getStoredPayments()]);
-      try {
-        await setDoc(doc(db, 'fees', paymentId), newPayment);
-      } catch (e) {
-        console.warn('Firestore setDoc fee error:', e);
+      const hasExisting = existingPayments.some(
+        (p) => (String(p.student) === String(id) || String(p.student?._id) === String(id)) && p.monthYear === currentMonth
+      );
+      if (!hasExisting) {
+        const count = existingPayments.length + 1;
+        const paymentId = 'p_' + Date.now();
+        const newPayment = {
+          _id: paymentId,
+          student: id,
+          studentName: student.fullName,
+          rollNumber: student.rollNumber,
+          className: student.className,
+          amountPaid: Number(student.monthlyFee || 2500),
+          monthlyFee: Number(student.monthlyFee || 2500),
+          pendingAmount: 0,
+          paymentDate: new Date().toISOString().split('T')[0],
+          monthYear: currentMonth,
+          paymentMode: 'UPI',
+          receiptNumber: `REC-2026-000${count}`,
+          remarks: 'Monthly tuition fee (Toggle Paid)',
+        };
+        setStoredPayments([newPayment, ...existingPayments]);
+        try {
+          await setDoc(doc(db, 'fees', paymentId), newPayment);
+        } catch (e) {
+          console.warn('Firestore setDoc fee error:', e);
+        }
       }
+    } else if (!feesPaid) {
+      const filteredPayments = existingPayments.filter(
+        (p) => !(String(p.student) === String(id) || String(p.student?._id) === String(id)) || p.monthYear !== currentMonth
+      );
+      setStoredPayments(filteredPayments);
     }
 
     return {
@@ -917,19 +928,27 @@ export const feeService = {
     if (remote) return remote;
 
     const students = getStoredStudents();
-    const payments = getStoredPayments();
+    const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
+    const payments = getStoredPayments().filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
     const activeStudents = students.filter((s) => s.status === 'Active');
     const currentMonth = 'July 2026';
 
-    const totalMonthlyTarget = activeStudents.reduce((s, st) => s + (st.monthlyFee || 0), 0);
-    const totalFeesCollected = payments.reduce((s, p) => s + (p.amountPaid || 0), 0);
+    const totalMonthlyTarget = activeStudents.reduce((s, st) => s + (Number(st.monthlyFee) || 2500), 0);
+    const totalFeesCollected = payments.reduce((s, p) => s + (Number(p.amountPaid) || 0), 0);
     const currentMonthPayments = payments.filter((p) => p.monthYear === currentMonth);
-    const currentMonthCollected = currentMonthPayments.reduce((s, p) => s + (p.amountPaid || 0), 0);
-    const pendingFeePayments = Math.max(0, totalMonthlyTarget - currentMonthCollected);
+    const currentMonthCollected = currentMonthPayments.reduce((s, p) => s + (Number(p.amountPaid) || 0), 0);
 
     const paidStudentIds = new Set(currentMonthPayments.map((p) => String(p.student?._id || p.student)));
-    const paidStudentsCount = activeStudents.filter((s) => paidStudentIds.has(String(s._id)) || s.paidTillMonth === currentMonth).length;
-    const pendingStudentsCount = Math.max(0, activeStudents.length - paidStudentsCount);
+    const unpaidStudents = activeStudents.filter(
+      (s) => !s.feesPaid && s.paidTillMonth !== currentMonth && !paidStudentIds.has(String(s._id || s.id))
+    );
+    const paidStudents = activeStudents.filter(
+      (s) => s.feesPaid || s.paidTillMonth === currentMonth || paidStudentIds.has(String(s._id || s.id))
+    );
+
+    const paidStudentsCount = paidStudents.length;
+    const pendingStudentsCount = unpaidStudents.length;
+    const pendingFeePayments = unpaidStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
 
     return {
       success: true,
@@ -1054,8 +1073,9 @@ export const dashboardService = {
     if (remote) return remote;
 
     const students = getStoredStudents();
+    const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
     const subjects = getStoredSubjects();
-    const payments = getStoredPayments();
+    const payments = getStoredPayments().filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
     const activeStudents = students.filter((s) => s.status === 'Active');
     const currentMonth = 'July 2026';
 

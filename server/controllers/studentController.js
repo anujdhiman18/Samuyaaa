@@ -156,8 +156,8 @@ export const toggleFeeStatus = async (req, res) => {
     await student.save();
 
     // If marked Paid, auto-record fee ledger history entry if not present
+    const FeePayment = (await import('../models/FeePayment.js')).default;
     if (feesPaid) {
-      const FeePayment = (await import('../models/FeePayment.js')).default;
       const existing = await FeePayment.findOne({ student: student._id, monthYear: currentMonth });
       if (!existing) {
         const count = await FeePayment.countDocuments();
@@ -177,6 +177,8 @@ export const toggleFeeStatus = async (req, res) => {
           remarks: 'Monthly tuition fee (Toggle Paid)',
         });
       }
+    } else {
+      await FeePayment.deleteMany({ student: student._id, monthYear: currentMonth });
     }
 
     res.json({
