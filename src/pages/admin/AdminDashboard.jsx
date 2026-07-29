@@ -211,16 +211,10 @@ export default function AdminDashboard() {
               {((stats?.overdueCount || 0) + (stats?.dueTodayCount || 0) + (stats?.dueThisWeekCount || 0))} Students with Pending Dues
             </h4>
 
-            {/* Breakdown Status Badges in single card */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
-                <span>!</span> Overdue: <strong>{stats?.overdueCount || 0}</strong>
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
-                <span>⚠️</span> Due Today: <strong>{stats?.dueTodayCount || 0}</strong>
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                <span>⏳</span> Next 7 Days: <strong>{stats?.dueThisWeekCount || 0}</strong>
+            {/* Single Summary Badge */}
+            <div className="pt-1">
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1.5 shadow-sm">
+                <span>⚠️</span> Total Dues Pending: <strong>{((stats?.overdueCount || 0) + (stats?.dueTodayCount || 0) + (stats?.dueThisWeekCount || 0))} Students</strong>
               </span>
             </div>
           </div>
