@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentManagement from './pages/admin/StudentManagement';
 import StudentDetail from './pages/admin/StudentDetail';
 import SubjectManagement from './pages/admin/SubjectManagement';
+import FacultyManagement from './pages/admin/FacultyManagement';
 import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
 
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="students/:id" element={<StudentDetail />} />
                 <Route path="subjects" element={<SubjectManagement />} />
+                <Route path="faculty" element={<FacultyManagement />} />
                 <Route path="fees" element={<FeeManagement />} />
                 <Route path="reminders" element={<FeeReminders />} />
               </Route>

@@ -11,6 +11,7 @@ import subjectRoutes from './routes/subjectRoutes.js';
 import feeRoutes from './routes/feeRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import feedbackRoutes from './routes/feedback.js';
+import facultyRoutes from './routes/facultyRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
 
@@ -41,6 +42,7 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/faculty', facultyRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

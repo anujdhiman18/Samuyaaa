@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { supabase, isSupabaseConfigured } from '../supabase';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -1219,6 +1220,283 @@ export const feedbackService = {
     const updatedList = [newFB, ...list];
     setStoredFeedbacks(updatedList);
     return { success: true, feedback: newFB };
+  },
+};
+
+const initialMockFaculty = [
+  {
+    _id: 'fac_1',
+    id: 'fac_1',
+    name: 'Dr. Jitender Sharma',
+    designation: 'Senior Physics HOD',
+    subject: 'Physics & Mechanics',
+    qualification: 'Ph.D. Physics (IIT Delhi)',
+    experience: '15+ Years Teaching',
+    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    _id: 'fac_2',
+    id: 'fac_2',
+    name: 'Prof. Saumyaa Sharma',
+    designation: 'Mathematics Department Head',
+    subject: 'Advanced Mathematics',
+    qualification: 'M.Sc. Mathematics (Gold Medalist)',
+    experience: '12+ Years Teaching',
+    photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    _id: 'fac_3',
+    id: 'fac_3',
+    name: 'Dr. Rajesh Verma',
+    designation: 'Senior Chemistry Mentor',
+    subject: 'Organic & Physical Chemistry',
+    qualification: 'Ph.D. Organic Chemistry',
+    experience: '10+ Years Teaching',
+    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    display_order: 3,
+    is_active: true,
+  },
+  {
+    _id: 'fac_4',
+    id: 'fac_4',
+    name: 'Er. Ananya Patel',
+    designation: 'Biology & Olympiad Specialist',
+    subject: 'Biology & Life Sciences',
+    qualification: 'M.Tech Biotechnology',
+    experience: '8+ Years Teaching',
+    photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',
+    display_order: 4,
+    is_active: true,
+  },
+];
+
+const getStoredFaculty = () => {
+  try {
+    const data = localStorage.getItem('saumyaa_faculty');
+    if (!data) {
+      localStorage.setItem('saumyaa_faculty', JSON.stringify(initialMockFaculty));
+      return initialMockFaculty;
+    }
+    return JSON.parse(data);
+  } catch (e) {
+    return initialMockFaculty;
+  }
+};
+
+const setStoredFaculty = (list) => {
+  try {
+    localStorage.setItem('saumyaa_faculty', JSON.stringify(list));
+  } catch (e) {
+    console.warn('LocalStorage faculty write error:', e);
+  }
+};
+
+export const facultyService = {
+  getFaculty: async ({ activeOnly = false } = {}) => {
+    // 1. Try Supabase first if configured
+    if (isSupabaseConfigured()) {
+      try {
+        let query = supabase.from('faculty').select('*').order('display_order', { ascending: true });
+        if (activeOnly) {
+          query = query.eq('is_active', true);
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          return { success: true, faculty: data };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase getFaculty error, falling back:', sbErr.message);
+      }
+    }
+
+    // 2. Try Express API Backend
+    const remote = await apiCall(`/faculty${activeOnly ? '?activeOnly=true' : ''}`);
+    if (remote && remote.faculty) return remote;
+
+    // 3. LocalStorage Fallback
+    let list = getStoredFaculty();
+    if (activeOnly) {
+      list = list.filter((f) => f.is_active);
+    }
+    list.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+    return { success: true, faculty: list };
+  },
+
+  createFaculty: async (data) => {
+    if (!data.name || !data.name.trim()) {
+      throw new Error('Faculty name is required');
+    }
+    if (!data.photo_url) {
+      throw new Error('Faculty photo is required');
+    }
+
+    // 1. Supabase insert
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: sbData, error } = await supabase
+          .from('faculty')
+          .insert([
+            {
+              name: data.name,
+              designation: data.designation || 'Senior Faculty Member',
+              subject: data.subject || 'General Academics',
+              qualification: data.qualification || 'Master’s Degree',
+              experience: data.experience || '5+ Years',
+              photo_url: data.photo_url,
+              display_order: Number(data.display_order) || 1,
+              is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+            },
+          ])
+          .select();
+        if (!error && sbData && sbData[0]) {
+          return { success: true, faculty: sbData[0], message: 'Faculty member created in Supabase' };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase createFaculty warning:', sbErr.message);
+      }
+    }
+
+    // 2. Express Backend
+    const remote = await apiCall('/faculty', { method: 'POST', body: JSON.stringify(data) });
+    if (remote && remote.faculty) return remote;
+
+    // 3. LocalStorage
+    const newFaculty = {
+      _id: 'fac_' + Date.now(),
+      id: 'fac_' + Date.now(),
+      name: data.name,
+      designation: data.designation || 'Senior Faculty Member',
+      subject: data.subject || 'General Academics',
+      qualification: data.qualification || 'Master’s Degree',
+      experience: data.experience || '5+ Years',
+      photo_url: data.photo_url,
+      display_order: Number(data.display_order) || 1,
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+      created_at: new Date().toISOString(),
+    };
+    const list = getStoredFaculty();
+    const updated = [...list, newFaculty];
+    setStoredFaculty(updated);
+    return { success: true, faculty: newFaculty, message: 'Faculty added successfully' };
+  },
+
+  updateFaculty: async (id, data) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: sbData, error } = await supabase
+          .from('faculty')
+          .update(data)
+          .eq('id', id)
+          .select();
+        if (!error && sbData && sbData[0]) {
+          return { success: true, faculty: sbData[0], message: 'Faculty updated in Supabase' };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase updateFaculty warning:', sbErr.message);
+      }
+    }
+
+    const remote = await apiCall(`/faculty/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    if (remote && remote.faculty) return remote;
+
+    const list = getStoredFaculty();
+    const idx = list.findIndex((f) => String(f._id) === String(id) || String(f.id) === String(id));
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...data };
+      setStoredFaculty(list);
+    }
+    return { success: true, faculty: list[idx], message: 'Faculty updated successfully' };
+  },
+
+  deleteFaculty: async (id, photoUrl) => {
+    if (isSupabaseConfigured() && photoUrl && photoUrl.includes('/storage/v1/object/public/faculty/')) {
+      try {
+        const fileName = photoUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage.from('faculty').remove([fileName]);
+        }
+      } catch (imgErr) {
+        console.warn('Supabase storage remove image error:', imgErr.message);
+      }
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('faculty').delete().eq('id', id);
+      } catch (sbErr) {
+        console.warn('Supabase deleteFaculty error:', sbErr.message);
+      }
+    }
+
+    try {
+      await apiCall(`/faculty/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Express remote delete faculty call skipped:', e);
+    }
+
+    const list = getStoredFaculty().filter((f) => String(f._id) !== String(id) && String(f.id) !== String(id));
+    setStoredFaculty(list);
+    return { success: true, message: 'Faculty member deleted successfully' };
+  },
+
+  uploadFacultyPhoto: async (file, onProgress) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Invalid image format! Only JPG, PNG, and WEBP files are allowed.');
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
+    }
+
+    if (onProgress) onProgress(20);
+
+    if (isSupabaseConfigured()) {
+      try {
+        if (onProgress) onProgress(40);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('faculty').upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+        if (uploadError) {
+          console.warn('Supabase bucket upload error:', uploadError.message);
+          throw uploadError;
+        }
+
+        if (onProgress) onProgress(80);
+        const { data: publicUrlData } = supabase.storage.from('faculty').getPublicUrl(filePath);
+
+        if (onProgress) onProgress(100);
+        return publicUrlData.publicUrl;
+      } catch (sbErr) {
+        console.warn('Supabase Storage upload failed, converting to Base64:', sbErr.message);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          onProgress(percent);
+        }
+      };
+      reader.onload = () => {
+        if (onProgress) onProgress(100);
+        resolve(reader.result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.readAsDataURL(file);
+    });
   },
 };
 

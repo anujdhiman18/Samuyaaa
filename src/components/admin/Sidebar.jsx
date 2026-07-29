@@ -5,6 +5,7 @@ const navItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Student Directory', icon: 'groups' },
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
+  { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
   { path: '/admin/reminders', label: 'Fee Reminders', icon: 'notifications_active' },
 ];

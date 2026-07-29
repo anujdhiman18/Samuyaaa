@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import MobileMenu from './MobileMenu';
 import About from './About';
 import Course from './Course';
+import FacultySection from './FacultySection';
 import Results from './Results';
 import Testimonials from './Testimonials';
 import Faq from './Faq';
@@ -45,7 +46,7 @@ export default function PublicWebsite() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-surface font-body text-on-surface">
       <Navbar
         onOpenBooking={openBooking}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
@@ -70,6 +71,7 @@ export default function PublicWebsite() {
 
         <About onOpenBooking={openBooking} />
         <Course onOpenBooking={openBooking} />
+        <FacultySection />
         <Results />
         <Testimonials />
         <Faq />
@@ -85,6 +87,6 @@ export default function PublicWebsite() {
         prefilledProgram={prefilledProgram}
         onClose={closeBooking}
       />
-    </>
+    </div>
   );
 }
