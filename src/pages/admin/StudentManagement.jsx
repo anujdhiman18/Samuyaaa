@@ -53,6 +53,8 @@ export default function StudentManagement() {
   useEffect(() => {
     fetchStudents();
     fetchSubjects();
+    window.addEventListener('saumyaa_data_updated', fetchStudents);
+    return () => window.removeEventListener('saumyaa_data_updated', fetchStudents);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, selectedClass, search]);
 

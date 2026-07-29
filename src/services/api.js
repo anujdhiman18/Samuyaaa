@@ -6,7 +6,15 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${hostname}:5000/api`;
+    }
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+};
 
 const initialMockStudents = [
   {
@@ -246,7 +254,7 @@ const getAuthHeaders = () => {
 
 export const apiCall = async (endpoint, options = {}) => {
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
       headers: {
         ...getAuthHeaders(),

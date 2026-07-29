@@ -9,6 +9,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboard();
+    window.addEventListener('saumyaa_data_updated', fetchDashboard);
+    return () => window.removeEventListener('saumyaa_data_updated', fetchDashboard);
   }, []);
 
   const fetchDashboard = async () => {
