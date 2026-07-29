@@ -193,70 +193,45 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Overdue Card */}
-          <Link
-            to="/admin/students?feeStatus=overdue"
-            className="p-4 rounded-xl bg-rose-50 border border-rose-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
-          >
-            <div>
-              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-rose-700 block">
-                Overdue Fees
+        <Link
+          to="/admin/students?feeStatus=overdue"
+          className="p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50/50 to-blue-50 border border-outline-variant/20 hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group cursor-pointer"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-headings font-extrabold uppercase tracking-wider text-rose-700 bg-rose-100/80 px-2.5 py-0.5 rounded-full border border-rose-200">
+                Fee Dues Summary
               </span>
-              <h4 className="font-headings font-extrabold text-2xl text-rose-800 mt-1">
-                {stats?.overdueCount || 0} Students
-              </h4>
-              <span className="text-[10px] text-rose-600 font-medium group-hover:underline">
-                Click to view overdue list &rarr;
+              <span className="text-[11px] text-on-surface-variant font-medium">
+                Combined Overview
               </span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-rose-200/60 text-rose-700 flex items-center justify-center font-bold">
-              !
-            </div>
-          </Link>
 
-          {/* Due Today Card */}
-          <Link
-            to="/admin/students?feeStatus=due_today"
-            className="p-4 rounded-xl bg-amber-50 border border-amber-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
-          >
-            <div>
-              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-amber-800 block">
-                Due Today
-              </span>
-              <h4 className="font-headings font-extrabold text-2xl text-amber-900 mt-1">
-                {stats?.dueTodayCount || 0} Students
-              </h4>
-              <span className="text-[10px] text-amber-700 font-medium group-hover:underline">
-                Click to view due today &rarr;
-              </span>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-amber-200/60 text-amber-800 flex items-center justify-center font-bold">
-              ⚠️
-            </div>
-          </Link>
+            <h4 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
+              {((stats?.overdueCount || 0) + (stats?.dueTodayCount || 0) + (stats?.dueThisWeekCount || 0))} Students with Pending Dues
+            </h4>
 
-          {/* Due Next 7 Days Card */}
-          <Link
-            to="/admin/students?feeStatus=due_soon"
-            className="p-4 rounded-xl bg-blue-50 border border-blue-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
-          >
-            <div>
-              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-blue-800 block">
-                Due Next 7 Days
+            {/* Breakdown Status Badges in single card */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
+                <span>!</span> Overdue: <strong>{stats?.overdueCount || 0}</strong>
               </span>
-              <h4 className="font-headings font-extrabold text-2xl text-blue-900 mt-1">
-                {stats?.dueThisWeekCount || 0} Students
-              </h4>
-              <span className="text-[10px] text-blue-700 font-medium group-hover:underline">
-                Click to view due soon &rarr;
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                <span>⚠️</span> Due Today: <strong>{stats?.dueTodayCount || 0}</strong>
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                <span>⏳</span> Next 7 Days: <strong>{stats?.dueThisWeekCount || 0}</strong>
               </span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-blue-200/60 text-blue-800 flex items-center justify-center font-bold">
-              ⏳
-            </div>
-          </Link>
-        </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end md:self-center">
+            <span className="text-xs font-bold text-primary group-hover:underline flex items-center gap-1 bg-white px-4 py-2 rounded-full shadow-sm border border-outline-variant/15">
+              Manage Dues List
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Visual Chart & Activity Breakdown */}
