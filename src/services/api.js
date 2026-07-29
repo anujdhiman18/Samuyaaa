@@ -1657,6 +1657,8 @@ export const alumniService = {
       deleteFirebaseFile(photoUrl).catch(() => {});
     }
 
+    addDeletedId('alumni', id);
+
     try {
       await deleteDoc(doc(db, 'alumni', String(id)));
     } catch (fsErr) {

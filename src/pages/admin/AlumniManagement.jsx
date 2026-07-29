@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { alumniService } from '../../services/api';
+import { alumniService, subscribeFirestoreCollection } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
@@ -45,8 +45,19 @@ export default function AlumniManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('alumni', [], (list) => {
+      if (list) {
+        let filtered = [...list];
+        if (filterFeatured) filtered = filtered.filter((a) => a.is_featured);
+        if (filterActive) filtered = filtered.filter((a) => a.is_active !== false);
+        filtered.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0) || (a.display_order || 1) - (b.display_order || 1));
+        setAlumniList(filtered);
+        setLoading(false);
+      }
+    });
+
     fetchAlumni();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => unsubscribe();
   }, [filterFeatured, filterActive]);
 
   const fetchAlumni = async () => {
@@ -365,14 +376,22 @@ export default function AlumniManagement() {
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => openEditModal(a)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(a);
+                          }}
                           className="p-1.5 rounded-lg text-secondary hover:bg-secondary/10 transition-colors"
                           title="Edit Alumni"
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
                         <button
-                          onClick={() => confirmDelete(a)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDelete(a);
+                          }}
                           className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
                           title="Delete Alumni"
                         >
