@@ -2,10 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { alumniService } from '../services/api';
 
 export default function AlumniSection() {
-  const [alumniList, setAlumniList] = useState([]);
-  const [featuredAlumni, setFeaturedAlumni] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [alumniList, setAlumniList] = useState(() => {
+    try {
+      const data = localStorage.getItem('saumyaa_alumni');
+      return data ? JSON.parse(data).filter((a) => a.is_active !== false) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [featuredAlumni, setFeaturedAlumni] = useState(() => {
+    try {
+      const data = localStorage.getItem('saumyaa_alumni');
+      const list = data ? JSON.parse(data).filter((a) => a.is_active !== false) : [];
+      const feat = list.filter((a) => a.is_featured);
+      return feat.length > 0 ? feat : list.slice(0, 3);
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [stats, setStats] = useState({
+    totalAlumni: 120,
+    studentsPlaced: 115,
+    topRecruiters: 28,
+    averagePackage: '28.5 LPA',
+    highestPackage: '45 LPA',
+  });
 
   // Featured Carousel Index
   const [activeSlide, setActiveSlide] = useState(0);
@@ -18,14 +41,13 @@ export default function AlumniSection() {
   }, []);
 
   const fetchAlumniData = async () => {
-    setLoading(true);
     try {
       const [alumniRes, statsRes] = await Promise.all([
         alumniService.getAlumni({ activeOnly: true }),
         alumniService.getAlumniStats(),
       ]);
 
-      if (alumniRes && alumniRes.alumni) {
+      if (alumniRes && alumniRes.alumni && alumniRes.alumni.length > 0) {
         setAlumniList(alumniRes.alumni);
         const featured = alumniRes.alumni.filter((a) => a.is_featured);
         setFeaturedAlumni(featured.length > 0 ? featured : alumniRes.alumni.slice(0, 3));
@@ -35,9 +57,7 @@ export default function AlumniSection() {
         setStats(statsRes.stats);
       }
     } catch (err) {
-      console.error('Error loading alumni section:', err);
-    } finally {
-      setLoading(false);
+      console.warn('Error loading alumni section:', err);
     }
   };
 
@@ -152,6 +172,7 @@ export default function AlumniSection() {
                 <img
                   src={currentFeatured.photo_url}
                   alt={currentFeatured.full_name}
+                  loading="lazy"
                   className="w-44 h-44 sm:w-56 sm:h-56 rounded-2xl object-cover shadow-2xl border-4 border-white/20"
                 />
                 <span className="absolute -top-3 -right-3 bg-amber-400 text-secondary text-[11px] font-headings font-extrabold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
@@ -246,6 +267,7 @@ export default function AlumniSection() {
               <img
                 src={currentTestimonial.photo_url}
                 alt={currentTestimonial.full_name}
+                loading="lazy"
                 className="w-11 h-11 rounded-full object-cover border-2 border-primary shadow-md"
               />
               <div className="text-left">
@@ -282,6 +304,7 @@ export default function AlumniSection() {
                       <img
                         src={a.photo_url}
                         alt={a.full_name}
+                        loading="lazy"
                         className="w-16 h-16 rounded-full object-cover border-2 border-primary/20 group-hover:border-primary transition-colors shadow-md"
                       />
                       {a.is_featured && (

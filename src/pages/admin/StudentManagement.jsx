@@ -59,7 +59,7 @@ export default function StudentManagement() {
   }, [page, selectedClass, search]);
 
   const fetchStudents = async () => {
-    setLoading(true);
+    if (students.length === 0) setLoading(true);
     try {
       const data = await studentService.getStudents({
         search,

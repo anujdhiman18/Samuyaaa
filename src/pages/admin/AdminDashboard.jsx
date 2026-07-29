@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchDashboard = async () => {
-    setLoading(true);
+    if (!stats) setLoading(true);
     try {
       const data = await dashboardService.getStats();
       if (data && data.stats) {

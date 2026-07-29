@@ -253,14 +253,19 @@ const getAuthHeaders = () => {
 };
 
 export const apiCall = async (endpoint, options = {}) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1000);
+
   try {
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
         ...options.headers,
       },
     });
+    clearTimeout(timeoutId);
 
     if (res.status === 401) {
       localStorage.removeItem('saumyaa_token');
@@ -273,7 +278,8 @@ export const apiCall = async (endpoint, options = {}) => {
     }
     return data;
   } catch (err) {
-    console.warn(`API server offline on ${endpoint}. Operating via local client state.`);
+    clearTimeout(timeoutId);
+    console.warn(`API server offline/unreachable on ${endpoint}. Operating via fast local state.`);
     return null;
   }
 };

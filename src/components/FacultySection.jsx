@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { facultyService } from '../services/api';
 
 export default function FacultySection() {
-  const [faculty, setFaculty] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [faculty, setFaculty] = useState(() => {
+    try {
+      const data = localStorage.getItem('saumyaa_faculty');
+      return data ? JSON.parse(data).filter((f) => f.is_active !== false) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   useEffect(() => {
     fetchActiveFaculty();
@@ -12,38 +18,13 @@ export default function FacultySection() {
   const fetchActiveFaculty = async () => {
     try {
       const res = await facultyService.getFaculty({ activeOnly: true });
-      if (res && res.faculty) {
+      if (res && res.faculty && res.faculty.length > 0) {
         setFaculty(res.faculty);
       }
     } catch (err) {
       console.warn('Error fetching faculty for public website:', err);
-    } finally {
-      setLoading(false);
     }
   };
-
-  // If loading, show skeleton cards
-  if (loading) {
-    return (
-      <section className="py-16 md:py-24 bg-surface-container-low/40 relative overflow-hidden">
-        <div className="max-w-container-max mx-auto px-gutter">
-          <div className="text-center max-w-2xl mx-auto mb-12 animate-pulse space-y-3">
-            <div className="w-32 h-4 bg-slate-200 rounded-full mx-auto" />
-            <div className="w-64 h-8 bg-slate-200 rounded mx-auto" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="animate-pulse bg-white/60 p-6 rounded-3xl h-72 border border-outline-variant/15 space-y-4">
-                <div className="w-20 h-20 rounded-full bg-slate-200 mx-auto" />
-                <div className="w-32 h-4 bg-slate-200 rounded mx-auto" />
-                <div className="w-24 h-3 bg-slate-200 rounded mx-auto" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   // Hide section automatically if there are no active faculty members
   if (faculty.length === 0) {
@@ -84,6 +65,7 @@ export default function FacultySection() {
                   <img
                     src={member.photo_url}
                     alt={member.name}
+                    loading="lazy"
                     className="relative w-24 h-24 rounded-full object-cover border-3 border-white shadow-md mx-auto group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
