@@ -7,20 +7,31 @@ import FeePayment from '../models/FeePayment.js';
 export const getDashboardStats = async (req, res) => {
   try {
     const totalStudents = await Student.countDocuments();
-    const activeStudents = await Student.countDocuments({ status: 'Active' });
+    const activeStudentsList = await Student.find({ status: 'Active' });
+    const activeStudents = activeStudentsList.length;
     const totalSubjects = await Subject.countDocuments();
 
     const payments = await FeePayment.find();
     const totalFeesCollected = payments.reduce((acc, p) => acc + (p.amountPaid || 0), 0);
 
-    const students = await Student.find({ status: 'Active' });
-    const monthlyTarget = students.reduce((acc, s) => acc + (s.monthlyFee || 0), 0);
-
     const currentMonthStr = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const thisMonthPayments = payments.filter((p) => p.monthYear === currentMonthStr);
     const thisMonthCollected = thisMonthPayments.reduce((acc, p) => acc + (p.amountPaid || 0), 0);
 
-    const pendingFeeAmount = Math.max(0, monthlyTarget - thisMonthCollected);
+    const paidStudentIds = new Set(thisMonthPayments.map((p) => String(p.student)));
+
+    const unpaidStudents = activeStudentsList.filter(
+      (s) => !s.feesPaid && s.paidTillMonth !== currentMonthStr && !paidStudentIds.has(String(s._id))
+    );
+    const paidStudents = activeStudentsList.filter(
+      (s) => s.feesPaid || s.paidTillMonth === currentMonthStr || paidStudentIds.has(String(s._id))
+    );
+
+    const paidStudentsCount = paidStudents.length;
+    const pendingStudentsCount = unpaidStudents.length;
+
+    const pendingFeeAmount = unpaidStudents.reduce((acc, s) => acc + (s.monthlyFee || 2500), 0);
+    const monthlyTarget = activeStudentsList.reduce((acc, s) => acc + (s.monthlyFee || 2500), 0);
 
     const recentRegistrations = await Student.find().sort({ createdAt: -1 }).limit(5);
 
@@ -34,6 +45,10 @@ export const getDashboardStats = async (req, res) => {
         pendingFeePayments: pendingFeeAmount,
         thisMonthCollected,
         monthlyTarget,
+        paidStudentsCount,
+        pendingStudentsCount,
+        paidPercentage: activeStudents ? Math.round((paidStudentsCount / activeStudents) * 100) : 0,
+        pendingPercentage: activeStudents ? Math.round((pendingStudentsCount / activeStudents) * 100) : 0,
       },
       recentRegistrations,
     });

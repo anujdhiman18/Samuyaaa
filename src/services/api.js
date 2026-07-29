@@ -1059,15 +1059,24 @@ export const dashboardService = {
     const activeStudents = students.filter((s) => s.status === 'Active');
     const currentMonth = 'July 2026';
 
-    const totalMonthlyTarget = activeStudents.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
-    const totalFeesCollected = payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
-    const thisMonthPayments = payments.filter((p) => p.monthYear === currentMonth);
-    const thisMonthCollected = thisMonthPayments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
-    const pendingFeePayments = Math.max(0, totalMonthlyTarget - thisMonthCollected);
+    const totalMonthlyTarget = activeStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
+    const totalFeesCollected = payments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
+
+    const thisMonthPayments = payments.filter((p) => p.monthYear === currentMonth || p.monthYear === 'July 2026');
+    const thisMonthCollected = thisMonthPayments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
 
     const paidStudentIds = new Set(thisMonthPayments.map((p) => String(p.student?._id || p.student)));
-    const paidStudentsCount = activeStudents.filter((s) => paidStudentIds.has(String(s._id)) || s.paidTillMonth === currentMonth).length;
-    const pendingStudentsCount = Math.max(0, activeStudents.length - paidStudentsCount);
+
+    const unpaidStudents = activeStudents.filter(
+      (s) => !s.feesPaid && s.paidTillMonth !== currentMonth && s.paidTillMonth !== 'July 2026' && !paidStudentIds.has(String(s._id || s.id))
+    );
+    const paidStudents = activeStudents.filter(
+      (s) => s.feesPaid || s.paidTillMonth === currentMonth || s.paidTillMonth === 'July 2026' || paidStudentIds.has(String(s._id || s.id))
+    );
+
+    const paidStudentsCount = paidStudents.length;
+    const pendingStudentsCount = unpaidStudents.length;
+    const pendingFeePayments = unpaidStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
 
     return {
       success: true,
@@ -1077,7 +1086,7 @@ export const dashboardService = {
         totalSubjects: subjects.length,
         totalFeesCollected,
         thisMonthCollected,
-        monthlyTarget: totalMonthlyTarget || 12500,
+        monthlyTarget: totalMonthlyTarget,
         pendingFeePayments,
         paidStudentsCount,
         pendingStudentsCount,

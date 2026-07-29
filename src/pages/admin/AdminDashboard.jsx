@@ -175,18 +175,19 @@ export default function AdminDashboard() {
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span className="text-on-surface">Current Month Revenue</span>
                 <span className="text-emerald-700 font-bold">
-                  ₹{(stats?.thisMonthCollected || 6700).toLocaleString()} / ₹
-                  {(stats?.monthlyTarget || 12500).toLocaleString()}
+                  ₹{(stats?.thisMonthCollected ?? 0).toLocaleString()} / ₹
+                  {(stats?.monthlyTarget ?? 0).toLocaleString()}
                 </span>
               </div>
               <div className="h-4 bg-surface-container-low rounded-full overflow-hidden p-0.5 border border-outline-variant/15">
                 <div
                   className="h-full bg-emerald-600 rounded-full transition-all duration-1000"
                   style={{
-                    width: `${Math.min(
-                      100,
-                      ((stats?.thisMonthCollected || 6700) / (stats?.monthlyTarget || 12500)) * 100
-                    )}%`,
+                    width: `${
+                      (stats?.monthlyTarget ?? 0) > 0
+                        ? Math.min(100, Math.round(((stats?.thisMonthCollected ?? 0) / stats.monthlyTarget) * 100))
+                        : 0
+                    }%`,
                   }}
                 />
               </div>
@@ -194,16 +195,21 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-6 gap-2 pt-6 items-end h-40">
               {[
-                { month: 'Feb', amount: 8400, height: '55%' },
-                { month: 'Mar', amount: 9200, height: '65%' },
-                { month: 'Apr', amount: 11000, height: '80%' },
-                { month: 'May', amount: 10500, height: '75%' },
-                { month: 'Jun', amount: 12000, height: '90%' },
-                { month: 'Jul', amount: 6700, height: '60%', active: true },
+                { month: 'Feb', amount: 0, height: '15%' },
+                { month: 'Mar', amount: 0, height: '15%' },
+                { month: 'Apr', amount: 0, height: '15%' },
+                { month: 'May', amount: 0, height: '15%' },
+                { month: 'Jun', amount: 0, height: '15%' },
+                {
+                  month: 'Jul',
+                  amount: stats?.thisMonthCollected ?? 0,
+                  height: `${Math.max(15, Math.min(100, (stats?.monthlyTarget ? Math.round(((stats?.thisMonthCollected ?? 0) / stats.monthlyTarget) * 100) : 15)))}%`,
+                  active: true,
+                },
               ].map((m) => (
                 <div key={m.month} className="flex flex-col items-center gap-2 h-full justify-end group">
                   <span className="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity text-primary">
-                    ₹{m.amount}
+                    ₹{m.amount.toLocaleString()}
                   </span>
                   <div
                     className={`w-full rounded-t-xl transition-all ${
