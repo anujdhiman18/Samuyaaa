@@ -320,21 +320,16 @@ const setStoredSubjects = (s) => {
 const getStoredPayments = () => {
   try {
     const raw = JSON.parse(localStorage.getItem('mock_payments') || JSON.stringify(initialMockPayments));
-    const students = JSON.parse(localStorage.getItem('mock_students') || '[]');
-    const deletedStudents = JSON.parse(localStorage.getItem('saumyaa_deleted_students') || '[]');
+    const students = getStoredStudents();
 
     const validStudentMap = new Map();
     if (students && Array.isArray(students)) {
       students.forEach((s) => {
         const id = String(s._id || s.id);
-        if (id && !deletedStudents.includes(id)) {
+        if (id) {
           validStudentMap.set(id, s);
         }
       });
-    }
-
-    if (validStudentMap.size === 0) {
-      return Array.isArray(raw) ? raw.filter(Boolean) : initialMockPayments;
     }
 
     const currentMonth = 'July 2026';
@@ -365,7 +360,7 @@ const getStoredPayments = () => {
 
     return cleanPayments;
   } catch (e) {
-    return initialMockPayments;
+    return [];
   }
 };
 
@@ -919,13 +914,11 @@ export const feeService = {
     const remote = await apiCall(`/fees?${query}`);
     if (remote) return remote;
 
-    const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
-    let list = fsPayments || getStoredPayments();
+    let list = getStoredPayments();
 
     if (params.studentId) {
       list = list.filter((p) => p.student === params.studentId || p.student?._id === params.studentId);
     }
-    setStoredPayments(list);
     return { success: true, payments: list };
   },
 
