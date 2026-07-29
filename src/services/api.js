@@ -22,73 +22,7 @@ const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 };
 
-const initialMockStudents = [
-  {
-    _id: 's1',
-    fullName: 'Rahul Gupta',
-    fatherName: 'Rajesh Gupta',
-    motherName: 'Sunita Gupta',
-    phone: '9816012345',
-    parentPhone: '8894190175',
-    email: 'rahul.g@gmail.com',
-    address: 'House #42, Main Market, Jamula, Palampur',
-    className: '10th',
-    rollNumber: 'SAU-10-001',
-    subjects: ['Mathematics Advanced', 'Integrated Science'],
-    dateOfAdmission: '2025-04-10',
-    monthlyFee: 2500,
-    feeDueDate: 5,
-    status: 'Active',
-    paidTillMonth: 'July 2026',
-    dob: '2009-08-15',
-    bloodGroup: 'B+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-  },
-  {
-    _id: 's2',
-    fullName: 'Damini Sharma',
-    fatherName: 'Subhash Sharma',
-    motherName: 'Kamlesh Sharma',
-    phone: '9876543210',
-    parentPhone: '8894190175',
-    email: 'damini.s@gmail.com',
-    address: 'Bagru Garh, Palaid, HP 176093',
-    className: '10th',
-    rollNumber: 'SAU-10-002',
-    subjects: ['Mathematics Advanced'],
-    dateOfAdmission: '2025-03-15',
-    monthlyFee: 2000,
-    feeDueDate: 5,
-    status: 'Active',
-    paidTillMonth: 'July 2026',
-    dob: '2009-11-20',
-    bloodGroup: 'O+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-  },
-  {
-    _id: 's3',
-    fullName: 'Aryan Mehta',
-    fatherName: 'Vikas Mehta',
-    motherName: 'Priya Mehta',
-    phone: '9816112233',
-    parentPhone: '8894190175',
-    email: 'aryan.m@gmail.com',
-    address: 'Ward No 4, Civil Lines, HP',
-    className: '11th',
-    rollNumber: 'SAU-11-003',
-    subjects: ['Physics IIT-JEE Prep', 'Chemistry Foundation'],
-    dateOfAdmission: '2025-05-01',
-    monthlyFee: 3000,
-    feeDueDate: 5,
-    status: 'Active',
-    paidTillMonth: 'June 2026',
-    dob: '2008-05-10',
-    bloodGroup: 'A+',
-    emergencyContact: '8894190175',
-  },
-];
+const initialMockStudents = [];
 
 const initialMockSubjects = [
   {
@@ -293,9 +227,15 @@ const notifyDataUpdate = () => {
 
 const getDeletedIds = (key) => {
   try {
-    return JSON.parse(localStorage.getItem(`saumyaa_deleted_${key}`) || '[]');
+    const list = JSON.parse(localStorage.getItem(`saumyaa_deleted_${key}`) || '[]');
+    if (key === 'students') {
+      ['s1', 's2', 's3', 's4'].forEach((mockId) => {
+        if (!list.includes(mockId)) list.push(mockId);
+      });
+    }
+    return list;
   } catch (e) {
-    return [];
+    return key === 'students' ? ['s1', 's2', 's3', 's4'] : [];
   }
 };
 
