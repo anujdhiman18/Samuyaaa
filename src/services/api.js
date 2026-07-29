@@ -1196,76 +1196,76 @@ export const dashboardService = {
 const initialMockFeedbacks = [
   {
     _id: 'fb1',
-    quote:
-      "Before joining Saumyaa Studies, my son Rahul struggled to sit through a Math paper. Jitender sir's patience changed everything. Not only did his marks improve from 62 to 89, but he's actually excited about Algebra now.",
+    id: 'fb1',
+    name: 'Mr. Rajesh Gupta',
+    role: 'Parent of Rahul (Grade 10)',
+    quote: "Before joining Saumyaa Studies, my son Rahul struggled to sit through a Math paper. Jitender sir's patience changed everything. Not only did his marks improve from 62 to 89, but he's actually excited about Algebra now.",
     initials: 'RG',
     initialsBg: 'bg-secondary/15',
     initialsColor: 'text-secondary',
-    name: 'Mr. Rajesh Gupta',
-    role: 'Parent of Rahul (Grade 10)',
     stars: 5,
   },
   {
     _id: 'fb2',
-    quote:
-      'Jitender sir makes science feel alive. The practical formulas and conceptual clarity we developed in the classes helped me clear CBSE board physics and chemistry exams with top scores.',
+    id: 'fb2',
+    name: 'Aryan Mehta',
+    role: 'Student (Class 10 CBSE 98.4%)',
+    quote: 'Jitender sir makes science feel alive. The practical formulas and conceptual clarity we developed in the classes helped me clear CBSE board physics and chemistry exams with top scores.',
     initials: 'AM',
     initialsBg: 'bg-primary/15',
     initialsColor: 'text-primary',
-    name: 'Aryan Mehta',
-    role: 'Student (Class 10 CBSE 98.4%)',
     stars: 5,
   },
   {
     _id: 'fb3',
-    quote:
-      'The class size is limited to 12. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
+    id: 'fb3',
+    name: 'Sneha Reddy',
+    role: 'JEE Foundation Student',
+    quote: 'The class size is limited to 12. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
     initials: 'SR',
     initialsBg: 'bg-tertiary/15',
     initialsColor: 'text-tertiary',
-    name: 'Sneha Reddy',
-    role: 'JEE Foundation Student',
     stars: 5,
   },
   {
     _id: 'fb4',
-    quote:
-      'English literature class and grammatical deep-dives here helped me secure 96 in class 12 Boards. The answer writing strategies they teach are gold.',
+    id: 'fb4',
+    name: 'Karan Dhillon',
+    role: 'Student (Class 12 Boards)',
+    quote: 'English literature class and grammatical deep-dives here helped me secure 96 in class 12 Boards. The answer writing strategies they teach are gold.',
     initials: 'KD',
     initialsBg: 'bg-secondary/15',
     initialsColor: 'text-secondary',
-    name: 'Karan Dhillon',
-    role: 'Student (Class 12 Boards)',
     stars: 4,
   },
 ];
 
-const getStoredFeedbacks = () => {
-  const saved = localStorage.getItem('saumyaa_feedbacks');
-  return saved ? JSON.parse(saved) : initialMockFeedbacks;
+export const getStoredFeedbacks = () => {
+  try {
+    const saved = localStorage.getItem('saumyaa_feedbacks');
+    if (!saved) {
+      localStorage.setItem('saumyaa_feedbacks', JSON.stringify(initialMockFeedbacks));
+      return initialMockFeedbacks;
+    }
+    return saved ? JSON.parse(saved) : initialMockFeedbacks;
+  } catch (e) {
+    return initialMockFeedbacks;
+  }
 };
 
 const setStoredFeedbacks = (list) => {
   localStorage.setItem('saumyaa_feedbacks', JSON.stringify(list));
+  notifyDataUpdate();
 };
 
 export const feedbackService = {
   getFeedbacks: async () => {
-    const remote = await apiCall('/feedback');
-    if (remote && remote.feedbacks && remote.feedbacks.length > 0) return remote;
-
-    return { success: true, feedbacks: getStoredFeedbacks() };
+    const fsFeedbacks = await syncFirestoreCollection('feedbacks', initialMockFeedbacks);
+    let list = fsFeedbacks || getStoredFeedbacks();
+    return { success: true, feedbacks: list };
   },
 
   createFeedback: async (feedbackData) => {
-    const remote = await apiCall('/feedback', 'POST', feedbackData);
-    if (remote && remote.feedback) {
-      const list = getStoredFeedbacks();
-      setStoredFeedbacks([remote.feedback, ...list]);
-      return remote;
-    }
-
-    const list = getStoredFeedbacks();
     const initials = (feedbackData.name || 'Anonymous')
       .split(' ')
       .map((n) => n[0])
@@ -1273,15 +1273,27 @@ export const feedbackService = {
       .toUpperCase()
       .slice(0, 2);
 
+    const id = `fb_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const newFB = {
-      _id: `fb-${Date.now()}`,
-      ...feedbackData,
+      _id: id,
+      id,
+      name: feedbackData.name,
+      role: feedbackData.role || 'Student / Community Member',
+      quote: feedbackData.quote,
+      stars: Number(feedbackData.stars) || 5,
       initials: initials || 'FB',
       initialsBg: 'bg-primary/15',
       initialsColor: 'text-primary',
       createdAt: new Date().toISOString(),
     };
 
+    try {
+      await setDoc(doc(db, 'feedbacks', id), newFB);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc feedback error:', fsErr.message);
+    }
+
+    const list = getStoredFeedbacks();
     const updatedList = [newFB, ...list];
     setStoredFeedbacks(updatedList);
     return { success: true, feedback: newFB };

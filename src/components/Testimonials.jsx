@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { feedbackService } from '../services/api.js';
+import { feedbackService, subscribeFirestoreCollection } from '../services/api.js';
 
 function getVisibleCount() {
   if (typeof window === 'undefined') return 3;
@@ -24,7 +24,14 @@ export default function Testimonials() {
   const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('feedbacks', [], (list) => {
+      if (list && list.length > 0) {
+        setFeedbacks(list);
+      }
+    });
+
     fetchLiveFeedbacks();
+    return () => unsubscribe();
   }, []);
 
   const fetchLiveFeedbacks = async () => {
