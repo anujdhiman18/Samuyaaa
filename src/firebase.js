@@ -19,12 +19,30 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+const readAsBase64 = (file, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        onProgress(percent);
+      }
+    };
+    reader.onload = () => {
+      if (onProgress) onProgress(100);
+      resolve(reader.result);
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file.'));
+    reader.readAsDataURL(file);
+  });
+};
+
 /**
- * Upload a file to Firebase Storage
+ * Upload a file to Firebase Storage with automatic Base64 fallback if storage bucket CORS or network hangs
  * @param {File} file - File object to upload
  * @param {string} pathFolder - Storage folder path (e.g., 'faculty', 'alumni', 'gallery')
  * @param {Function} [onProgress] - Optional progress callback (0-100)
- * @returns {Promise<string>} Download URL
+ * @returns {Promise<string>} Download URL or Data URL
  */
 export const uploadFirebaseFile = (file, pathFolder, onProgress) => {
   return new Promise((resolve, reject) => {
@@ -32,10 +50,23 @@ export const uploadFirebaseFile = (file, pathFolder, onProgress) => {
       return reject(new Error('No file provided for upload'));
     }
 
+    if (onProgress) onProgress(20);
+
     const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${fileExt}`;
     const storageRef = ref(storage, `${pathFolder}/${fileName}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
+
+    let isCompleted = false;
+
+    // Timeout fallback to FileReader Base64 if Firebase Storage hangs or CORS fails
+    const fallbackTimeout = setTimeout(() => {
+      if (!isCompleted) {
+        console.warn('Firebase Storage upload timed out, falling back to Base64 data URL reader...');
+        uploadTask.cancel();
+        readAsBase64(file, onProgress).then(resolve).catch(reject);
+      }
+    }, 4000);
 
     uploadTask.on(
       'state_changed',
@@ -44,15 +75,21 @@ export const uploadFirebaseFile = (file, pathFolder, onProgress) => {
         if (onProgress) onProgress(progress);
       },
       (error) => {
-        console.error('Firebase Storage upload error:', error);
-        reject(error);
+        console.warn('Firebase Storage upload error/canceled, falling back to Base64:', error.message);
+        clearTimeout(fallbackTimeout);
+        if (!isCompleted) {
+          readAsBase64(file, onProgress).then(resolve).catch(reject);
+        }
       },
       async () => {
+        isCompleted = true;
+        clearTimeout(fallbackTimeout);
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          if (onProgress) onProgress(100);
           resolve(downloadURL);
         } catch (err) {
-          reject(err);
+          readAsBase64(file, onProgress).then(resolve).catch(reject);
         }
       }
     );
