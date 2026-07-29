@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { studentService, feeService } from '../../services/api';
+import { studentService, feeService, getFeeDueDateStatus } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -205,7 +205,7 @@ export default function StudentDetail() {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 text-left md:text-right min-w-[240px] flex flex-col justify-between gap-3">
+        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 text-left md:text-right min-w-[260px] flex flex-col justify-between gap-3">
           <div>
             <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
               Monthly Fee Structure
@@ -213,6 +213,30 @@ export default function StudentDetail() {
             <span className="font-headings font-extrabold text-2xl text-secondary mt-0.5 block">
               ₹{(student.monthlyFee || 2500).toLocaleString()} / month
             </span>
+            <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+              <span className="font-bold text-on-surface-variant">Next Due Date:</span>
+              <span className="font-mono font-bold text-secondary">
+                {student.nextFeeDueDate
+                  ? new Date(student.nextFeeDueDate).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : 'Not Set'}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-2 text-xs">
+              <span className="font-bold text-on-surface-variant">Computed Status:</span>
+              {(() => {
+                const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
+                const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid);
+                return (
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
+                    {dueInfo.label}
+                  </span>
+                );
+              })()}
+            </div>
           </div>
 
           <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-2">

@@ -162,6 +162,92 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Fee Due Overview Widget */}
+      <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-headings font-bold text-base text-secondary flex items-center gap-2">
+              <span className="material-symbols-outlined text-rose-600">event_upcoming</span>
+              Fee Due Overview
+            </h3>
+            <p className="text-xs text-on-surface-variant">
+              Live tracking of upcoming and overdue student tuition fees.
+            </p>
+          </div>
+          <Link
+            to="/admin/students"
+            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+          >
+            View All Students &rarr;
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Overdue Card */}
+          <Link
+            to="/admin/students?feeStatus=overdue"
+            className="p-4 rounded-xl bg-rose-50 border border-rose-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div>
+              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-rose-700 block">
+                Overdue Fees
+              </span>
+              <h4 className="font-headings font-extrabold text-2xl text-rose-800 mt-1">
+                {stats?.overdueCount || 0} Students
+              </h4>
+              <span className="text-[10px] text-rose-600 font-medium group-hover:underline">
+                Click to view overdue list &rarr;
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-rose-200/60 text-rose-700 flex items-center justify-center font-bold">
+              !
+            </div>
+          </Link>
+
+          {/* Due Today Card */}
+          <Link
+            to="/admin/students?feeStatus=due_today"
+            className="p-4 rounded-xl bg-amber-50 border border-amber-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div>
+              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-amber-800 block">
+                Due Today
+              </span>
+              <h4 className="font-headings font-extrabold text-2xl text-amber-900 mt-1">
+                {stats?.dueTodayCount || 0} Students
+              </h4>
+              <span className="text-[10px] text-amber-700 font-medium group-hover:underline">
+                Click to view due today &rarr;
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-amber-200/60 text-amber-800 flex items-center justify-center font-bold">
+              ⚠️
+            </div>
+          </Link>
+
+          {/* Due Next 7 Days Card */}
+          <Link
+            to="/admin/students?feeStatus=due_soon"
+            className="p-4 rounded-xl bg-blue-50 border border-blue-200 hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div>
+              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-blue-800 block">
+                Due Next 7 Days
+              </span>
+              <h4 className="font-headings font-extrabold text-2xl text-blue-900 mt-1">
+                {stats?.dueThisWeekCount || 0} Students
+              </h4>
+              <span className="text-[10px] text-blue-700 font-medium group-hover:underline">
+                Click to view due soon &rarr;
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-blue-200/60 text-blue-800 flex items-center justify-center font-bold">
+              ⏳
+            </div>
+          </Link>
+        </div>
+      </div>
+
       {/* Visual Chart & Activity Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Visual Revenue & Enrollment Chart */}

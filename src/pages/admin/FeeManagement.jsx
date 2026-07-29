@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { feeService, studentService } from '../../services/api';
+import { feeService, studentService, getFeeDueDateStatus, getDefaultNextFeeDueDate } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
@@ -21,7 +21,7 @@ export default function FeeManagement() {
   const [isEditFeeModalOpen, setIsEditFeeModalOpen] = useState(false);
   const [editingFeeStudent, setEditingFeeStudent] = useState(null);
   const [newMonthlyFee, setNewMonthlyFee] = useState('');
-  const [newFeeDueDate, setNewFeeDueDate] = useState(5);
+  const [nextFeeDueDate, setNextFeeDueDate] = useState('');
   const [savingFee, setSavingFee] = useState(false);
 
   const { addToast } = useToast();
@@ -83,21 +83,25 @@ export default function FeeManagement() {
   const openEditFeeModal = (student) => {
     setEditingFeeStudent(student);
     setNewMonthlyFee(student.monthlyFee !== undefined ? student.monthlyFee : 2500);
-    setNewFeeDueDate(student.feeDueDate || 5);
+    setNextFeeDueDate(student.nextFeeDueDate || getDefaultNextFeeDueDate());
     setIsEditFeeModalOpen(true);
   };
 
   const handleSaveFee = async (e) => {
     e.preventDefault();
     if (!editingFeeStudent) return;
+    if (!nextFeeDueDate) {
+      addToast('Next Fee Due Date is required', 'warning');
+      return;
+    }
     setSavingFee(true);
     try {
       await studentService.updateStudent(editingFeeStudent._id || editingFeeStudent.id, {
         monthlyFee: Number(newMonthlyFee),
-        feeDueDate: Number(newFeeDueDate),
+        nextFeeDueDate: nextFeeDueDate,
       });
 
-      addToast(`Updated monthly fee for ${editingFeeStudent.fullName} to ₹${Number(newMonthlyFee).toLocaleString()}`, 'success');
+      addToast(`Updated fee structure for ${editingFeeStudent.fullName}`, 'success');
       setIsEditFeeModalOpen(false);
       fetchFeeData();
     } catch (err) {
@@ -188,33 +192,49 @@ export default function FeeManagement() {
                   <th className="py-3 px-4">Student Name</th>
                   <th className="py-3 px-4">Class</th>
                   <th className="py-3 px-4">Monthly Fee</th>
-                  <th className="py-3 px-4">Due Date</th>
+                  <th className="py-3 px-4">Next Due Date</th>
+                  <th className="py-3 px-4">Fee Status</th>
                   <th className="py-3 px-4 text-right">Fee Edit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15">
-                {students.map((s) => (
-                  <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-primary">{s.rollNumber}</td>
-                    <td className="py-3 px-4 font-bold text-on-surface">{s.fullName}</td>
-                    <td className="py-3 px-4 font-semibold text-secondary">Class {s.className}</td>
-                    <td className="py-3 px-4 font-extrabold text-emerald-800">
-                      ₹{(s.monthlyFee || 2500).toLocaleString()}/month
-                    </td>
-                    <td className="py-3 px-4 text-on-surface-variant">
-                      Every {s.feeDueDate || 5}th of month
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => openEditFeeModal(s)}
-                        className="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-secondary px-3 py-1.5 rounded-full font-headings font-bold text-xs transition-colors shadow-sm"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">edit</span>
-                        Edit Fee
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {students.map((s) => {
+                  const isPaid = Boolean(s.feesPaid || s.paidTillMonth === 'July 2026');
+                  const dueInfo = getFeeDueDateStatus(s.nextFeeDueDate, isPaid);
+                  return (
+                    <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-primary">{s.rollNumber}</td>
+                      <td className="py-3 px-4 font-bold text-on-surface">{s.fullName}</td>
+                      <td className="py-3 px-4 font-semibold text-secondary">Class {s.className}</td>
+                      <td className="py-3 px-4 font-extrabold text-emerald-800">
+                        ₹{(s.monthlyFee || 2500).toLocaleString()}/month
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-secondary">
+                        {s.nextFeeDueDate
+                          ? new Date(s.nextFeeDueDate).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : 'Not Set'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
+                          {dueInfo.label}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => openEditFeeModal(s)}
+                          className="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-secondary px-3 py-1.5 rounded-full font-headings font-bold text-xs transition-colors shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">edit</span>
+                          Edit Fee
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -421,19 +441,17 @@ export default function FeeManagement() {
 
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Monthly Fee Due Date (Day of Month)
+                Next Fee Due Date *
               </label>
               <input
-                type="number"
-                min="1"
-                max="31"
-                value={newFeeDueDate}
-                onChange={(e) => setNewFeeDueDate(e.target.value)}
-                placeholder="5"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary"
+                type="date"
+                required
+                value={nextFeeDueDate}
+                onChange={(e) => setNextFeeDueDate(e.target.value)}
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary cursor-pointer"
               />
               <span className="text-[10px] text-on-surface-variant">
-                Standard due day (e.g. 5th of every month).
+                Select exact due date from calendar picker.
               </span>
             </div>
 

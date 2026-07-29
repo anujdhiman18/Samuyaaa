@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { studentService, subjectService } from '../../services/api';
+import { studentService, subjectService, subscribeFirestoreCollection, initialMockStudents, getFeeDueDateStatus, getDefaultNextFeeDueDate } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -20,23 +20,23 @@ const initialStudentForm = {
   rollNumber: '',
   subjects: ['Mathematics Advanced'],
   monthlyFee: 2500,
-  feeDueDate: 5,
+  nextFeeDueDate: getDefaultNextFeeDueDate(),
   status: 'Active',
 };
 
 export default function StudentManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
+  const initialFeeFilter = searchParams.get('feeStatus') || 'All';
 
   const [students, setStudents] = useState([]);
-  const [availableSubjects, setAvailableSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters & Pagination
+  // Filters & Search
   const [search, setSearch] = useState(initialSearch);
   const [selectedClass, setSelectedClass] = useState('All');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [feeStatusFilter, setFeeStatusFilter] = useState(initialFeeFilter);
+  const [sortByDueDate, setSortByDueDate] = useState('asc');
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,72 +51,54 @@ export default function StudentManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('students', initialMockStudents, (list) => {
+      if (list) {
+        setStudents(list);
+        setLoading(false);
+      }
+    });
+
     fetchStudents();
-    fetchSubjects();
-    window.addEventListener('saumyaa_data_updated', fetchStudents);
-    return () => window.removeEventListener('saumyaa_data_updated', fetchStudents);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, selectedClass, search]);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const filterFromUrl = searchParams.get('feeStatus');
+    if (filterFromUrl) {
+      setFeeStatusFilter(filterFromUrl);
+    }
+  }, [searchParams]);
 
   const fetchStudents = async () => {
-    if (students.length === 0) setLoading(true);
+    setLoading(true);
     try {
-      const data = await studentService.getStudents({
-        search,
-        className: selectedClass,
-        page,
-        limit: 10,
-      });
+      const data = await studentService.getStudents({ limit: 100 });
       if (data && data.students) {
         setStudents(data.students);
-        setTotalPages(data.pages || 1);
       }
     } catch (err) {
-      addToast(err.message || 'Failed to fetch students', 'error');
+      addToast('Error fetching student directory', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFeeToggle = async (studentId, newStatus) => {
+  const handleFeeToggle = async (studentId, feesPaid) => {
     try {
-      await studentService.toggleFeeStatus(studentId, newStatus);
-      setStudents((prev) =>
-        prev.map((s) => {
-          if (String(s._id) === String(studentId) || String(s.id) === String(studentId)) {
-            return {
-              ...s,
-              feesPaid: newStatus,
-              paymentDate: newStatus ? new Date().toISOString() : null,
-              paidTillMonth: newStatus ? 'July 2026' : '',
-            };
-          }
-          return s;
-        })
-      );
-      addToast(`Fee status updated to ${newStatus ? 'PAID' : 'UNPAID'}`, newStatus ? 'success' : 'info');
+      await studentService.toggleFeeStatus(studentId, feesPaid);
+      addToast(`Fee status updated to ${feesPaid ? 'PAID' : 'UNPAID'}`, 'success');
+      fetchStudents();
     } catch (err) {
-      addToast(err.message || 'Error updating fee status', 'error');
+      addToast('Error updating fee status', 'error');
     }
   };
 
-  const fetchSubjects = async () => {
-    try {
-      const data = await subjectService.getSubjects();
-      if (data && data.subjects) {
-        setAvailableSubjects(data.subjects);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const generateAutoRollNumber = (targetClass = '10th', existingStudents = []) => {
-    const classCode = targetClass ? targetClass.replace(/\D/g, '') || '10' : '10';
+  const generateAutoRollNumber = (className, currentStudents) => {
+    const classCode = className ? className.replace(/\D/g, '') || '10' : '10';
     const prefix = `SAU-${classCode.padStart(2, '0')}-`;
     let maxSeq = 0;
-    existingStudents.forEach((s) => {
-      if (s.rollNumber) {
+    currentStudents.forEach((s) => {
+      if (s.rollNumber && s.rollNumber.startsWith(prefix)) {
         const match = s.rollNumber.match(/(\d+)$/);
         if (match) {
           const num = parseInt(match[1], 10);
@@ -134,6 +116,7 @@ export default function StudentManagement() {
     setForm({
       ...initialStudentForm,
       rollNumber: autoRoll,
+      nextFeeDueDate: getDefaultNextFeeDueDate(),
     });
     setIsModalOpen(true);
   };
@@ -149,17 +132,27 @@ export default function StudentManagement() {
 
   const handleOpenEdit = (student) => {
     setEditingStudent(student);
-    setForm({ ...student });
+    setForm({
+      ...student,
+      monthlyFee: student.monthlyFee !== undefined ? student.monthlyFee : 2500,
+      nextFeeDueDate: student.nextFeeDueDate || getDefaultNextFeeDueDate(),
+    });
     setIsModalOpen(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    if (!form.nextFeeDueDate) {
+      addToast('Next Fee Due Date is required!', 'warning');
+      return;
+    }
+
     setFormSubmitting(true);
     try {
       if (editingStudent) {
-        await studentService.updateStudent(editingStudent._id, form);
-        addToast('Student details updated successfully', 'success');
+        await studentService.updateStudent(editingStudent._id || editingStudent.id, form);
+        addToast('Student record updated successfully', 'success');
       } else {
         await studentService.createStudent(form);
         addToast('New student registered successfully', 'success');
@@ -177,7 +170,7 @@ export default function StudentManagement() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await studentService.deleteStudent(deleteTarget._id);
+      await studentService.deleteStudent(deleteTarget._id || deleteTarget.id);
       addToast('Student record deleted successfully', 'success');
       setDeleteTarget(null);
       fetchStudents();
@@ -190,7 +183,7 @@ export default function StudentManagement() {
 
   const exportToCSV = () => {
     if (students.length === 0) return;
-    const headers = ['Roll Number', 'Full Name', 'Class', 'Phone', 'Parent Phone', 'Email', 'Monthly Fee', 'Status'];
+    const headers = ['Roll Number', 'Full Name', 'Class', 'Phone', 'Parent Phone', 'Email', 'Monthly Fee', 'Next Due Date', 'Status'];
     const rows = students.map((s) => [
       s.rollNumber,
       `"${s.fullName}"`,
@@ -199,6 +192,7 @@ export default function StudentManagement() {
       s.parentPhone,
       s.email || '',
       s.monthlyFee,
+      s.nextFeeDueDate || '',
       s.status,
     ]);
 
@@ -213,16 +207,42 @@ export default function StudentManagement() {
     addToast('Student directory exported to CSV', 'info');
   };
 
+  // Filtering & Sorting Logic
+  let filteredStudents = students.filter((s) => {
+    if (selectedClass !== 'All' && s.className !== selectedClass) return false;
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      const matchName = s.fullName && s.fullName.toLowerCase().includes(term);
+      const matchRoll = s.rollNumber && s.rollNumber.toLowerCase().includes(term);
+      const matchPhone = s.phone && s.phone.includes(term);
+      if (!matchName && !matchRoll && !matchPhone) return false;
+    }
+    if (feeStatusFilter !== 'All') {
+      const info = getFeeDueDateStatus(s.nextFeeDueDate, Boolean(s.feesPaid || s.paidTillMonth === 'July 2026'));
+      if (feeStatusFilter === 'overdue' && info.code !== 'overdue') return false;
+      if (feeStatusFilter === 'due_today' && info.code !== 'due_today') return false;
+      if (feeStatusFilter === 'due_soon' && info.code !== 'due_soon') return false;
+      if (feeStatusFilter === 'up_to_date' && info.code !== 'up_to_date') return false;
+    }
+    return true;
+  });
+
+  filteredStudents.sort((a, b) => {
+    const dateA = a.nextFeeDueDate ? new Date(a.nextFeeDueDate).getTime() : 0;
+    const dateB = b.nextFeeDueDate ? new Date(b.nextFeeDueDate).getTime() : 0;
+    return sortByDueDate === 'asc' ? dateA - dateB : dateB - dateA;
+  });
+
   return (
     <div className="space-y-6 font-body">
       {/* Header & Main Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
             Student Directory Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Comprehensive student directory, batch assignments, and academic tracking.
+            Comprehensive student directory, batch assignments, and manual next fee due date tracking.
           </p>
         </div>
 
@@ -235,13 +255,6 @@ export default function StudentManagement() {
             Export CSV
           </button>
           <button
-            onClick={() => window.print()}
-            className="px-4 py-2 rounded-full border border-outline-variant/30 bg-white text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            Print Roster
-          </button>
-          <button
             onClick={handleOpenAdd}
             className="bg-primary text-white font-headings font-bold px-5 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
           >
@@ -251,77 +264,86 @@ export default function StudentManagement() {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-premium border border-outline-variant/15 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <span className="material-symbols-outlined absolute left-3 top-2.5 text-[18px] text-on-surface-variant/60">
+      {/* Search & Filter Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
             search
           </span>
           <input
             type="text"
+            placeholder="Search by student name, roll number, or phone..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchParams({ search: e.target.value });
-            }}
-            placeholder="Search by name, roll number, or phone..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-medium text-on-surface focus:outline-none focus:border-secondary"
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:outline-none focus:border-primary font-body"
           />
         </div>
 
-        <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
-          {CLASSES.map((cls) => (
-            <button
-              key={cls}
-              onClick={() => {
-                setSelectedClass(cls);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 rounded-full text-xs font-headings font-bold transition-all ${
-                selectedClass === cls
-                  ? 'bg-secondary text-white shadow-tactile-btn'
-                  : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
-              }`}
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Class Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Class:</span>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              {cls === 'All' ? 'All Classes' : `Class ${cls}`}
+              {CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'All' ? 'All Classes' : `Class ${c}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fee Status Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Fee Status:</span>
+            <select
+              value={feeStatusFilter}
+              onChange={(e) => {
+                setFeeStatusFilter(e.target.value);
+                setSearchParams((prev) => {
+                  const updated = new URLSearchParams(prev);
+                  if (e.target.value === 'All') updated.delete('feeStatus');
+                  else updated.set('feeStatus', e.target.value);
+                  return updated;
+                });
+              }}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="All">All Fee Statuses</option>
+              <option value="overdue">🔴 Overdue</option>
+              <option value="due_today">⚠️ Due Today</option>
+              <option value="due_soon">⏳ Due Soon (7 Days)</option>
+              <option value="up_to_date">🟢 Up to Date</option>
+            </select>
+          </div>
+
+          {/* Due Date Sort */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Sort Due:</span>
+            <button
+              onClick={() => setSortByDueDate(sortByDueDate === 'asc' ? 'desc' : 'asc')}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary flex items-center gap-1 hover:bg-surface-container"
+            >
+              <span>{sortByDueDate === 'asc' ? 'Earliest First ⬆' : 'Latest First ⬇'}</span>
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Table & Data */}
+      {/* Directory Table */}
       <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-xs animate-pulse">Loading student records...</div>
-        ) : students.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="material-symbols-outlined text-[48px] text-on-surface-variant/40 mb-2">
-              group_off
-            </span>
-            <h4 className="font-headings font-bold text-base text-on-surface">
-              No Students Found
-            </h4>
-            <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-              No student records match your filters, or all student records have been deleted.
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <button
-                onClick={handleOpenAdd}
-                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn"
-              >
-                + Register Student
-              </button>
-              <button
-                onClick={() => {
-                  studentService.resetStudentData();
-                  fetchStudents();
-                  addToast('Sample demo students restored!', 'info');
-                }}
-                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
-              >
-                Restore Demo Data
-              </button>
-            </div>
+          <div className="p-12 text-center text-xs font-bold text-on-surface-variant animate-pulse">
+            Loading Student Directory from Firebase...
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="p-12 text-center text-xs text-on-surface-variant space-y-2">
+            <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">search_off</span>
+            <p className="font-bold text-secondary">No Students Matching Current Filters</p>
+            <p>Try resetting the search terms or fee status filter.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -331,16 +353,17 @@ export default function StudentManagement() {
                   <th className="py-3.5 px-4">Roll No.</th>
                   <th className="py-3.5 px-4">Student Name</th>
                   <th className="py-3.5 px-4">Class</th>
-                  <th className="py-3.5 px-4">Parent Phone</th>
                   <th className="py-3.5 px-4">Monthly Fee</th>
-                  <th className="py-3.5 px-4">Fee Paid Status</th>
-                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Next Due Date</th>
+                  <th className="py-3.5 px-4">Fee Status</th>
+                  <th className="py-3.5 px-4">Paid Toggle</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
-                {students.map((student) => {
+                {filteredStudents.map((student) => {
                   const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
+                  const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid);
                   return (
                     <tr
                       key={student._id || student.id}
@@ -359,14 +382,25 @@ export default function StudentManagement() {
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
-                          {student.className}
+                          Class {student.className}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-on-surface-variant">
-                        {student.parentPhone}
+                      <td className="py-3.5 px-4 font-bold text-emerald-800">
+                        ₹{(student.monthlyFee || 2500).toLocaleString()}/mo
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-on-surface">
-                        ₹{(student.monthlyFee || 0).toLocaleString()}
+                      <td className="py-3.5 px-4 font-bold text-secondary font-mono">
+                        {student.nextFeeDueDate
+                          ? new Date(student.nextFeeDueDate).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : 'Not Set'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
+                          {dueInfo.label}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4">
                         <FeeToggleSwitch
@@ -376,43 +410,32 @@ export default function StudentManagement() {
                           size="sm"
                         />
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                            student.status === 'Active'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
+                      <td className="py-3.5 px-4 text-right space-x-2">
+                        <Link
+                          to={`/admin/students/${student._id || student.id}`}
+                          className="p-1.5 rounded-lg text-secondary hover:bg-secondary/10 inline-block"
+                          title="View Full Profile"
                         >
-                          {student.status}
-                        </span>
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        </Link>
+                        <button
+                          onClick={() => handleOpenEdit(student)}
+                          className="p-1.5 rounded-lg text-primary hover:bg-primary/10"
+                          title="Edit Record"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(student)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
+                          title="Delete Record"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
                       </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <Link
-                        to={`/admin/students/${student._id || student.id}`}
-                        className="p-1.5 rounded-lg text-secondary hover:bg-secondary/10 inline-block"
-                        title="View Full Profile"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">visibility</span>
-                      </Link>
-                      <button
-                        onClick={() => handleOpenEdit(student)}
-                        className="p-1.5 rounded-lg text-primary hover:bg-primary/10"
-                        title="Edit Record"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(student)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
-                        title="Delete Record"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -420,209 +443,199 @@ export default function StudentManagement() {
       </div>
 
       {/* Add / Edit Student Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingStudent ? 'Edit Student Record' : 'Register New Student'}
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handleSave} className="space-y-4 text-xs font-body">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                placeholder="Rahul Gupta"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <label className="font-headings font-bold text-on-surface-variant flex items-center gap-1.5">
-                  Roll Number *
-                  <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    Auto-Assigned
-                  </span>
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingStudent ? 'Edit Student Record' : 'Register New Student'}
+          maxWidth="max-w-2xl"
+        >
+          <form onSubmit={handleSave} className="space-y-4 text-xs font-body">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Full Name *
                 </label>
-                {!editingStudent && (
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, rollNumber: generateAutoRollNumber(form.className, students) })}
-                    className="text-[10px] text-primary hover:underline font-bold flex items-center gap-0.5"
-                    title="Recalculate next sequential roll number"
-                  >
-                    <span className="material-symbols-outlined text-[13px]">refresh</span>
-                    Auto-Generate
-                  </button>
-                )}
+                <input
+                  type="text"
+                  required
+                  value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  placeholder="Rahul Gupta"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
               </div>
-              <input
-                type="text"
-                required
-                value={form.rollNumber}
-                onChange={(e) => setForm({ ...form, rollNumber: e.target.value })}
-                placeholder="SAU-10-001"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono font-bold"
-              />
-              <span className="text-[10px] text-on-surface-variant/70">
-                Sequential ID automatically assigned based on Class. You can customize if needed.
-              </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <label className="font-headings font-bold text-on-surface-variant">
+                    Roll Number *
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={form.rollNumber}
+                  onChange={(e) => setForm({ ...form, rollNumber: e.target.value })}
+                  placeholder="SAU-10-001"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono font-bold"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Father's Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.fatherName}
-                onChange={(e) => setForm({ ...form, fatherName: e.target.value })}
-                placeholder="Rajesh Gupta"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Father's Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.fatherName}
+                  onChange={(e) => setForm({ ...form, fatherName: e.target.value })}
+                  placeholder="Rajesh Gupta"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Mother's Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.motherName}
+                  onChange={(e) => setForm({ ...form, motherName: e.target.value })}
+                  placeholder="Sunita Gupta"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Mother's Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.motherName}
-                onChange={(e) => setForm({ ...form, motherName: e.target.value })}
-                placeholder="Sunita Gupta"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Student Phone *
-              </label>
-              <input
-                type="tel"
-                required
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="10-digit mobile number"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Student Phone *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="10-digit mobile number"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Parent Phone *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={form.parentPhone}
+                  onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
+                  placeholder="Parent 10-digit number"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Parent Phone *
-              </label>
-              <input
-                type="tel"
-                required
-                value={form.parentPhone}
-                onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
-                placeholder="Parent 10-digit number"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="rahul@domain.com"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="rahul@domain.com"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Class / Grade *
+                </label>
+                <select
+                  required
+                  value={form.className}
+                  onChange={(e) => handleClassChange(e.target.value)}
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                >
+                  {CLASSES.filter((c) => c !== 'All').map((c) => (
+                    <option key={c} value={c}>
+                      Class {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Class / Grade *
-              </label>
-              <select
-                required
-                value={form.className}
-                onChange={(e) => handleClassChange(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Monthly Fee Amount (₹) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={form.monthlyFee !== undefined ? form.monthlyFee : 2500}
+                  onChange={(e) => setForm({ ...form, monthlyFee: Number(e.target.value) })}
+                  placeholder="2500"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-emerald-800"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant">
+                  Next Fee Due Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={form.nextFeeDueDate || ''}
+                  onChange={(e) => setForm({ ...form, nextFeeDueDate: e.target.value })}
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary cursor-pointer"
+                />
+                <span className="text-[10px] text-on-surface-variant/70">
+                  Select exact due date from calendar picker.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
               >
-                {CLASSES.filter((c) => c !== 'All').map((c) => (
-                  <option key={c} value={c}>
-                    Class {c}
-                  </option>
-                ))}
-              </select>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={formSubmitting}
+                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
+              >
+                {editingStudent ? 'Update Record' : 'Save Student'}
+              </button>
             </div>
-          </div>
+          </form>
+        </Modal>
+      )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Monthly Fee Amount (₹) *
-              </label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={form.monthlyFee !== undefined ? form.monthlyFee : 2500}
-                onChange={(e) => setForm({ ...form, monthlyFee: Number(e.target.value) })}
-                placeholder="2500"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-emerald-800"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Fee Due Date (Day of Month)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                value={form.feeDueDate || 5}
-                onChange={(e) => setForm({ ...form, feeDueDate: Number(e.target.value) })}
-                placeholder="5"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={formSubmitting}
-              className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
-            >
-              {editingStudent ? 'Update Record' : 'Save Student'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <ConfirmModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
-        title={`Delete Student ${deleteTarget?.fullName}?`}
-        message={`Are you sure you want to remove roll number ${deleteTarget?.rollNumber}?`}
-      />
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <ConfirmModal
+          isOpen={Boolean(deleteTarget)}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Student Record"
+          message={`Are you sure you want to permanently delete student profile for ${deleteTarget?.fullName}?`}
+          loading={deleting}
+        />
+      )}
     </div>
   );
 }

@@ -22,7 +22,7 @@ const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 };
 
-const initialMockStudents = [];
+export const initialMockStudents = [];
 
 const initialMockSubjects = [
   {
@@ -1109,6 +1109,86 @@ export const notificationService = {
   },
 };
 
+export const getFeeDueDateStatus = (nextFeeDueDate, feesPaid = false) => {
+  if (feesPaid) {
+    return {
+      status: 'Up to Date',
+      code: 'up_to_date',
+      color: 'emerald',
+      bgClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      label: 'Up to Date ✓',
+    };
+  }
+
+  if (!nextFeeDueDate) {
+    return {
+      status: 'Up to Date',
+      code: 'up_to_date',
+      color: 'emerald',
+      bgClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      label: 'Up to Date ✓',
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dueDate = new Date(nextFeeDueDate);
+  if (isNaN(dueDate.getTime())) {
+    return {
+      status: 'Up to Date',
+      code: 'up_to_date',
+      color: 'emerald',
+      bgClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      label: 'Up to Date ✓',
+    };
+  }
+  dueDate.setHours(0, 0, 0, 0);
+
+  const diffTime = dueDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      status: 'Overdue',
+      code: 'overdue',
+      color: 'rose',
+      bgClass: 'bg-rose-100 text-rose-800 border border-rose-200 font-extrabold',
+      label: `Overdue (${Math.abs(diffDays)}d) !`,
+    };
+  } else if (diffDays === 0) {
+    return {
+      status: 'Due Today',
+      code: 'due_today',
+      color: 'rose',
+      bgClass: 'bg-rose-100 text-rose-800 border border-rose-200 font-extrabold',
+      label: 'Due Today ⚠️',
+    };
+  } else if (diffDays <= 7) {
+    return {
+      status: 'Due Soon',
+      code: 'due_soon',
+      color: 'amber',
+      bgClass: 'bg-amber-100 text-amber-800 border border-amber-200 font-bold',
+      label: `Due in ${diffDays}d ⏳`,
+    };
+  } else {
+    return {
+      status: 'Up to Date',
+      code: 'up_to_date',
+      color: 'emerald',
+      bgClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      label: 'Up to Date ✓',
+    };
+  }
+};
+
+export const getDefaultNextFeeDueDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().split('T')[0];
+};
+
 // Dashboard Service
 export const dashboardService = {
   getStats: async () => {
@@ -1150,6 +1230,17 @@ export const dashboardService = {
     const pendingStudentsCount = unpaidStudents.length;
     const pendingFeePayments = unpaidStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
 
+    let dueTodayCount = 0;
+    let dueThisWeekCount = 0;
+    let overdueCount = 0;
+
+    activeStudents.forEach((s) => {
+      const info = getFeeDueDateStatus(s.nextFeeDueDate, s.feesPaid);
+      if (info.code === 'overdue') overdueCount++;
+      if (info.code === 'due_today') dueTodayCount++;
+      if (info.code === 'due_soon') dueThisWeekCount++;
+    });
+
     return {
       success: true,
       stats: {
@@ -1162,6 +1253,9 @@ export const dashboardService = {
         pendingFeePayments,
         paidStudentsCount,
         pendingStudentsCount,
+        dueTodayCount,
+        dueThisWeekCount,
+        overdueCount,
         paidPercentage: activeStudents.length ? Math.round((paidStudentsCount / activeStudents.length) * 100) : 0,
         pendingPercentage: activeStudents.length ? Math.round((pendingStudentsCount / activeStudents.length) * 100) : 0,
       },
