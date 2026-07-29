@@ -17,6 +17,13 @@ export default function FeeManagement() {
   const [monthYear, setMonthYear] = useState('July 2026');
   const [submitting, setSubmitting] = useState(false);
 
+  // Edit Fee Modal State
+  const [isEditFeeModalOpen, setIsEditFeeModalOpen] = useState(false);
+  const [editingFeeStudent, setEditingFeeStudent] = useState(null);
+  const [newMonthlyFee, setNewMonthlyFee] = useState('');
+  const [newFeeDueDate, setNewFeeDueDate] = useState(5);
+  const [savingFee, setSavingFee] = useState(false);
+
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -73,18 +80,45 @@ export default function FeeManagement() {
     }
   };
 
+  const openEditFeeModal = (student) => {
+    setEditingFeeStudent(student);
+    setNewMonthlyFee(student.monthlyFee !== undefined ? student.monthlyFee : 2500);
+    setNewFeeDueDate(student.feeDueDate || 5);
+    setIsEditFeeModalOpen(true);
+  };
+
+  const handleSaveFee = async (e) => {
+    e.preventDefault();
+    if (!editingFeeStudent) return;
+    setSavingFee(true);
+    try {
+      await studentService.updateStudent(editingFeeStudent._id || editingFeeStudent.id, {
+        monthlyFee: Number(newMonthlyFee),
+        feeDueDate: Number(newFeeDueDate),
+      });
+
+      addToast(`Updated monthly fee for ${editingFeeStudent.fullName} to ₹${Number(newMonthlyFee).toLocaleString()}`, 'success');
+      setIsEditFeeModalOpen(false);
+      fetchFeeData();
+    } catch (err) {
+      addToast(err.message || 'Error updating fee structure', 'error');
+    } finally {
+      setSavingFee(false);
+    }
+  };
+
   const totalCollected = stats?.totalFeesCollected || payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
 
   return (
     <div className="space-y-6 font-body">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-            Fee Collection &amp; Payment Ledger
+            Fee Collection &amp; Structure Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Track tuition fee collections, print receipts, and monitor month-wise revenue.
+            Track tuition fee collections, customize monthly student fee amounts, and print receipts.
           </p>
         </div>
 
@@ -130,11 +164,68 @@ export default function FeeManagement() {
         </div>
       </div>
 
-      {/* Fee Payments Table */}
+      {/* Student Fee Structure Directory */}
+      <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
+        <div className="p-4 border-b border-outline-variant/15 flex items-center justify-between">
+          <div>
+            <h3 className="font-headings font-bold text-base text-secondary">
+              Student Monthly Fee Structure
+            </h3>
+            <p className="text-xs text-on-surface-variant">
+              Manage custom monthly fees and due dates for enrolled students.
+            </p>
+          </div>
+        </div>
+
+        {students.length === 0 ? (
+          <div className="p-8 text-center text-xs text-on-surface-variant">No students registered yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
+                  <th className="py-3 px-4">Roll No.</th>
+                  <th className="py-3 px-4">Student Name</th>
+                  <th className="py-3 px-4">Class</th>
+                  <th className="py-3 px-4">Monthly Fee</th>
+                  <th className="py-3 px-4">Due Date</th>
+                  <th className="py-3 px-4 text-right">Fee Edit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/15">
+                {students.map((s) => (
+                  <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-primary">{s.rollNumber}</td>
+                    <td className="py-3 px-4 font-bold text-on-surface">{s.fullName}</td>
+                    <td className="py-3 px-4 font-semibold text-secondary">Class {s.className}</td>
+                    <td className="py-3 px-4 font-extrabold text-emerald-800">
+                      ₹{(s.monthlyFee || 2500).toLocaleString()}/month
+                    </td>
+                    <td className="py-3 px-4 text-on-surface-variant">
+                      Every {s.feeDueDate || 5}th of month
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => openEditFeeModal(s)}
+                        className="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-secondary px-3 py-1.5 rounded-full font-headings font-bold text-xs transition-colors shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">edit</span>
+                        Edit Fee
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Fee Payments Transactions Table */}
       <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
         <div className="p-4 border-b border-outline-variant/15">
           <h3 className="font-headings font-bold text-base text-secondary">
-            Recent Fee Transactions &amp; Receipts
+            Recent Fee Transactions &amp; Receipts Ledger
           </h3>
         </div>
 
@@ -287,6 +378,79 @@ export default function FeeManagement() {
                 className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
               >
                 {submitting ? 'Generating...' : 'Save & Print Receipt'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Student Fee Modal */}
+      {isEditFeeModalOpen && (
+        <Modal
+          isOpen={isEditFeeModalOpen}
+          open={isEditFeeModalOpen}
+          onClose={() => setIsEditFeeModalOpen(false)}
+          title={`Edit Fee Structure for ${editingFeeStudent?.fullName}`}
+          maxWidth="max-w-md"
+        >
+          <form onSubmit={handleSaveFee} className="space-y-4 text-xs font-body">
+            <div className="bg-surface-container-low p-3.5 rounded-xl border border-outline-variant/20 space-y-1">
+              <p className="font-bold text-secondary text-xs">{editingFeeStudent?.fullName}</p>
+              <p className="text-[11px] text-on-surface-variant">
+                Roll No: <span className="font-mono font-bold">{editingFeeStudent?.rollNumber}</span> | Class: <span className="font-bold">{editingFeeStudent?.className}</span>
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Monthly Fee Amount (₹) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={newMonthlyFee}
+                onChange={(e) => setNewMonthlyFee(e.target.value)}
+                placeholder="2500"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-emerald-800"
+              />
+              <span className="text-[10px] text-on-surface-variant">
+                Monthly fee amount billed to the student every month.
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Monthly Fee Due Date (Day of Month)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={newFeeDueDate}
+                onChange={(e) => setNewFeeDueDate(e.target.value)}
+                placeholder="5"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary"
+              />
+              <span className="text-[10px] text-on-surface-variant">
+                Standard due day (e.g. 5th of every month).
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
+              <button
+                type="button"
+                onClick={() => setIsEditFeeModalOpen(false)}
+                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold hover:bg-surface-container-low"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingFee}
+                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
+              >
+                {savingFee ? 'Saving Fee...' : 'Update Student Fee'}
               </button>
             </div>
           </form>

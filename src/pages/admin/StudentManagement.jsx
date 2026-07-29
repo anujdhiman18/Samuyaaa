@@ -565,6 +565,37 @@ export default function StudentManagement() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Monthly Fee Amount (₹) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={form.monthlyFee !== undefined ? form.monthlyFee : 2500}
+                onChange={(e) => setForm({ ...form, monthlyFee: Number(e.target.value) })}
+                placeholder="2500"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-emerald-800"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Fee Due Date (Day of Month)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={form.feeDueDate || 5}
+                onChange={(e) => setForm({ ...form, feeDueDate: Number(e.target.value) })}
+                placeholder="5"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary"
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
             <button
               type="button"
