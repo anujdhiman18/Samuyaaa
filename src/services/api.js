@@ -253,19 +253,14 @@ const getAuthHeaders = () => {
 };
 
 export const apiCall = async (endpoint, options = {}) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 1000);
-
   try {
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
-      signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
         ...options.headers,
       },
     });
-    clearTimeout(timeoutId);
 
     if (res.status === 401) {
       localStorage.removeItem('saumyaa_token');
@@ -278,8 +273,7 @@ export const apiCall = async (endpoint, options = {}) => {
     }
     return data;
   } catch (err) {
-    clearTimeout(timeoutId);
-    console.warn(`API server offline/unreachable on ${endpoint}. Operating via fast local state.`);
+    console.warn(`API server offline on ${endpoint}. Operating via local client state.`);
     return null;
   }
 };
@@ -1362,7 +1356,7 @@ const initialMockFaculty = [
   },
 ];
 
-const getStoredFaculty = () => {
+export const getStoredFaculty = () => {
   try {
     const data = localStorage.getItem('saumyaa_faculty');
     if (!data) {
@@ -1663,9 +1657,13 @@ const initialMockAlumni = [
   },
 ];
 
-const getStoredAlumni = () => {
+export const getStoredAlumni = () => {
   try {
     const data = localStorage.getItem('saumyaa_alumni');
+    if (!data) {
+      localStorage.setItem('saumyaa_alumni', JSON.stringify(initialMockAlumni));
+      return initialMockAlumni;
+    }
     return data ? JSON.parse(data) : initialMockAlumni;
   } catch (e) {
     return initialMockAlumni;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { alumniService } from '../services/api';
+import { alumniService, getStoredAlumni } from '../services/api';
 
 export default function AlumniSection() {
   const [alumniList, setAlumniList] = useState(() => {
     try {
-      const data = localStorage.getItem('saumyaa_alumni');
-      return data ? JSON.parse(data).filter((a) => a.is_active !== false) : [];
+      const list = getStoredAlumni();
+      return list ? list.filter((a) => a.is_active !== false) : [];
     } catch (e) {
       return [];
     }
@@ -13,8 +13,7 @@ export default function AlumniSection() {
 
   const [featuredAlumni, setFeaturedAlumni] = useState(() => {
     try {
-      const data = localStorage.getItem('saumyaa_alumni');
-      const list = data ? JSON.parse(data).filter((a) => a.is_active !== false) : [];
+      const list = getStoredAlumni().filter((a) => a.is_active !== false);
       const feat = list.filter((a) => a.is_featured);
       return feat.length > 0 ? feat : list.slice(0, 3);
     } catch (e) {

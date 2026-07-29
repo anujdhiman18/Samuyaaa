@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { facultyService } from '../services/api';
+import { facultyService, getStoredFaculty } from '../services/api';
 
 export default function FacultySection() {
   const [faculty, setFaculty] = useState(() => {
     try {
-      const data = localStorage.getItem('saumyaa_faculty');
-      return data ? JSON.parse(data).filter((f) => f.is_active !== false) : [];
+      const list = getStoredFaculty();
+      return list ? list.filter((f) => f.is_active !== false) : [];
     } catch (e) {
       return [];
     }
