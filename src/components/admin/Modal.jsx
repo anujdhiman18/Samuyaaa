@@ -1,7 +1,8 @@
 import React from 'react';
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-xl' }) {
-  if (!isOpen) return null;
+export default function Modal({ isOpen, open, onClose, title, children, maxWidth = 'max-w-xl' }) {
+  const showModal = isOpen !== undefined ? isOpen : open;
+  if (!showModal) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body">
@@ -18,6 +19,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
         <div className="px-6 py-4 border-b border-outline-variant/15 flex items-center justify-between bg-surface-container-low">
           <h3 className="font-headings font-bold text-base text-secondary">{title}</h3>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
           >

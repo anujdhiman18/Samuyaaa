@@ -409,6 +409,7 @@ export default function AlumniManagement() {
 
       {/* Add / Edit Alumni Modal */}
       <Modal
+        isOpen={isModalOpen}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingAlumni ? 'Edit Alumni Profile' : 'Add New Alumni'}
@@ -647,6 +648,7 @@ export default function AlumniManagement() {
 
       {/* Delete Confirmation Modal */}
       <Modal
+        isOpen={isDeleteModalOpen}
         open={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         title="Confirm Delete Alumni"
