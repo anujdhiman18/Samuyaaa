@@ -377,18 +377,18 @@ export default function StudentManagement() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[950px]">
               <thead>
                 <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
-                  <th className="py-3.5 px-4">Roll No.</th>
-                  <th className="py-3.5 px-4">Student Name</th>
-                  <th className="py-3.5 px-4">Class</th>
-                  <th className="py-3.5 px-4">Monthly Fee</th>
-                  <th className="py-3.5 px-4">Monthly Due Day</th>
-                  <th className="py-3.5 px-4">Next Due Date</th>
-                  <th className="py-3.5 px-4">Fee Status</th>
-                  <th className="py-3.5 px-4">Paid Toggle</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Student Name</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Monthly Fee</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Monthly Due Day</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Next Due Date</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Fee Status</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Paid Toggle</th>
+                  <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
@@ -406,10 +406,10 @@ export default function StudentManagement() {
                       key={student._id || student.id}
                       className="hover:bg-surface-container-low transition-colors"
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold text-secondary">
+                      <td className="py-3.5 px-4 font-mono font-bold text-secondary whitespace-nowrap">
                         {student.rollNumber}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-on-surface">
+                      <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
                         <Link
                           to={`/admin/students/${student._id || student.id}`}
                           className="hover:text-primary transition-colors"
@@ -417,30 +417,30 @@ export default function StudentManagement() {
                           {student.fullName}
                         </Link>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px] whitespace-nowrap">
                           Class {student.className}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-emerald-800">
+                      <td className="py-3.5 px-4 font-bold text-emerald-800 whitespace-nowrap">
                         ₹{(student.monthlyFee || 2500).toLocaleString()}/mo
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-secondary">
+                      <td className="py-3.5 px-4 font-semibold text-secondary whitespace-nowrap">
                         {dueDay}{suffix} of every month
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-secondary">
+                      <td className="py-3.5 px-4 font-mono font-bold text-secondary whitespace-nowrap">
                         {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 shadow-xs ${dueInfo.bgClass}`}>
                           {dueInfo.label}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <FeeToggleSwitch
                           checked={isPaid}
                           onChange={(newStatus) => handleFeeToggle(student._id || student.id, newStatus)}
@@ -448,7 +448,7 @@ export default function StudentManagement() {
                           size="sm"
                         />
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
+                      <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
                         <Link
                           to={`/admin/students/${student._id || student.id}`}
                           className="p-1.5 rounded-lg text-secondary hover:bg-secondary/10 inline-block"

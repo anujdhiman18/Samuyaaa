@@ -21,8 +21,9 @@ export default function AdminLogin() {
 
     try {
       const data = await authService.login(email, password);
-      login(data.admin, data.token);
-      addToast(`Welcome back, ${data.admin.name}!`, 'success');
+      const userObj = data.user || data.admin;
+      login(userObj, data.token);
+      addToast(`Welcome back, ${userObj.name}!`, 'success');
       navigate('/admin');
     } catch (error) {
       addToast(error.message || 'Login failed. Check email & password.', 'error');

@@ -198,17 +198,17 @@ export default function FeeManagement() {
           <div className="p-8 text-center text-xs text-on-surface-variant">No students registered yet.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-xs min-w-[900px]">
               <thead>
                 <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
-                  <th className="py-3 px-4">Roll No.</th>
-                  <th className="py-3 px-4">Student Name</th>
-                  <th className="py-3 px-4">Class</th>
-                  <th className="py-3 px-4">Monthly Fee</th>
-                  <th className="py-3 px-4">Monthly Due Day</th>
-                  <th className="py-3 px-4">Next Due Date</th>
-                  <th className="py-3 px-4">Fee Status</th>
-                  <th className="py-3 px-4 text-right">Fee Edit</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Roll No.</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Student Name</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Class</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Monthly Fee</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Monthly Due Day</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Next Due Date</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Fee Status</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Fee Edit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15">
@@ -223,28 +223,28 @@ export default function FeeManagement() {
 
                   return (
                     <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-primary">{s.rollNumber}</td>
-                      <td className="py-3 px-4 font-bold text-on-surface">{s.fullName}</td>
-                      <td className="py-3 px-4 font-semibold text-secondary">Class {s.className}</td>
-                      <td className="py-3 px-4 font-extrabold text-emerald-800">
+                      <td className="py-3 px-4 font-mono font-bold text-primary whitespace-nowrap">{s.rollNumber}</td>
+                      <td className="py-3 px-4 font-bold text-on-surface whitespace-nowrap">{s.fullName}</td>
+                      <td className="py-3 px-4 font-semibold text-secondary whitespace-nowrap">Class {s.className}</td>
+                      <td className="py-3 px-4 font-extrabold text-emerald-800 whitespace-nowrap">
                         ₹{(s.monthlyFee || 2500).toLocaleString()}/month
                       </td>
-                      <td className="py-3 px-4 font-semibold text-secondary">
+                      <td className="py-3 px-4 font-semibold text-secondary whitespace-nowrap">
                         {dueDay}{suffix} of every month
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-secondary">
+                      <td className="py-3 px-4 font-mono font-bold text-secondary whitespace-nowrap">
                         {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 ${dueInfo.bgClass}`}>
                           {dueInfo.label}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => openEditFeeModal(s)}
                           className="inline-flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-secondary px-3 py-1.5 rounded-full font-headings font-bold text-xs transition-colors shadow-sm"
@@ -462,19 +462,19 @@ export default function FeeManagement() {
 
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Next Fee Due Date *
+                Monthly Fee Due Day (1–31) *
               </label>
               <input
-                type="date"
+                type="number"
                 required
-                min="2020-01-01"
-                max="2035-12-31"
-                value={nextFeeDueDate}
-                onChange={(e) => setNextFeeDueDate(e.target.value)}
+                min="1"
+                max="31"
+                value={monthlyDueDay}
+                onChange={(e) => setMonthlyDueDay(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none focus:border-primary"
               />
               <span className="text-[10px] text-on-surface-variant">
-                Type date (YYYY-MM-DD) or pick from calendar picker.
+                Day of the month when tuition fee is due (e.g. 5 for 5th of every month).
               </span>
             </div>
 

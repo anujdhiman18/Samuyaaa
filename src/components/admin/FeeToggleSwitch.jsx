@@ -20,7 +20,7 @@ export default function FeeToggleSwitch({
     : null;
 
   return (
-    <div className="inline-flex items-center gap-2.5">
+    <div className="inline-flex items-center gap-2.5 whitespace-nowrap">
       <button
         type="button"
         role="switch"
@@ -30,7 +30,7 @@ export default function FeeToggleSwitch({
           e.stopPropagation();
           if (!disabled && onChange) onChange(!checked);
         }}
-        className={`relative inline-flex items-center rounded-full transition-colors duration-300 focus:outline-none cursor-pointer ${
+        className={`relative inline-flex items-center rounded-full transition-colors duration-300 focus:outline-none cursor-pointer flex-shrink-0 ${
           isSmall ? 'w-12 h-6.5 p-0.5' : 'w-14 h-7.5 p-1'
         } ${
           checked
@@ -55,9 +55,9 @@ export default function FeeToggleSwitch({
       </button>
 
       {showLabel && (
-        <div className="flex flex-col text-left">
+        <div className="flex flex-col text-left whitespace-nowrap">
           <span
-            className={`font-headings font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${
+            className={`font-headings font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${
               checked
                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/40'
                 : 'bg-rose-100 text-rose-800 border border-rose-300/40'
@@ -66,7 +66,7 @@ export default function FeeToggleSwitch({
             {checked ? 'PAID ✓' : 'UNPAID !'}
           </span>
           {checked && formattedDate && (
-            <span className="text-[9px] text-on-surface-variant/70 mt-0.5 font-medium">
+            <span className="text-[9px] text-on-surface-variant/70 mt-0.5 font-medium whitespace-nowrap">
               {formattedDate}
             </span>
           )}
