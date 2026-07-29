@@ -119,6 +119,16 @@ export default function Results() {
           </div>
         </div>
 
+        Live Enrolled Students Counter Card
+        <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition-transform duration-300">
+          <div className="flex items-baseline justify-center text-secondary font-headings font-extrabold text-4xl mb-1">
+            <span>{countStat}</span>
+            <span className="text-2xl">+</span>
+          </div>
+          <p className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+            Active Batch Enrolled Students
+          </p>
+        </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition-transform duration-300">
           <div className="flex items-baseline justify-center text-tertiary font-headings font-extrabold text-4xl mb-1">
