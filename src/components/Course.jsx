@@ -38,7 +38,7 @@ export default function Courses({ onOpenBooking }) {
           id: sub._id || `live-${idx}`,
           title: sub.name,
           category: sub.className ? sub.className.toLowerCase() : '10th',
-          tags: [`Class ${sub.className}`, `${sub.totalEnrolled || 15}+ Enrolled`, sub.teacherName || 'Jitender Sharma'],
+          tags: [`Class ${sub.className}`, sub.teacherName || 'Jitender Sharma'],
           description: sub.description || 'Comprehensive conceptual coaching and board exam preparation.',
           batch: sub.batchTime || '5:00 PM - 6:30 PM',
           program: sub.name,
