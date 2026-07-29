@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { alumniService, subscribeFirestoreCollection } from '../../services/api';
+import { alumniService, subscribeFirestoreCollection, getStoredAlumni } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
 export default function AlumniManagement() {
-  const [alumniList, setAlumniList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [alumniList, setAlumniList] = useState(() => {
+    try {
+      return getStoredAlumni() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { feeService, studentService, getFeeStatusInfo } from '../../services/api';
+import { feeService, studentService, getFeeStatusInfo, getStoredPayments, getStoredStudents } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
 export default function FeeManagement() {
-  const [payments, setPayments] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [payments, setPayments] = useState(() => {
+    try {
+      return getStoredPayments() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [students, setStudents] = useState(() => {
+    try {
+      return getStoredStudents() || [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Fee Collection Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

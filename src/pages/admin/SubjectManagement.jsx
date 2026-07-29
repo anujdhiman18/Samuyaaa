@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { subjectService } from '../../services/api';
+import { subjectService, getStoredSubjects } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -13,8 +13,14 @@ const initialSubjectForm = {
 };
 
 export default function SubjectManagement() {
-  const [subjects, setSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [subjects, setSubjects] = useState(() => {
+    try {
+      return getStoredSubjects() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);

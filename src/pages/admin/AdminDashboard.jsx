@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardService, subscribeFirestoreCollection } from '../../services/api';
+import { dashboardService, subscribeFirestoreCollection, getStoredStudents } from '../../services/api';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [recentStudents, setRecentStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(() => {
+    try {
+      return dashboardService.getInitialStatsSync();
+    } catch (e) {
+      return null;
+    }
+  });
+  const [recentStudents, setRecentStudents] = useState(() => {
+    try {
+      return (getStoredStudents() || []).slice(0, 5);
+    } catch (e) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -22,7 +34,6 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchDashboard = async () => {
-    if (!stats) setLoading(true);
     try {
       const data = await dashboardService.getStats();
       if (data && data.stats) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { studentService, subscribeFirestoreCollection, initialMockStudents, getFeeStatusInfo } from '../../services/api';
+import { studentService, subscribeFirestoreCollection, initialMockStudents, getFeeStatusInfo, getStoredStudents } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -46,8 +46,14 @@ export default function StudentManagement() {
   const initialSearch = searchParams.get('search') || '';
   const initialFeeFilter = searchParams.get('feeStatus') || 'All';
 
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [students, setStudents] = useState(() => {
+    try {
+      return getStoredStudents() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   // Filters & Search
   const [search, setSearch] = useState(initialSearch);

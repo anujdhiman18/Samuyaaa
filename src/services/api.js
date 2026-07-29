@@ -22,7 +22,98 @@ const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 };
 
-export const initialMockStudents = [];
+export const initialMockStudents = [
+  {
+    _id: 's1',
+    fullName: 'Rahul Gupta',
+    fatherName: 'Rajesh Gupta',
+    motherName: 'Sunita Gupta',
+    phone: '9816012345',
+    parentPhone: '8894190175',
+    email: 'rahul.g@gmail.com',
+    address: 'House #42, Main Market, Jamula, Palampur',
+    className: '10th',
+    rollNumber: 'SAU-10-001',
+    subjects: ['Mathematics Advanced', 'Integrated Science'],
+    dateOfAdmission: '2025-04-10',
+    monthlyFee: 2500,
+    monthlyDueDay: 5,
+    status: 'Active',
+    paidTillMonth: 'June 2026',
+    feesPaid: false,
+    dob: '2009-08-15',
+    bloodGroup: 'B+',
+    emergencyContact: '8894190175',
+    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+  },
+  {
+    _id: 's2',
+    fullName: 'Damini Sharma',
+    fatherName: 'Subhash Sharma',
+    motherName: 'Kamlesh Sharma',
+    phone: '9876543210',
+    parentPhone: '8894190175',
+    email: 'damini.s@gmail.com',
+    address: 'Bagru Garh, Palaid, HP 176093',
+    className: '10th',
+    rollNumber: 'SAU-10-002',
+    subjects: ['Mathematics Advanced'],
+    dateOfAdmission: '2025-03-15',
+    monthlyFee: 2000,
+    monthlyDueDay: 5,
+    status: 'Active',
+    paidTillMonth: 'July 2026',
+    feesPaid: true,
+    dob: '2009-11-20',
+    bloodGroup: 'O+',
+    emergencyContact: '8894190175',
+    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+  },
+  {
+    _id: 's3',
+    fullName: 'Aryan Mehta',
+    fatherName: 'Vikas Mehta',
+    motherName: 'Priya Mehta',
+    phone: '9816112233',
+    parentPhone: '8894190175',
+    email: 'aryan.m@gmail.com',
+    address: 'Ward No 4, Civil Lines, HP',
+    className: '11th',
+    rollNumber: 'SAU-11-003',
+    subjects: ['Physics IIT-JEE Prep', 'Chemistry Foundation'],
+    dateOfAdmission: '2025-05-01',
+    monthlyFee: 3000,
+    monthlyDueDay: 5,
+    status: 'Active',
+    paidTillMonth: 'June 2026',
+    feesPaid: false,
+    dob: '2008-05-10',
+    bloodGroup: 'A+',
+    emergencyContact: '8894190175',
+  },
+  {
+    _id: 's4',
+    fullName: 'Aditya Sharma',
+    fatherName: 'Ramesh Sharma',
+    motherName: 'Geeta Sharma',
+    phone: '9816223344',
+    parentPhone: '8894190175',
+    email: 'aditya.s@gmail.com',
+    address: 'Palaid Road, Palampur, HP',
+    className: '10th',
+    rollNumber: 'SAU-10-004',
+    subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+    dateOfAdmission: '2025-06-01',
+    monthlyFee: 2500,
+    monthlyDueDay: 5,
+    status: 'Active',
+    paidTillMonth: 'June 2026',
+    feesPaid: false,
+    dob: '2009-02-14',
+    bloodGroup: 'AB+',
+    emergencyContact: '8894190175',
+  },
+];
 
 const initialMockSubjects = [
   {
@@ -233,15 +324,9 @@ const notifyDataUpdate = () => {
 
 const getDeletedIds = (key) => {
   try {
-    const list = JSON.parse(localStorage.getItem(`saumyaa_deleted_${key}`) || '[]');
-    if (key === 'students') {
-      ['s1', 's2', 's3', 's4'].forEach((mockId) => {
-        if (!list.includes(mockId)) list.push(mockId);
-      });
-    }
-    return list;
+    return JSON.parse(localStorage.getItem(`saumyaa_deleted_${key}`) || '[]');
   } catch (e) {
-    return key === 'students' ? ['s1', 's2', 's3', 's4'] : [];
+    return [];
   }
 };
 
@@ -254,7 +339,7 @@ const addDeletedId = (key, id) => {
   }
 };
 
-const getStoredStudents = () => {
+export const getStoredStudents = () => {
   try {
     const raw = localStorage.getItem('mock_students');
     const list = raw !== null ? JSON.parse(raw) : initialMockStudents;
@@ -266,18 +351,18 @@ const getStoredStudents = () => {
   }
 };
 
-const setStoredStudents = (s) => {
+export const setStoredStudents = (s) => {
   localStorage.setItem('mock_students', JSON.stringify(s));
   notifyDataUpdate();
 };
 
-const getStoredSubjects = () => JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
-const setStoredSubjects = (s) => {
+export const getStoredSubjects = () => JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
+export const setStoredSubjects = (s) => {
   localStorage.setItem('mock_subjects', JSON.stringify(s));
   notifyDataUpdate();
 };
 
-const getStoredPayments = () => {
+export const getStoredPayments = () => {
   try {
     const raw = JSON.parse(localStorage.getItem('mock_payments') || JSON.stringify(initialMockPayments));
     const students = getStoredStudents();
@@ -596,8 +681,43 @@ export const syncFirestoreCollection = async (collectionName, defaultData = []) 
   return null;
 };
 
+export const getStoredCollectionFallback = (collectionName, defaultData = []) => {
+  try {
+    switch (collectionName) {
+      case 'students':
+        return getStoredStudents();
+      case 'subjects':
+        return getStoredSubjects();
+      case 'fees':
+        return getStoredPayments();
+      case 'toppers':
+        return getStoredToppers();
+      case 'faculty':
+        return getStoredFaculty();
+      case 'alumni':
+        return getStoredAlumni();
+      case 'feedbacks':
+        return getStoredFeedbacks();
+      default:
+        return defaultData;
+    }
+  } catch (e) {
+    return defaultData;
+  }
+};
+
 export const subscribeFirestoreCollection = (collectionName, defaultData = [], callback) => {
   const colRef = collection(db, collectionName);
+
+  // Immediately return stored cached data synchronously if callback provided
+  if (callback) {
+    try {
+      const initialItems = getStoredCollectionFallback(collectionName, defaultData);
+      if (initialItems && initialItems.length > 0) {
+        callback(initialItems);
+      }
+    } catch (e) {}
+  }
 
   return onSnapshot(
     colRef,
@@ -628,7 +748,13 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
       if (callback) callback(items);
     },
     (err) => {
-      console.warn(`Firestore onSnapshot error for ${collectionName}:`, err.message);
+      console.warn(`Firestore onSnapshot notice for ${collectionName}:`, err.message);
+      if (callback) {
+        try {
+          const fallback = getStoredCollectionFallback(collectionName, defaultData);
+          callback(fallback);
+        } catch (e) {}
+      }
     }
   );
 };
@@ -1292,6 +1418,75 @@ export const getDefaultNextFeeDueDate = () => {
 
 // Dashboard Service
 export const dashboardService = {
+  getInitialStatsSync: () => {
+    try {
+      const students = getStoredStudents() || [];
+      const subjects = getStoredSubjects() || [];
+      const rawPayments = getStoredPayments() || [];
+
+      const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
+      const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
+      const activeStudents = students.filter((s) => s.status === 'Active');
+      const currentMonth = 'July 2026';
+
+      const totalMonthlyTarget = activeStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
+      const totalFeesCollected = payments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
+
+      const thisMonthPayments = payments.filter((p) => p.monthYear === currentMonth || p.monthYear === 'July 2026');
+      const thisMonthCollected = thisMonthPayments.reduce((sum, p) => sum + (Number(p.amountPaid) || 0), 0);
+
+      const paidStudentIds = new Set(thisMonthPayments.map((p) => String(p.student?._id || p.student)));
+
+      const unpaidStudents = activeStudents.filter(
+        (s) => !s.feesPaid && s.paidTillMonth !== currentMonth && s.paidTillMonth !== 'July 2026' && !paidStudentIds.has(String(s._id || s.id))
+      );
+      const paidStudents = activeStudents.filter(
+        (s) => s.feesPaid || s.paidTillMonth === currentMonth || s.paidTillMonth === 'July 2026' || paidStudentIds.has(String(s._id || s.id))
+      );
+
+      const paidStudentsCount = paidStudents.length;
+      const pendingStudentsCount = unpaidStudents.length;
+      const pendingFeePayments = unpaidStudents.reduce((sum, s) => sum + (Number(s.monthlyFee) || 2500), 0);
+
+      let dueTodayCount = 0;
+      let dueTomorrowCount = 0;
+      let dueThisWeekCount = 0;
+      let upcomingCount = 0;
+      let overdueCount = 0;
+
+      activeStudents.forEach((s) => {
+        const isPaid = Boolean(s.feesPaid || s.paidTillMonth === currentMonth || paidStudentIds.has(String(s._id || s.id)));
+        const info = getFeeStatusInfo(s.monthlyDueDay || s.feeDueDate || 5, isPaid, s.paymentDate, s.nextFeeDueDate);
+        if (info.code === 'overdue') overdueCount++;
+        if (info.code === 'due_today') dueTodayCount++;
+        if (info.code === 'due_tomorrow') dueTomorrowCount++;
+        if (info.code === 'due_this_week') dueThisWeekCount++;
+        if (info.code === 'upcoming') upcomingCount++;
+      });
+
+      return {
+        totalStudents: students.length,
+        activeStudents: activeStudents.length,
+        totalSubjects: subjects.length,
+        totalFeesCollected,
+        thisMonthCollected,
+        monthlyTarget: totalMonthlyTarget,
+        pendingFeePayments,
+        paidStudentsCount,
+        pendingStudentsCount,
+        dueTodayCount,
+        dueTomorrowCount,
+        dueThisWeekCount,
+        upcomingCount,
+        overdueCount,
+        paidPercentage: activeStudents.length ? Math.round((paidStudentsCount / activeStudents.length) * 100) : 0,
+        pendingPercentage: activeStudents.length ? Math.round((pendingStudentsCount / activeStudents.length) * 100) : 0,
+      };
+    } catch (e) {
+      return null;
+    }
+  },
+
   getStats: async () => {
     const remote = await apiCall('/dashboard/stats');
     if (remote) return remote;

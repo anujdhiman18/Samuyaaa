@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { facultyService } from '../../services/api';
+import { facultyService, getStoredFaculty } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -16,8 +16,14 @@ const initialForm = {
 };
 
 export default function FacultyManagement() {
-  const [facultyList, setFacultyList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [facultyList, setFacultyList] = useState(() => {
+    try {
+      return getStoredFaculty() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { topperService, subscribeFirestoreCollection, initialMockToppers } from '../../services/api';
+import { topperService, subscribeFirestoreCollection, initialMockToppers, getStoredToppers } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
 export default function ToppersManagement() {
-  const [toppersList, setToppersList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [toppersList, setToppersList] = useState(() => {
+    try {
+      return getStoredToppers() || [];
+    } catch (e) {
+      return initialMockToppers;
+    }
+  });
+  const [loading, setLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
