@@ -5,6 +5,7 @@ import MobileMenu from './MobileMenu';
 import About from './About';
 import Course from './Course';
 import FacultySection from './FacultySection';
+import AlumniSection from './AlumniSection';
 import Results from './Results';
 import Testimonials from './Testimonials';
 import Faq from './Faq';
@@ -72,6 +73,7 @@ export default function PublicWebsite() {
         <About onOpenBooking={openBooking} />
         <Course onOpenBooking={openBooking} />
         <FacultySection />
+        <AlumniSection />
         <Results />
         <Testimonials />
         <Faq />

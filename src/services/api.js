@@ -1574,3 +1574,364 @@ export const facultyService = {
   },
 };
 
+const initialMockAlumni = [
+  {
+    _id: 'alum_1',
+    id: 'alum_1',
+    full_name: 'Ananya Sharma',
+    graduation_year: 2022,
+    course: 'JEE Advanced Foundation (Physics & Math)',
+    current_company: 'Google',
+    current_position: 'Software Development Engineer II',
+    package_ctc: '32 LPA',
+    location: 'Bengaluru, India',
+    achievement: 'AIR 342 in JEE Advanced | Gold Medalist IIT Bombay',
+    testimonial: 'Saumyaa Studies gave me the conceptual clarity and problem-solving speed required to crack JEE Advanced with AIR 342. Jitender Sir’s guidance in Physics was unmatched!',
+    linkedin_url: 'https://linkedin.com/in/ananyasharma',
+    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    display_order: 1,
+    is_featured: true,
+    is_active: true,
+  },
+  {
+    _id: 'alum_2',
+    id: 'alum_2',
+    full_name: 'Vikas Sen',
+    graduation_year: 2020,
+    course: 'IIT-JEE Super 30 Batch',
+    current_company: 'Apple',
+    current_position: 'Hardware Systems Engineer',
+    package_ctc: '45 LPA',
+    location: 'Cupertino, USA / Hyderabad',
+    achievement: 'Published 3 IEEE Patents | B.Tech IIT Delhi',
+    testimonial: 'The deep numerical practice and daily test series at Saumyaa Studies built the foundation for my IIT Delhi admission and global engineering career.',
+    linkedin_url: 'https://linkedin.com/in/vikassen',
+    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    display_order: 2,
+    is_featured: true,
+    is_active: true,
+  },
+  {
+    _id: 'alum_3',
+    id: 'alum_3',
+    full_name: 'Priya Thakur',
+    graduation_year: 2023,
+    course: 'Mathematics Advanced & Physics (12th Board)',
+    current_company: 'Microsoft',
+    current_position: 'Senior Data Scientist',
+    package_ctc: '28 LPA',
+    location: 'Noida, India',
+    achievement: '98.6% Board Topper | B.Tech BITS Pilani',
+    testimonial: 'Scoring 98.6% in 12th Boards and getting into BITS Pilani was only possible because of the personal attention and rigorous mock exams at Saumyaa Studies.',
+    linkedin_url: 'https://linkedin.com/in/priyathakur',
+    photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
+    display_order: 3,
+    is_featured: true,
+    is_active: true,
+  },
+  {
+    _id: 'alum_4',
+    id: 'alum_4',
+    full_name: 'Dr. Karan Verma',
+    graduation_year: 2021,
+    course: 'NEET Foundation & Integrated Biology',
+    current_company: 'AIIMS New Delhi',
+    current_position: 'Resident Physician (Internal Medicine)',
+    package_ctc: '18 LPA',
+    location: 'New Delhi, India',
+    achievement: 'AIR 128 NEET-UG | MD Scholar',
+    testimonial: 'The faculty’s commitment to clarifying every single doubt, no matter how small, made all the difference during my NEET preparation.',
+    linkedin_url: 'https://linkedin.com/in/karanverma',
+    photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+    display_order: 4,
+    is_featured: false,
+    is_active: true,
+  },
+];
+
+const getStoredAlumni = () => {
+  try {
+    const data = localStorage.getItem('saumyaa_alumni');
+    return data ? JSON.parse(data) : initialMockAlumni;
+  } catch (e) {
+    return initialMockAlumni;
+  }
+};
+
+const setStoredAlumni = (list) => {
+  localStorage.setItem('saumyaa_alumni', JSON.stringify(list));
+  notifyDataUpdate();
+};
+
+// Alumni Service with Supabase & Express API
+export const alumniService = {
+  getAlumni: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const remote = await apiCall(`/alumni?${query}`);
+    if (remote && remote.alumni) return remote;
+
+    if (isSupabaseConfigured()) {
+      try {
+        let q = supabase.from('alumni').select('*');
+        if (params.activeOnly) q = q.eq('is_active', true);
+        if (params.featuredOnly) q = q.eq('is_featured', true);
+        if (params.year) q = q.eq('graduation_year', Number(params.year));
+
+        q = q.order('is_featured', { ascending: false }).order('display_order', { ascending: true });
+
+        const { data, error } = await q;
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((a) => ({
+            ...a,
+            _id: a.id,
+          }));
+          return { success: true, alumni: mapped };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase getAlumni fallback:', sbErr.message);
+      }
+    }
+
+    let list = getStoredAlumni();
+    if (params.activeOnly) {
+      list = list.filter((a) => a.is_active);
+    }
+    if (params.featuredOnly) {
+      list = list.filter((a) => a.is_featured);
+    }
+    if (params.year) {
+      list = list.filter((a) => Number(a.graduation_year) === Number(params.year));
+    }
+    if (params.course) {
+      list = list.filter((a) => (a.course || '').toLowerCase().includes(params.course.toLowerCase()));
+    }
+    if (params.query) {
+      const q = params.query.toLowerCase();
+      list = list.filter(
+        (a) =>
+          (a.full_name || '').toLowerCase().includes(q) ||
+          (a.current_company || '').toLowerCase().includes(q) ||
+          (a.current_position || '').toLowerCase().includes(q) ||
+          (a.course || '').toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0) || (a.display_order || 1) - (b.display_order || 1));
+
+    return { success: true, alumni: list };
+  },
+
+  getAlumniStats: async () => {
+    const remote = await apiCall('/alumni/stats');
+    if (remote && remote.stats) return remote;
+
+    const res = await alumniService.getAlumni({ activeOnly: true });
+    const list = res.alumni || [];
+    const companies = new Set(list.map((a) => a.current_company).filter(Boolean));
+
+    let highestNum = 0;
+    let totalNum = 0;
+    let count = 0;
+
+    list.forEach((a) => {
+      if (a.package_ctc) {
+        const match = a.package_ctc.match(/(\d+(\.\d+)?)/);
+        if (match) {
+          const val = parseFloat(match[1]);
+          if (val > highestNum) highestNum = val;
+          totalNum += val;
+          count += 1;
+        }
+      }
+    });
+
+    const avgNum = count > 0 ? (totalNum / count).toFixed(1) : '28.5';
+
+    return {
+      success: true,
+      stats: {
+        totalAlumni: list.length || 120,
+        studentsPlaced: list.length ? Math.round(list.length * 0.95) : 115,
+        topRecruiters: companies.size || 28,
+        averagePackage: `${avgNum} LPA`,
+        highestPackage: highestNum > 0 ? `${highestNum} LPA` : '45 LPA',
+      },
+    };
+  },
+
+  createAlumni: async (data) => {
+    const remote = await apiCall('/alumni', { method: 'POST', body: JSON.stringify(data) });
+    if (remote && remote.alumni) return remote;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = {
+          full_name: data.full_name,
+          graduation_year: Number(data.graduation_year),
+          course: data.course || '',
+          current_company: data.current_company,
+          current_position: data.current_position,
+          package_ctc: data.package_ctc || '',
+          location: data.location || '',
+          achievement: data.achievement || '',
+          testimonial: data.testimonial || '',
+          linkedin_url: data.linkedin_url || '',
+          photo_url: data.photo_url,
+          display_order: Number(data.display_order || 1),
+          is_featured: Boolean(data.is_featured),
+          is_active: Boolean(data.is_active ?? true),
+        };
+        const { data: newRec, error } = await supabase.from('alumni').insert([payload]).select().single();
+        if (!error && newRec) {
+          return { success: true, alumni: { ...newRec, _id: newRec.id }, message: 'Alumni record created in Supabase DB' };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase createAlumni fallback:', sbErr.message);
+      }
+    }
+
+    const id = 'alum_' + Date.now();
+    const newAlumnus = {
+      ...data,
+      _id: id,
+      id,
+      graduation_year: Number(data.graduation_year),
+      display_order: Number(data.display_order || 1),
+      is_featured: Boolean(data.is_featured),
+      is_active: Boolean(data.is_active ?? true),
+      created_at: new Date().toISOString(),
+    };
+
+    const list = getStoredAlumni();
+    setStoredAlumni([newAlumnus, ...list]);
+    return { success: true, alumni: newAlumnus, message: 'Alumni record saved successfully' };
+  },
+
+  updateAlumni: async (id, data) => {
+    const remote = await apiCall(`/alumni/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    if (remote && remote.alumni) return remote;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = { ...data };
+        delete payload._id;
+        delete payload.id;
+        const { data: updatedRec, error } = await supabase.from('alumni').update(payload).eq('id', id).select().single();
+        if (!error && updatedRec) {
+          return { success: true, alumni: { ...updatedRec, _id: updatedRec.id }, message: 'Alumni updated in Supabase DB' };
+        }
+      } catch (sbErr) {
+        console.warn('Supabase updateAlumni fallback:', sbErr.message);
+      }
+    }
+
+    const list = getStoredAlumni();
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        ...data,
+        graduation_year: data.graduation_year !== undefined ? Number(data.graduation_year) : list[idx].graduation_year,
+        display_order: data.display_order !== undefined ? Number(data.display_order) : list[idx].display_order,
+        is_featured: data.is_featured !== undefined ? Boolean(data.is_featured) : list[idx].is_featured,
+        is_active: data.is_active !== undefined ? Boolean(data.is_active) : list[idx].is_active,
+      };
+      setStoredAlumni(list);
+      return { success: true, alumni: list[idx], message: 'Alumni record updated successfully' };
+    }
+
+    throw new Error('Alumni record not found');
+  },
+
+  deleteAlumni: async (id, photoUrl) => {
+    const remote = await apiCall(`/alumni/${id}`, { method: 'DELETE' });
+    if (remote) {
+      if (photoUrl && isSupabaseConfigured()) {
+        try {
+          const parts = photoUrl.split('/storage/v1/object/public/alumni/');
+          if (parts.length > 1) {
+            await supabase.storage.from('alumni').remove([parts[1]]);
+          }
+        } catch (e) {
+          console.warn('Supabase Storage image removal warning:', e);
+        }
+      }
+      return remote;
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('alumni').delete().eq('id', id);
+        if (photoUrl) {
+          const parts = photoUrl.split('/storage/v1/object/public/alumni/');
+          if (parts.length > 1) {
+            await supabase.storage.from('alumni').remove([parts[1]]);
+          }
+        }
+      } catch (sbErr) {
+        console.warn('Supabase deleteAlumni fallback:', sbErr.message);
+      }
+    }
+
+    const list = getStoredAlumni().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
+    setStoredAlumni(list);
+    return { success: true, message: 'Alumni record deleted successfully' };
+  },
+
+  uploadAlumniPhoto: async (file, onProgress) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Invalid image format! Only JPG, PNG, and WEBP files are allowed.');
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
+    }
+
+    if (onProgress) onProgress(20);
+
+    if (isSupabaseConfigured()) {
+      try {
+        if (onProgress) onProgress(40);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('alumni').upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+        if (uploadError) {
+          console.warn('Supabase bucket upload error:', uploadError.message);
+          throw uploadError;
+        }
+
+        if (onProgress) onProgress(80);
+        const { data: publicUrlData } = supabase.storage.from('alumni').getPublicUrl(filePath);
+
+        if (onProgress) onProgress(100);
+        return publicUrlData.publicUrl;
+      } catch (sbErr) {
+        console.warn('Supabase Storage upload failed, converting to Base64:', sbErr.message);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          onProgress(percent);
+        }
+      };
+      reader.onload = () => {
+        if (onProgress) onProgress(100);
+        resolve(reader.result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.readAsDataURL(file);
+    });
+  },
+};
+
