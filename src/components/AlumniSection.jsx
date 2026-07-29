@@ -70,7 +70,9 @@ export default function AlumniSection() {
   }, [featuredAlumni.length]);
 
   // Testimonial Carousel Autoplay
-  const testimonialsList = alumniList.filter((a) => a.testimonial && a.testimonial.trim().length > 0);
+  const testimonialsList = (alumniList || []).filter(
+    (a) => a && typeof a.testimonial === 'string' && a.testimonial.trim().length > 0
+  );
   useEffect(() => {
     if (testimonialsList.length <= 1) return;
     const interval = setInterval(() => {
@@ -79,11 +81,13 @@ export default function AlumniSection() {
     return () => clearInterval(interval);
   }, [testimonialsList.length]);
 
-  if (!loading && alumniList.length === 0) {
-    return null; // Automatically hide section if no active alumni exist
+  const safeFeatured = (featuredAlumni || []).filter((a) => a && a.is_active !== false);
+
+  if (!alumniList || alumniList.length === 0) {
+    return null;
   }
 
-  const currentFeatured = featuredAlumni[activeSlide] || featuredAlumni[0];
+  const currentFeatured = safeFeatured[activeSlide] || safeFeatured[0] || alumniList[0];
   const currentTestimonial = testimonialsList[activeTestimonial] || testimonialsList[0];
 
   return (
