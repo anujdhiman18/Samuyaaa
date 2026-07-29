@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { facultyService, getStoredFaculty } from '../services/api';
+import { facultyService, getStoredFaculty, subscribeFirestoreCollection } from '../services/api';
 
 export default function FacultySection() {
   const [faculty, setFaculty] = useState(() => {
@@ -12,7 +12,16 @@ export default function FacultySection() {
   });
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('faculty', [], (list) => {
+      if (list && list.length > 0) {
+        const active = list.filter((f) => f.is_active !== false);
+        active.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+        setFaculty(active);
+      }
+    });
+
     fetchActiveFaculty();
+    return () => unsubscribe();
   }, []);
 
   const fetchActiveFaculty = async () => {

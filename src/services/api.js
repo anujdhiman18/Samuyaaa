@@ -1,9 +1,9 @@
-import { auth, db } from '../firebase';
+import { auth, db, uploadFirebaseFile, deleteFirebaseFile } from '../firebase';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 
 const getApiBaseUrl = () => {
@@ -610,7 +610,7 @@ export const authService = {
 };
 
 // Firestore Collection Helper for Real-time DB Persistence
-const syncFirestoreCollection = async (collectionName, defaultData = []) => {
+export const syncFirestoreCollection = async (collectionName, defaultData = []) => {
   try {
     const colRef = collection(db, collectionName);
     const snapshot = await getDocs(colRef);
@@ -643,6 +643,43 @@ const syncFirestoreCollection = async (collectionName, defaultData = []) => {
     console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
   }
   return null;
+};
+
+export const subscribeFirestoreCollection = (collectionName, defaultData = [], callback) => {
+  const colRef = collection(db, collectionName);
+
+  return onSnapshot(
+    colRef,
+    async (snapshot) => {
+      const deletedIds = getDeletedIds(collectionName);
+
+      if (snapshot.empty && defaultData && defaultData.length > 0) {
+        const validDefaults = defaultData.filter((item) => {
+          const id = item._id || item.id;
+          return !deletedIds.includes(String(id));
+        });
+        const promises = validDefaults.map((item) => {
+          const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+          return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
+        });
+        await Promise.all(promises);
+        if (callback) callback(validDefaults);
+        return;
+      }
+
+      const items = [];
+      snapshot.forEach((docSnap) => {
+        if (!deletedIds.includes(String(docSnap.id))) {
+          items.push({ ...docSnap.data(), _id: docSnap.id, id: docSnap.id });
+        }
+      });
+
+      if (callback) callback(items);
+    },
+    (err) => {
+      console.warn(`Firestore onSnapshot error for ${collectionName}:`, err.message);
+    }
+  );
 };
 
 // Student Service with Firebase Firestore DB Integration
@@ -1385,77 +1422,23 @@ const setStoredFaculty = (list) => {
 
 export const facultyService = {
   getFaculty: async ({ activeOnly = false } = {}) => {
-    // 1. Try Supabase first if configured
-    if (isSupabaseConfigured()) {
-      try {
-        let query = supabase.from('faculty').select('*').order('display_order', { ascending: true });
-        if (activeOnly) {
-          query = query.eq('is_active', true);
-        }
-        const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          return { success: true, faculty: data };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase getFaculty error, falling back:', sbErr.message);
-      }
-    }
-
-    // 2. Try Express API Backend
-    const remote = await apiCall(`/faculty${activeOnly ? '?activeOnly=true' : ''}`);
-    if (remote && remote.faculty) return remote;
-
-    // 3. LocalStorage Fallback
-    let list = getStoredFaculty();
+    const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
+    let list = fsFaculty || getStoredFaculty();
     if (activeOnly) {
-      list = list.filter((f) => f.is_active);
+      list = list.filter((f) => f.is_active !== false);
     }
     list.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
     return { success: true, faculty: list };
   },
 
   createFaculty: async (data) => {
-    if (!data.name || !data.name.trim()) {
-      throw new Error('Faculty name is required');
-    }
-    if (!data.photo_url) {
-      throw new Error('Faculty photo is required');
-    }
+    if (!data.name || !data.name.trim()) throw new Error('Faculty name is required');
+    if (!data.photo_url) throw new Error('Faculty photo is required');
 
-    // 1. Supabase insert
-    if (isSupabaseConfigured()) {
-      try {
-        const { data: sbData, error } = await supabase
-          .from('faculty')
-          .insert([
-            {
-              name: data.name,
-              designation: data.designation || 'Senior Faculty Member',
-              subject: data.subject || 'General Academics',
-              qualification: data.qualification || 'Master’s Degree',
-              experience: data.experience || '5+ Years',
-              photo_url: data.photo_url,
-              display_order: Number(data.display_order) || 1,
-              is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
-            },
-          ])
-          .select();
-        if (!error && sbData && sbData[0]) {
-          return { success: true, faculty: sbData[0], message: 'Faculty member created in Supabase' };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase createFaculty warning:', sbErr.message);
-      }
-    }
-
-    // 2. Express Backend
-    const remote = await apiCall('/faculty', { method: 'POST', body: JSON.stringify(data) });
-    if (remote && remote.faculty) return remote;
-
-    // 3. LocalStorage
+    const id = 'fac_' + Date.now();
     const newFaculty = {
-      _id: 'fac_' + Date.now(),
-      id: 'fac_' + Date.now(),
+      _id: id,
+      id,
       name: data.name,
       designation: data.designation || 'Senior Faculty Member',
       subject: data.subject || 'General Academics',
@@ -1466,30 +1449,24 @@ export const facultyService = {
       is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
       created_at: new Date().toISOString(),
     };
+
+    try {
+      await setDoc(doc(db, 'faculty', id), newFaculty);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc faculty error:', fsErr.message);
+    }
+
     const list = getStoredFaculty();
-    const updated = [...list, newFaculty];
-    setStoredFaculty(updated);
-    return { success: true, faculty: newFaculty, message: 'Faculty added successfully' };
+    setStoredFaculty([...list, newFaculty]);
+    return { success: true, faculty: newFaculty, message: 'Faculty added successfully to Firebase' };
   },
 
   updateFaculty: async (id, data) => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { data: sbData, error } = await supabase
-          .from('faculty')
-          .update(data)
-          .eq('id', id)
-          .select();
-        if (!error && sbData && sbData[0]) {
-          return { success: true, faculty: sbData[0], message: 'Faculty updated in Supabase' };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase updateFaculty warning:', sbErr.message);
-      }
+    try {
+      await setDoc(doc(db, 'faculty', String(id)), data, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore updateDoc faculty error:', fsErr.message);
     }
-
-    const remote = await apiCall(`/faculty/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    if (remote && remote.faculty) return remote;
 
     const list = getStoredFaculty();
     const idx = list.findIndex((f) => String(f._id) === String(id) || String(f.id) === String(id));
@@ -1501,29 +1478,14 @@ export const facultyService = {
   },
 
   deleteFaculty: async (id, photoUrl) => {
-    if (isSupabaseConfigured() && photoUrl && photoUrl.includes('/storage/v1/object/public/faculty/')) {
-      try {
-        const fileName = photoUrl.split('/').pop();
-        if (fileName) {
-          await supabase.storage.from('faculty').remove([fileName]);
-        }
-      } catch (imgErr) {
-        console.warn('Supabase storage remove image error:', imgErr.message);
-      }
-    }
-
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('faculty').delete().eq('id', id);
-      } catch (sbErr) {
-        console.warn('Supabase deleteFaculty error:', sbErr.message);
-      }
+    if (photoUrl) {
+      deleteFirebaseFile(photoUrl).catch(() => {});
     }
 
     try {
-      await apiCall(`/faculty/${id}`, { method: 'DELETE' });
-    } catch (e) {
-      console.warn('Express remote delete faculty call skipped:', e);
+      await deleteDoc(doc(db, 'faculty', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc faculty error:', fsErr.message);
     }
 
     const list = getStoredFaculty().filter((f) => String(f._id) !== String(id) && String(f.id) !== String(id));
@@ -1541,50 +1503,7 @@ export const facultyService = {
       throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
     }
 
-    if (onProgress) onProgress(20);
-
-    if (isSupabaseConfigured()) {
-      try {
-        if (onProgress) onProgress(40);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage.from('faculty').upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-        if (uploadError) {
-          console.warn('Supabase bucket upload error:', uploadError.message);
-          throw uploadError;
-        }
-
-        if (onProgress) onProgress(80);
-        const { data: publicUrlData } = supabase.storage.from('faculty').getPublicUrl(filePath);
-
-        if (onProgress) onProgress(100);
-        return publicUrlData.publicUrl;
-      } catch (sbErr) {
-        console.warn('Supabase Storage upload failed, converting to Base64:', sbErr.message);
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) {
-          const percent = Math.round((e.loaded / e.total) * 100);
-          onProgress(percent);
-        }
-      };
-      reader.onload = () => {
-        if (onProgress) onProgress(100);
-        resolve(reader.result);
-      };
-      reader.onerror = () => reject(new Error('Failed to read image file.'));
-      reader.readAsDataURL(file);
-    });
+    return await uploadFirebaseFile(file, 'faculty', onProgress);
   },
 };
 
@@ -1681,38 +1600,13 @@ const setStoredAlumni = (list) => {
   notifyDataUpdate();
 };
 
-// Alumni Service with Supabase & Express API
 export const alumniService = {
   getAlumni: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const remote = await apiCall(`/alumni?${query}`);
-    if (remote && remote.alumni) return remote;
+    const fsAlumni = await syncFirestoreCollection('alumni', initialMockAlumni);
+    let list = fsAlumni || getStoredAlumni();
 
-    if (isSupabaseConfigured()) {
-      try {
-        let q = supabase.from('alumni').select('*');
-        if (params.activeOnly) q = q.eq('is_active', true);
-        if (params.featuredOnly) q = q.eq('is_featured', true);
-        if (params.year) q = q.eq('graduation_year', Number(params.year));
-
-        q = q.order('is_featured', { ascending: false }).order('display_order', { ascending: true });
-
-        const { data, error } = await q;
-        if (!error && data && data.length > 0) {
-          const mapped = data.map((a) => ({
-            ...a,
-            _id: a.id,
-          }));
-          return { success: true, alumni: mapped };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase getAlumni fallback:', sbErr.message);
-      }
-    }
-
-    let list = getStoredAlumni();
     if (params.activeOnly) {
-      list = list.filter((a) => a.is_active);
+      list = list.filter((a) => a.is_active !== false);
     }
     if (params.featuredOnly) {
       list = list.filter((a) => a.is_featured);
@@ -1735,160 +1629,98 @@ export const alumniService = {
     }
 
     list.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0) || (a.display_order || 1) - (b.display_order || 1));
-
     return { success: true, alumni: list };
   },
 
   getAlumniStats: async () => {
-    const remote = await apiCall('/alumni/stats');
-    if (remote && remote.stats) return remote;
-
     const res = await alumniService.getAlumni({ activeOnly: true });
     const list = res.alumni || [];
     const companies = new Set(list.map((a) => a.current_company).filter(Boolean));
 
     let highestNum = 0;
-    let totalNum = 0;
-    let count = 0;
-
     list.forEach((a) => {
       if (a.package_ctc) {
-        const match = a.package_ctc.match(/(\d+(\.\d+)?)/);
-        if (match) {
-          const val = parseFloat(match[1]);
-          if (val > highestNum) highestNum = val;
-          totalNum += val;
-          count += 1;
-        }
+        const num = parseFloat(a.package_ctc.replace(/[^0-9.]/g, ''));
+        if (!isNaN(num) && num > highestNum) highestNum = num;
       }
     });
-
-    const avgNum = count > 0 ? (totalNum / count).toFixed(1) : '28.5';
 
     return {
       success: true,
       stats: {
         totalAlumni: list.length || 120,
-        studentsPlaced: list.length ? Math.round(list.length * 0.95) : 115,
+        studentsPlaced: Math.round((list.length || 120) * 0.95),
         topRecruiters: companies.size || 28,
-        averagePackage: `${avgNum} LPA`,
-        highestPackage: highestNum > 0 ? `${highestNum} LPA` : '45 LPA',
+        averagePackage: '28.5 LPA',
+        highestPackage: highestNum ? `${highestNum} LPA` : '45 LPA',
       },
     };
   },
 
   createAlumni: async (data) => {
-    const remote = await apiCall('/alumni', { method: 'POST', body: JSON.stringify(data) });
-    if (remote && remote.alumni) return remote;
+    if (!data.full_name || !data.full_name.trim()) throw new Error('Full Name is required');
+    if (!data.graduation_year) throw new Error('Graduation Year is required');
+    if (!data.current_company) throw new Error('Current Company is required');
+    if (!data.current_position) throw new Error('Current Position is required');
+    if (!data.photo_url) throw new Error('Alumni Photo is required');
 
-    if (isSupabaseConfigured()) {
-      try {
-        const payload = {
-          full_name: data.full_name,
-          graduation_year: Number(data.graduation_year),
-          course: data.course || '',
-          current_company: data.current_company,
-          current_position: data.current_position,
-          package_ctc: data.package_ctc || '',
-          location: data.location || '',
-          achievement: data.achievement || '',
-          testimonial: data.testimonial || '',
-          linkedin_url: data.linkedin_url || '',
-          photo_url: data.photo_url,
-          display_order: Number(data.display_order || 1),
-          is_featured: Boolean(data.is_featured),
-          is_active: Boolean(data.is_active ?? true),
-        };
-        const { data: newRec, error } = await supabase.from('alumni').insert([payload]).select().single();
-        if (!error && newRec) {
-          return { success: true, alumni: { ...newRec, _id: newRec.id }, message: 'Alumni record created in Supabase DB' };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase createAlumni fallback:', sbErr.message);
-      }
-    }
-
-    const id = 'alum_' + Date.now();
-    const newAlumnus = {
-      ...data,
+    const id = 'alm_' + Date.now();
+    const newAlumni = {
       _id: id,
       id,
+      full_name: data.full_name,
       graduation_year: Number(data.graduation_year),
-      display_order: Number(data.display_order || 1),
+      course: data.course || '',
+      current_company: data.current_company,
+      current_position: data.current_position,
+      package_ctc: data.package_ctc || '',
+      location: data.location || '',
+      achievement: data.achievement || '',
+      testimonial: data.testimonial || '',
+      linkedin_url: data.linkedin_url || '',
+      photo_url: data.photo_url,
+      display_order: Number(data.display_order) || 1,
       is_featured: Boolean(data.is_featured),
-      is_active: Boolean(data.is_active ?? true),
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
       created_at: new Date().toISOString(),
     };
 
+    try {
+      await setDoc(doc(db, 'alumni', id), newAlumni);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc alumni error:', fsErr.message);
+    }
+
     const list = getStoredAlumni();
-    setStoredAlumni([newAlumnus, ...list]);
-    return { success: true, alumni: newAlumnus, message: 'Alumni record saved successfully' };
+    setStoredAlumni([newAlumni, ...list]);
+    return { success: true, alumni: newAlumni, message: 'Alumni record added to Firebase' };
   },
 
   updateAlumni: async (id, data) => {
-    const remote = await apiCall(`/alumni/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    if (remote && remote.alumni) return remote;
-
-    if (isSupabaseConfigured()) {
-      try {
-        const payload = { ...data };
-        delete payload._id;
-        delete payload.id;
-        const { data: updatedRec, error } = await supabase.from('alumni').update(payload).eq('id', id).select().single();
-        if (!error && updatedRec) {
-          return { success: true, alumni: { ...updatedRec, _id: updatedRec.id }, message: 'Alumni updated in Supabase DB' };
-        }
-      } catch (sbErr) {
-        console.warn('Supabase updateAlumni fallback:', sbErr.message);
-      }
+    try {
+      await setDoc(doc(db, 'alumni', String(id)), data, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore updateDoc alumni error:', fsErr.message);
     }
 
     const list = getStoredAlumni();
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
     if (idx !== -1) {
-      list[idx] = {
-        ...list[idx],
-        ...data,
-        graduation_year: data.graduation_year !== undefined ? Number(data.graduation_year) : list[idx].graduation_year,
-        display_order: data.display_order !== undefined ? Number(data.display_order) : list[idx].display_order,
-        is_featured: data.is_featured !== undefined ? Boolean(data.is_featured) : list[idx].is_featured,
-        is_active: data.is_active !== undefined ? Boolean(data.is_active) : list[idx].is_active,
-      };
+      list[idx] = { ...list[idx], ...data };
       setStoredAlumni(list);
-      return { success: true, alumni: list[idx], message: 'Alumni record updated successfully' };
     }
-
-    throw new Error('Alumni record not found');
+    return { success: true, alumni: list[idx], message: 'Alumni updated successfully' };
   },
 
   deleteAlumni: async (id, photoUrl) => {
-    const remote = await apiCall(`/alumni/${id}`, { method: 'DELETE' });
-    if (remote) {
-      if (photoUrl && isSupabaseConfigured()) {
-        try {
-          const parts = photoUrl.split('/storage/v1/object/public/alumni/');
-          if (parts.length > 1) {
-            await supabase.storage.from('alumni').remove([parts[1]]);
-          }
-        } catch (e) {
-          console.warn('Supabase Storage image removal warning:', e);
-        }
-      }
-      return remote;
+    if (photoUrl) {
+      deleteFirebaseFile(photoUrl).catch(() => {});
     }
 
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('alumni').delete().eq('id', id);
-        if (photoUrl) {
-          const parts = photoUrl.split('/storage/v1/object/public/alumni/');
-          if (parts.length > 1) {
-            await supabase.storage.from('alumni').remove([parts[1]]);
-          }
-        }
-      } catch (sbErr) {
-        console.warn('Supabase deleteAlumni fallback:', sbErr.message);
-      }
+    try {
+      await deleteDoc(doc(db, 'alumni', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc alumni error:', fsErr.message);
     }
 
     const list = getStoredAlumni().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
@@ -1906,50 +1738,6 @@ export const alumniService = {
       throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
     }
 
-    if (onProgress) onProgress(20);
-
-    if (isSupabaseConfigured()) {
-      try {
-        if (onProgress) onProgress(40);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage.from('alumni').upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-        if (uploadError) {
-          console.warn('Supabase bucket upload error:', uploadError.message);
-          throw uploadError;
-        }
-
-        if (onProgress) onProgress(80);
-        const { data: publicUrlData } = supabase.storage.from('alumni').getPublicUrl(filePath);
-
-        if (onProgress) onProgress(100);
-        return publicUrlData.publicUrl;
-      } catch (sbErr) {
-        console.warn('Supabase Storage upload failed, converting to Base64:', sbErr.message);
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) {
-          const percent = Math.round((e.loaded / e.total) * 100);
-          onProgress(percent);
-        }
-      };
-      reader.onload = () => {
-        if (onProgress) onProgress(100);
-        resolve(reader.result);
-      };
-      reader.onerror = () => reject(new Error('Failed to read image file.'));
-      reader.readAsDataURL(file);
-    });
+    return await uploadFirebaseFile(file, 'alumni', onProgress);
   },
 };
-

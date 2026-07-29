@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { alumniService, getStoredAlumni } from '../services/api';
+import { alumniService, getStoredAlumni, subscribeFirestoreCollection } from '../services/api';
 
 export default function AlumniSection() {
   const [alumniList, setAlumniList] = useState(() => {
@@ -36,7 +36,18 @@ export default function AlumniSection() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('alumni', [], (list) => {
+      if (list && list.length > 0) {
+        const active = list.filter((a) => a.is_active !== false);
+        active.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0) || (a.display_order || 1) - (b.display_order || 1));
+        setAlumniList(active);
+        const feat = active.filter((a) => a.is_featured);
+        setFeaturedAlumni(feat.length > 0 ? feat : active.slice(0, 3));
+      }
+    });
+
     fetchAlumniData();
+    return () => unsubscribe();
   }, []);
 
   const fetchAlumniData = async () => {
