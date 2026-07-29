@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardService } from '../../services/api';
+import { dashboardService, subscribeFirestoreCollection } from '../../services/api';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -9,8 +9,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboard();
+
+    const unsubStudents = subscribeFirestoreCollection('students', [], () => fetchDashboard());
+    const unsubFees = subscribeFirestoreCollection('fees', [], () => fetchDashboard());
+
     window.addEventListener('saumyaa_data_updated', fetchDashboard);
-    return () => window.removeEventListener('saumyaa_data_updated', fetchDashboard);
+    return () => {
+      unsubStudents();
+      unsubFees();
+      window.removeEventListener('saumyaa_data_updated', fetchDashboard);
+    };
   }, []);
 
   const fetchDashboard = async () => {

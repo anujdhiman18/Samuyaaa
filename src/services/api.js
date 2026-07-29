@@ -963,9 +963,16 @@ export const feeService = {
     const remote = await apiCall('/fees/stats');
     if (remote) return remote;
 
-    const students = getStoredStudents();
+    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+    const students = fsStudents || getStoredStudents();
+    if (fsStudents) setStoredStudents(fsStudents);
+
+    const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
+    const rawPayments = fsPayments || getStoredPayments();
+    if (fsPayments) setStoredPayments(rawPayments);
+
     const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
-    const payments = getStoredPayments().filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
+    const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
     const activeStudents = students.filter((s) => s.status === 'Active');
     const currentMonth = 'July 2026';
 
@@ -1108,10 +1115,19 @@ export const dashboardService = {
     const remote = await apiCall('/dashboard/stats');
     if (remote) return remote;
 
-    const students = getStoredStudents();
+    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+    const students = fsStudents || getStoredStudents();
+    if (fsStudents) setStoredStudents(fsStudents);
+
+    const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
+    const subjects = fsSubjects || getStoredSubjects();
+
+    const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
+    const rawPayments = fsPayments || getStoredPayments();
+    if (fsPayments) setStoredPayments(rawPayments);
+
     const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
-    const subjects = getStoredSubjects();
-    const payments = getStoredPayments().filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
+    const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
     const activeStudents = students.filter((s) => s.status === 'Active');
     const currentMonth = 'July 2026';
 
