@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { studentService, subjectService, subscribeFirestoreCollection, initialMockStudents, getFeeDueDateStatus, getDefaultNextFeeDueDate } from '../../services/api';
+import { studentService, subscribeFirestoreCollection, initialMockStudents, getFeeStatusInfo } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
-const CLASSES = ['All', '8th', '9th', '10th', '11th', '12th', 'Olympiad'];
+const CLASSES = [
+  'All',
+  'Nursery',
+  'LKG',
+  'UKG',
+  '1st',
+  '2nd',
+  '3rd',
+  '4th',
+  '5th',
+  '6th',
+  '7th',
+  '8th',
+  '9th',
+  '10th',
+  '11th (+1)',
+  '12th (+2)',
+];
 
 const initialStudentForm = {
   fullName: '',
@@ -16,11 +33,11 @@ const initialStudentForm = {
   parentPhone: '',
   email: '',
   address: '',
-  className: '10th',
+  className: 'Nursery',
   rollNumber: '',
   subjects: ['Mathematics Advanced'],
   monthlyFee: 2500,
-  nextFeeDueDate: getDefaultNextFeeDueDate(),
+  monthlyDueDay: 5,
   status: 'Active',
 };
 
@@ -116,7 +133,7 @@ export default function StudentManagement() {
     setForm({
       ...initialStudentForm,
       rollNumber: autoRoll,
-      nextFeeDueDate: getDefaultNextFeeDueDate(),
+      monthlyDueDay: 5,
     });
     setIsModalOpen(true);
   };
@@ -135,7 +152,7 @@ export default function StudentManagement() {
     setForm({
       ...student,
       monthlyFee: student.monthlyFee !== undefined ? student.monthlyFee : 2500,
-      nextFeeDueDate: student.nextFeeDueDate || getDefaultNextFeeDueDate(),
+      monthlyDueDay: student.monthlyDueDay || student.feeDueDate || 5,
     });
     setIsModalOpen(true);
   };
@@ -143,8 +160,8 @@ export default function StudentManagement() {
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (!form.nextFeeDueDate || isNaN(new Date(form.nextFeeDueDate).getTime())) {
-      addToast('Please select or type a valid Next Fee Due Date!', 'warning');
+    if (!form.monthlyDueDay || form.monthlyDueDay < 1 || form.monthlyDueDay > 31) {
+      addToast('Please select a valid Monthly Fee Due Day (1–31)!', 'warning');
       return;
     }
 
@@ -183,7 +200,7 @@ export default function StudentManagement() {
 
   const exportToCSV = () => {
     if (students.length === 0) return;
-    const headers = ['Roll Number', 'Full Name', 'Class', 'Phone', 'Parent Phone', 'Email', 'Monthly Fee', 'Next Due Date', 'Status'];
+    const headers = ['Roll Number', 'Full Name', 'Class', 'Phone', 'Parent Phone', 'Email', 'Monthly Fee', 'Monthly Due Day', 'Status'];
     const rows = students.map((s) => [
       s.rollNumber,
       `"${s.fullName}"`,
@@ -192,7 +209,7 @@ export default function StudentManagement() {
       s.parentPhone,
       s.email || '',
       s.monthlyFee,
-      s.nextFeeDueDate || '',
+      s.monthlyDueDay || s.feeDueDate || 5,
       s.status,
     ]);
 
@@ -218,18 +235,23 @@ export default function StudentManagement() {
       if (!matchName && !matchRoll && !matchPhone) return false;
     }
     if (feeStatusFilter !== 'All') {
-      const info = getFeeDueDateStatus(s.nextFeeDueDate, Boolean(s.feesPaid || s.paidTillMonth === 'July 2026'));
+      const isPaid = Boolean(s.feesPaid || s.paidTillMonth === 'July 2026');
+      const info = getFeeStatusInfo(s.monthlyDueDay || s.feeDueDate || 5, isPaid, s.paymentDate, s.nextFeeDueDate);
       if (feeStatusFilter === 'overdue' && info.code !== 'overdue') return false;
       if (feeStatusFilter === 'due_today' && info.code !== 'due_today') return false;
-      if (feeStatusFilter === 'due_soon' && info.code !== 'due_soon') return false;
+      if (feeStatusFilter === 'due_tomorrow' && info.code !== 'due_tomorrow') return false;
+      if (feeStatusFilter === 'due_this_week' && info.code !== 'due_this_week') return false;
+      if (feeStatusFilter === 'upcoming' && info.code !== 'upcoming') return false;
       if (feeStatusFilter === 'up_to_date' && info.code !== 'up_to_date') return false;
     }
     return true;
   });
 
   filteredStudents.sort((a, b) => {
-    const dateA = a.nextFeeDueDate ? new Date(a.nextFeeDueDate).getTime() : 0;
-    const dateB = b.nextFeeDueDate ? new Date(b.nextFeeDueDate).getTime() : 0;
+    const isPaidA = Boolean(a.feesPaid || a.paidTillMonth === 'July 2026');
+    const isPaidB = Boolean(b.feesPaid || b.paidTillMonth === 'July 2026');
+    const dateA = getFeeStatusInfo(a.monthlyDueDay || a.feeDueDate || 5, isPaidA, a.paymentDate, a.nextFeeDueDate).nextDueDate.getTime();
+    const dateB = getFeeStatusInfo(b.monthlyDueDay || b.feeDueDate || 5, isPaidB, b.paymentDate, b.nextFeeDueDate).nextDueDate.getTime();
     return sortByDueDate === 'asc' ? dateA - dateB : dateB - dateA;
   });
 
@@ -242,7 +264,7 @@ export default function StudentManagement() {
             Student Directory Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Comprehensive student directory, batch assignments, and manual next fee due date tracking.
+            Comprehensive student directory, batch assignments, and automated monthly recurring fee tracking.
           </p>
         </div>
 
@@ -315,7 +337,9 @@ export default function StudentManagement() {
               <option value="All">All Fee Statuses</option>
               <option value="overdue">🔴 Overdue</option>
               <option value="due_today">⚠️ Due Today</option>
-              <option value="due_soon">⏳ Due Soon (7 Days)</option>
+              <option value="due_tomorrow">⏳ Due Tomorrow</option>
+              <option value="due_this_week">📅 Due This Week</option>
+              <option value="upcoming">🔵 Upcoming</option>
               <option value="up_to_date">🟢 Up to Date</option>
             </select>
           </div>
@@ -354,6 +378,7 @@ export default function StudentManagement() {
                   <th className="py-3.5 px-4">Student Name</th>
                   <th className="py-3.5 px-4">Class</th>
                   <th className="py-3.5 px-4">Monthly Fee</th>
+                  <th className="py-3.5 px-4">Monthly Due Day</th>
                   <th className="py-3.5 px-4">Next Due Date</th>
                   <th className="py-3.5 px-4">Fee Status</th>
                   <th className="py-3.5 px-4">Paid Toggle</th>
@@ -363,7 +388,13 @@ export default function StudentManagement() {
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
                 {filteredStudents.map((student) => {
                   const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
-                  const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid);
+                  const dueDay = student.monthlyDueDay || student.feeDueDate || 5;
+                  const dueInfo = getFeeStatusInfo(dueDay, isPaid, student.paymentDate, student.nextFeeDueDate);
+                  let suffix = 'th';
+                  if (dueDay === 1 || dueDay === 21 || dueDay === 31) suffix = 'st';
+                  else if (dueDay === 2 || dueDay === 22) suffix = 'nd';
+                  else if (dueDay === 3 || dueDay === 23) suffix = 'rd';
+
                   return (
                     <tr
                       key={student._id || student.id}
@@ -388,14 +419,15 @@ export default function StudentManagement() {
                       <td className="py-3.5 px-4 font-bold text-emerald-800">
                         ₹{(student.monthlyFee || 2500).toLocaleString()}/mo
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-secondary font-mono">
-                        {student.nextFeeDueDate
-                          ? new Date(student.nextFeeDueDate).toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                          : 'Not Set'}
+                      <td className="py-3.5 px-4 font-semibold text-secondary">
+                        {dueDay}{suffix} of every month
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-secondary">
+                        {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
@@ -590,19 +622,28 @@ export default function StudentManagement() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="font-headings font-bold text-on-surface-variant">
-                  Next Fee Due Date *
+                  Monthly Fee Due Day (1–31) *
                 </label>
-                <input
-                  type="date"
+                <select
                   required
-                  min="2020-01-01"
-                  max="2035-12-31"
-                  value={form.nextFeeDueDate || ''}
-                  onChange={(e) => setForm({ ...form, nextFeeDueDate: e.target.value })}
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none focus:border-primary"
-                />
+                  value={form.monthlyDueDay || form.feeDueDate || 5}
+                  onChange={(e) => setForm({ ...form, monthlyDueDay: Number(e.target.value), feeDueDate: Number(e.target.value) })}
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                    let suffix = 'th';
+                    if (day === 1 || day === 21 || day === 31) suffix = 'st';
+                    else if (day === 2 || day === 22) suffix = 'nd';
+                    else if (day === 3 || day === 23) suffix = 'rd';
+                    return (
+                      <option key={day} value={day}>
+                        {day}{suffix} of every month
+                      </option>
+                    );
+                  })}
+                </select>
                 <span className="text-[10px] text-on-surface-variant/70">
-                  Type date (YYYY-MM-DD) or pick from calendar picker.
+                  Select recurring day of month when tuition fee is due.
                 </span>
               </div>
             </div>
