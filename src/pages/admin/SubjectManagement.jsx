@@ -213,7 +213,7 @@ export default function SubjectManagement() {
                 onChange={(e) => setForm({ ...form, className: e.target.value })}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               >
-                {['8th', '9th', '10th', '11th', '12th', 'Olympiad'].map((c) => (
+                {['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'Olympiad'].map((c) => (
                   <option key={c} value={c}>
                     Class {c}
                   </option>

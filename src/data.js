@@ -6,7 +6,7 @@ export const courses = [
     iconBg: 'bg-primary-fixed',
     iconColor: 'text-primary',
     title: 'Mathematics',
-    tags: ['Class 4 - 12', 'Board'],
+    tags: ['Class Nursery - 12', 'Board'],
     description:
       'A deep dive into Calculus, Algebra, and Geometry with a focus on problem-solving speed, numerical confidence, and conceptual depth.',
     batch: 'Mon-Wed | 5:00 PM',
@@ -19,7 +19,7 @@ export const courses = [
     iconBg: 'bg-secondary-container',
     iconColor: 'text-on-secondary-container',
     title: 'Science',
-    tags: ['Class 8 - 10', 'JEE/NEET Prep'],
+    tags: ['Class Nursery - 10', 'JEE/NEET Prep'],
     description:
       'Combining Physics, Chemistry, and Biology to build a robust foundation for future competitive engineering and medical aspirants.',
     batch: 'Tue-Thu | 4:30 PM',

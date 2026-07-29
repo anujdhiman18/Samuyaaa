@@ -225,11 +225,21 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                   <option value="" disabled>
                     Choose class
                   </option>
-                  <option value="Grade 8">Class 8th</option>
-                  <option value="Grade 9">Class 9th</option>
-                  <option value="Grade 10">Class 10th</option>
-                  <option value="Grade 11">Class 11th</option>
-                  <option value="Grade 12">Class 12th</option>
+                  <option value="Nursery">Nursery</option>
+                  <option value="LKG">LKG</option>
+                  <option value="UKG">UKG</option>
+                  <option value="Class 1st">Class 1st</option>
+                  <option value="Class 2nd">Class 2nd</option>
+                  <option value="Class 3rd">Class 3rd</option>
+                  <option value="Class 4th">Class 4th</option>
+                  <option value="Class 5th">Class 5th</option>
+                  <option value="Class 6th">Class 6th</option>
+                  <option value="Class 7th">Class 7th</option>
+                  <option value="Class 8th">Class 8th</option>
+                  <option value="Class 9th">Class 9th</option>
+                  <option value="Class 10th">Class 10th</option>
+                  <option value="Class 11th">Class 11th</option>
+                  <option value="Class 12th">Class 12th</option>
                 </select>
               </div>
 

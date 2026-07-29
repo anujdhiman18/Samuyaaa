@@ -382,7 +382,7 @@ export default function AdminDashboard() {
               Recent Student Admissions
             </h3>
             <p className="text-xs text-on-surface-variant">
-              Latest enrolled students across Grade 8 - 12
+              Latest enrolled students across Nursery - 12th
             </p>
           </div>
           <Link
