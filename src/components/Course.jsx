@@ -23,7 +23,7 @@ export default function Courses({ onOpenBooking }) {
     const handleUpdate = () => fetchLiveSubjects();
     window.addEventListener('saumyaa_data_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
-    const interval = setInterval(fetchLiveSubjects, 3000);
+    const interval = setInterval(fetchLiveSubjects, 20000);
 
     return () => {
       window.removeEventListener('saumyaa_data_updated', handleUpdate);

@@ -194,13 +194,19 @@ const getAuthHeaders = () => {
 
 export const apiCall = async (endpoint, options = {}) => {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
         ...options.headers,
       },
     });
+
+    clearTimeout(timeoutId);
 
     if (res.status === 401) {
       localStorage.removeItem('saumyaa_token');
@@ -213,7 +219,7 @@ export const apiCall = async (endpoint, options = {}) => {
     }
     return data;
   } catch (err) {
-    console.warn(`API server offline on ${endpoint}. Operating via local client state.`);
+    console.warn(`API server offline or slow on ${endpoint}. Operating via local client state.`);
     return null;
   }
 };
@@ -552,33 +558,38 @@ export const authService = {
 // Firestore Collection Helper for Real-time DB Persistence
 export const syncFirestoreCollection = async (collectionName, defaultData = []) => {
   try {
-    const colRef = collection(db, collectionName);
-    const snapshot = await getDocs(colRef);
-    const deletedIds = getDeletedIds(collectionName);
+    const syncTask = (async () => {
+      const colRef = collection(db, collectionName);
+      const snapshot = await getDocs(colRef);
+      const deletedIds = getDeletedIds(collectionName);
 
-    if (snapshot.empty && defaultData && defaultData.length > 0) {
-      const validDefaults = defaultData.filter((item) => {
-        const id = item._id || item.id;
-        return !deletedIds.includes(String(id));
-      });
-      // Seed default initial data into Firestore if empty
-      const promises = validDefaults.map((item) => {
-        const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
-      });
-      await Promise.all(promises);
-      return validDefaults;
-    }
+      if (snapshot.empty && defaultData && defaultData.length > 0) {
+        const validDefaults = defaultData.filter((item) => {
+          const id = item._id || item.id;
+          return !deletedIds.includes(String(id));
+        });
+        const promises = validDefaults.map((item) => {
+          const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+          return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
+        });
+        await Promise.all(promises);
+        return validDefaults;
+      }
 
-    if (!snapshot.empty) {
-      const items = [];
-      snapshot.forEach((docSnap) => {
-        if (!deletedIds.includes(String(docSnap.id))) {
-          items.push({ ...docSnap.data(), _id: docSnap.id });
-        }
-      });
-      return items;
-    }
+      if (!snapshot.empty) {
+        const items = [];
+        snapshot.forEach((docSnap) => {
+          if (!deletedIds.includes(String(docSnap.id))) {
+            items.push({ ...docSnap.data(), _id: docSnap.id });
+          }
+        });
+        return items;
+      }
+      return null;
+    })();
+
+    const timeoutTask = new Promise((resolve) => setTimeout(() => resolve(null), 1500));
+    return await Promise.race([syncTask, timeoutTask]);
   } catch (err) {
     console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
   }
