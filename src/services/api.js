@@ -317,7 +317,58 @@ const setStoredSubjects = (s) => {
   notifyDataUpdate();
 };
 
-const getStoredPayments = () => JSON.parse(localStorage.getItem('mock_payments') || JSON.stringify(initialMockPayments));
+const getStoredPayments = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem('mock_payments') || JSON.stringify(initialMockPayments));
+    const students = JSON.parse(localStorage.getItem('mock_students') || '[]');
+    const deletedStudents = JSON.parse(localStorage.getItem('saumyaa_deleted_students') || '[]');
+
+    const validStudentMap = new Map();
+    if (students && Array.isArray(students)) {
+      students.forEach((s) => {
+        const id = String(s._id || s.id);
+        if (id && !deletedStudents.includes(id)) {
+          validStudentMap.set(id, s);
+        }
+      });
+    }
+
+    if (validStudentMap.size === 0) {
+      return Array.isArray(raw) ? raw.filter(Boolean) : initialMockPayments;
+    }
+
+    const currentMonth = 'July 2026';
+    const seenStudentMonthKeys = new Set();
+    const cleanPayments = [];
+
+    if (Array.isArray(raw)) {
+      for (const p of raw) {
+        if (!p) continue;
+        const stId = String(p.student?._id || p.student);
+        if (!validStudentMap.has(stId)) continue; // Skip deleted or orphan student payments
+
+        const student = validStudentMap.get(stId);
+        const mYear = p.monthYear || currentMonth;
+
+        // If current month payment, check if student is unpaid
+        if (mYear === currentMonth && student && !student.feesPaid && student.paidTillMonth !== currentMonth) {
+          continue;
+        }
+
+        const key = `${stId}_${mYear}`;
+        if (!seenStudentMonthKeys.has(key)) {
+          seenStudentMonthKeys.add(key);
+          cleanPayments.push(p);
+        }
+      }
+    }
+
+    return cleanPayments;
+  } catch (e) {
+    return initialMockPayments;
+  }
+};
+
 const setStoredPayments = (p) => {
   localStorage.setItem('mock_payments', JSON.stringify(p));
   notifyDataUpdate();
@@ -709,6 +760,7 @@ export const studentService = {
   resetStudentData: () => {
     localStorage.removeItem('saumyaa_deleted_students');
     localStorage.removeItem('mock_students');
+    localStorage.removeItem('mock_payments');
     notifyDataUpdate();
     return { success: true, message: 'Sample student data restored successfully' };
   },
