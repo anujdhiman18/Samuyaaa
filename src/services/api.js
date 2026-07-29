@@ -1683,3 +1683,157 @@ export const alumniService = {
     return await uploadFirebaseFile(file, 'alumni', onProgress);
   },
 };
+
+export const initialMockToppers = [
+  {
+    _id: 'top_1',
+    id: 'top_1',
+    student_name: 'Damini Sharma',
+    exam_name: 'Class 10th HPBOSE Board',
+    score: '98.6% (100/100 Math)',
+    quote: "Jitender sir's focus on logic instead of memorization made Organic Chemistry and Math feel like logical puzzles. My score shot up to 98.6%!",
+    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    display_order: 1,
+    is_active: true,
+  },
+  {
+    _id: 'top_2',
+    id: 'top_2',
+    student_name: 'Rahul Gupta',
+    exam_name: 'Class 10th Board Exam',
+    score: '97.2% (Physics 98/100)',
+    quote: 'The daily practice tests and personalized attention at Saumyaa Studies helped me secure top rank in Board Exams.',
+    photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
+    display_order: 2,
+    is_active: true,
+  },
+  {
+    _id: 'top_3',
+    id: 'top_3',
+    student_name: 'Aryan Mehta',
+    exam_name: 'Class 11th IIT-JEE Foundation',
+    score: '96.0% (Chemistry 96/100)',
+    quote: 'Solving complex numerical problems became second nature thanks to the guidance of the faculty.',
+    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    display_order: 3,
+    is_active: true,
+  },
+  {
+    _id: 'top_4',
+    id: 'top_4',
+    student_name: 'Aditya Sharma',
+    exam_name: 'HPBOSE Class 10 Board Record',
+    score: '95.4% (Center Topper)',
+    quote: 'Scoring 95.4% and 100 in Mathematics gave me the confidence to aim for top engineering institutes.',
+    photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+    display_order: 4,
+    is_active: true,
+  },
+];
+
+export const getStoredToppers = () => {
+  try {
+    const data = localStorage.getItem('saumyaa_toppers');
+    if (!data) {
+      localStorage.setItem('saumyaa_toppers', JSON.stringify(initialMockToppers));
+      return initialMockToppers;
+    }
+    return data ? JSON.parse(data) : initialMockToppers;
+  } catch (e) {
+    return initialMockToppers;
+  }
+};
+
+const setStoredToppers = (list) => {
+  localStorage.setItem('saumyaa_toppers', JSON.stringify(list));
+  notifyDataUpdate();
+};
+
+export const topperService = {
+  getToppers: async ({ activeOnly = false } = {}) => {
+    const fsToppers = await syncFirestoreCollection('toppers', initialMockToppers);
+    let list = fsToppers || getStoredToppers();
+
+    if (activeOnly) {
+      list = list.filter((t) => t.is_active !== false);
+    }
+    list.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+    return { success: true, toppers: list };
+  },
+
+  createTopper: async (data) => {
+    if (!data.student_name || !data.student_name.trim()) throw new Error('Student Name is required');
+    if (!data.score || !data.score.trim()) throw new Error('Score/Percentage is required');
+
+    const id = 'top_' + Date.now();
+    const newTopper = {
+      _id: id,
+      id,
+      student_name: data.student_name.trim(),
+      exam_name: data.exam_name ? data.exam_name.trim() : 'Board Exam',
+      score: data.score.trim(),
+      quote: data.quote ? data.quote.trim() : '',
+      photo_url: data.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+      display_order: Number(data.display_order) || 1,
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      await setDoc(doc(db, 'toppers', id), newTopper);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc topper error:', fsErr.message);
+    }
+
+    const list = getStoredToppers();
+    setStoredToppers([newTopper, ...list]);
+    return { success: true, topper: newTopper, message: 'Topper student added successfully' };
+  },
+
+  updateTopper: async (id, data) => {
+    try {
+      await setDoc(doc(db, 'toppers', String(id)), data, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore updateDoc topper error:', fsErr.message);
+    }
+
+    const list = getStoredToppers();
+    const idx = list.findIndex((t) => String(t._id) === String(id) || String(t.id) === String(id));
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...data };
+      setStoredToppers(list);
+    }
+    return { success: true, topper: list[idx], message: 'Topper updated successfully' };
+  },
+
+  deleteTopper: async (id, photoUrl) => {
+    if (photoUrl) {
+      deleteFirebaseFile(photoUrl).catch(() => {});
+    }
+
+    addDeletedId('toppers', id);
+
+    try {
+      await deleteDoc(doc(db, 'toppers', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc topper error:', fsErr.message);
+    }
+
+    const list = getStoredToppers().filter((t) => String(t._id) !== String(id) && String(t.id) !== String(id));
+    setStoredToppers(list);
+    return { success: true, message: 'Topper student deleted successfully' };
+  },
+
+  uploadTopperPhoto: async (file, onProgress) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Invalid image format! Only JPG, PNG, and WEBP files are allowed.');
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
+    }
+
+    return await uploadFirebaseFile(file, 'toppers', onProgress);
+  },
+};

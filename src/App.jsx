@@ -18,6 +18,7 @@ import StudentDetail from './pages/admin/StudentDetail';
 import SubjectManagement from './pages/admin/SubjectManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import AlumniManagement from './pages/admin/AlumniManagement';
+import ToppersManagement from './pages/admin/ToppersManagement';
 import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
 
@@ -92,6 +93,7 @@ export default function App() {
                 <Route path="subjects" element={<SubjectManagement />} />
                 <Route path="faculty" element={<FacultyManagement />} />
                 <Route path="alumni" element={<AlumniManagement />} />
+                <Route path="toppers" element={<ToppersManagement />} />
                 <Route path="fees" element={<FeeManagement />} />
                 <Route path="reminders" element={<FeeReminders />} />
               </Route>

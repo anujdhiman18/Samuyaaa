@@ -7,6 +7,7 @@ const navItems = [
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
+  { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
   { path: '/admin/reminders', label: 'Fee Reminders', icon: 'notifications_active' },
 ];

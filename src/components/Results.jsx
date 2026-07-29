@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { studentService } from '../services/api';
+import { studentService, subscribeFirestoreCollection, initialMockToppers } from '../services/api';
 
 function useCountUp(target, animate, { decimal = false, duration = 1500 } = {}) {
   const [value, setValue] = useState(0);
@@ -30,38 +30,33 @@ function useCountUp(target, animate, { decimal = false, duration = 1500 } = {}) 
 export default function Results() {
   const sectionRef = useRef(null);
   const [animate, setAnimate] = useState(false);
-  const [liveStudents, setLiveStudents] = useState([]);
-  const [totalStudentsCount, setTotalStudentsCount] = useState(3);
+  const [toppers, setToppers] = useState(initialMockToppers);
+  const [totalStudentsCount, setTotalStudentsCount] = useState(1);
 
-  const fetchLiveStudents = async () => {
+  useEffect(() => {
+    // Real-Time Firebase Firestore listener for Toppers
+    const unsubscribeToppers = subscribeFirestoreCollection('toppers', initialMockToppers, (list) => {
+      if (list && list.length > 0) {
+        const active = list.filter((t) => t.is_active !== false);
+        active.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+        setToppers(active);
+      }
+    });
+
+    fetchStudentCount();
+    return () => unsubscribeToppers();
+  }, []);
+
+  const fetchStudentCount = async () => {
     try {
       const data = await studentService.getStudents({ limit: 50 });
       if (data && data.students) {
-        setLiveStudents(data.students);
-        setTotalStudentsCount(data.total || data.students.length || 3);
+        setTotalStudentsCount(data.students.length || 1);
       }
     } catch (err) {
       console.error(err);
     }
   };
-
-  useEffect(() => {
-    fetchLiveStudents();
-
-    // Event listeners for real-time live sync when Admin Panel updates data
-    const handleUpdate = () => fetchLiveStudents();
-    window.addEventListener('saumyaa_data_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    // Auto-polling interval for multi-tab sync
-    const interval = setInterval(fetchLiveStudents, 3000);
-
-    return () => {
-      window.removeEventListener('saumyaa_data_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-      clearInterval(interval);
-    };
-  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -81,18 +76,7 @@ export default function Results() {
   const improveStat = useCountUp(15, animate);
   const clearsStat = useCountUp(92, animate);
 
-  const defaultToppers = [
-    'Damini Sharma (Class 10th) - Mathematics 100/100',
-    'Rahul Gupta (Class 10th) - Mathematics Advanced 98/100',
-    'Aryan Mehta (Class 11th) - Physics IIT-JEE 96/100',
-  ];
-
-  const topperList =
-    liveStudents.length > 0
-      ? liveStudents.map(
-          (s) => `${s.fullName} (${s.className}) - Roll: ${s.rollNumber} (${s.status})`
-        )
-      : defaultToppers;
+  const featuredTopper = toppers[0] || initialMockToppers[0];
 
   return (
     <section id="results" ref={sectionRef} className="max-w-container-max mx-auto px-gutter py-16 md:py-24 font-body">
@@ -101,7 +85,7 @@ export default function Results() {
           The Proof is in the Progress
         </span>
         <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-on-surface mb-3">
-          Wall of Excellence &amp; Live Student Roster
+          Wall of Excellence &amp; Board Toppers
         </h2>
         <div className="w-16 h-1 bg-primary mx-auto rounded-full" />
       </div>
@@ -114,7 +98,7 @@ export default function Results() {
 
           <div className="relative z-10">
             <span className="bg-white/20 text-white text-[10px] font-headings font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md">
-              Center Record Topper 2025
+              Center Record Topper
             </span>
           </div>
 
@@ -156,31 +140,34 @@ export default function Results() {
           </p>
         </div>
 
-        {/* Achievement Quote Card with Dynamic Toppers & Enrolled Students */}
+        {/* Dynamic Topper Students Managed via Admin Panel Card */}
         <div className="md:col-span-2 md:row-span-2 bg-surface-container-low border border-surface-container-high rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-premium hover:shadow-premium-hover transition-all duration-300">
           <div className="w-24 h-24 rounded-full overflow-hidden shrink-0 border-4 border-white shadow-md relative group">
             <img
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              alt="Student Top Scorer"
-              src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
+              alt={featuredTopper?.student_name || 'Topper Student'}
+              src={featuredTopper?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
             />
           </div>
           <div className="flex-grow text-center md:text-left">
-            <span className="inline-block bg-secondary text-white px-3 py-1 rounded-md text-[10px] font-headings font-bold uppercase tracking-wider mb-2">
-              🏆 Enrolled Students (Managed Live via Admin Panel)
+            <span className="inline-block bg-amber-600 text-white px-3 py-1 rounded-md text-[10px] font-headings font-bold uppercase tracking-wider mb-2">
+              🏆 TOPPER STUDENTS (MANAGED LIVE VIA ADMIN PANEL)
             </span>
             <div className="font-headings font-bold text-sm text-on-surface mb-2 space-y-1">
-              {topperList.slice(0, 4).map((line) => (
-                <div key={line} className="text-xs font-semibold text-secondary flex items-center gap-1.5 justify-center md:justify-start">
-                  <span className="material-symbols-outlined text-[14px] text-primary">check_circle</span>
-                  <span>{line}</span>
+              {toppers.slice(0, 4).map((t) => (
+                <div key={t._id || t.id} className="text-xs font-semibold text-secondary flex items-center gap-1.5 justify-center md:justify-start">
+                  <span className="material-symbols-outlined text-[14px] text-amber-500">emoji_events</span>
+                  <span>
+                    <strong className="text-primary">{t.student_name}</strong> ({t.exam_name}) – <span className="text-emerald-700 font-extrabold">{t.score}</span>
+                  </span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-on-surface-variant italic leading-relaxed mt-2">
-              "Jitender sir's focus on logic instead of memorization made Organic Chemistry feel like a set of
-              logical puzzles. My school score shot up from 72% to a massive 95% in pre-boards."
-            </p>
+            {featuredTopper?.quote && (
+              <p className="text-xs text-on-surface-variant italic leading-relaxed mt-2">
+                "{featuredTopper.quote}"
+              </p>
+            )}
           </div>
         </div>
 
