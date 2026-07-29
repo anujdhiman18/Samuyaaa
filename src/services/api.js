@@ -9,7 +9,13 @@ import { supabase, isSupabaseConfigured } from '../supabase';
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    if (
+      hostname !== 'localhost' &&
+      hostname !== '127.0.0.1' &&
+      !hostname.includes('vercel.app') &&
+      !hostname.includes('netlify.app') &&
+      !hostname.includes('render.com')
+    ) {
       return `${window.location.protocol}//${hostname}:5000/api`;
     }
   }

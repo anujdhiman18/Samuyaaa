@@ -32,12 +32,49 @@ import StudentFee from './pages/student/StudentFee';
 import StudentAnnouncements from './pages/student/StudentAnnouncements';
 import StudentNotifications from './pages/student/StudentNotifications';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 text-center">
+          <div className="max-w-md bg-white p-8 rounded-3xl shadow-xl space-y-4">
+            <span className="material-symbols-outlined text-5xl text-primary">school</span>
+            <h1 className="font-headings font-extrabold text-2xl text-secondary">Saumyaa Studies</h1>
+            <p className="text-sm text-slate-600">The application encountered a temporary error. Please refresh the page.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-primary text-white font-bold text-xs px-6 py-3 rounded-full shadow-lg"
+            >
+              Refresh Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <BrowserRouter>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <BrowserRouter>
             <Routes>
               {/* Public Website Route */}
               <Route path="/" element={<PublicWebsite />} />
@@ -80,5 +117,6 @@ export default function App() {
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }

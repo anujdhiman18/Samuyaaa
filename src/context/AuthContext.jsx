@@ -4,12 +4,21 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('saumyaa_user') || localStorage.getItem('saumyaa_admin');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('saumyaa_user') || localStorage.getItem('saumyaa_admin');
+      return saved && saved !== 'undefined' ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [token, setToken] = useState(() => {
-    return localStorage.getItem('saumyaa_token') || null;
+    try {
+      const t = localStorage.getItem('saumyaa_token');
+      return t && t !== 'undefined' ? t : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   useEffect(() => {
