@@ -5,7 +5,11 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
-import authRoutes from './routes/authRoutes.js';
+import { validateEnv } from './config/validateEnv.js';
+import publicRoutes from './routes/public/publicWebsiteRoutes.js';
+import authRoutes from './routes/public/authRoutes.js';
+import adminRoutes from './routes/admin/adminRoutes.js';
+
 import studentRoutes from './routes/studentRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import feeRoutes from './routes/feeRoutes.js';
@@ -13,10 +17,14 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import feedbackRoutes from './routes/feedback.js';
 import facultyRoutes from './routes/facultyRoutes.js';
 import alumniRoutes from './routes/alumniRoutes.js';
+
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
 
 dotenv.config();
+
+// Step 1: Startup Environment Validation
+validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,13 +39,20 @@ app.use(express.urlencoded({ extended: true }));
 // Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
+  max: 500,
+  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' },
 });
 app.use('/api', limiter);
 
-// Mount API Routes
+// Step 2: Physically Separated & Isolated Route Mounts
+// Public Website & Auth API Namespace
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
+
+// Admin Portal API Namespace
+app.use('/api/admin', adminRoutes);
+
+// Backward Compatibility Direct Mappings
 app.use('/api/students', studentRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/fees', feeRoutes);
@@ -46,28 +61,52 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/alumni', alumniRoutes);
 
-// Health check endpoint
+// Health Check Endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Saumyaa Studies API backend is operational' });
+  res.json({
+    success: true,
+    status: 'OK',
+    message: 'Saumyaa Studies API backend is operational',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Error handling middleware
+// Global Error Handler Middleware
 app.use(errorHandler);
 
-// Database Connection
+// Global Uncaught Exception Protection to Prevent Server Crashes
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception caught gracefully:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled Rejection caught gracefully:', reason);
+});
+
+// Database Connection & Server Listener with Port Conflict Protection
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log(`Connected to MongoDB database: ${MONGO_URI}`);
-    initSchedulers();
-    app.listen(PORT, () => {
-      console.log(`Saumyaa Admin Backend running on http://localhost:${PORT}`);
-    });
+    console.log(`✅ Connected to MongoDB database: ${MONGO_URI}`);
+    startServer();
   })
   .catch((err) => {
-    console.warn(`MongoDB Connection Warning: ${err.message}. Backend running in standalone mode on port ${PORT}.`);
-    initSchedulers();
-    app.listen(PORT, () => {
-      console.log(`Saumyaa Admin Backend running on http://localhost:${PORT}`);
-    });
+    console.warn(`⚠️ MongoDB Connection Warning: ${err.message}. Backend running in standalone mode on port ${PORT}.`);
+    startServer();
   });
+
+function startServer() {
+  initSchedulers();
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Saumyaa Admin & Public Backend running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ ERROR: Port ${PORT} is already in use by another process.`);
+      console.error(`👉 Please terminate the process using port ${PORT} or change PORT in server/.env`);
+    } else {
+      console.error('❌ Server startup error:', err.message);
+    }
+  });
+}
