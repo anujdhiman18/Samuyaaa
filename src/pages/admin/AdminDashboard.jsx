@@ -173,60 +173,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Fee Due Overview Widget */}
-      <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-headings font-bold text-base text-secondary flex items-center gap-2">
-              <span className="material-symbols-outlined text-rose-600">event_upcoming</span>
-              Fee Due Overview
-            </h3>
-            <p className="text-xs text-on-surface-variant">
-              Live tracking of upcoming and overdue student tuition fees.
-            </p>
-          </div>
-          <Link
-            to="/admin/students"
-            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-          >
-            View All Students &rarr;
-          </Link>
-        </div>
 
-        <Link
-          to="/admin/students?feeStatus=overdue"
-          className="p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50/50 to-blue-50 border border-outline-variant/20 hover:shadow-md transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group cursor-pointer"
-        >
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-headings font-extrabold uppercase tracking-wider text-rose-700 bg-rose-100/80 px-2.5 py-0.5 rounded-full border border-rose-200">
-                Fee Dues Summary
-              </span>
-              <span className="text-[11px] text-on-surface-variant font-medium">
-                Combined Overview
-              </span>
-            </div>
-
-            <h4 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-              {((stats?.overdueCount || 0) + (stats?.dueTodayCount || 0) + (stats?.dueThisWeekCount || 0))} Students with Pending Dues
-            </h4>
-
-            {/* Single Summary Badge */}
-            <div className="pt-1">
-              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1.5 shadow-sm">
-                <span>⚠️</span> Total Dues Pending: <strong>{((stats?.overdueCount || 0) + (stats?.dueTodayCount || 0) + (stats?.dueThisWeekCount || 0))} Students</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 self-end md:self-center">
-            <span className="text-xs font-bold text-primary group-hover:underline flex items-center gap-1 bg-white px-4 py-2 rounded-full shadow-sm border border-outline-variant/15">
-              Manage Dues List
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </span>
-          </div>
-        </Link>
-      </div>
 
       {/* Visual Chart & Activity Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

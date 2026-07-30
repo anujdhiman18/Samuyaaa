@@ -242,13 +242,8 @@ export default function StudentManagement() {
     }
     if (feeStatusFilter !== 'All') {
       const isPaid = Boolean(s.feesPaid || s.paidTillMonth === 'July 2026');
-      const info = getFeeStatusInfo(s.monthlyDueDay || s.feeDueDate || 5, isPaid, s.paymentDate, s.nextFeeDueDate);
-      if (feeStatusFilter === 'overdue' && info.code !== 'overdue') return false;
-      if (feeStatusFilter === 'due_today' && info.code !== 'due_today') return false;
-      if (feeStatusFilter === 'due_tomorrow' && info.code !== 'due_tomorrow') return false;
-      if (feeStatusFilter === 'due_this_week' && info.code !== 'due_this_week') return false;
-      if (feeStatusFilter === 'upcoming' && info.code !== 'upcoming') return false;
-      if (feeStatusFilter === 'up_to_date' && info.code !== 'up_to_date') return false;
+      if (feeStatusFilter === 'paid' && !isPaid) return false;
+      if (feeStatusFilter === 'unpaid' && isPaid) return false;
     }
     return true;
   });
@@ -263,28 +258,28 @@ export default function StudentManagement() {
 
   return (
     <div className="space-y-6 font-body">
-      {/* Header & Main Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-            Student Directory Management
+            Student Management Directory
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Comprehensive student directory, batch assignments, and automated monthly recurring fee tracking.
+            Enrolled students across Nursery to 12th grade (+2).
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 rounded-full border border-outline-variant/30 bg-white text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-full border border-outline-variant/30 bg-white text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <span className="material-symbols-outlined text-[18px]">download</span>
-            Export CSV
+            Export Directory
           </button>
           <button
             onClick={handleOpenAdd}
-            className="bg-primary text-white font-headings font-bold px-5 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
+            className="bg-primary text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">person_add</span>
             Add Student
@@ -329,36 +324,13 @@ export default function StudentManagement() {
             <span className="text-xs font-bold text-on-surface-variant">Fee Status:</span>
             <select
               value={feeStatusFilter}
-              onChange={(e) => {
-                setFeeStatusFilter(e.target.value);
-                setSearchParams((prev) => {
-                  const updated = new URLSearchParams(prev);
-                  if (e.target.value === 'All') updated.delete('feeStatus');
-                  else updated.set('feeStatus', e.target.value);
-                  return updated;
-                });
-              }}
+              onChange={(e) => setFeeStatusFilter(e.target.value)}
               className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              <option value="All">All Fee Statuses</option>
-              <option value="overdue">🔴 Overdue</option>
-              <option value="due_today">⚠️ Due Today</option>
-              <option value="due_tomorrow">⏳ Due Tomorrow</option>
-              <option value="due_this_week">📅 Due This Week</option>
-              <option value="upcoming">🔵 Upcoming</option>
-              <option value="up_to_date">🟢 Up to Date</option>
+              <option value="All">All Students</option>
+              <option value="paid">🟢 Fees Paid</option>
+              <option value="unpaid">🔴 Fees Pending</option>
             </select>
-          </div>
-
-          {/* Due Date Sort */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-on-surface-variant">Sort Due:</span>
-            <button
-              onClick={() => setSortByDueDate(sortByDueDate === 'asc' ? 'desc' : 'asc')}
-              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary flex items-center gap-1 hover:bg-surface-container"
-            >
-              <span>{sortByDueDate === 'asc' ? 'Earliest First ⬆' : 'Latest First ⬇'}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -366,40 +338,27 @@ export default function StudentManagement() {
       {/* Directory Table */}
       <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-xs font-bold text-on-surface-variant animate-pulse">
-            Loading Student Directory from Firebase...
-          </div>
+          <div className="p-8 text-center text-xs animate-pulse">Loading student roster...</div>
         ) : filteredStudents.length === 0 ? (
-          <div className="p-12 text-center text-xs text-on-surface-variant space-y-2">
-            <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">search_off</span>
-            <p className="font-bold text-secondary">No Students Matching Current Filters</p>
-            <p>Try resetting the search terms or fee status filter.</p>
+          <div className="p-12 text-center text-xs text-on-surface-variant">
+            No students found matching your filter criteria.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[950px]">
+            <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                   <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Student Name</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Monthly Fee</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Monthly Due Day</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Next Due Date</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Fee Status</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Paid Toggle</th>
                   <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
                 {filteredStudents.map((student) => {
                   const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
-                  const dueDay = student.monthlyDueDay || student.feeDueDate || 5;
-                  const dueInfo = getFeeStatusInfo(dueDay, isPaid, student.paymentDate, student.nextFeeDueDate);
-                  let suffix = 'th';
-                  if (dueDay === 1 || dueDay === 21 || dueDay === 31) suffix = 'st';
-                  else if (dueDay === 2 || dueDay === 22) suffix = 'nd';
-                  else if (dueDay === 3 || dueDay === 23) suffix = 'rd';
 
                   return (
                     <tr
@@ -424,21 +383,6 @@ export default function StudentManagement() {
                       </td>
                       <td className="py-3.5 px-4 font-bold text-emerald-800 whitespace-nowrap">
                         ₹{(student.monthlyFee || 2500).toLocaleString()}/mo
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-secondary whitespace-nowrap">
-                        {dueDay}{suffix} of every month
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-secondary whitespace-nowrap">
-                        {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 shadow-xs ${dueInfo.bgClass}`}>
-                          {dueInfo.label}
-                        </span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <FeeToggleSwitch
