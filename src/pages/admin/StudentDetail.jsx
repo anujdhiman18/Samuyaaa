@@ -229,7 +229,8 @@ export default function StudentDetail() {
               <span className="font-bold text-on-surface-variant">Computed Status:</span>
               {(() => {
                 const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
-                const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid);
+                const dueDay = student.monthlyDueDay || student.feeDueDate || 5;
+                const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid, dueDay);
                 return (
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
                     {dueInfo.label}
