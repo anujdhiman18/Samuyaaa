@@ -283,10 +283,16 @@ const getAuthHeaders = () => {
   };
 };
 
+let isBackendAvailable = null;
+
 export const apiCall = async (endpoint, options = {}) => {
+  if (isBackendAvailable === false) {
+    return null;
+  }
+
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const timeoutId = setTimeout(() => controller.abort(), 600);
 
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
@@ -298,6 +304,7 @@ export const apiCall = async (endpoint, options = {}) => {
     });
 
     clearTimeout(timeoutId);
+    isBackendAvailable = true;
 
     if (res.status === 401) {
       localStorage.removeItem('saumyaa_token');
@@ -310,7 +317,7 @@ export const apiCall = async (endpoint, options = {}) => {
     }
     return data;
   } catch (err) {
-    console.warn(`API server offline or slow on ${endpoint}. Operating via local client state.`);
+    isBackendAvailable = false;
     return null;
   }
 };

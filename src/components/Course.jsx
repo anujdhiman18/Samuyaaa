@@ -49,7 +49,9 @@ export default function Courses({ onOpenBooking }) {
       : defaultCourses;
 
   const visibleCourses = displayCourses.filter(
-    (course) => activeFilter === 'all' || course.category.includes(activeFilter.toLowerCase())
+    (course) =>
+      activeFilter === 'all' ||
+      (course.category && String(course.category).toLowerCase().includes(activeFilter.toLowerCase()))
   );
 
   return (
