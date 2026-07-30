@@ -172,12 +172,12 @@ export default function FeeManagement() {
 
         <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
           <p className="font-headings text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-            Pending Month Fees
+            Active Student Roster
           </p>
-          <h3 className="font-headings font-extrabold text-3xl text-rose-600 mt-2">
-            ₹{(stats?.pendingFeePayments || 0).toLocaleString()}
+          <h3 className="font-headings font-extrabold text-3xl text-secondary mt-2">
+            {students.length} Students
           </h3>
-          <p className="text-[10px] text-rose-600 font-semibold mt-1">Due on 5th of every month</p>
+          <p className="text-[10px] text-secondary font-semibold mt-1">Enrolled student fee profiles</p>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export default function FeeManagement() {
               Student Monthly Fee Structure
             </h3>
             <p className="text-xs text-on-surface-variant">
-              Manage custom monthly fees and due dates for enrolled students.
+              Manage custom monthly tuition fees for enrolled students.
             </p>
           </div>
         </div>
@@ -198,29 +198,18 @@ export default function FeeManagement() {
           <div className="p-8 text-center text-xs text-on-surface-variant">No students registered yet.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs min-w-[900px]">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                   <th className="py-3 px-4 whitespace-nowrap">Roll No.</th>
                   <th className="py-3 px-4 whitespace-nowrap">Student Name</th>
                   <th className="py-3 px-4 whitespace-nowrap">Class</th>
                   <th className="py-3 px-4 whitespace-nowrap">Monthly Fee</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Monthly Due Day</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Next Due Date</th>
-                  <th className="py-3 px-4 whitespace-nowrap">Fee Status</th>
-                  <th className="py-3 px-4 text-right whitespace-nowrap">Fee Edit</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15">
                 {students.map((s) => {
-                  const isPaid = Boolean(s.feesPaid || s.paidTillMonth === 'July 2026');
-                  const dueDay = s.monthlyDueDay || s.feeDueDate || 5;
-                  const dueInfo = getFeeStatusInfo(dueDay, isPaid, s.paymentDate, s.nextFeeDueDate);
-                  let suffix = 'th';
-                  if (dueDay === 1 || dueDay === 21 || dueDay === 31) suffix = 'st';
-                  else if (dueDay === 2 || dueDay === 22) suffix = 'nd';
-                  else if (dueDay === 3 || dueDay === 23) suffix = 'rd';
-
                   return (
                     <tr key={s._id || s.id} className="hover:bg-surface-container-low/50 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-primary whitespace-nowrap">{s.rollNumber}</td>
@@ -228,21 +217,6 @@ export default function FeeManagement() {
                       <td className="py-3 px-4 font-semibold text-secondary whitespace-nowrap">Class {s.className}</td>
                       <td className="py-3 px-4 font-extrabold text-emerald-800 whitespace-nowrap">
                         ₹{(s.monthlyFee || 2500).toLocaleString()}/month
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-secondary whitespace-nowrap">
-                        {dueDay}{suffix} of every month
-                      </td>
-                      <td className="py-3 px-4 font-mono font-bold text-secondary whitespace-nowrap">
-                        {dueInfo.nextDueDate.toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 ${dueInfo.bgClass}`}>
-                          {dueInfo.label}
-                        </span>
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
