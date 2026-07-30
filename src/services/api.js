@@ -6,22 +6,6 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (
-      hostname !== 'localhost' &&
-      hostname !== '127.0.0.1' &&
-      !hostname.includes('vercel.app') &&
-      !hostname.includes('netlify.app') &&
-      !hostname.includes('render.com')
-    ) {
-      return `${window.location.protocol}//${hostname}:5000/api`;
-    }
-  }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-};
-
 export const initialMockStudents = [
   {
     _id: 's1',
@@ -283,12 +267,37 @@ const getAuthHeaders = () => {
   };
 };
 
+let lastBackendFailureTime = 0;
+
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (
+      (hostname.includes('vercel.app') || hostname.includes('netlify.app') || hostname.includes('render.com')) &&
+      (!import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL.includes('localhost'))
+    ) {
+      return null;
+    }
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `${window.location.protocol}//${hostname}:5000/api`;
+    }
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+};
+
 export const apiCall = async (endpoint, options = {}) => {
+  const baseUrl = getApiBaseUrl();
+  if (!baseUrl) return null;
+
+  if (Date.now() - lastBackendFailureTime < 15000) {
+    return null;
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 400);
 
-    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -310,6 +319,7 @@ export const apiCall = async (endpoint, options = {}) => {
     }
     return data;
   } catch (err) {
+    lastBackendFailureTime = Date.now();
     return null;
   }
 };
@@ -341,7 +351,7 @@ const addDeletedId = (key, id) => {
 export const getStoredStudents = () => {
   try {
     const raw = localStorage.getItem('mock_students');
-    const list = raw !== null ? JSON.parse(raw) : initialMockStudents;
+    const list = raw ? JSON.parse(raw) : initialMockStudents;
     const deleted = getDeletedIds('students');
     return list.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)));
   } catch (e) {
@@ -350,15 +360,15 @@ export const getStoredStudents = () => {
   }
 };
 
-export const setStoredStudents = (s) => {
+export const setStoredStudents = (s, skipNotify = false) => {
   localStorage.setItem('mock_students', JSON.stringify(s));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 export const getStoredSubjects = () => JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
-export const setStoredSubjects = (s) => {
+export const setStoredSubjects = (s, skipNotify = false) => {
   localStorage.setItem('mock_subjects', JSON.stringify(s));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 export const getStoredPayments = () => {
@@ -368,39 +378,26 @@ export const getStoredPayments = () => {
 
     const validStudentMap = new Map();
     if (students && Array.isArray(students)) {
-      students.forEach((s) => {
-        const id = String(s._id || s.id);
-        if (id) {
-          validStudentMap.set(id, s);
-        }
+      students.forEach((st) => {
+        const sid = String(st._id || st.id);
+        validStudentMap.set(sid, st);
       });
     }
 
-    const currentMonth = 'July 2026';
-    const seenStudentMonthKeys = new Set();
-    const cleanPayments = [];
-
-    if (Array.isArray(raw)) {
-      for (const p of raw) {
-        if (!p) continue;
-        const stId = String(p.student?._id || p.student);
-        if (!validStudentMap.has(stId)) continue; // Skip deleted or orphan student payments
-
-        const student = validStudentMap.get(stId);
-        const mYear = p.monthYear || currentMonth;
-
-        // If current month payment, check if student is unpaid
-        if (mYear === currentMonth && student && !student.feesPaid && student.paidTillMonth !== currentMonth) {
-          continue;
-        }
-
-        const key = `${stId}_${mYear}`;
-        if (!seenStudentMonthKeys.has(key)) {
-          seenStudentMonthKeys.add(key);
-          cleanPayments.push(p);
-        }
+    const cleanPayments = raw.map((p) => {
+      const studentId = String(p.student?._id || p.student);
+      const studentObj = validStudentMap.get(studentId);
+      if (studentObj) {
+        return {
+          ...p,
+          student: studentObj,
+          studentName: studentObj.fullName,
+          rollNumber: studentObj.rollNumber,
+          className: studentObj.className,
+        };
       }
-    }
+      return p;
+    });
 
     return cleanPayments;
   } catch (e) {
@@ -408,33 +405,33 @@ export const getStoredPayments = () => {
   }
 };
 
-const setStoredPayments = (p) => {
+const setStoredPayments = (p, skipNotify = false) => {
   localStorage.setItem('mock_payments', JSON.stringify(p));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 const getStoredMarks = () => JSON.parse(localStorage.getItem('mock_marks') || JSON.stringify(initialMockMarks));
-const setStoredMarks = (m) => {
+const setStoredMarks = (m, skipNotify = false) => {
   localStorage.setItem('mock_marks', JSON.stringify(m));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 const getStoredAttendance = () => JSON.parse(localStorage.getItem('mock_attendance') || JSON.stringify(initialMockAttendance));
-const setStoredAttendance = (a) => {
+const setStoredAttendance = (a, skipNotify = false) => {
   localStorage.setItem('mock_attendance', JSON.stringify(a));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 const getStoredAnnouncements = () => JSON.parse(localStorage.getItem('mock_announcements') || JSON.stringify(initialMockAnnouncements));
-const setStoredAnnouncements = (a) => {
+const setStoredAnnouncements = (a, skipNotify = false) => {
   localStorage.setItem('mock_announcements', JSON.stringify(a));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 const getStoredNotifications = () => JSON.parse(localStorage.getItem('mock_notifications') || JSON.stringify(initialMockNotifications));
-const setStoredNotifications = (n) => {
+const setStoredNotifications = (n, skipNotify = false) => {
   localStorage.setItem('mock_notifications', JSON.stringify(n));
-  notifyDataUpdate();
+  if (!skipNotify) notifyDataUpdate();
 };
 
 // Auth Service with Firebase Auth & Firestore Integration
@@ -1101,11 +1098,11 @@ export const feeService = {
 
     const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
     const students = fsStudents || getStoredStudents();
-    if (fsStudents) setStoredStudents(fsStudents);
+    if (fsStudents) setStoredStudents(fsStudents, true);
 
     const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
     const rawPayments = fsPayments || getStoredPayments();
-    if (fsPayments) setStoredPayments(rawPayments);
+    if (fsPayments) setStoredPayments(rawPayments, true);
 
     const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
     const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
@@ -1587,14 +1584,14 @@ export const dashboardService = {
 
     const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
     const students = fsStudents || getStoredStudents();
-    if (fsStudents) setStoredStudents(fsStudents);
+    if (fsStudents) setStoredStudents(fsStudents, true);
 
     const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
     const subjects = fsSubjects || getStoredSubjects();
 
     const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
     const rawPayments = fsPayments || getStoredPayments();
-    if (fsPayments) setStoredPayments(rawPayments);
+    if (fsPayments) setStoredPayments(rawPayments, true);
 
     const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
     const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));
