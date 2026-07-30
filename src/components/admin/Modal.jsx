@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function Modal({ isOpen, open, onClose, title, children, maxWidth = 'max-w-xl' }) {
-  const showModal = isOpen !== undefined ? isOpen : open;
+  const showModal = Boolean(open || isOpen);
   if (!showModal) return null;
 
   return (

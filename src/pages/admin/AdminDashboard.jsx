@@ -77,14 +77,14 @@ export default function AdminDashboard() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2.5">
           <Link
-            to="/admin/students"
+            to="/admin/students?action=add"
             className="bg-primary text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">person_add</span>
             Add Student
           </Link>
           <Link
-            to="/admin/fees"
+            to="/admin/fees?action=record"
             className="bg-secondary text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-secondary active:scale-95 shadow-tactile-btn transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">payments</span>

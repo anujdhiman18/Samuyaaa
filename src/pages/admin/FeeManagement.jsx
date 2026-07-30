@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { feeService, studentService, getFeeStatusInfo, getStoredPayments, getStoredStudents } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
 export default function FeeManagement() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [payments, setPayments] = useState(() => {
     try {
       return getStoredPayments() || [];
@@ -11,6 +13,14 @@ export default function FeeManagement() {
       return [];
     }
   });
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'record') {
+      setIsModalOpen(true);
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
   const [students, setStudents] = useState(() => {
     try {
       return getStoredStudents() || [];

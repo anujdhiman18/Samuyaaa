@@ -90,6 +90,11 @@ export default function StudentManagement() {
     if (filterFromUrl) {
       setFeeStatusFilter(filterFromUrl);
     }
+    if (searchParams.get('action') === 'add') {
+      handleOpenAdd();
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
   }, [searchParams]);
 
   const fetchStudents = async () => {

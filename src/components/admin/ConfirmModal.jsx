@@ -1,7 +1,8 @@
 import React from 'react';
 
-export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Delete', loading = false }) {
-  if (!isOpen) return null;
+export default function ConfirmModal({ isOpen, open, onClose, onConfirm, title, message, confirmText = 'Delete', loading = false }) {
+  const showModal = Boolean(open || isOpen);
+  if (!showModal) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body">
