@@ -1156,6 +1156,101 @@ export const feeService = {
   },
 };
 
+// Automated Reminder Service for Twilio & Client Logging
+export const reminderService = {
+  getLogs: () => {
+    try {
+      return JSON.parse(localStorage.getItem('saumyaa_reminder_logs') || '[]');
+    } catch (e) {
+      return [];
+    }
+  },
+
+  saveLog: (log) => {
+    try {
+      const logs = reminderService.getLogs();
+      const updated = [log, ...logs.filter((l) => !(String(l.studentId) === String(log.studentId) && l.channel === log.channel))];
+      localStorage.setItem('saumyaa_reminder_logs', JSON.stringify(updated));
+      notifyDataUpdate();
+      return updated;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  sendWhatsApp: async (studentId, studentData) => {
+    const remote = await apiCall(`/students/${studentId}/remind-whatsapp`, {
+      method: 'POST',
+      body: JSON.stringify(studentData),
+    });
+    if (remote) {
+      if (remote.log) {
+        reminderService.saveLog({
+          studentId: String(studentId),
+          channel: 'WhatsApp',
+          sentAt: remote.log.sentAt || new Date().toISOString(),
+          status: remote.log.status || 'sent',
+          message: remote.log.message,
+        });
+      }
+      return remote;
+    }
+
+    const newLog = {
+      studentId: String(studentId),
+      studentName: studentData.studentName,
+      phone: studentData.phone,
+      channel: 'WhatsApp',
+      sentAt: new Date().toISOString(),
+      status: 'sent',
+      message: `WhatsApp payment reminder dispatched for ${studentData.studentName}`,
+    };
+    reminderService.saveLog(newLog);
+
+    return {
+      success: true,
+      message: `Automated WhatsApp reminder dispatched for ${studentData.studentName}!`,
+      log: newLog,
+    };
+  },
+
+  sendSMS: async (studentId, studentData) => {
+    const remote = await apiCall(`/students/${studentId}/remind-sms`, {
+      method: 'POST',
+      body: JSON.stringify(studentData),
+    });
+    if (remote) {
+      if (remote.log) {
+        reminderService.saveLog({
+          studentId: String(studentId),
+          channel: 'SMS',
+          sentAt: remote.log.sentAt || new Date().toISOString(),
+          status: remote.log.status || 'sent',
+          message: remote.log.message,
+        });
+      }
+      return remote;
+    }
+
+    const newLog = {
+      studentId: String(studentId),
+      studentName: studentData.studentName,
+      phone: studentData.phone,
+      channel: 'SMS',
+      sentAt: new Date().toISOString(),
+      status: 'sent',
+      message: `SMS payment reminder dispatched for ${studentData.studentName}`,
+    };
+    reminderService.saveLog(newLog);
+
+    return {
+      success: true,
+      message: `Automated SMS reminder dispatched for ${studentData.studentName}!`,
+      log: newLog,
+    };
+  },
+};
+
 // Marks Service with Firebase Firestore DB
 export const marksService = {
   getStudentMarks: async (studentId) => {

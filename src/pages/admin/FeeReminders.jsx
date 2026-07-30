@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { studentService, getStoredStudents, subscribeFirestoreCollection } from '../../services/api';
+import { studentService, getStoredStudents, subscribeFirestoreCollection, reminderService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -108,6 +108,13 @@ function FeeRemindersContent() {
   const [selectedClass, setSelectedClass] = useState('All');
   const [sortBy, setSortBy] = useState('due_desc'); // 'due_desc', 'due_date_asc', 'name_asc'
 
+  // Automated Twilio Sending & Log States
+  const [sendingWhatsappId, setSendingWhatsappId] = useState(null);
+  const [sendingSmsId, setSendingSmsId] = useState(null);
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [reminderLogs, setReminderLogs] = useState(() => reminderService.getLogs());
+
   // Add / Edit Record Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -130,6 +137,11 @@ function FeeRemindersContent() {
   const { addToast } = useToast();
 
   useEffect(() => {
+    const handleLogsUpdate = () => {
+      setReminderLogs(reminderService.getLogs());
+    };
+    window.addEventListener('saumyaa_data_updated', handleLogsUpdate);
+
     const unsubscribe = subscribeFirestoreCollection('students', [], (list) => {
       if (list && list.length > 0) {
         setRawStudents(list);
@@ -137,7 +149,10 @@ function FeeRemindersContent() {
     });
 
     fetchStudents();
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      window.removeEventListener('saumyaa_data_updated', handleLogsUpdate);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -158,6 +173,18 @@ function FeeRemindersContent() {
   const normalizedStudents = useMemo(() => {
     return rawStudents.map(normalizeStudent);
   }, [rawStudents]);
+
+  // Helper to format last reminded log timestamp for student row
+  const getLastRemindedInfo = (studentId) => {
+    const studentLogs = reminderLogs.filter((l) => String(l.studentId) === String(studentId));
+    if (!studentLogs || studentLogs.length === 0) return null;
+    studentLogs.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+    const latest = studentLogs[0];
+    const dateObj = new Date(latest.sentAt);
+    const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    return `${dateStr}, ${timeStr} (${latest.channel})`;
+  };
 
   // Summary Header Calculations
   const stats = useMemo(() => {
@@ -225,25 +252,115 @@ function FeeRemindersContent() {
     return list;
   }, [normalizedStudents, search, selectedClass, statusFilter, sortBy]);
 
-  // One-Click WhatsApp Reminder Action
-  const handleWhatsAppReminder = (student) => {
+  // 1-Click Automated WhatsApp API Sender
+  const handleSendWhatsAppAPI = async (student) => {
     const cleanPhone = String(student.phone).replace(/\D/g, '');
-    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-    const msg = `Dear Parent, this is a fee payment reminder from Saumyaa Studies for student ${student.fullName} (${student.rollNumber}, Class ${student.className}).\n\nTotal Fee: ₹${student.totalFeeAmount.toLocaleString()}\nAmount Paid: ₹${student.amountPaid.toLocaleString()}\nPending Due Amount: ₹${student.dueAmount.toLocaleString()}\nDue Date: ${student.dueDate}\n\nKindly clear the pending tuition fee at your earliest convenience. Thank you!`;
-    const encoded = encodeURIComponent(msg);
-    const url = `https://wa.me/${phoneWithCountry}?text=${encoded}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-    addToast(`🚀 Opened WhatsApp reminder for ${student.fullName} (${phoneWithCountry})`, 'success');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      addToast(`❌ Cannot send WhatsApp: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits!`, 'error');
+      return;
+    }
+
+    setSendingWhatsappId(student.id);
+    try {
+      const payload = {
+        studentName: student.fullName,
+        phone: student.phone,
+        dueAmount: student.dueAmount,
+        rollNumber: student.rollNumber,
+        className: student.className,
+      };
+      const res = await reminderService.sendWhatsApp(student.id, payload);
+      addToast(res.message || `Automated WhatsApp reminder sent to ${student.fullName}!`, 'success');
+      setReminderLogs(reminderService.getLogs());
+    } catch (err) {
+      addToast(`Failed to send WhatsApp to ${student.fullName}: ${err.message}`, 'error');
+    } finally {
+      setSendingWhatsappId(null);
+    }
   };
 
-  // One-Click SMS Reminder Action
-  const handleSMSReminder = (student) => {
+  // 1-Click Automated SMS API Sender
+  const handleSendSMSAPI = async (student) => {
     const cleanPhone = String(student.phone).replace(/\D/g, '');
-    const msg = `Fee Reminder - Saumyaa Studies: Student ${student.fullName} (${student.rollNumber}, Class ${student.className}). Pending Due: ₹${student.dueAmount.toLocaleString()}, Due Date: ${student.dueDate}. Please clear payment promptly.`;
-    const encoded = encodeURIComponent(msg);
-    const url = `sms:${cleanPhone}?body=${encoded}`;
-    window.open(url, '_self');
-    addToast(`📱 Opened SMS composer for ${student.fullName} (${cleanPhone})`, 'info');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      addToast(`❌ Cannot send SMS: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits!`, 'error');
+      return;
+    }
+
+    setSendingSmsId(student.id);
+    try {
+      const payload = {
+        studentName: student.fullName,
+        phone: student.phone,
+        dueAmount: student.dueAmount,
+        rollNumber: student.rollNumber,
+        className: student.className,
+      };
+      const res = await reminderService.sendSMS(student.id, payload);
+      addToast(res.message || `Automated SMS reminder sent to ${student.fullName}!`, 'success');
+      setReminderLogs(reminderService.getLogs());
+    } catch (err) {
+      addToast(`Failed to send SMS to ${student.fullName}: ${err.message}`, 'error');
+    } finally {
+      setSendingSmsId(null);
+    }
+  };
+
+  // Bulk Remind All Unpaid Students Action with Rate Limiting Delay
+  const handleBulkRemindUnpaid = async () => {
+    const unpaidList = normalizedStudents.filter((s) => s.dueAmount > 0);
+    if (unpaidList.length === 0) {
+      addToast('No unpaid students found to send reminders!', 'info');
+      return;
+    }
+
+    setBulkSending(true);
+    setBulkProgress({ current: 0, total: unpaidList.length });
+    let successCount = 0;
+    let failCount = 0;
+    const failures = [];
+
+    for (let i = 0; i < unpaidList.length; i++) {
+      const student = unpaidList[i];
+      setBulkProgress({ current: i + 1, total: unpaidList.length });
+
+      const cleanPhone = String(student.phone).replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length < 10) {
+        failCount++;
+        failures.push(`${student.fullName} (Invalid Phone)`);
+        continue;
+      }
+
+      try {
+        await reminderService.sendWhatsApp(student.id, {
+          studentName: student.fullName,
+          phone: student.phone,
+          dueAmount: student.dueAmount,
+          rollNumber: student.rollNumber,
+          className: student.className,
+        });
+        successCount++;
+      } catch (err) {
+        failCount++;
+        failures.push(`${student.fullName} (${err.message})`);
+      }
+
+      // 600ms rate-limiting delay between requests to comply with API rate limits
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+
+    setBulkSending(false);
+    setReminderLogs(reminderService.getLogs());
+
+    if (failCount === 0) {
+      addToast(`🚀 Bulk WhatsApp reminders complete! Sent: ${successCount}, Failed: 0`, 'success', 6000);
+    } else {
+      addToast(
+        `Bulk Reminders Summary — Sent: ${successCount}, Failed: ${failCount} [${failures.join(', ')}]`,
+        'warning',
+        8000
+      );
+    }
   };
 
   // Mark as Paid Instant Action
@@ -355,24 +472,45 @@ function FeeRemindersContent() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-              Fees Reminder Dashboard
+              Automated Fees Reminder Dashboard
             </h1>
-            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-bold font-mono">
-              Live Reminders
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
+              Twilio Ready
             </span>
           </div>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Track student tuition fee dues and dispatch 1-click WhatsApp or SMS reminders directly to registered phone numbers.
+            Dispatch 1-click automated WhatsApp &amp; SMS fee reminders directly from the server.
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
-        >
-          <span className="material-symbols-outlined text-[18px]">person_add</span>
-          Add Student Record
-        </button>
+        <div className="flex flex-wrap gap-2.5">
+          {/* Bulk Send Button */}
+          <button
+            onClick={handleBulkRemindUnpaid}
+            disabled={bulkSending || stats.unpaidCount === 0}
+            className="bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all disabled:opacity-50"
+          >
+            {bulkSending ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                Sending ({bulkProgress.current}/{bulkProgress.total})...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[18px]">send</span>
+                Remind All Unpaid ({stats.unpaidCount})
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">person_add</span>
+            Add Student Record
+          </button>
+        </div>
       </div>
 
       {/* Summary Header Metrics */}
@@ -511,7 +649,7 @@ function FeeRemindersContent() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[980px]">
+            <table className="w-full text-left border-collapse min-w-[1020px]">
               <thead>
                 <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                   <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
@@ -523,7 +661,7 @@ function FeeRemindersContent() {
                   <th className="py-3.5 px-4 whitespace-nowrap">Due Amount</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Due Date</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
-                  <th className="py-3.5 px-4 text-center whitespace-nowrap">1-Click Reminders</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap">Automated 1-Click Reminders</th>
                   <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
@@ -531,6 +669,7 @@ function FeeRemindersContent() {
                 {filteredStudents.map((student) => {
                   const isPaid = student.status === 'Paid';
                   const isPartial = student.status === 'Partially Paid';
+                  const lastRemindedStr = getLastRemindedInfo(student.id);
 
                   return (
                     <tr
@@ -547,7 +686,14 @@ function FeeRemindersContent() {
                         {student.rollNumber}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
-                        {student.fullName}
+                        <div>
+                          <span>{student.fullName}</span>
+                          {lastRemindedStr && (
+                            <span className="block text-[10px] font-normal text-on-surface-variant/80 mt-0.5">
+                              Last reminded: {lastRemindedStr}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px] whitespace-nowrap">
@@ -595,24 +741,34 @@ function FeeRemindersContent() {
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {student.dueAmount > 0 ? (
                           <div className="inline-flex items-center gap-2">
-                            {/* WhatsApp Button (Primary Green Accent) */}
+                            {/* Automated WhatsApp Button (Primary Green Accent) */}
                             <button
-                              onClick={() => handleWhatsAppReminder(student)}
-                              className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95"
-                              title="Send 1-Click WhatsApp Payment Reminder"
+                              onClick={() => handleSendWhatsAppAPI(student)}
+                              disabled={sendingWhatsappId === student.id || bulkSending}
+                              className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                              title="Send Automated WhatsApp Payment Reminder via Server"
                             >
-                              <span className="material-symbols-outlined text-[16px]">chat</span>
-                              WhatsApp
+                              {sendingWhatsappId === student.id ? (
+                                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[16px]">chat</span>
+                              )}
+                              Send WhatsApp
                             </button>
 
-                            {/* SMS Button (Secondary Outline Style) */}
+                            {/* Automated SMS Button (Secondary Outline Style) */}
                             <button
-                              onClick={() => handleSMSReminder(student)}
-                              className="px-3 py-1.5 rounded-lg border border-outline-variant/40 bg-white hover:bg-surface-container text-secondary font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95"
-                              title="Send 1-Click SMS Payment Reminder"
+                              onClick={() => handleSendSMSAPI(student)}
+                              disabled={sendingSmsId === student.id || bulkSending}
+                              className="px-3 py-1.5 rounded-lg border border-outline-variant/40 bg-white hover:bg-surface-container text-secondary font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                              title="Send Automated SMS Payment Reminder via Server"
                             >
-                              <span className="material-symbols-outlined text-[16px]">sms</span>
-                              SMS
+                              {sendingSmsId === student.id ? (
+                                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[16px]">sms</span>
+                              )}
+                              Send SMS
                             </button>
                           </div>
                         ) : (

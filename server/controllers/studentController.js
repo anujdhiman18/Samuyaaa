@@ -190,3 +190,127 @@ export const toggleFeeStatus = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Send automated WhatsApp reminder via Twilio
+// @route   POST /api/students/:id/remind-whatsapp
+export const remindWhatsApp = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    const studentName = student ? student.fullName : req.body.studentName || 'Student';
+    const studentPhone = student ? (student.parentPhone || student.phone) : req.body.phone;
+    const dueAmount = student ? (student.totalFeeAmount ? (student.totalFeeAmount - (student.amountPaid || 0)) : (student.monthlyFee || 2500)) : (req.body.dueAmount || 2500);
+    const rollNumber = student ? student.rollNumber : req.body.rollNumber || 'N/A';
+    const className = student ? student.className : req.body.className || '10th';
+
+    if (!studentPhone) {
+      return res.status(400).json({ success: false, message: 'Student registered phone number is missing or empty' });
+    }
+
+    try {
+      const { sendWhatsAppReminder } = await import('../services/twilioService.js');
+      const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+      const twilioRes = await sendWhatsAppReminder({ studentPhone, studentName, dueAmount, rollNumber, className });
+
+      const log = await FeeReminderLog.create({
+        student: student ? student._id : null,
+        studentName,
+        parentPhone: studentPhone,
+        amountDue: Number(dueAmount),
+        monthYear: req.body.monthYear || 'July 2026',
+        channel: 'WhatsApp',
+        status: 'sent',
+        message: twilioRes.message,
+      });
+
+      return res.json({
+        success: true,
+        message: `WhatsApp reminder dispatched to ${studentName} (${studentPhone})`,
+        twilio: twilioRes,
+        log,
+      });
+    } catch (twilioErr) {
+      const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+      await FeeReminderLog.create({
+        student: student ? student._id : null,
+        studentName,
+        parentPhone: studentPhone,
+        amountDue: Number(dueAmount),
+        monthYear: req.body.monthYear || 'July 2026',
+        channel: 'WhatsApp',
+        status: 'failed',
+        message: twilioErr.message,
+      });
+      return res.status(500).json({ success: false, message: twilioErr.message });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Send automated SMS reminder via Twilio
+// @route   POST /api/students/:id/remind-sms
+export const remindSMS = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    const studentName = student ? student.fullName : req.body.studentName || 'Student';
+    const studentPhone = student ? (student.parentPhone || student.phone) : req.body.phone;
+    const dueAmount = student ? (student.totalFeeAmount ? (student.totalFeeAmount - (student.amountPaid || 0)) : (student.monthlyFee || 2500)) : (req.body.dueAmount || 2500);
+    const rollNumber = student ? student.rollNumber : req.body.rollNumber || 'N/A';
+    const className = student ? student.className : req.body.className || '10th';
+
+    if (!studentPhone) {
+      return res.status(400).json({ success: false, message: 'Student registered phone number is missing or empty' });
+    }
+
+    try {
+      const { sendSMSReminder } = await import('../services/twilioService.js');
+      const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+      const twilioRes = await sendSMSReminder({ studentPhone, studentName, dueAmount, rollNumber, className });
+
+      const log = await FeeReminderLog.create({
+        student: student ? student._id : null,
+        studentName,
+        parentPhone: studentPhone,
+        amountDue: Number(dueAmount),
+        monthYear: req.body.monthYear || 'July 2026',
+        channel: 'SMS',
+        status: 'sent',
+        message: twilioRes.message,
+      });
+
+      return res.json({
+        success: true,
+        message: `SMS reminder dispatched to ${studentName} (${studentPhone})`,
+        twilio: twilioRes,
+        log,
+      });
+    } catch (twilioErr) {
+      const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+      await FeeReminderLog.create({
+        student: student ? student._id : null,
+        studentName,
+        parentPhone: studentPhone,
+        amountDue: Number(dueAmount),
+        monthYear: req.body.monthYear || 'July 2026',
+        channel: 'SMS',
+        status: 'failed',
+        message: twilioErr.message,
+      });
+      return res.status(500).json({ success: false, message: twilioErr.message });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all reminder logs history
+// @route   GET /api/students/reminder-logs
+export const getReminderLogs = async (req, res) => {
+  try {
+    const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+    const logs = await FeeReminderLog.find().sort({ sentAt: -1 }).limit(100);
+    res.json({ success: true, logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
