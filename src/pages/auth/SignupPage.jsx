@@ -10,7 +10,7 @@ export default function SignupPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('Student');
+  const role = 'Student';
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();

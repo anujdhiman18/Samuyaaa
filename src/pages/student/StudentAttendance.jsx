@@ -31,6 +31,14 @@ export default function StudentAttendance() {
   const totalDays = presentCount + absentCount;
   const percentage = Math.round((presentCount / totalDays) * 100);
 
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-xs animate-pulse font-body text-on-surface-variant">
+        Loading attendance records...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 font-body">
       <div>

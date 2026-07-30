@@ -1570,7 +1570,6 @@ export const dashboardService = {
     if (remote) return remote;
 
     const students = (getStoredStudents() || []).filter(Boolean);
-    const todayDate = new Date().getDate();
     const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
     const todayDue = [];
