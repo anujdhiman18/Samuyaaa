@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { dashboardService } from '../../services/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { studentService, getStoredStudents, subscribeFirestoreCollection } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
+import ConfirmModal from '../../components/admin/ConfirmModal';
 
 class FeeRemindersErrorBoundary extends React.Component {
   constructor(props) {
@@ -28,7 +29,7 @@ class FeeRemindersErrorBoundary extends React.Component {
             Fee Reminder System
           </h3>
           <p className="text-xs text-on-surface-variant mt-1 mb-4">
-            Dashboard reloaded cleanly. Click below to view all fee reminder logs.
+            Dashboard reloaded cleanly. Click below to refresh system logs.
           </p>
           <button
             onClick={() => {
@@ -47,326 +48,786 @@ class FeeRemindersErrorBoundary extends React.Component {
   }
 }
 
-function FeeRemindersContent() {
-  const [reminders, setReminders] = useState({ todayDue: [], nextThreeDaysDue: [], overdue: [] });
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('overdue');
+const CLASSES = ['All', 'Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
 
-  // Reminder Dispatch Modal
-  const [reminderModalTarget, setReminderModalTarget] = useState(null);
-  const [reminderChannel, setReminderChannel] = useState('sms');
-  const [sending, setSending] = useState(false);
+function normalizeStudent(student) {
+  const totalFeeAmount = Number(student.totalFeeAmount || student.monthlyFee || 2500);
+
+  let amountPaid = 0;
+  if (student.amountPaid !== undefined && student.amountPaid !== null) {
+    amountPaid = Number(student.amountPaid);
+  } else if (student.feesPaid || student.paidTillMonth === 'July 2026') {
+    amountPaid = totalFeeAmount;
+  } else if (student.partiallyPaidAmount) {
+    amountPaid = Number(student.partiallyPaidAmount);
+  } else {
+    amountPaid = 0;
+  }
+
+  const dueAmount = Math.max(0, totalFeeAmount - amountPaid);
+
+  let status = 'Unpaid';
+  if (dueAmount === 0 || amountPaid >= totalFeeAmount) {
+    status = 'Paid';
+  } else if (amountPaid > 0 && dueAmount > 0) {
+    status = 'Partially Paid';
+  } else {
+    status = 'Unpaid';
+  }
+
+  const dueDate = student.dueDate || student.nextFeeDueDate || '2026-08-05';
+  const phone = student.phone || student.parentPhone || '9816012345';
+
+  return {
+    ...student,
+    id: student._id || student.id,
+    fullName: student.fullName || 'Student',
+    rollNumber: student.rollNumber || 'SAU-10-000',
+    className: student.className || '10th',
+    phone,
+    totalFeeAmount,
+    amountPaid,
+    dueAmount,
+    dueDate,
+    status,
+  };
+}
+
+function FeeRemindersContent() {
+  const [rawStudents, setRawStudents] = useState(() => {
+    try {
+      return getStoredStudents() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('pending'); // 'pending', 'all', 'unpaid', 'partially_paid', 'paid'
+  const [selectedClass, setSelectedClass] = useState('All');
+  const [sortBy, setSortBy] = useState('due_desc'); // 'due_desc', 'due_date_asc', 'name_asc'
+
+  // Add / Edit Record Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    rollNumber: '',
+    className: '10th',
+    phone: '',
+    totalFeeAmount: 2500,
+    amountPaid: 0,
+    dueDate: '2026-08-05',
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Delete Confirm Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { addToast } = useToast();
 
   useEffect(() => {
-    fetchReminders();
+    const unsubscribe = subscribeFirestoreCollection('students', [], (list) => {
+      if (list && list.length > 0) {
+        setRawStudents(list);
+      }
+    });
+
+    fetchStudents();
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchReminders = async () => {
+  const fetchStudents = async () => {
     setLoading(true);
     try {
-      const data = await dashboardService.getReminders();
-      if (data && data.reminders) {
-        setReminders(data.reminders);
+      const res = await studentService.getStudents();
+      if (res && res.students) {
+        setRawStudents(res.students);
       }
     } catch (err) {
-      addToast('Error fetching fee reminders', 'error');
+      addToast('Error fetching student fee records', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDirectSMS = (student) => {
-    const parentPhone = student?.parentPhone || '8894190175';
-    addToast(`🚀 Dispatched SMS directly to parent phone ${parentPhone} (${student?.fullName})...`, 'info', 3000);
+  const normalizedStudents = useMemo(() => {
+    return rawStudents.map(normalizeStudent);
+  }, [rawStudents]);
 
-    setTimeout(() => {
-      addToast(
-        `✓ SMS message successfully delivered directly to parent phone: ${parentPhone}!`,
-        'success',
-        6000
+  // Summary Header Calculations
+  const stats = useMemo(() => {
+    const totalStudents = normalizedStudents.length;
+    const unpaidList = normalizedStudents.filter((s) => s.dueAmount > 0);
+    const unpaidCount = unpaidList.length;
+    const paidCount = normalizedStudents.filter((s) => s.status === 'Paid').length;
+    const partiallyPaidCount = normalizedStudents.filter((s) => s.status === 'Partially Paid').length;
+    const totalPendingAmount = normalizedStudents.reduce((sum, s) => sum + s.dueAmount, 0);
+
+    return {
+      totalStudents,
+      unpaidCount,
+      paidCount,
+      partiallyPaidCount,
+      totalPendingAmount,
+    };
+  }, [normalizedStudents]);
+
+  // Search, Filter & Sort Logic
+  const filteredStudents = useMemo(() => {
+    let list = [...normalizedStudents];
+
+    // Search filter
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.fullName.toLowerCase().includes(q) ||
+          s.rollNumber.toLowerCase().includes(q) ||
+          s.phone.includes(q)
       );
-    }, 1200);
+    }
+
+    // Class filter
+    if (selectedClass !== 'All') {
+      list = list.filter((s) => s.className === selectedClass);
+    }
+
+    // Status filter
+    if (statusFilter === 'pending') {
+      list = list.filter((s) => s.dueAmount > 0);
+    } else if (statusFilter === 'unpaid') {
+      list = list.filter((s) => s.status === 'Unpaid');
+    } else if (statusFilter === 'partially_paid') {
+      list = list.filter((s) => s.status === 'Partially Paid');
+    } else if (statusFilter === 'paid') {
+      list = list.filter((s) => s.status === 'Paid');
+    }
+
+    // Sorting logic
+    list.sort((a, b) => {
+      if (sortBy === 'due_desc') {
+        return b.dueAmount - a.dueAmount;
+      }
+      if (sortBy === 'due_date_asc') {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortBy === 'name_asc') {
+        return a.fullName.localeCompare(b.fullName);
+      }
+      return 0;
+    });
+
+    return list;
+  }, [normalizedStudents, search, selectedClass, statusFilter, sortBy]);
+
+  // One-Click WhatsApp Reminder Action
+  const handleWhatsAppReminder = (student) => {
+    const cleanPhone = String(student.phone).replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const msg = `Dear Parent, this is a fee payment reminder from Saumyaa Studies for student ${student.fullName} (${student.rollNumber}, Class ${student.className}).\n\nTotal Fee: ₹${student.totalFeeAmount.toLocaleString()}\nAmount Paid: ₹${student.amountPaid.toLocaleString()}\nPending Due Amount: ₹${student.dueAmount.toLocaleString()}\nDue Date: ${student.dueDate}\n\nKindly clear the pending tuition fee at your earliest convenience. Thank you!`;
+    const encoded = encodeURIComponent(msg);
+    const url = `https://wa.me/${phoneWithCountry}?text=${encoded}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    addToast(`🚀 Opened WhatsApp reminder for ${student.fullName} (${phoneWithCountry})`, 'success');
   };
 
-  const handleSendReminder = (e) => {
+  // One-Click SMS Reminder Action
+  const handleSMSReminder = (student) => {
+    const cleanPhone = String(student.phone).replace(/\D/g, '');
+    const msg = `Fee Reminder - Saumyaa Studies: Student ${student.fullName} (${student.rollNumber}, Class ${student.className}). Pending Due: ₹${student.dueAmount.toLocaleString()}, Due Date: ${student.dueDate}. Please clear payment promptly.`;
+    const encoded = encodeURIComponent(msg);
+    const url = `sms:${cleanPhone}?body=${encoded}`;
+    window.open(url, '_self');
+    addToast(`📱 Opened SMS composer for ${student.fullName} (${cleanPhone})`, 'info');
+  };
+
+  // Mark as Paid Instant Action
+  const handleMarkAsPaid = async (student) => {
+    try {
+      const updatedData = {
+        totalFeeAmount: student.totalFeeAmount,
+        amountPaid: student.totalFeeAmount,
+        feesPaid: true,
+        paidTillMonth: 'July 2026',
+        paymentDate: new Date().toISOString().split('T')[0],
+      };
+      await studentService.updateStudent(student.id, updatedData);
+      addToast(`Marked ${student.fullName} as PAID (₹${student.totalFeeAmount.toLocaleString()})`, 'success');
+      fetchStudents();
+    } catch (err) {
+      addToast(err.message || 'Failed to update payment status', 'error');
+    }
+  };
+
+  // Modal Handlers
+  const handleOpenAdd = () => {
+    setEditingStudent(null);
+    setFormData({
+      fullName: '',
+      rollNumber: '',
+      className: '10th',
+      phone: '',
+      totalFeeAmount: 2500,
+      amountPaid: 0,
+      dueDate: '2026-08-05',
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleOpenEdit = (student) => {
+    setEditingStudent(student);
+    setFormData({
+      fullName: student.fullName,
+      rollNumber: student.rollNumber,
+      className: student.className,
+      phone: student.phone,
+      totalFeeAmount: student.totalFeeAmount,
+      amountPaid: student.amountPaid,
+      dueDate: student.dueDate,
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleSaveStudent = async (e) => {
     e.preventDefault();
-    setSending(true);
+    setSaving(true);
+    try {
+      const totalFee = Number(formData.totalFeeAmount);
+      const paid = Number(formData.amountPaid);
+      const isFull = paid >= totalFee;
 
-    const parentPhone = reminderModalTarget?.parentPhone || '8894190175';
+      const payload = {
+        fullName: formData.fullName,
+        rollNumber: formData.rollNumber,
+        className: formData.className,
+        phone: formData.phone,
+        parentPhone: formData.phone,
+        totalFeeAmount: totalFee,
+        monthlyFee: totalFee,
+        amountPaid: paid,
+        feesPaid: isFull,
+        paidTillMonth: isFull ? 'July 2026' : '',
+        dueDate: formData.dueDate,
+        nextFeeDueDate: formData.dueDate,
+      };
 
-    setTimeout(() => {
-      setSending(false);
-      addToast(
-        `✓ ${reminderChannel.toUpperCase()} Fee Reminder directly delivered to ${parentPhone} (${reminderModalTarget?.fullName})!`,
-        'success',
-        6000
-      );
-      setReminderModalTarget(null);
-    }, 1000);
+      if (editingStudent) {
+        await studentService.updateStudent(editingStudent.id, payload);
+        addToast(`Updated student fee record for ${formData.fullName}`, 'success');
+      } else {
+        await studentService.createStudent(payload);
+        addToast(`Added new student record for ${formData.fullName}`, 'success');
+      }
+      setEditModalOpen(false);
+      fetchStudents();
+    } catch (err) {
+      addToast(err.message || 'Error saving student record', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const overdueList = (reminders?.overdue || []).filter(Boolean);
-  const todayList = (reminders?.todayDue || []).filter(Boolean);
-  const nextThreeList = (reminders?.nextThreeDaysDue || []).filter(Boolean);
-
-  const currentList =
-    activeCategory === 'overdue'
-      ? overdueList
-      : activeCategory === 'today'
-      ? todayList
-      : nextThreeList;
+  const handleDeleteConfirm = async () => {
+    if (!deletingStudent) return;
+    setDeleting(true);
+    try {
+      await studentService.deleteStudent(deletingStudent.id);
+      addToast(`Deleted record for ${deletingStudent.fullName}`, 'success');
+      setDeleteModalOpen(false);
+      setDeletingStudent(null);
+      fetchStudents();
+    } catch (err) {
+      addToast(err.message || 'Error deleting student', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6 font-body">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
-          <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-            Fee Reminder System
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
+              Fees Reminder Dashboard
+            </h1>
+            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-bold font-mono">
+              Live Reminders
+            </span>
+          </div>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Direct SMS and WhatsApp gateway dispatch for overdue tuition fee reminders.
+            Track student tuition fee dues and dispatch 1-click WhatsApp or SMS reminders directly to registered phone numbers.
           </p>
         </div>
 
         <button
-          onClick={() => {
-            addToast('Sending batch SMS directly to parent numbers (8894190175)...', 'info');
-            setTimeout(() => {
-              addToast('✓ Batch SMS delivered directly to all overdue parent phone numbers!', 'success', 6000);
-            }, 1500);
-          }}
-          className="bg-primary text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
+          onClick={handleOpenAdd}
+          className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
         >
-          <span className="material-symbols-outlined text-[18px]">sms</span>
-          Direct Batch SMS to Parents
+          <span className="material-symbols-outlined text-[18px]">person_add</span>
+          Add Student Record
         </button>
       </div>
 
-      {/* Categories Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <button
-          onClick={() => setActiveCategory('overdue')}
-          className={`p-6 rounded-2xl border text-left transition-all ${
-            activeCategory === 'overdue'
-              ? 'bg-rose-50 border-rose-500 shadow-premium'
-              : 'bg-white border-outline-variant/15'
-          }`}
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-headings text-xs font-bold uppercase tracking-wider text-rose-600">
-              Overdue Fees
-            </span>
-            <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-xs">
-              {overdueList.length}
-            </span>
+      {/* Summary Header Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex items-center justify-between">
+          <div>
+            <p className="font-headings text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              Total Enrolled Students
+            </p>
+            <h3 className="font-headings font-extrabold text-3xl text-secondary mt-2">
+              {stats.totalStudents}
+            </h3>
+            <p className="text-[11px] text-on-surface-variant mt-1">
+              Active student roster
+            </p>
           </div>
-          <p className="text-xs text-on-surface-variant">
-            Students past the 5th monthly due date
-          </p>
-        </button>
+          <div className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]">groups</span>
+          </div>
+        </div>
 
-        <button
-          onClick={() => setActiveCategory('today')}
-          className={`p-6 rounded-2xl border text-left transition-all ${
-            activeCategory === 'today'
-              ? 'bg-amber-50 border-amber-500 shadow-premium'
-              : 'bg-white border-outline-variant/15'
-          }`}
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-headings text-xs font-bold uppercase tracking-wider text-amber-700">
-              Due Today
-            </span>
-            <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-              {todayList.length}
-            </span>
+        <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex items-center justify-between">
+          <div>
+            <p className="font-headings text-xs font-bold uppercase tracking-wider text-rose-600">
+              Total Unpaid / Partial Dues
+            </p>
+            <h3 className="font-headings font-extrabold text-3xl text-rose-600 mt-2">
+              {stats.unpaidCount} <span className="text-xs font-semibold text-on-surface-variant">Students</span>
+            </h3>
+            <p className="text-[11px] text-rose-700 font-semibold mt-1">
+              {stats.partiallyPaidCount} partially paid &bull; {stats.unpaidCount - stats.partiallyPaidCount} unpaid
+            </p>
           </div>
-          <p className="text-xs text-on-surface-variant">
-            Fee due for collection today
-          </p>
-        </button>
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]">pending_actions</span>
+          </div>
+        </div>
 
-        <button
-          onClick={() => setActiveCategory('next3')}
-          className={`p-6 rounded-2xl border text-left transition-all ${
-            activeCategory === 'next3'
-              ? 'bg-emerald-50 border-emerald-500 shadow-premium'
-              : 'bg-white border-outline-variant/15'
-          }`}
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-headings text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Next 3 Days
-            </span>
-            <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-              {nextThreeList.length}
-            </span>
+        <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex items-center justify-between">
+          <div>
+            <p className="font-headings text-xs font-bold uppercase tracking-wider text-amber-700">
+              Total Dues Pending Collection
+            </p>
+            <h3 className="font-headings font-extrabold text-3xl text-amber-700 mt-2">
+              ₹{stats.totalPendingAmount.toLocaleString()}
+            </h3>
+            <p className="text-[11px] text-amber-700 font-semibold mt-1">
+              Outstanding tuition fee balance
+            </p>
           </div>
-          <p className="text-xs text-on-surface-variant">
-            Fee due coming up within 72 hours
-          </p>
-        </button>
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[24px]">payments</span>
+          </div>
+        </div>
       </div>
 
-      {/* Reminder List Table */}
-      <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
-        <h3 className="font-headings font-bold text-base text-secondary mb-4 capitalize">
-          {activeCategory === 'overdue'
-            ? 'Overdue Students'
-            : activeCategory === 'today'
-            ? 'Due Today Students'
-            : 'Upcoming Due Students'}
-        </h3>
+      {/* Search, Filter & Sort Controls Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search by student name or roll number..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:outline-none focus:border-primary font-body"
+          />
+        </div>
 
+        {/* Filter Controls */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Filter:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="pending">⚠️ Pending Dues Only ({stats.unpaidCount})</option>
+              <option value="all">All Students ({stats.totalStudents})</option>
+              <option value="unpaid">🔴 Unpaid Only ({stats.unpaidCount - stats.partiallyPaidCount})</option>
+              <option value="partially_paid">🟡 Partially Paid Only ({stats.partiallyPaidCount})</option>
+              <option value="paid">🟢 Paid Only ({stats.paidCount})</option>
+            </select>
+          </div>
+
+          {/* Class Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Class:</span>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+            >
+              {CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'All' ? 'All Classes' : `Class ${c}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-on-surface-variant">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="due_desc">Highest Dues First ⬇</option>
+              <option value="due_date_asc">Earliest Due Date 📅</option>
+              <option value="name_asc">Student Name A-Z 🔤</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table Listing */}
+      <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-xs animate-pulse">Checking reminder logs...</div>
-        ) : currentList.length === 0 ? (
-          <div className="p-8 text-center text-xs text-on-surface-variant">
-            No students found in this category. All clear!
+          <div className="p-8 text-center text-xs animate-pulse font-body text-on-surface-variant">
+            Loading student fee records...
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="p-12 text-center text-xs text-on-surface-variant space-y-2">
+            <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">
+              notifications_off
+            </span>
+            <p className="font-bold text-secondary text-sm">No Students Found</p>
+            <p>No student fee records match your selected search or filter criteria.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {currentList.map((st) => {
-              if (!st) return null;
-              return (
-                <div
-                  key={st._id || st.rollNumber || Math.random()}
-                  className="p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-sm text-on-surface">{st.fullName || 'Student'}</h4>
-                      {st.rollNumber && (
-                        <span className="font-mono text-xs font-bold text-secondary">
-                          ({st.rollNumber})
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-on-surface-variant mt-1">
-                      Father: <strong className="text-on-surface">{st.fatherName || 'N/A'}</strong> &bull; Parent Phone: <strong className="text-primary font-bold">{st.parentPhone || '8894190175'}</strong>
-                    </p>
-                    <p className="text-[11px] text-rose-600 font-semibold mt-0.5">
-                      Monthly Fee: ₹{st.monthlyFee || 2500} &bull; Due Date: {st.feeDueDate || 5}th of month
-                    </p>
-                  </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[980px]">
+              <thead>
+                <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
+                  <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Student Name</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Phone</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Total Fee</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Amount Paid</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Due Amount</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Due Date</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap">1-Click Reminders</th>
+                  <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
+                {filteredStudents.map((student) => {
+                  const isPaid = student.status === 'Paid';
+                  const isPartial = student.status === 'Partially Paid';
 
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDirectSMS(st)}
-                      className="bg-primary text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary shadow-tactile-btn transition-colors"
+                  return (
+                    <tr
+                      key={student.id}
+                      className={`hover:bg-surface-container-low transition-colors ${
+                        isPaid
+                          ? 'bg-white'
+                          : isPartial
+                          ? 'bg-amber-50/30'
+                          : 'bg-rose-50/20'
+                      }`}
                     >
-                      <span className="material-symbols-outlined text-[16px]">sms</span>
-                      Send SMS (Direct)
-                    </button>
-                    <button
-                      onClick={() => setReminderModalTarget(st)}
-                      className="border border-secondary text-secondary font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 hover:bg-secondary/10 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">tune</span>
-                      Options
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                      <td className="py-3.5 px-4 font-mono font-bold text-secondary whitespace-nowrap">
+                        {student.rollNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-on-surface whitespace-nowrap">
+                        {student.fullName}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px] whitespace-nowrap">
+                          Class {student.className}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-semibold text-secondary whitespace-nowrap">
+                        {student.phone}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-secondary whitespace-nowrap">
+                        ₹{student.totalFeeAmount.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-emerald-700 whitespace-nowrap">
+                        ₹{student.amountPaid.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold whitespace-nowrap">
+                        <span
+                          className={`font-mono text-sm ${
+                            student.dueAmount > 0 ? 'text-rose-700 font-extrabold' : 'text-emerald-700'
+                          }`}
+                        >
+                          ₹{student.dueAmount.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-on-surface-variant whitespace-nowrap">
+                        {student.dueDate}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {isPaid && (
+                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 shadow-xs">
+                            🟢 Paid
+                          </span>
+                        )}
+                        {isPartial && (
+                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 shadow-xs">
+                            🟡 Partially Paid
+                          </span>
+                        )}
+                        {!isPaid && !isPartial && (
+                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1 shadow-xs">
+                            🔴 Unpaid
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {student.dueAmount > 0 ? (
+                          <div className="inline-flex items-center gap-2">
+                            {/* WhatsApp Button (Primary Green Accent) */}
+                            <button
+                              onClick={() => handleWhatsAppReminder(student)}
+                              className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95"
+                              title="Send 1-Click WhatsApp Payment Reminder"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">chat</span>
+                              WhatsApp
+                            </button>
+
+                            {/* SMS Button (Secondary Outline Style) */}
+                            <button
+                              onClick={() => handleSMSReminder(student)}
+                              className="px-3 py-1.5 rounded-lg border border-outline-variant/40 bg-white hover:bg-surface-container text-secondary font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95"
+                              title="Send 1-Click SMS Payment Reminder"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">sms</span>
+                              SMS
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-emerald-700 font-bold italic">
+                            No Dues Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
+                        {student.dueAmount > 0 && (
+                          <button
+                            onClick={() => handleMarkAsPaid(student)}
+                            className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-[10px] transition-colors shadow-xs"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleOpenEdit(student)}
+                          className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors"
+                          title="Edit Student Fee Record"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeletingStudent(student);
+                            setDeleteModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors"
+                          title="Delete Record"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-
-      {/* Send Reminder Modal */}
-      {reminderModalTarget && (
-        <Modal
-          isOpen={!!reminderModalTarget}
-          onClose={() => setReminderModalTarget(null)}
-          title="Direct Gateway Message Dispatch"
-        >
-          <form onSubmit={handleSendReminder} className="space-y-4 text-xs font-body">
-            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-              <p className="font-bold text-on-surface">{reminderModalTarget.fullName}</p>
-              <p className="text-[11px] text-on-surface-variant font-mono">
-                Parent Phone: {reminderModalTarget.parentPhone || '8894190175'} &bull; Monthly Fee: ₹{reminderModalTarget.monthlyFee}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Select Direct Gateway Channel *
+      {/* Add / Edit Student Record Modal */}
+      <Modal
+        open={editModalOpen}
+        title={editingStudent ? 'Edit Student Fee Record' : 'Add New Student Record'}
+        onClose={() => setEditModalOpen(false)}
+      >
+        <form onSubmit={handleSaveStudent} className="space-y-4 font-body">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Student Full Name *
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setReminderChannel('sms')}
-                  className={`p-3 rounded-full border font-headings font-bold flex items-center justify-center gap-2 transition-all ${
-                    reminderChannel === 'sms'
-                      ? 'border-primary bg-primary text-white shadow-tactile-btn'
-                      : 'border-outline-variant/30 text-on-surface-variant'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">sms</span>
-                  Direct SMS Gateway
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReminderChannel('whatsapp')}
-                  className={`p-3 rounded-full border font-headings font-bold flex items-center justify-center gap-2 transition-all ${
-                    reminderChannel === 'whatsapp'
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-tactile-btn'
-                      : 'border-outline-variant/30 text-on-surface-variant'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">chat</span>
-                  WhatsApp API Gateway
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Direct Message Content
-              </label>
-              <textarea
-                readOnly
-                rows={4}
-                value={`Dear ${reminderModalTarget.fatherName}, this is a gentle reminder from Saumyaa Studies regarding the tuition fee payment of ₹${reminderModalTarget.monthlyFee} for ${reminderModalTarget.fullName} (${reminderModalTarget.rollNumber}). Kindly clear the pending fee at your earliest convenience.`}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono text-on-surface"
+              <input
+                type="text"
+                required
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="e.g. Rahul Gupta"
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:outline-none focus:border-primary"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
-              <button
-                type="button"
-                onClick={() => setReminderModalTarget(null)}
-                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={sending}
-                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium flex items-center gap-1.5"
-              >
-                {sending ? (
-                  <>
-                    <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                    Sending Direct SMS...
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[16px]">send</span>
-                    Send Direct Message
-                  </>
-                )}
-              </button>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Roll Number / Student ID
+              </label>
+              <input
+                type="text"
+                value={formData.rollNumber}
+                onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
+                placeholder="Auto-generated if empty"
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:outline-none focus:border-primary"
+              />
             </div>
-          </form>
-        </Modal>
-      )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Class / Course *
+              </label>
+              <select
+                value={formData.className}
+                onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:outline-none focus:border-primary"
+              >
+                {CLASSES.filter((c) => c !== 'All').map((c) => (
+                  <option key={c} value={c}>
+                    Class {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Registered Phone Number *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="e.g. 9816012345"
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Total Fee Amount (₹) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={formData.totalFeeAmount}
+                onChange={(e) => setFormData({ ...formData, totalFeeAmount: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Amount Paid (₹) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                max={formData.totalFeeAmount}
+                value={formData.amountPaid}
+                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-emerald-700 focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Due Date *
+              </label>
+              <input
+                type="date"
+                required
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Auto-Calculated Status Preview Box */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 flex items-center justify-between text-xs font-bold">
+            <span className="text-on-surface-variant">Computed Status &amp; Due:</span>
+            <div className="flex items-center gap-3">
+              <span className="text-rose-700 font-mono">
+                Due: ₹{Math.max(0, Number(formData.totalFeeAmount) - Number(formData.amountPaid)).toLocaleString()}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                  Number(formData.amountPaid) >= Number(formData.totalFeeAmount)
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : Number(formData.amountPaid) > 0
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                {Number(formData.amountPaid) >= Number(formData.totalFeeAmount)
+                  ? 'Paid'
+                  : Number(formData.amountPaid) > 0
+                  ? 'Partially Paid'
+                  : 'Unpaid'}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-3 flex justify-end gap-3 border-t border-outline-variant/15">
+            <button
+              type="button"
+              onClick={() => setEditModalOpen(false)}
+              className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container shadow-premium transition-all disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : editingStudent ? 'Update Record' : 'Create Record'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={deleteModalOpen}
+        title="Delete Student Fee Record"
+        message={`Are you sure you want to delete the record for ${deletingStudent?.fullName}? This action cannot be undone.`}
+        confirmText="Delete Record"
+        confirmVariant="danger"
+        loading={deleting}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeletingStudent(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
