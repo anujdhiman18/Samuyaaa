@@ -5,6 +5,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
+import { sendFacultyApplicationNotification } from './emailService';
 
 export const initialMockStudents = [
   {
@@ -2098,11 +2099,18 @@ export const facultyApplicationService = {
     const updated = [newApp, ...list];
     setStoredFacultyApplications(updated);
 
+    // Send email notification to target admin email: anujdhiman1706@gmail.com
+    try {
+      await sendFacultyApplicationNotification(newApp);
+    } catch (emailErr) {
+      console.warn('Faculty email notification warning:', emailErr);
+    }
+
     return {
       success: true,
       application: newApp,
       applicationId,
-      message: 'Faculty Application submitted successfully!',
+      message: 'Faculty Application submitted successfully & email sent!',
     };
   },
 

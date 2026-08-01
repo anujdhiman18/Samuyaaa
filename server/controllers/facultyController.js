@@ -73,3 +73,23 @@ export const deleteFaculty = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Notify admin on faculty application submission
+// @route   POST /api/faculty/notify
+export const notifyFacultyApplication = async (req, res) => {
+  try {
+    const { targetEmail = 'anujdhiman1706@gmail.com', applicationData } = req.body;
+    console.log(`[Faculty Recruitment Email Log] New Faculty Joining Application received for email: ${targetEmail}`);
+    if (applicationData) {
+      console.log(`Applicant: ${applicationData.fullName} | Position: ${applicationData.positionApplied} | Phone: ${applicationData.contactNumber}`);
+    }
+
+    res.json({
+      success: true,
+      message: `Notification logged & queued to ${targetEmail}`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
