@@ -75,6 +75,13 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
           </div>
 
           <div className="border-t border-surface-container-high pt-6 flex flex-col gap-2.5">
+            <Link
+              to="/apply"
+              onClick={onClose}
+              className="w-full border border-outline-variant/40 text-primary text-center py-2.5 rounded-xl font-headings font-bold hover:bg-primary/10 transition-colors text-xs flex items-center justify-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">work</span> Join as Faculty
+            </Link>
             <div className="grid grid-cols-2 gap-2">
               <Link
                 to="/login"

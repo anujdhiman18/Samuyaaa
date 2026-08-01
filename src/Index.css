@@ -72,6 +72,11 @@
 }
 
 /* ---------- Base ---------- */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
 body {
   font-family: 'Work Sans', sans-serif;
   background-color: #faf9f6;
