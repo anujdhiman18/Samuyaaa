@@ -2104,17 +2104,25 @@ export const facultyApplicationService = {
     let emailWarning = null;
 
     try {
-      const emailResponse = await fetch('/api/faculty/send-email', {
+      const baseUrl = getApiBaseUrl();
+      const emailApiUrl = baseUrl ? `${baseUrl}/faculty/send-email` : '/api/faculty/send-email';
+
+      const emailResponse = await fetch(emailApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newApp),
       });
 
-      const emailResult = await emailResponse.json();
-      if (emailResponse.ok && emailResult.success) {
-        emailSent = true;
+      const contentType = emailResponse.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const emailResult = await emailResponse.json();
+        if (emailResponse.ok && emailResult.success) {
+          emailSent = true;
+        } else {
+          emailWarning = emailResult.message || 'Email notification endpoint returned an error.';
+        }
       } else {
-        emailWarning = emailResult.message || 'Email notification endpoint returned an error.';
+        emailWarning = `Server email endpoint returned status ${emailResponse.status}.`;
       }
     } catch (emailErr) {
       console.warn('Faculty application backend email notification warning:', emailErr.message);
