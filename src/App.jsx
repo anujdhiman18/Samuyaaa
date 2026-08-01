@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 
 // Public & Auth Pages
 import PublicWebsite from './components/PublicWebsite';
+import FacultyApplicationPage from './pages/FacultyApplicationPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 
@@ -97,6 +98,10 @@ export default function App() {
                   </PortalErrorBoundary>
                 }
               />
+
+              {/* Faculty Application Routes */}
+              <Route path="/apply" element={<FacultyApplicationPage />} />
+              <Route path="/faculty/apply" element={<FacultyApplicationPage />} />
 
               {/* Authentication Routes */}
               <Route path="/login" element={<LoginPage />} />

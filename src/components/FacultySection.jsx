@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { facultyService, getStoredFaculty, subscribeFirestoreCollection } from '../services/api';
 
 export default function FacultySection() {
@@ -112,6 +113,30 @@ export default function FacultySection() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Join as Faculty CTA Banner */}
+        <div className="mt-14 bg-gradient-to-r from-secondary to-primary text-white rounded-3xl p-8 shadow-premium flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="space-y-2 text-center md:text-left z-10">
+            <span className="bg-white/20 text-white font-headings font-extrabold text-[11px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/20 inline-block">
+              Career Opportunities
+            </span>
+            <h3 className="font-headings font-extrabold text-2xl md:text-3xl text-white">
+              Are You a Passionate Educator? Join Our Faculty Team!
+            </h3>
+            <p className="text-xs md:text-sm text-white/80 max-w-xl font-light">
+              We are expanding our academic team. Apply today to teach top competitive JEE, NEET, Board & Foundation batches with state-of-the-art facilities.
+            </p>
+          </div>
+          <div className="z-10 shrink-0">
+            <Link
+              to="/apply"
+              className="bg-white text-secondary hover:bg-surface-container font-headings font-bold text-xs px-7 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
+              Fill Faculty Application Form
+            </Link>
+          </div>
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { facultyService, getStoredFaculty } from '../../services/api';
+import { facultyService, facultyApplicationService, getStoredFaculty } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -16,6 +16,9 @@ const initialForm = {
 };
 
 export default function FacultyManagement() {
+  const [activeTab, setActiveTab] = useState('directory'); // 'directory' | 'applications'
+
+  // Faculty Directory State
   const [facultyList, setFacultyList] = useState(() => {
     try {
       return getStoredFaculty() || [];
@@ -25,7 +28,15 @@ export default function FacultyManagement() {
   });
   const [loading, setLoading] = useState(false);
 
-  // Modal states
+  // Applications State
+  const [applications, setApplications] = useState([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [appFilterStatus, setAppFilterStatus] = useState('All');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [updatingApp, setUpdatingApp] = useState(false);
+
+  // Faculty Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -44,6 +55,7 @@ export default function FacultyManagement() {
 
   useEffect(() => {
     fetchFaculty();
+    fetchApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -58,6 +70,20 @@ export default function FacultyManagement() {
       addToast(err.message || 'Failed to fetch faculty list', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    setLoadingApps(true);
+    try {
+      const res = await facultyApplicationService.getApplications();
+      if (res && res.applications) {
+        setApplications(res.applications);
+      }
+    } catch (err) {
+      addToast(err.message || 'Failed to fetch applications', 'error');
+    } finally {
+      setLoadingApps(false);
     }
   };
 
@@ -90,7 +116,6 @@ export default function FacultyManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type & size
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       addToast('Validation Error: Only JPG, PNG, and WEBP files are allowed.', 'error');
@@ -102,7 +127,6 @@ export default function FacultyManagement() {
       return;
     }
 
-    // Set temporary local preview
     const tempUrl = URL.createObjectURL(file);
     setPreviewUrl(tempUrl);
 
@@ -173,180 +197,536 @@ export default function FacultyManagement() {
     }
   };
 
+  // Application Handlers
+  const handleOpenAppDetails = (app) => {
+    setSelectedApp(app);
+    setAdminNotes(app.notes || '');
+  };
+
+  const handleUpdateAppStatus = async (status) => {
+    if (!selectedApp) return;
+    setUpdatingApp(true);
+    try {
+      await facultyApplicationService.updateApplicationStatus(selectedApp._id || selectedApp.id, status, adminNotes);
+      addToast(`Application status set to "${status}"`, 'success');
+      setSelectedApp(null);
+      fetchApplications();
+    } catch (err) {
+      addToast('Failed to update status', 'error');
+    } finally {
+      setUpdatingApp(false);
+    }
+  };
+
+  const handleApproveAndOnboard = async () => {
+    if (!selectedApp) return;
+    setUpdatingApp(true);
+    try {
+      await facultyApplicationService.approveAndConvertToFaculty(selectedApp);
+      addToast(`Applicant ${selectedApp.fullName} approved & onboarded to Active Faculty Directory!`, 'success');
+      setSelectedApp(null);
+      fetchApplications();
+      fetchFaculty();
+    } catch (err) {
+      addToast(err.message || 'Failed to onboard faculty member', 'error');
+    } finally {
+      setUpdatingApp(false);
+    }
+  };
+
+  const handleDeleteApp = async (appId) => {
+    try {
+      await facultyApplicationService.deleteApplication(appId);
+      addToast('Application record deleted', 'info');
+      setSelectedApp(null);
+      fetchApplications();
+    } catch (err) {
+      addToast('Failed to delete application', 'error');
+    }
+  };
+
+  const filteredApplications = applications.filter((a) => {
+    if (appFilterStatus === 'All') return true;
+    return a.status === appFilterStatus;
+  });
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Approved':
+        return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
+      case 'Shortlisted':
+        return 'bg-blue-500/10 text-blue-700 border-blue-500/20';
+      case 'Under Review':
+        return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+      case 'Rejected':
+        return 'bg-rose-500/10 text-rose-700 border-rose-500/20';
+      default:
+        return 'bg-slate-500/10 text-slate-700 border-slate-500/20';
+    }
+  };
+
   return (
     <div className="space-y-6 font-body text-on-surface">
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-headings font-extrabold text-2xl text-secondary">Faculty Directory</h1>
+          <h1 className="font-headings font-extrabold text-2xl text-secondary">Faculty Portal Management</h1>
           <p className="text-xs text-on-surface-variant mt-1">
-            Manage academic instructors, department heads, subject experts, and faculty profiles.
+            Manage active academic faculty directory and review candidate recruitment joining applications.
           </p>
         </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenAdd}
+            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center justify-center gap-2 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all shadow-tactile-btn cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">person_add</span>
+            + Add Faculty Member
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Selector */}
+      <div className="flex border-b border-outline-variant/20 gap-4">
         <button
-          onClick={handleOpenAdd}
-          className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center justify-center gap-2 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all shadow-tactile-btn cursor-pointer"
+          onClick={() => setActiveTab('directory')}
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+            activeTab === 'directory'
+              ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              : 'text-on-surface-variant hover:text-secondary'
+          }`}
         >
-          <span className="material-symbols-outlined text-[18px]">person_add</span>
-          + Add Faculty Member
+          <span className="material-symbols-outlined text-[18px]">badge</span>
+          Active Faculty Directory ({facultyList.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('applications')}
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+            activeTab === 'applications'
+              ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              : 'text-on-surface-variant hover:text-secondary'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
+          Faculty Applications ({applications.length})
+          {applications.filter((a) => a.status === 'Pending').length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+              {applications.filter((a) => a.status === 'Pending').length} new
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Main List Table / Grid */}
-      <div className="bg-white rounded-2xl border border-outline-variant/15 shadow-premium overflow-hidden">
-        {loading ? (
-          /* Loading Skeletons */
-          <div className="p-6 space-y-4">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="animate-pulse flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-200" />
-                  <div className="space-y-2">
-                    <div className="w-40 h-4 bg-slate-200 rounded" />
-                    <div className="w-24 h-3 bg-slate-200 rounded" />
+      {/* TAB 1: ACTIVE FACULTY DIRECTORY */}
+      {activeTab === 'directory' && (
+        <div className="bg-white rounded-2xl border border-outline-variant/15 shadow-premium overflow-hidden">
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="animate-pulse flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-200" />
+                    <div className="space-y-2">
+                      <div className="w-40 h-4 bg-slate-200 rounded" />
+                      <div className="w-24 h-3 bg-slate-200 rounded" />
+                    </div>
                   </div>
+                  <div className="w-20 h-6 bg-slate-200 rounded-full" />
                 </div>
-                <div className="w-20 h-6 bg-slate-200 rounded-full" />
-              </div>
-            ))}
-          </div>
-        ) : facultyList.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="material-symbols-outlined text-[48px] text-on-surface-variant/40 mb-2">
-              badge
-            </span>
-            <h3 className="font-headings font-bold text-base text-secondary">No Faculty Members Found</h3>
-            <p className="text-xs text-on-surface-variant mt-1 mb-4">
-              Get started by adding your first academic faculty profile.
-            </p>
-            <button
-              onClick={handleOpenAdd}
-              className="px-4 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn cursor-pointer"
-            >
-              + Add Faculty
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
-                  <th className="py-3.5 px-4">Photo</th>
-                  <th className="py-3.5 px-4">Faculty Name</th>
-                  <th className="py-3.5 px-4">Subject</th>
-                  <th className="py-3.5 px-4">Designation</th>
-                  <th className="py-3.5 px-4">Qualification</th>
-                  <th className="py-3.5 px-4">Experience</th>
-                  <th className="py-3.5 px-4 text-center">Order</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
-                {facultyList.map((member) => (
-                  <tr key={member.id || member._id} className="hover:bg-surface-container-low transition-colors">
-                    <td className="py-3.5 px-4">
-                      <img
-                        src={member.photo_url}
-                        alt={member.name}
-                        className="w-11 h-11 rounded-full object-cover border-2 border-secondary shadow-sm"
-                      />
-                    </td>
-                    <td className="py-3.5 px-4 font-headings font-bold text-secondary text-sm">
-                      {member.name}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-semibold text-[11px]">
-                        {member.subject}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-on-surface">
-                      {member.designation}
-                    </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant">
-                      {member.qualification}
-                    </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant">
-                      {member.experience}
-                    </td>
-                    <td className="py-3.5 px-4 text-center font-mono font-bold text-secondary">
-                      #{member.display_order}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                          member.is_active
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/40'
-                            : 'bg-rose-100 text-rose-800 border border-rose-300/40'
-                        }`}
-                      >
-                        {member.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-1">
-                      <button
-                        onClick={() => handleOpenEdit(member)}
-                        className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                        title="Edit Faculty"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(member)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Delete Faculty"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                    </td>
+              ))}
+            </div>
+          ) : facultyList.length === 0 ? (
+            <div className="p-12 text-center">
+              <span className="material-symbols-outlined text-[48px] text-on-surface-variant/40 mb-2">
+                badge
+              </span>
+              <h3 className="font-headings font-bold text-base text-secondary">No Faculty Members Found</h3>
+              <p className="text-xs text-on-surface-variant mt-1 mb-4">
+                Get started by adding your first academic faculty profile.
+              </p>
+              <button
+                onClick={handleOpenAdd}
+                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn cursor-pointer"
+              >
+                + Add Faculty
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-surface-container-low/80 text-on-surface-variant font-headings font-bold border-b border-outline-variant/15">
+                    <th className="py-3.5 px-4">Instructor Details</th>
+                    <th className="py-3.5 px-4">Subject</th>
+                    <th className="py-3.5 px-4">Qualification</th>
+                    <th className="py-3.5 px-4">Experience</th>
+                    <th className="py-3.5 px-4 text-center">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/10">
+                  {facultyList.map((member) => (
+                    <tr key={member.id || member._id} className="hover:bg-surface-container-lowest/60 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={member.photo_url}
+                            alt={member.name}
+                            className="w-10 h-10 rounded-full object-cover border border-outline-variant/30 shrink-0"
+                          />
+                          <div>
+                            <p className="font-headings font-bold text-secondary text-sm">{member.name}</p>
+                            <span className="text-[11px] text-on-surface-variant font-medium">
+                              {member.designation}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2.5 py-1 rounded-full bg-primary-fixed/50 text-primary font-semibold text-[11px]">
+                          {member.subject}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-on-surface-variant font-medium">
+                        {member.qualification}
+                      </td>
+                      <td className="py-3.5 px-4 text-on-surface-variant font-medium">
+                        {member.experience}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-headings font-bold uppercase tracking-wider ${
+                            member.is_active
+                              ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-700 border border-rose-500/20'
+                          }`}
+                        >
+                          {member.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(member)}
+                            className="p-1.5 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors cursor-pointer"
+                            title="Edit Faculty"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(member)}
+                            className="p-1.5 rounded-lg text-on-surface-variant hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Delete Faculty"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Add / Edit Faculty Modal */}
+      {/* TAB 2: FACULTY APPLICATIONS MANAGEMENT */}
+      {activeTab === 'applications' && (
+        <div className="space-y-4">
+          {/* Applications Status Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-outline-variant/15 shadow-sm">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {['All', 'Pending', 'Under Review', 'Shortlisted', 'Approved', 'Rejected'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setAppFilterStatus(st)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-headings font-bold transition-all cursor-pointer ${
+                    appFilterStatus === st
+                      ? 'bg-secondary text-white shadow-sm'
+                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+
+            <span className="text-xs font-headings text-on-surface-variant font-medium">
+              Showing {filteredApplications.length} of {applications.length} applications
+            </span>
+          </div>
+
+          {/* Applications List Table */}
+          <div className="bg-white rounded-2xl border border-outline-variant/15 shadow-premium overflow-hidden">
+            {loadingApps ? (
+              <div className="p-6 text-center text-xs text-on-surface-variant">Loading application records...</div>
+            ) : filteredApplications.length === 0 ? (
+              <div className="p-12 text-center">
+                <span className="material-symbols-outlined text-[48px] text-on-surface-variant/40 mb-2">
+                  folder_off
+                </span>
+                <h3 className="font-headings font-bold text-base text-secondary">No Applications Found</h3>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  There are currently no candidate applications under this filter status.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-surface-container-low/80 text-on-surface-variant font-headings font-bold border-b border-outline-variant/15">
+                      <th className="py-3.5 px-4">Ref ID</th>
+                      <th className="py-3.5 px-4">Applicant</th>
+                      <th className="py-3.5 px-4">Position Applied</th>
+                      <th className="py-3.5 px-4">Experience</th>
+                      <th className="py-3.5 px-4">Applied Date</th>
+                      <th className="py-3.5 px-4 text-center">Status</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {filteredApplications.map((app) => (
+                      <tr key={app.id || app._id} className="hover:bg-surface-container-lowest/60 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-bold text-primary">
+                          {app.applicationId || app.id}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <p className="font-headings font-bold text-secondary text-sm">{app.fullName}</p>
+                            <p className="text-[11px] text-on-surface-variant">{app.email} &bull; {app.contactNumber}</p>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-on-surface">
+                          {app.positionApplied}
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-on-surface-variant">
+                          {app.totalExperience}
+                        </td>
+                        <td className="py-3.5 px-4 text-on-surface-variant font-medium">
+                          {new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-headings font-bold border ${getStatusBadge(app.status)}`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleOpenAppDetails(app)}
+                            className="px-3 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-full font-headings font-bold text-xs transition-all flex items-center gap-1 ml-auto cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                            Review App
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* APPLICATION DETAILS & REVIEW MODAL */}
+      {selectedApp && (
+        <Modal
+          isOpen={Boolean(selectedApp)}
+          onClose={() => setSelectedApp(null)}
+          title={`Faculty Application: ${selectedApp.applicationId || selectedApp.id}`}
+        >
+          <div className="space-y-6 font-body text-xs text-on-surface">
+            {/* Header info */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface-container-low p-4 rounded-2xl gap-3">
+              <div>
+                <h3 className="font-headings font-extrabold text-lg text-secondary">{selectedApp.fullName}</h3>
+                <p className="text-xs text-on-surface-variant">{selectedApp.email} &bull; {selectedApp.contactNumber}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-headings font-bold border ${getStatusBadge(selectedApp.status)}`}>
+                Status: {selectedApp.status}
+              </span>
+            </div>
+
+            {/* Grid breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Personal Details</h4>
+                <p><strong>DOB & Gender:</strong> {selectedApp.dob} ({selectedApp.gender})</p>
+                <p><strong>Current Address:</strong> {selectedApp.currentAddress}</p>
+                <p><strong>Permanent Address:</strong> {selectedApp.permanentAddress}</p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Educational Qualifications</h4>
+                <p><strong>Highest Degree:</strong> {selectedApp.highestDegree}</p>
+                <p><strong>Institution:</strong> {selectedApp.universityName} ({selectedApp.graduationYear})</p>
+                <p><strong>Specialization:</strong> {selectedApp.specialization}</p>
+                <p><strong>Certifications:</strong> {selectedApp.certifications || 'None'}</p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Experience & Teaching</h4>
+                <p><strong>Teaching Exp:</strong> {selectedApp.totalExperience}</p>
+                <p><strong>Prior Institutes:</strong> {selectedApp.previousInstitutions}</p>
+                <p><strong>Subjects Taught:</strong> {selectedApp.subjectsTaught}</p>
+                <p><strong>Employment Status:</strong> {selectedApp.currentStatus}</p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Position & Shift</h4>
+                <p><strong>Role Applied:</strong> {selectedApp.positionApplied}</p>
+                <p><strong>Expertise:</strong> {Array.isArray(selectedApp.subjectsExpertise) ? selectedApp.subjectsExpertise.join(', ') : selectedApp.subjectsExpertise}</p>
+                <p><strong>Preferred Shift:</strong> {selectedApp.preferredTimeSlot}</p>
+                <p><strong>Expected Joining:</strong> {selectedApp.expectedJoiningDate}</p>
+              </div>
+            </div>
+
+            {/* Statement & Skills */}
+            <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+              <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Statement of Purpose</h4>
+              <p className="italic text-on-surface-variant leading-relaxed font-light">"{selectedApp.whyJoinReason}"</p>
+              {selectedApp.skillsAchievements && (
+                <div className="pt-2">
+                  <strong>Special Skills & Achievements:</strong> {selectedApp.skillsAchievements}
+                </div>
+              )}
+            </div>
+
+            {/* References */}
+            {selectedApp.references && selectedApp.references.length > 0 && (
+              <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">References</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedApp.references.map((r, i) => (
+                    <div key={i} className="p-2 bg-surface-container rounded-lg">
+                      <p className="font-bold text-secondary">{r.name}</p>
+                      <p className="text-[11px] text-on-surface-variant">{r.contact} &bull; {r.relationship}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Attachments */}
+            <div className="p-4 rounded-xl border border-outline-variant/20 space-y-2">
+              <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px]">Attachments</h4>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-3 py-1.5 bg-surface-container rounded-lg font-semibold flex items-center gap-1.5 text-secondary">
+                  <span className="material-symbols-outlined text-[16px]">description</span>
+                  {selectedApp.resumeFileName || 'Resume.pdf'}
+                </span>
+                <span className="px-3 py-1.5 bg-surface-container rounded-lg font-semibold flex items-center gap-1.5 text-secondary">
+                  <span className="material-symbols-outlined text-[16px]">badge</span>
+                  {selectedApp.idProofFileName || 'ID_Proof.pdf'}
+                </span>
+                <span className="px-3 py-1.5 bg-surface-container rounded-lg font-semibold flex items-center gap-1.5 text-secondary">
+                  <span className="material-symbols-outlined text-[16px]">workspace_premium</span>
+                  {selectedApp.certificatesFileName || 'Certificates.pdf'}
+                </span>
+              </div>
+            </div>
+
+            {/* Admin Review Notes */}
+            <div className="space-y-1">
+              <label className="font-headings font-bold text-secondary block">Admin Internal Notes</label>
+              <textarea
+                rows={2}
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder="Add interviewer notes, demo feedback, background check results..."
+                className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
+              />
+            </div>
+
+            {/* Action Bar */}
+            <div className="pt-4 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-3">
+              <button
+                onClick={() => handleDeleteApp(selectedApp._id || selectedApp.id)}
+                className="text-rose-600 hover:text-rose-800 text-xs font-bold flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+                Delete Application
+              </button>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleUpdateAppStatus('Under Review')}
+                  className="px-3.5 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 font-bold text-xs"
+                >
+                  Mark Under Review
+                </button>
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleUpdateAppStatus('Shortlisted')}
+                  className="px-3.5 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 font-bold text-xs"
+                >
+                  Shortlist
+                </button>
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleUpdateAppStatus('Rejected')}
+                  className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 font-bold text-xs"
+                >
+                  Reject
+                </button>
+                <button
+                  disabled={updatingApp}
+                  onClick={handleApproveAndOnboard}
+                  className="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs shadow-md flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Approve & Onboard to Faculty
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ADD/EDIT FACULTY MODAL */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingMember ? 'Edit Faculty Profile' : 'Add New Faculty Member'}
-        maxWidth="max-w-2xl"
+        title={editingMember ? 'Edit Faculty Member' : 'Add New Faculty Member'}
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs font-body">
-          {/* Faculty Photo Uploader */}
+          {/* Photo preview & upload */}
           <div className="space-y-2">
             <label className="font-headings font-bold text-on-surface-variant block">
-              Faculty Photo * (JPG, PNG, WEBP &bull; Max 5MB)
+              Faculty Photo *
             </label>
-            <div className="flex items-center gap-4 p-3 bg-surface-container-low rounded-xl border border-dashed border-outline-variant/40">
-              <div className="relative">
+
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 rounded-full border-2 border-outline-variant/30 overflow-hidden bg-surface-container shrink-0 flex items-center justify-center">
                 {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-md"
-                  />
+                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[28px]">add_a_photo</span>
-                  </div>
+                  <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">person</span>
                 )}
               </div>
 
               <div className="flex-1 space-y-1">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  disabled={uploading}
-                  className="block w-full text-xs text-on-surface-variant file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-headings file:font-bold file:bg-primary file:text-white hover:file:bg-primary-container cursor-pointer"
-                />
+                <label className="bg-surface-container-high hover:bg-outline-variant/30 text-secondary font-headings font-bold text-xs px-3.5 py-2 rounded-xl cursor-pointer inline-flex items-center gap-2 border border-outline-variant/30 transition-colors">
+                  <span className="material-symbols-outlined text-[16px]">cloud_upload</span>
+                  {uploading ? 'Uploading...' : 'Choose Image File'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                  />
+                </label>
+
                 {uploading && (
-                  <div className="space-y-1 mt-2">
-                    <div className="flex justify-between text-[10px] text-on-surface-variant">
-                      <span>Uploading image...</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-on-surface-variant font-bold">
+                      <span>Uploading photo...</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
@@ -362,7 +742,6 @@ export default function FacultyManagement() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Faculty Name */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Faculty Name *
@@ -377,7 +756,6 @@ export default function FacultyManagement() {
               />
             </div>
 
-            {/* Subject */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Subject Specialization
@@ -391,7 +769,6 @@ export default function FacultyManagement() {
               />
             </div>
 
-            {/* Designation */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Designation / Title
@@ -405,7 +782,6 @@ export default function FacultyManagement() {
               />
             </div>
 
-            {/* Qualification */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Academic Qualification
@@ -419,7 +795,6 @@ export default function FacultyManagement() {
               />
             </div>
 
-            {/* Experience */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Teaching Experience
@@ -433,7 +808,6 @@ export default function FacultyManagement() {
               />
             </div>
 
-            {/* Display Order */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-on-surface-variant block">
                 Display Order Position
@@ -448,7 +822,6 @@ export default function FacultyManagement() {
             </div>
           </div>
 
-          {/* Active Status Toggle */}
           <div className="pt-2 flex items-center justify-between border-t border-outline-variant/15">
             <span className="font-headings font-bold text-on-surface-variant">
               Profile Active Status
@@ -467,7 +840,6 @@ export default function FacultyManagement() {
             </label>
           </div>
 
-          {/* Modal Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
             <button
               type="button"
@@ -493,7 +865,7 @@ export default function FacultyManagement() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Delete Faculty Member"
-        message={`Are you sure you want to remove ${deleteTarget?.name}? This action will permanently remove their profile record and image.`}
+        message={`Are you sure you want to remove ${deleteTarget?.name}? This action will permanently remove their profile record.`}
         confirmText={deleting ? 'Deleting...' : 'Delete Faculty'}
         isDanger={true}
       />

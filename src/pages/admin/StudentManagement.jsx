@@ -7,7 +7,6 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
 const CLASSES = [
-  'All',
   'Nursery',
   'LKG',
   'UKG',

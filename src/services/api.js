@@ -1962,6 +1962,200 @@ export const facultyService = {
   },
 };
 
+const initialMockFacultyApplications = [
+  {
+    _id: 'app_1001',
+    id: 'app_1001',
+    applicationId: 'SAU-FAC-2026-1001',
+    fullName: 'Dr. Ananya Sharma',
+    dob: '1990-05-14',
+    gender: 'Female',
+    contactNumber: '9816011223',
+    email: 'ananya.sharma@example.com',
+    currentAddress: 'House 45, Sector 4, Kangra Valley, HP 176001',
+    permanentAddress: 'House 45, Sector 4, Kangra Valley, HP 176001',
+    highestDegree: "Ph.D. / Doctorate",
+    universityName: 'IIT Delhi - Indian Institute of Technology',
+    graduationYear: '2016',
+    specialization: 'Quantum Mechanics & Applied Physics',
+    certifications: 'CSIR-NET JRF Qualified, NPTEL Advanced Physics Certification',
+    totalExperience: '8+ Years',
+    previousInstitutions: 'Allen Career Institute, Resonance Kota, DAV Public School',
+    subjectsTaught: 'Physics (Class 11-12), JEE Advanced Physics, Olympiad Physics',
+    currentStatus: 'Serving Notice Period',
+    positionApplied: 'Head of Department (HOD)',
+    subjectsExpertise: ['Physics & Mechanics', 'JEE/NEET Advanced Prep'],
+    preferredTimeSlot: 'Full-time (Morning Shift)',
+    expectedJoiningDate: '2026-08-15',
+    whyJoinReason: 'I am passionate about empowering students in tier-2 cities with top-tier competitive physics training. Saumyaa Studies has an exemplary record in conceptual clarity.',
+    skillsAchievements: 'Mentored top 50 AIR ranks in JEE Advanced 2024. Authored 2 physics problem workbooks.',
+    references: [
+      { name: 'Dr. Rajesh Khanna', contact: '9876543210', relationship: 'Former HOD at Allen' },
+      { name: 'Prof. V. K. Malhotra', contact: '9812345678', relationship: 'PhD Supervisor at IIT Delhi' }
+    ],
+    resumeFileName: 'Dr_Ananya_Sharma_Resume.pdf',
+    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    idProofFileName: 'Aadhaar_Ananya_Sharma.pdf',
+    idProofUrl: '',
+    certificatesFileName: 'PhD_Degree_Certificate.pdf',
+    certificatesUrl: '',
+    status: 'Under Review',
+    appliedAt: '2026-07-28T10:30:00.000Z',
+    notes: 'Strong candidate with IIT background and 8 years JEE experience.',
+  },
+  {
+    _id: 'app_1002',
+    id: 'app_1002',
+    applicationId: 'SAU-FAC-2026-1002',
+    fullName: 'Vikramaditya Verma',
+    dob: '1994-11-22',
+    gender: 'Male',
+    contactNumber: '9876512340',
+    email: 'vikram.verma@example.com',
+    currentAddress: 'Main Street, Palampur, HP 176061',
+    permanentAddress: 'Main Street, Palampur, HP 176061',
+    highestDegree: "Master's Degree (M.Sc / M.Tech / M.A)",
+    universityName: 'Panjab University, Chandigarh',
+    graduationYear: '2018',
+    specialization: 'Pure Mathematics & Calculus',
+    certifications: 'B.Ed in Mathematics, GATE Qualified (Maths)',
+    totalExperience: '5+ Years',
+    previousInstitutions: 'Mount Carmel School, Scholars Academy',
+    subjectsTaught: 'Class 9th to 12th Mathematics, Vedic Maths',
+    currentStatus: 'Currently Employed',
+    positionApplied: 'Subject Teacher',
+    subjectsExpertise: ['Mathematics', 'Logical Reasoning'],
+    preferredTimeSlot: 'Full-time (Evening Shift)',
+    expectedJoiningDate: '2026-09-01',
+    whyJoinReason: 'Saumyaa Studies provides a great academic ecosystem for student-centric teaching and innovative pedagogy.',
+    skillsAchievements: 'Conducted Vedic Math workshops for over 1000 students. 100% pass record in Class 10 Board exams.',
+    references: [
+      { name: 'Sunil Dutt', contact: '9816000000', relationship: 'Principal, Scholars Academy' }
+    ],
+    resumeFileName: 'Vikram_Verma_CV.pdf',
+    resumeUrl: '',
+    idProofFileName: 'PAN_Card.pdf',
+    idProofUrl: '',
+    certificatesFileName: 'MSc_Maths_Marksheet.pdf',
+    certificatesUrl: '',
+    status: 'Pending',
+    appliedAt: '2026-07-30T14:15:00.000Z',
+    notes: 'Good local applicant for senior maths classes.',
+  }
+];
+
+export const getStoredFacultyApplications = () => {
+  try {
+    const data = localStorage.getItem('saumyaa_faculty_applications');
+    if (!data) {
+      localStorage.setItem('saumyaa_faculty_applications', JSON.stringify(initialMockFacultyApplications));
+      return initialMockFacultyApplications;
+    }
+    return JSON.parse(data);
+  } catch (e) {
+    return initialMockFacultyApplications;
+  }
+};
+
+export const setStoredFacultyApplications = (list) => {
+  try {
+    localStorage.setItem('saumyaa_faculty_applications', JSON.stringify(list));
+  } catch (e) {
+    console.warn('LocalStorage faculty applications write error:', e);
+  }
+};
+
+export const facultyApplicationService = {
+  getApplications: async () => {
+    const fsApps = await syncFirestoreCollection('faculty_applications', initialMockFacultyApplications);
+    let list = fsApps || getStoredFacultyApplications();
+    list.sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0));
+    return { success: true, applications: list };
+  },
+
+  submitApplication: async (formData) => {
+    const id = 'app_' + Date.now();
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const applicationId = `SAU-FAC-${new Date().getFullYear()}-${randomCode}`;
+
+    const newApp = {
+      _id: id,
+      id,
+      applicationId,
+      ...formData,
+      status: 'Pending',
+      appliedAt: new Date().toISOString(),
+      notes: '',
+    };
+
+    try {
+      await setDoc(doc(db, 'faculty_applications', id), newApp);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc faculty_application error:', fsErr.message);
+    }
+
+    const list = getStoredFacultyApplications();
+    const updated = [newApp, ...list];
+    setStoredFacultyApplications(updated);
+
+    return {
+      success: true,
+      application: newApp,
+      applicationId,
+      message: 'Faculty Application submitted successfully!',
+    };
+  },
+
+  updateApplicationStatus: async (id, status, notes = '') => {
+    const list = getStoredFacultyApplications();
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+    if (idx !== -1) {
+      list[idx].status = status;
+      if (notes) list[idx].notes = notes;
+      list[idx].updatedAt = new Date().toISOString();
+
+      try {
+        await setDoc(doc(db, 'faculty_applications', String(id)), list[idx], { merge: true });
+      } catch (fsErr) {
+        console.warn('Firestore update application status error:', fsErr.message);
+      }
+
+      setStoredFacultyApplications([...list]);
+    }
+    return { success: true, message: `Application status updated to ${status}` };
+  },
+
+  deleteApplication: async (id) => {
+    try {
+      await deleteDoc(doc(db, 'faculty_applications', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore delete application error:', fsErr.message);
+    }
+
+    const list = getStoredFacultyApplications().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
+    setStoredFacultyApplications(list);
+    return { success: true, message: 'Application deleted successfully' };
+  },
+
+  approveAndConvertToFaculty: async (app) => {
+    const newFacultyData = {
+      name: app.fullName,
+      designation: app.positionApplied || 'Senior Faculty Member',
+      subject: Array.isArray(app.subjectsExpertise) ? app.subjectsExpertise.join(', ') : app.subjectsExpertise || app.specialization || 'General Academics',
+      qualification: `${app.highestDegree} (${app.specialization})`,
+      experience: app.totalExperience || '3+ Years',
+      photo_url: app.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+      display_order: 1,
+      is_active: true,
+    };
+
+    const res = await facultyService.createFaculty(newFacultyData);
+    await facultyApplicationService.updateApplicationStatus(app._id || app.id, 'Approved', 'Approved & Onboarded to Faculty Directory');
+    return res;
+  }
+};
+
+
 const initialMockAlumni = [
   {
     _id: 'alum_1',

@@ -53,6 +53,13 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
         </div>
 
         <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
+          <Link
+            to="/apply"
+            className="border border-outline-variant/40 text-on-surface-variant hover:text-primary hover:border-primary/40 px-3 py-2 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">work</span>
+            Join as Faculty
+          </Link>
           <button
             onClick={() => onOpenBooking()}
             className="bg-primary text-white hover:bg-primary-container px-3.5 py-2 xl:px-4 rounded-full font-headings font-bold shadow-premium hover:shadow-glow-primary active:scale-95 transform transition-all duration-150 text-xs whitespace-nowrap shadow-tactile-btn"
