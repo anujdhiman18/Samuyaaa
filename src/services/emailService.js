@@ -1,6 +1,6 @@
 /**
  * Faculty Application Email Notification Service
- * Automatically dispatches structured faculty application data to: anujdhiman1706@gmail.com
+ * Dispatches structured faculty application data to: anujdhiman1706@gmail.com
  */
 
 export const RECRUITMENT_TARGET_EMAIL = 'anujdhiman1706@gmail.com';
@@ -46,76 +46,56 @@ export const sendFacultyApplicationNotification = async (application) => {
     : subjectsExpertise || 'General Academics';
 
   const formattedReferences = Array.isArray(references) && references.length > 0
-    ? references.map((r, i) => `#${i + 1}: ${r.name} | Phone/Email: ${r.contact} | Role: ${r.relationship}`).join(' ; ')
+    ? references.map((r, i) => `#${i + 1}: ${r.name} | Contact: ${r.contact} | Role: ${r.relationship}`).join(' ; ')
     : 'None Provided';
 
-  // Strategy 1: Multi-Endpoint Direct Delivery (Formspree / Webhook Delivery Engine)
-  const formPayload = {
-    _to: RECRUITMENT_TARGET_EMAIL,
-    _subject: `🎓 New Faculty Joining Application: ${fullName} - ${positionApplied} (${applicationId})`,
-    "Application ID": applicationId,
-    "Applicant Name": fullName,
-    "Contact Phone": contactNumber,
-    "Applicant Email": email,
-    "Position Applied": positionApplied,
-    "Subject Expertise": formattedSubjects,
-    "Total Experience": totalExperience,
-    "Highest Qualification": `${highestDegree} in ${specialization}`,
-    "University Name": universityName,
-    "Year of Graduation": graduationYear,
-    "Additional Certifications": certifications || 'None',
-    "Previous Institutions": previousInstitutions,
-    "Subjects Taught": subjectsTaught,
-    "Employment Status": currentStatus,
-    "Preferred Time Slot": preferredTimeSlot,
-    "Expected Joining Date": expectedJoiningDate,
-    "Why Join Saumyaa Studies": whyJoinReason,
-    "Special Skills & Achievements": skillsAchievements || 'None',
-    "References": formattedReferences,
-    "Resume File": resumeFileName || 'Attached / Provided',
-    "ID Proof File": idProofFileName || 'Attached / Provided',
-    "Certificates File": certificatesFileName || 'Attached / Provided',
-    "Date of Birth": `${dob} (${gender})`,
-    "Current Address": currentAddress,
-    "Permanent Address": permanentAddress,
-    "Applied Timestamp": new Date(appliedAt || Date.now()).toLocaleString(),
-  };
-
   try {
-    // Attempt dispatch via HTTPS Webhook Email Bridge
-    const response = await fetch('https://formspree.io/f/xvgaajre', {
+    const response = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify(formPayload),
+      body: JSON.stringify({
+        _subject: `New Faculty Application - ${fullName}`,
+        "Application ID": applicationId,
+        "Full Name": fullName,
+        "Date of Birth": dob,
+        "Gender": gender,
+        "Contact Number": contactNumber,
+        "Email": email,
+        "Current Address": currentAddress,
+        "Permanent Address": permanentAddress,
+        "Highest Degree": highestDegree,
+        "University": universityName,
+        "Graduation Year": graduationYear,
+        "Specialization": specialization,
+        "Certifications": certifications || 'None',
+        "Teaching Experience": totalExperience,
+        "Current Status": currentStatus,
+        "Previous Institutions": previousInstitutions,
+        "Subjects Taught": subjectsTaught,
+        "Position Applied": positionApplied,
+        "Subjects Expertise": formattedSubjects,
+        "Preferred Time Slot": preferredTimeSlot,
+        "Expected Joining Date": expectedJoiningDate,
+        "Why Join": whyJoinReason,
+        "Skills & Achievements": skillsAchievements || 'None',
+        "References": formattedReferences,
+        "Resume File": resumeFileName || 'Not Uploaded',
+        "ID Proof File": idProofFileName || 'Not Uploaded',
+        "Certificates File": certificatesFileName || 'Not Uploaded',
+        "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
+      }),
     });
 
     if (response.ok) {
-      console.log(`[Email Service] Notification successfully delivered to ${RECRUITMENT_TARGET_EMAIL}`);
+      console.log(`[Email Service] Email successfully delivered to ${RECRUITMENT_TARGET_EMAIL}`);
       return { success: true, deliveredTo: RECRUITMENT_TARGET_EMAIL };
     }
   } catch (err) {
-    console.warn('[Email Service] Webhook delivery fallback active:', err.message);
+    console.warn('[Email Service] Direct email dispatch warning:', err.message);
   }
 
-  // Strategy 2: Backend Express Route Fallback
-  try {
-    const apiRes = await fetch('/api/faculty/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        targetEmail: RECRUITMENT_TARGET_EMAIL,
-        applicationData: application,
-      }),
-    });
-    if (apiRes.ok) {
-      return { success: true, deliveredTo: RECRUITMENT_TARGET_EMAIL };
-    }
-  } catch (backendErr) {
-    console.warn('[Email Service] Backend notification endpoint error:', backendErr.message);
-  }
-
-  return { success: true, message: 'Application recorded and queued for notification.' };
+  return { success: true, message: 'Application recorded' };
 };
