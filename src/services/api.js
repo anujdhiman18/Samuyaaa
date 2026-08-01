@@ -2099,18 +2099,37 @@ export const facultyApplicationService = {
     const updated = [newApp, ...list];
     setStoredFacultyApplications(updated);
 
-    // Send email notification to target admin email: anujdhiman1706@gmail.com
+    // Call secure backend Nodemailer API: POST /api/faculty/send-email
+    let emailSent = false;
+    let emailWarning = null;
+
     try {
-      await sendFacultyApplicationNotification(newApp);
+      const emailResponse = await fetch('/api/faculty/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp),
+      });
+
+      const emailResult = await emailResponse.json();
+      if (emailResponse.ok && emailResult.success) {
+        emailSent = true;
+      } else {
+        emailWarning = emailResult.message || 'Email notification endpoint returned an error.';
+      }
     } catch (emailErr) {
-      console.warn('Faculty email notification warning:', emailErr);
+      console.warn('Faculty application backend email notification warning:', emailErr.message);
+      emailWarning = emailErr.message || 'Failed to reach email notification service.';
     }
 
     return {
       success: true,
       application: newApp,
       applicationId,
-      message: 'Faculty Application submitted successfully & email sent!',
+      emailSent,
+      emailWarning,
+      message: emailSent
+        ? 'Faculty Application submitted successfully and emailed to anujdhiman1706@gmail.com!'
+        : 'Faculty Application saved successfully, but email dispatch encountered an issue.',
     };
   },
 

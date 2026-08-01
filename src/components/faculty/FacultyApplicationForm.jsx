@@ -335,6 +335,16 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
     }
   };
 
+  const readFileAsBase64 = (file) => {
+    return new Promise((resolve) => {
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(6)) {
@@ -344,6 +354,21 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
 
     setSubmitting(true);
     try {
+      // Process file attachments if files were selected
+      const fileAttachments = [];
+      if (formData.resumeFile) {
+        const b64 = await readFileAsBase64(formData.resumeFile);
+        if (b64) fileAttachments.push({ filename: formData.resumeFileName || 'Resume.pdf', content: b64, contentType: formData.resumeFile.type });
+      }
+      if (formData.idProofFile) {
+        const b64 = await readFileAsBase64(formData.idProofFile);
+        if (b64) fileAttachments.push({ filename: formData.idProofFileName || 'ID_Proof.pdf', content: b64, contentType: formData.idProofFile.type });
+      }
+      if (formData.certificatesFile) {
+        const b64 = await readFileAsBase64(formData.certificatesFile);
+        if (b64) fileAttachments.push({ filename: formData.certificatesFileName || 'Certificates.pdf', content: b64, contentType: formData.certificatesFile.type });
+      }
+
       const payload = {
         fullName: formData.fullName,
         dob: formData.dob,
@@ -376,13 +401,18 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
         resumeFileName: formData.resumeFileName || 'Resume.pdf',
         idProofFileName: formData.idProofFileName || 'ID_Proof.pdf',
         certificatesFileName: formData.certificatesFileName || 'Certificates.pdf',
+        fileAttachments,
       };
 
       const result = await facultyApplicationService.submitApplication(payload);
       if (result.success) {
         localStorage.removeItem('saumyaa_faculty_app_draft');
         setSubmittedApp(result);
-        addToast('Application submitted successfully!', 'success');
+        if (result.emailSent) {
+          addToast('Application submitted & emailed to anujdhiman1706@gmail.com!', 'success');
+        } else {
+          addToast(`Application saved! Warning: Email service error (${result.emailWarning || 'Check EMAIL_PASS in server/.env'}).`, 'warning');
+        }
         if (onSuccess) onSuccess(result);
       }
     } catch (err) {

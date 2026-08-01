@@ -1,5 +1,12 @@
 import express from 'express';
-import { getFaculty, createFaculty, updateFaculty, deleteFaculty, notifyFacultyApplication } from '../controllers/facultyController.js';
+import {
+  getFaculty,
+  createFaculty,
+  updateFaculty,
+  deleteFaculty,
+  notifyFacultyApplication,
+  sendFacultyApplicationEmailController,
+} from '../controllers/facultyController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -7,7 +14,10 @@ const router = express.Router();
 // Public route to fetch active faculty for website
 router.get('/', getFaculty);
 
-// Public route to notify admin on faculty application submission
+// Public route to send faculty application email via Nodemailer
+router.post('/send-email', sendFacultyApplicationEmailController);
+
+// Backward compatible notification route
 router.post('/notify', notifyFacultyApplication);
 
 // Admin protected routes for CUD operations
