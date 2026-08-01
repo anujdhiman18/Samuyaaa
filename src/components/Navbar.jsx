@@ -92,14 +92,23 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
           </Link>
         </div>
 
-        {/* Mobile / Tablet Menu Icon */}
-        <button
-          onClick={onOpenMobileMenu}
-          className="lg:hidden p-2 rounded-xl text-on-surface hover:bg-surface-container-high transition-colors"
-          aria-label="Toggle Menu"
-        >
-          <span className="material-symbols-outlined text-[26px]">menu</span>
-        </button>
+        {/* Mobile / Tablet Quick Controls */}
+        <div className="lg:hidden flex items-center gap-2">
+          <Link
+            to="/apply"
+            className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-1.5 rounded-full font-headings font-bold text-[11px] flex items-center gap-1 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[15px]">work</span>
+            Join Faculty
+          </Link>
+          <button
+            onClick={onOpenMobileMenu}
+            className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high transition-colors"
+            aria-label="Toggle Menu"
+          >
+            <span className="material-symbols-outlined text-[26px]">menu</span>
+          </button>
+        </div>
       </div>
     </nav>
   );

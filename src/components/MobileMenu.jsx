@@ -6,6 +6,7 @@ const links = [
   { href: '#about', label: 'About Founder' },
   { href: '#courses', label: 'Academic Programs' },
   { href: '#faculty', label: 'Faculty Roster' },
+  { to: '/apply', label: '💼 Join as Faculty', isRoute: true, highlight: true },
   { href: '#alumni', label: 'Proud Alumni' },
   { href: '#results', label: 'Wall of Excellence' },
   { href: '#testimonials', label: 'Student Testimonials' },
@@ -31,57 +32,88 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
       role="dialog"
       aria-modal="true"
     >
+      {/* Dark overlay backdrop */}
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-inverse-surface/50 backdrop-blur-sm transition-opacity duration-300 ${
           animateIn ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
+      {/* Sliding Mobile Drawer Container */}
       <div
-        className={`absolute inset-y-0 right-0 max-w-full flex pl-10 transform transition-transform duration-300 ease-out ${
+        className={`absolute inset-y-0 right-0 max-w-full flex transform transition-transform duration-300 ease-out ${
           animateIn ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="w-80 bg-surface shadow-2xl flex flex-col py-6 px-6 relative">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo.jpg"
-                alt="Saumyaa Studies Logo"
-                className="w-9 h-9 object-contain rounded-xl shadow-sm bg-white p-0.5"
-              />
-              <span className="font-headings font-extrabold text-lg text-secondary">Saumyaa Studies</span>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-            >
-              <span className="material-symbols-outlined text-[24px]">close</span>
-            </button>
-          </div>
-
-          <div className="flex flex-col space-y-4 font-headings text-lg font-semibold flex-grow">
-            {links.map((link) => (
-              <a
-                key={link.label}
+        <div className="w-80 max-w-[85vw] bg-surface shadow-2xl flex flex-col justify-between py-6 px-6 relative h-full overflow-y-auto">
+          {/* Top Header inside Drawer */}
+          <div>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-surface-container-high">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src="/logo.jpg"
+                  alt="Saumyaa Studies Logo"
+                  className="w-9 h-9 object-contain rounded-xl shadow-sm bg-white p-0.5"
+                />
+                <span className="font-headings font-extrabold text-lg text-secondary tracking-tight">
+                  Saumyaa Studies
+                </span>
+              </div>
+              <button
                 onClick={onClose}
-                href={link.href}
-                className="py-2 px-3 rounded-lg hover:bg-surface-container-low hover:text-primary transition-all"
+                className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                aria-label="Close Menu"
               >
-                {link.label}
-              </a>
-            ))}
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="flex flex-col space-y-2 font-headings text-base font-semibold">
+              {links.map((link) => {
+                if (link.isRoute) {
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.to}
+                      onClick={onClose}
+                      className={`py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-between ${
+                        link.highlight
+                          ? 'bg-primary/10 text-primary font-extrabold border border-primary/20 shadow-sm'
+                          : 'hover:bg-surface-container-low hover:text-primary'
+                      }`}
+                    >
+                      <span>{link.label}</span>
+                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </Link>
+                  );
+                }
+                return (
+                  <a
+                    key={link.label}
+                    onClick={onClose}
+                    href={link.href}
+                    className="py-2.5 px-3.5 rounded-xl hover:bg-surface-container-low hover:text-primary transition-all text-on-surface"
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="border-t border-surface-container-high pt-6 flex flex-col gap-2.5">
+          {/* Bottom Actions Section */}
+          <div className="border-t border-surface-container-high pt-5 mt-6 flex flex-col gap-2.5 shrink-0">
             <Link
               to="/apply"
               onClick={onClose}
-              className="w-full border border-outline-variant/40 text-primary text-center py-2.5 rounded-xl font-headings font-bold hover:bg-primary/10 transition-colors text-xs flex items-center justify-center gap-1.5"
+              className="w-full bg-gradient-to-r from-secondary to-primary text-white text-center py-3 rounded-xl font-headings font-bold hover:opacity-95 transition-all text-xs flex items-center justify-center gap-2 shadow-md"
             >
-              <span className="material-symbols-outlined text-[16px]">work</span> Join as Faculty
+              <span className="material-symbols-outlined text-[18px]">work</span>
+              Join as Faculty (Apply Now)
             </Link>
+
             <div className="grid grid-cols-2 gap-2">
               <Link
                 to="/login"
@@ -98,13 +130,15 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
                 <span className="material-symbols-outlined text-[16px]">person_add</span> Sign Up
               </Link>
             </div>
+
             <button
               onClick={() => {
                 onClose();
                 onOpenBooking();
               }}
-              className="w-full bg-primary text-white text-center py-2.5 rounded-xl font-headings font-bold shadow-premium shadow-tactile-btn hover:bg-primary-container transition-colors text-xs"
+              className="w-full bg-primary text-white text-center py-2.5 rounded-xl font-headings font-bold shadow-premium shadow-tactile-btn hover:bg-primary-container transition-colors text-xs flex items-center justify-center gap-1"
             >
+              <span className="material-symbols-outlined text-[16px]">event_available</span>
               Book a Free Demo
             </button>
           </div>
