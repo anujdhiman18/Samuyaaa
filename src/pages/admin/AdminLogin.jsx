@@ -17,18 +17,17 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('saumyaa_admin_profile') || localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.email || parsed?.username) {
-          const em = parsed.email || parsed.username;
-          setActiveAdminEmail(em);
+    const loadActiveAdmin = async () => {
+      try {
+        const res = await adminProfileService.getProfile();
+        if (res && res.profile && (res.profile.email || res.profile.username)) {
+          setActiveAdminEmail(res.profile.email || res.profile.username);
         }
+      } catch (e) {
+        console.warn('Could not load remote admin profile in login:', e);
       }
-    } catch (e) {
-      console.warn('Could not load saved admin profile in login:', e);
-    }
+    };
+    loadActiveAdmin();
   }, []);
 
   const handleLogin = async (e) => {

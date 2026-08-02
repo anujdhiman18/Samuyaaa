@@ -440,27 +440,38 @@ export const authService = {
   login: async (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase();
 
-    // 1. Fetch current active Admin Profile from LocalStorage / Firestore sync
+    // 1. Fetch current active Admin Profile from Firestore database first, fallback to LocalStorage
     let savedAdmin = null;
     try {
-      const savedAdminStr = localStorage.getItem('saumyaa_admin_profile') || localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
-      if (savedAdminStr) {
-        savedAdmin = JSON.parse(savedAdminStr);
+      const docSnap = await getDoc(doc(db, 'admin_profile', 'admin_main'));
+      if (docSnap.exists()) {
+        savedAdmin = docSnap.data();
       }
-    } catch (e) {
-      console.warn('Saved admin credential parse warning:', e);
+    } catch (fsErr) {
+      console.warn('Firestore admin profile fetch on login warning:', fsErr.message);
+    }
+
+    if (!savedAdmin) {
+      try {
+        const savedAdminStr = localStorage.getItem('saumyaa_admin_profile') || localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
+        if (savedAdminStr) {
+          savedAdmin = JSON.parse(savedAdminStr);
+        }
+      } catch (e) {
+        console.warn('Saved admin credential parse warning:', e);
+      }
     }
 
     const currentAdminEmail = (savedAdmin?.email || savedAdmin?.username || 'admin@saumyaa.com').trim().toLowerCase();
     const currentAdminPass = savedAdmin?.password || 'admin123';
 
-    // SECURITY REJECTION: If admin changed their username/email, reject logging in with the old 'admin@saumyaa.com'
+    // REJECT OLD USERNAME: If admin changed username in DB (e.g. to jitender0585@gmail.com), block login with old admin@saumyaa.com
     if (cleanEmail !== currentAdminEmail && currentAdminEmail !== 'admin@saumyaa.com' && (cleanEmail === 'admin@saumyaa.com' || cleanEmail === 'admin')) {
-      throw new Error(`The admin username has been changed to '${currentAdminEmail}'. Please sign in using your updated official email/username.`);
+      throw new Error(`Invalid credentials! Admin username has been updated in database to '${currentAdminEmail}'. Please sign in using '${currentAdminEmail}'.`);
     }
 
-    // Match against current active Admin email/username
-    if (cleanEmail === currentAdminEmail || cleanEmail === (savedAdmin?.username || '').toLowerCase() || cleanEmail === 'admin@saumyaa.com') {
+    // Match with current active Admin email/username
+    if (cleanEmail === currentAdminEmail || cleanEmail === (savedAdmin?.username || '').toLowerCase() || (cleanEmail === 'admin@saumyaa.com' && currentAdminEmail === 'admin@saumyaa.com')) {
       if (password === currentAdminPass || password === 'admin123' || password === 'admin') {
         const loggedUser = {
           id: savedAdmin?.id || 'admin1',
@@ -698,9 +709,16 @@ export const adminProfileService = {
   },
 
   updateProfile: async (profileData) => {
-    // 1. Update in Firestore
+    const updated = {
+      ...profileData,
+      email: (profileData.email || '').trim().toLowerCase(),
+      username: (profileData.email || profileData.username || '').trim().toLowerCase(),
+    };
+
+    // 1. Update in Firestore Database (admin_profile collection & users collection)
     try {
-      await setDoc(doc(db, 'admin_profile', 'admin_main'), profileData, { merge: true });
+      await setDoc(doc(db, 'admin_profile', 'admin_main'), updated, { merge: true });
+      await setDoc(doc(db, 'users', 'admin_main'), updated, { merge: true });
     } catch (fsErr) {
       console.warn('Firestore admin profile write warning:', fsErr.message);
     }
@@ -717,24 +735,23 @@ export const adminProfileService = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(profileData)
+          body: JSON.stringify(updated)
         });
       }
     } catch (apiErr) {
       console.warn('Backend admin profile update warning:', apiErr.message);
     }
 
-    // 3. Update in LocalStorage
+    // 3. Update in LocalStorage across all admin keys
     try {
-      const savedUser = JSON.parse(localStorage.getItem('saumyaa_user') || '{}');
-      const updated = { ...savedUser, ...profileData };
       localStorage.setItem('saumyaa_user', JSON.stringify(updated));
       localStorage.setItem('saumyaa_admin', JSON.stringify(updated));
+      localStorage.setItem('saumyaa_admin_profile', JSON.stringify(updated));
     } catch (e) {
       console.warn('LocalStorage admin write warning:', e);
     }
 
-    return { success: true, profile: profileData, message: 'Admin profile saved to database successfully!' };
+    return { success: true, profile: updated, message: 'Admin profile & username saved to database successfully!' };
   },
 
   changePassword: async (currentPassword, newPassword) => {
