@@ -203,13 +203,22 @@ export default function FacultyManagement() {
     setAdminNotes(app.notes || '');
   };
 
-  const handleUpdateAppStatus = async (status) => {
-    if (!selectedApp) return;
+  const handleUpdateAppStatus = async (status, targetApp = selectedApp) => {
+    if (!targetApp) return;
     setUpdatingApp(true);
     try {
-      await facultyApplicationService.updateApplicationStatus(selectedApp._id || selectedApp.id, status, adminNotes);
-      addToast(`Application status set to "${status}"`, 'success');
-      setSelectedApp(null);
+      const res = await facultyApplicationService.updateApplicationStatus(
+        targetApp._id || targetApp.id,
+        status,
+        adminNotes
+      );
+      addToast(
+        res.message || `Application status set to "${status}" & candidate (${targetApp.email}) notified via email!`,
+        'success'
+      );
+      if (selectedApp && (selectedApp._id === targetApp._id || selectedApp.id === targetApp.id)) {
+        setSelectedApp(null);
+      }
       fetchApplications();
     } catch (err) {
       addToast('Failed to update status', 'error');
@@ -509,9 +518,18 @@ export default function FacultyManagement() {
                           {new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
                         <td className="py-3.5 px-4 text-center">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-headings font-bold border ${getStatusBadge(app.status)}`}>
-                            {app.status}
-                          </span>
+                          <select
+                            value={app.status}
+                            disabled={updatingApp}
+                            onChange={(e) => handleUpdateAppStatus(e.target.value, app)}
+                            className={`text-[10px] font-headings font-bold py-1 px-2.5 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(app.status)}`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Approved">Approved / Selected</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <button
@@ -629,6 +647,32 @@ export default function FacultyManagement() {
                 </span>
               </div>
             </div>
+
+            {/* Candidate Notification Log */}
+            {selectedApp.notificationHistory && selectedApp.notificationHistory.length > 0 && (
+              <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-primary">mark_email_read</span>
+                  Candidate Notification History ({selectedApp.notificationHistory.length})
+                </h4>
+                <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                  {selectedApp.notificationHistory.map((log, idx) => (
+                    <div key={idx} className="p-2.5 bg-white rounded-lg border border-outline-variant/15 flex items-start justify-between gap-2 text-[11px]">
+                      <div>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(log.status)}`}>
+                          {log.status}
+                        </span>
+                        <p className="mt-1 font-medium text-on-surface">Sent to: <span className="font-mono text-primary">{log.sentTo || selectedApp.email}</span></p>
+                        {log.notes && <p className="text-on-surface-variant italic">"{log.notes}"</p>}
+                      </div>
+                      <span className="text-[10px] text-on-surface-variant shrink-0">
+                        {new Date(log.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Admin Review Notes */}
             <div className="space-y-1">

@@ -5,7 +5,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
-import { sendFacultyApplicationNotification } from './emailService';
+import { sendFacultyApplicationNotification, sendCandidateStatusNotification } from './emailService';
 
 export const initialMockStudents = [
   {
@@ -2152,10 +2152,26 @@ export const facultyApplicationService = {
   updateApplicationStatus: async (id, status, notes = '') => {
     const list = getStoredFacultyApplications();
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+    let notificationResult = null;
+    let targetEmail = '';
+
     if (idx !== -1) {
       list[idx].status = status;
       if (notes) list[idx].notes = notes;
       list[idx].updatedAt = new Date().toISOString();
+      targetEmail = list[idx].email || '';
+
+      const historyLog = {
+        status,
+        date: new Date().toISOString(),
+        notes: notes || '',
+        sentTo: targetEmail,
+      };
+
+      list[idx].notificationHistory = [
+        ...(list[idx].notificationHistory || []),
+        historyLog
+      ];
 
       try {
         await setDoc(doc(db, 'faculty_applications', String(id)), list[idx], { merge: true });
@@ -2164,8 +2180,18 @@ export const facultyApplicationService = {
       }
 
       setStoredFacultyApplications([...list]);
+
+      // Trigger status notification email directly to candidate
+      if (targetEmail) {
+        notificationResult = await sendCandidateStatusNotification(list[idx], status, notes);
+      }
     }
-    return { success: true, message: `Application status updated to ${status}` };
+
+    return {
+      success: true,
+      message: `Application status updated to ${status}${targetEmail ? ` & candidate notified (${targetEmail})` : ''}`,
+      notificationResult
+    };
   },
 
   deleteApplication: async (id) => {

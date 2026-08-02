@@ -6,6 +6,7 @@ import {
   deleteFaculty,
   notifyFacultyApplication,
   sendFacultyApplicationEmailController,
+  sendCandidateStatusEmailController,
 } from '../controllers/facultyController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -16,6 +17,9 @@ router.get('/', getFaculty);
 
 // Public route to send faculty application email via Nodemailer
 router.post('/send-email', sendFacultyApplicationEmailController);
+
+// Public route to send candidate status change notification via Nodemailer / fallback
+router.post('/notify-status', sendCandidateStatusEmailController);
 
 // Backward compatible notification route
 router.post('/notify', notifyFacultyApplication);
