@@ -113,6 +113,24 @@ export const sendCandidateStatusNotification = async (application, newStatus, no
 
   const { fullName, email, positionApplied, applicationId } = application;
   const targetEmail = email;
+  const refId = applicationId || application._id || 'SAU-FAC-2026';
+
+  let customSubject = `Saumyaa Studies: Application Status Update for ${fullName}`;
+  let statusMessage = `The status of your faculty application for ${positionApplied} has been updated to ${newStatus}.`;
+
+  if (newStatus === 'Shortlisted') {
+    customSubject = `🎉 Congratulations ${fullName}! Your Application for ${positionApplied} has been Shortlisted - Saumyaa Studies`;
+    statusMessage = `Dear ${fullName},\n\nWe are pleased to inform you that your application for ${positionApplied} (Ref ID: ${refId}) has been SHORTLISTED by our academic screening committee.\n\nOur recruitment team will contact you shortly to schedule your interview and demo class session.\n\nBest regards,\nSaumyaa Studies Academic Recruitment Cell`;
+  } else if (newStatus === 'Approved' || newStatus === 'Selected') {
+    customSubject = `🌟 Welcome Onboard ${fullName}! Application Approved - Saumyaa Studies`;
+    statusMessage = `Dear ${fullName},\n\nCongratulations! We are delighted to inform you that your application for ${positionApplied} (Ref ID: ${refId}) at Saumyaa Studies has been APPROVED & SELECTED!\n\nWelcome to our faculty team. Our academic operations desk will reach out with your onboarding document and schedule details.\n\nBest regards,\nSaumyaa Studies Academic Recruitment Cell`;
+  } else if (newStatus === 'Rejected') {
+    customSubject = `Status Update regarding your Faculty Application (${refId}) - Saumyaa Studies`;
+    statusMessage = `Dear ${fullName},\n\nThank you for applying for ${positionApplied} (Ref ID: ${refId}) at Saumyaa Studies.\n\nAfter thorough evaluation by our department heads, we regret to inform you that we are unable to move forward with your candidate application at this time. We appreciate your time and wish you success in your future endeavors.\n\nBest regards,\nSaumyaa Studies Academic Recruitment Cell`;
+  } else if (newStatus === 'Under Review') {
+    customSubject = `Application Under Review (${refId}) - Saumyaa Studies`;
+    statusMessage = `Dear ${fullName},\n\nYour application for ${positionApplied} (Ref ID: ${refId}) is currently under active review by our department head and subject evaluation committee. We will update you as soon as the evaluation is completed.\n\nBest regards,\nSaumyaa Studies Academic Recruitment Cell`;
+  }
 
   // 1. Try Backend Nodemailer API endpoint if accessible
   try {
@@ -132,19 +150,8 @@ export const sendCandidateStatusNotification = async (application, newStatus, no
     console.warn('[Candidate Email Service] Backend notification endpoint warning:', err.message);
   }
 
-  // 2. Direct Fallback Engine via FormSubmit directly to candidate's email
+  // 2. Direct Fallback Engine via FormSubmit configured for candidate delivery
   try {
-    let statusSubject = `Faculty Application Status Update: ${newStatus}`;
-    if (newStatus === 'Shortlisted') {
-      statusSubject = `🎉 Congratulations! Your Application has been Shortlisted - Saumyaa Studies`;
-    } else if (newStatus === 'Approved' || newStatus === 'Selected') {
-      statusSubject = `🌟 Welcome Onboard! Application Approved - Saumyaa Studies`;
-    } else if (newStatus === 'Rejected') {
-      statusSubject = `Update regarding your Faculty Application - Saumyaa Studies`;
-    } else if (newStatus === 'Under Review') {
-      statusSubject = `Application Under Review - Saumyaa Studies`;
-    }
-
     const fsRes = await fetch(`https://formsubmit.co/ajax/${targetEmail}`, {
       method: 'POST',
       headers: {
@@ -152,13 +159,18 @@ export const sendCandidateStatusNotification = async (application, newStatus, no
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        _subject: statusSubject,
+        _subject: customSubject,
+        _replyto: 'anujdhiman1706@gmail.com',
+        _template: 'box',
+        _captcha: 'false',
+        _autorespond: statusMessage,
         "Candidate Name": fullName,
-        "Ref ID": applicationId || application._id,
+        "Application Ref ID": refId,
         "Position Applied": positionApplied,
-        "Updated Status": newStatus,
-        "Admin Notes": notes || 'No additional remarks provided.',
-        "Date": new Date().toLocaleString(),
+        "Updated Status Decision": newStatus,
+        "Candidate Notification": statusMessage,
+        "Official Remarks": notes || 'No additional remarks provided.',
+        "Updated Date": new Date().toLocaleString(),
       }),
     });
 
