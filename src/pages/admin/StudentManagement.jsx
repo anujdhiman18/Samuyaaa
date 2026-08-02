@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { studentService, subscribeFirestoreCollection, initialMockStudents, getFeeStatusInfo, getStoredStudents } from '../../services/api';
+import { studentService, credentialRequestService, subscribeFirestoreCollection, initialMockStudents, getFeeStatusInfo, getStoredStudents } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -31,6 +31,7 @@ const initialStudentForm = {
   phone: '',
   parentPhone: '',
   email: '',
+  password: 'student123',
   address: '',
   className: 'Nursery',
   rollNumber: '',
@@ -53,6 +54,10 @@ export default function StudentManagement() {
     }
   });
   const [loading, setLoading] = useState(false);
+
+  // Credential Change Requests
+  const [credentialRequests, setCredentialRequests] = useState([]);
+  const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
 
   // Filters & Search
   const [search, setSearch] = useState(initialSearch);
@@ -81,8 +86,20 @@ export default function StudentManagement() {
     });
 
     fetchStudents();
+    fetchRequests();
     return () => unsubscribe();
   }, []);
+
+  const fetchRequests = async () => {
+    try {
+      const res = await credentialRequestService.getRequests();
+      if (res && res.requests) {
+        setCredentialRequests(res.requests);
+      }
+    } catch (e) {
+      console.warn('Error fetching credential requests:', e);
+    }
+  };
 
   useEffect(() => {
     const filterFromUrl = searchParams.get('feeStatus');
@@ -193,6 +210,17 @@ export default function StudentManagement() {
     }
   };
 
+  const handleProcessRequest = async (requestId, action) => {
+    try {
+      const res = await credentialRequestService.processRequest(requestId, action);
+      addToast(res.message || `Request ${action} successfully!`, 'success');
+      fetchRequests();
+      fetchStudents();
+    } catch (err) {
+      addToast(err.message || 'Error processing request', 'error');
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -274,6 +302,18 @@ export default function StudentManagement() {
         </div>
 
         <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setIsRequestsModalOpen(true)}
+            className="px-4 py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-headings font-bold hover:bg-primary/20 transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+            Credential Requests
+            {credentialRequests.filter((r) => r.status === 'Pending').length > 0 && (
+              <span className="w-5 h-5 bg-rose-600 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center shadow-sm">
+                {credentialRequests.filter((r) => r.status === 'Pending').length}
+              </span>
+            )}
+          </button>
           <button
             onClick={exportToCSV}
             className="px-4 py-2.5 rounded-full border border-outline-variant/30 bg-white text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5 shadow-sm"
@@ -527,19 +567,35 @@ export default function StudentManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <label className="font-headings font-bold text-on-surface-variant">
-                  Email Address
+                  Official Email / Username
                 </label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="rahul@domain.com"
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono"
                 />
               </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-headings font-bold text-on-surface-variant flex items-center justify-between">
+                  <span>Login Password *</span>
+                  <span className="text-[10px] text-primary font-bold">Admin Assigned</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.password || 'student123'}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="student123"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono font-bold"
+                />
+              </div>
+
               <div className="flex flex-col gap-1">
                 <label className="font-headings font-bold text-on-surface-variant">
                   Class / Grade *
@@ -548,7 +604,7 @@ export default function StudentManagement() {
                   required
                   value={form.className}
                   onChange={(e) => handleClassChange(e.target.value)}
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs bg-white"
                 >
                   {CLASSES.filter((c) => c !== 'All').map((c) => (
                     <option key={c} value={c}>
@@ -632,6 +688,77 @@ export default function StudentManagement() {
           message={`Are you sure you want to permanently delete student profile for ${deleteTarget?.fullName}?`}
           loading={deleting}
         />
+      )}
+
+      {/* Credential Change Requests Modal */}
+      {isRequestsModalOpen && (
+        <Modal isOpen={isRequestsModalOpen} onClose={() => setIsRequestsModalOpen(false)} title="Student Credential Change Requests">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs font-body">
+            <p className="text-on-surface-variant text-xs">
+              Review and approve username/email or password change requests submitted by enrolled students.
+            </p>
+
+            {credentialRequests.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant bg-surface-container-low rounded-2xl">
+                No credential change requests submitted yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {credentialRequests.map((req) => (
+                  <div key={req._id || req.id} className="p-4 rounded-2xl bg-white border border-outline-variant/20 shadow-sm space-y-2.5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="font-headings font-extrabold text-sm text-secondary">{req.studentName}</span>
+                        <span className="text-[11px] text-on-surface-variant ml-2 font-mono">({req.rollNumber})</span>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        req.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
+                        : req.status === 'Rejected' ? 'bg-rose-500/10 text-rose-700 border border-rose-500/20'
+                        : 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-surface-container-low text-[11px]">
+                      <div>
+                        <span className="text-on-surface-variant block font-semibold">Request Type:</span>
+                        <strong className="text-primary">{req.requestType}</strong>
+                      </div>
+                      <div>
+                        <span className="text-on-surface-variant block font-semibold">Requested New Value:</span>
+                        <strong className="text-secondary font-mono">{req.newValue}</strong>
+                      </div>
+                    </div>
+
+                    {req.reason && (
+                      <p className="text-[11px] text-on-surface-variant italic">
+                        "Reason: {req.reason}"
+                      </p>
+                    )}
+
+                    {req.status === 'Pending' && (
+                      <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/15">
+                        <button
+                          onClick={() => handleProcessRequest(req._id || req.id, 'Rejected')}
+                          className="px-3.5 py-1.5 rounded-full border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-bold cursor-pointer transition-colors"
+                        >
+                          Reject Request
+                        </button>
+                        <button
+                          onClick={() => handleProcessRequest(req._id || req.id, 'Approved')}
+                          className="px-4 py-1.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold shadow-sm cursor-pointer transition-colors"
+                        >
+                          Approve &amp; Update Credential
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

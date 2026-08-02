@@ -1,167 +1,57 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
-import { authService } from '../../services/api';
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function SignupPage() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const role = 'Student';
-  const [loading, setLoading] = useState(false);
-
-  const { login } = useAuth();
-  const { addToast } = useToast();
-  const navigate = useNavigate();
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-
-    if (role === 'Admin') {
-      addToast('❌ Admin accounts cannot be created publicly! Access denied.', 'error');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      addToast('Passwords do not match!', 'warning');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const data = await authService.signup({
-        fullName,
-        email,
-        phone,
-        password,
-        role: 'Student',
-      });
-
-      login(data.user, data.token);
-      addToast('🎉 Welcome to Saumyaa Studies! Account created.', 'success');
-      navigate('/student/dashboard');
-    } catch (error) {
-      addToast(error.message || 'Registration failed', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4 font-body">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-premium border border-outline-variant/15 relative overflow-hidden">
-        <div className="relative z-10 text-center mb-6">
-          <Link to="/" className="inline-flex items-center gap-3 mb-2 group">
+      <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-outline-variant/15 text-center space-y-6">
+        <div className="flex justify-center">
+          <Link to="/" className="inline-flex items-center gap-3 group">
             <img
               src="/logo.jpg"
               alt="Saumyaa Studies Logo"
-              className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
+              className="w-12 h-12 object-contain rounded-2xl shadow-md group-hover:scale-105 transition-transform bg-white p-0.5"
             />
-            <span className="font-headings font-extrabold text-xl text-secondary tracking-tight">
+            <span className="font-headings font-extrabold text-2xl text-secondary tracking-tight">
               Saumyaa Studies
             </span>
           </Link>
-          <h2 className="font-headings font-extrabold text-2xl text-secondary">
-            Student Registration
+        </div>
+
+        <div className="w-16 h-16 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-500/20">
+          <span className="material-symbols-outlined text-3xl">lock_person</span>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="font-headings font-extrabold text-xl text-secondary">
+            Student Registration Restricted
           </h2>
-          <p className="font-body text-xs text-on-surface-variant mt-1">
-            Create your student portal account
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            Public student self-registration is disabled. Student profiles and login accounts are created exclusively by the <strong>Saumyaa Studies Academic Administration</strong>.
           </p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-3.5 relative z-10 text-xs font-body">
-          <div className="flex flex-col gap-1">
-            <label className="font-headings font-bold text-on-surface-variant">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Rahul Gupta"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:border-secondary transition-all"
-            />
-          </div>
+        <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/15 text-xs text-on-surface-variant space-y-1 text-left">
+          <p className="font-headings font-bold text-secondary flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-primary text-[16px]">info</span>
+            How to get your Student Account?
+          </p>
+          <p className="text-[11px] leading-relaxed">
+            Please contact your Admin or Class Teacher to receive your assigned <strong>Roll Number / Email</strong> and initial <strong>Login Password</strong>.
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@domain.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:border-secondary transition-all"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="10-digit mobile"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:border-secondary transition-all"
-              />
-            </div>
-          </div>
-
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Password *
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:border-secondary transition-all"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Confirm Password *
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:border-secondary transition-all"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || role === 'Admin'}
-            className="w-full mt-2 bg-primary hover:bg-primary-container text-white font-headings font-bold py-3.5 rounded-full text-xs transition-all shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn flex items-center justify-center gap-2 disabled:opacity-50"
+        <div className="pt-2 space-y-3">
+          <Link
+            to="/login"
+            className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-white font-headings font-bold py-3 rounded-full text-xs shadow-md transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            {loading ? 'Creating Account...' : 'Create Student Account'}
-          </button>
-        </form>
+            <span className="material-symbols-outlined text-[18px]">login</span>
+            Go to Student & Admin Login
+          </Link>
 
-        <div className="mt-6 text-center border-t border-outline-variant/15 pt-4 text-xs">
-          <Link to="/login" className="text-secondary font-headings font-bold hover:underline">
-            Already registered? Sign In
+          <Link to="/" className="block text-xs font-semibold text-on-surface-variant hover:text-secondary">
+            Return to Homepage
           </Link>
         </div>
       </div>

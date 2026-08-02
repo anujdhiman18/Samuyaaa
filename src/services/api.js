@@ -2384,6 +2384,90 @@ export const facultyApplicationService = {
   }
 };
 
+// Credential Change Request Service (Username / Password Change Requests from Students to Admin)
+export const credentialRequestService = {
+  getRequests: async () => {
+    const fsReqs = await syncFirestoreCollection('credential_requests', []);
+    let list = fsReqs || [];
+    try {
+      const stored = localStorage.getItem('saumyaa_credential_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+    list.sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
+    return { success: true, requests: list };
+  },
+
+  submitRequest: async (requestData) => {
+    const id = 'req_' + Date.now();
+    const newReq = {
+      _id: id,
+      id,
+      ...requestData,
+      status: 'Pending',
+      requestedAt: new Date().toISOString(),
+    };
+
+    try {
+      await setDoc(doc(db, 'credential_requests', id), newReq);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc credential request warning:', fsErr.message);
+    }
+
+    let list = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_credential_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    list = [newReq, ...list];
+    localStorage.setItem('saumyaa_credential_requests', JSON.stringify(list));
+
+    return { success: true, request: newReq, message: 'Credential change request submitted to Admin successfully!' };
+  },
+
+  processRequest: async (requestId, action, adminNotes = '') => {
+    let list = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_credential_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
+    if (idx !== -1) {
+      list[idx].status = action;
+      list[idx].adminNotes = adminNotes;
+      list[idx].processedAt = new Date().toISOString();
+
+      try {
+        await setDoc(doc(db, 'credential_requests', String(requestId)), list[idx], { merge: true });
+      } catch (fsErr) {
+        console.warn('Firestore process request error:', fsErr.message);
+      }
+
+      localStorage.setItem('saumyaa_credential_requests', JSON.stringify(list));
+
+      // If Approved, automatically update student record in students database!
+      if (action === 'Approved') {
+        const reqItem = list[idx];
+        const studentId = reqItem.studentId;
+        const updatePayload = {};
+
+        if (reqItem.requestType === 'Username / Email Change') {
+          updatePayload.email = reqItem.newValue;
+        } else if (reqItem.requestType === 'Password Change') {
+          updatePayload.password = reqItem.newValue;
+        }
+
+        if (studentId && Object.keys(updatePayload).length > 0) {
+          await studentService.updateStudent(studentId, updatePayload);
+        }
+      }
+    }
+
+    return { success: true, message: `Credential request ${action.toLowerCase()} successfully.` };
+  },
+};
+
 
 const initialMockAlumni = [
   {
