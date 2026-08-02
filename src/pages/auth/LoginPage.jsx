@@ -25,7 +25,9 @@ export default function LoginPage() {
       login(loggedUser, data.token);
       addToast(`Welcome back, ${loggedUser.name}!`, 'success');
 
-      if (loggedUser.role === 'Admin') {
+      const isAdmin = Boolean(loggedUser && loggedUser.role !== 'Student');
+
+      if (isAdmin) {
         navigate('/admin');
       } else {
         navigate('/student/dashboard');

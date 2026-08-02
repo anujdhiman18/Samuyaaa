@@ -9,12 +9,10 @@ export default function AdminLayout() {
   const { isAuthenticated, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // STRICT PROTECTION: If not authenticated or role is not Admin, block access completely!
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const isAdmin = Boolean(user && user.role !== 'Student');
 
-  if (user?.role !== 'Admin') {
+  // STRICT PROTECTION: If not authenticated or role is Student, block access completely!
+  if (!isAuthenticated || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
 

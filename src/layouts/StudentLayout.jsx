@@ -9,11 +9,13 @@ export default function StudentLayout() {
   const { isAuthenticated, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const isAdmin = Boolean(user && user.role !== 'Student');
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.role === 'Admin') {
+  if (isAdmin) {
     return <Navigate to="/admin" replace />;
   }
 
