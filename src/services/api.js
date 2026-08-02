@@ -438,13 +438,29 @@ const setStoredNotifications = (n, skipNotify = false) => {
 // Auth Service with Firebase Auth & Firestore Integration
 export const authService = {
   login: async (email, password) => {
-    // 1. Demo Admin Quick Login
-    if (email === 'admin@saumyaa.com' && password === 'admin123') {
+    // 1. Admin Quick / Saved Credentials Login Check
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const savedAdminStr = localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
+
+    if (savedAdminStr) {
+      try {
+        const savedAdmin = JSON.parse(savedAdminStr);
+        const savedEmail = (savedAdmin.email || savedAdmin.username || '').toLowerCase();
+        if (savedEmail === cleanEmail && (password === 'admin123' || password === 'admin' || password === savedAdmin.password)) {
+          return { success: true, user: savedAdmin, token: 'mock_jwt_token_admin_2026' };
+        }
+      } catch (e) {
+        console.warn('Saved admin credential parse warning:', e);
+      }
+    }
+
+    if ((cleanEmail === 'admin@saumyaa.com' || cleanEmail === 'admin') && password === 'admin123') {
       const mockAdmin = {
         id: 'admin1',
         name: 'Jitender Sharma',
         email: 'admin@saumyaa.com',
-        role: 'Admin',
+        username: 'admin@saumyaa.com',
+        role: 'SuperAdmin',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       };
       return { success: true, user: mockAdmin, token: 'mock_jwt_token_admin_2026' };

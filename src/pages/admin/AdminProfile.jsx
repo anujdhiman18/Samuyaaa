@@ -18,7 +18,8 @@ export default function AdminProfile() {
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
     name: currentAdmin?.name || 'Jitender Sharma',
-    email: currentAdmin?.email || 'admin@saumyaa.com',
+    email: currentAdmin?.email || currentAdmin?.username || 'admin@saumyaa.com',
+    username: currentAdmin?.username || currentAdmin?.email || 'admin@saumyaa.com',
     phone: currentAdmin?.phone || '+91 9816543210',
     role: currentAdmin?.role || 'SuperAdmin',
     department: currentAdmin?.department || 'Academic Management & Operations',
@@ -38,6 +39,7 @@ export default function AdminProfile() {
   });
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
@@ -53,7 +55,8 @@ export default function AdminProfile() {
           ...prev,
           ...res.profile,
           name: res.profile.name || prev.name,
-          email: res.profile.email || prev.email,
+          email: res.profile.email || res.profile.username || prev.email,
+          username: res.profile.username || res.profile.email || prev.username,
           avatar: res.profile.avatar || prev.avatar,
         }));
       }
@@ -94,6 +97,15 @@ export default function AdminProfile() {
     }
   };
 
+  const handleEmailUsernameChange = (val) => {
+    const cleanVal = val.trim();
+    setProfileForm((prev) => ({
+      ...prev,
+      email: val,
+      username: cleanVal,
+    }));
+  };
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
 
@@ -103,16 +115,22 @@ export default function AdminProfile() {
     }
 
     if (!profileForm.email.trim()) {
-      addToast('Admin Email cannot be empty', 'error');
+      addToast('Official Email / Username cannot be empty', 'error');
       return;
     }
 
     setSavingProfile(true);
 
+    const updatedData = {
+      ...profileForm,
+      email: profileForm.email.trim().toLowerCase(),
+      username: profileForm.email.trim().toLowerCase(),
+    };
+
     try {
-      const res = await adminProfileService.updateProfile(profileForm);
-      updateUser(profileForm);
-      addToast(res.message || 'Admin Profile updated and saved to Database!', 'success');
+      const res = await adminProfileService.updateProfile(updatedData);
+      updateUser(updatedData);
+      addToast(res.message || 'Admin profile & login username updated in database!', 'success');
     } catch (err) {
       addToast(err.message || 'Failed to update profile in database', 'error');
     } finally {
@@ -183,7 +201,7 @@ export default function AdminProfile() {
                 {profileForm.role}
               </span>
             </div>
-            <p className="text-xs text-on-surface-variant font-mono mt-1">{profileForm.email}</p>
+            <p className="text-xs text-on-surface-variant font-mono mt-1">Username: {profileForm.email}</p>
             <p className="text-xs text-primary font-medium mt-0.5">{profileForm.department}</p>
           </div>
         </div>
@@ -203,7 +221,7 @@ export default function AdminProfile() {
                 <span className="material-symbols-outlined text-primary text-[22px]">manage_accounts</span>
                 <h2 className="font-headings font-extrabold text-base text-secondary">Admin Profile Details</h2>
               </div>
-              <span className="text-[11px] text-on-surface-variant">Update identity & credentials</span>
+              <span className="text-[11px] text-on-surface-variant">Update identity & login credentials</span>
             </div>
 
             <form onSubmit={handleProfileSubmit} className="space-y-4 text-xs">
@@ -278,16 +296,21 @@ export default function AdminProfile() {
                   />
                 </div>
 
-                {/* Email */}
+                {/* Username / Official Email */}
                 <div className="space-y-1">
-                  <label className="font-headings font-bold text-secondary block">Official Email Address *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-headings font-bold text-secondary block">Official Email / Username *</label>
+                    <span className="text-[10px] text-primary font-bold">Admin Login ID</span>
+                  </div>
                   <input
                     type="email"
                     required
                     value={profileForm.email}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs font-mono"
+                    onChange={(e) => handleEmailUsernameChange(e.target.value)}
+                    placeholder="admin@saumyaa.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs font-mono font-bold"
                   />
+                  <p className="text-[10px] text-on-surface-variant/80">Updating this changes your official login username/email.</p>
                 </div>
 
                 {/* Phone */}
@@ -371,21 +394,27 @@ export default function AdminProfile() {
               {/* Current Password */}
               <div className="space-y-1">
                 <label className="font-headings font-bold text-secondary block">Current Password *</label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <input
                     type={showCurrentPass ? 'text' : 'password'}
                     required
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
                     placeholder="Enter current password"
-                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
+                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs font-mono"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowCurrentPass((prev) => !prev)}
-                    className="absolute right-3 top-2.5 text-on-surface-variant hover:text-secondary cursor-pointer"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCurrentPass((prev) => !prev);
+                    }}
+                    className="absolute right-2.5 z-20 p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer select-none"
+                    aria-label="Toggle current password visibility"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[20px] block pointer-events-none">
                       {showCurrentPass ? 'visibility_off' : 'visibility'}
                     </span>
                   </button>
@@ -395,21 +424,27 @@ export default function AdminProfile() {
               {/* New Password */}
               <div className="space-y-1">
                 <label className="font-headings font-bold text-secondary block">New Password *</label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <input
                     type={showNewPass ? 'text' : 'password'}
                     required
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
                     placeholder="Minimum 6 characters"
-                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
+                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs font-mono"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowNewPass((prev) => !prev)}
-                    className="absolute right-3 top-2.5 text-on-surface-variant hover:text-secondary cursor-pointer"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowNewPass((prev) => !prev);
+                    }}
+                    className="absolute right-2.5 z-20 p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer select-none"
+                    aria-label="Toggle new password visibility"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[20px] block pointer-events-none">
                       {showNewPass ? 'visibility_off' : 'visibility'}
                     </span>
                   </button>
@@ -419,14 +454,31 @@ export default function AdminProfile() {
               {/* Confirm Password */}
               <div className="space-y-1">
                 <label className="font-headings font-bold text-secondary block">Confirm New Password *</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="Re-enter new password"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type={showConfirmPass ? 'text' : 'password'}
+                    required
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Re-enter new password"
+                    className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowConfirmPass((prev) => !prev);
+                    }}
+                    className="absolute right-2.5 z-20 p-1.5 rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer select-none"
+                    aria-label="Toggle confirm password visibility"
+                  >
+                    <span className="material-symbols-outlined text-[20px] block pointer-events-none">
+                      {showConfirmPass ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               <div className="pt-2">
@@ -449,6 +501,10 @@ export default function AdminProfile() {
               Admin Session & Privileges
             </h3>
             <div className="space-y-1.5 text-on-surface-variant text-[11px]">
+              <p className="flex justify-between">
+                <span>Admin Login Username:</span>
+                <strong className="text-secondary font-mono">{profileForm.email}</strong>
+              </p>
               <p className="flex justify-between">
                 <span>Access Level:</span>
                 <strong className="text-secondary">{profileForm.role}</strong>
