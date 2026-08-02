@@ -343,97 +343,26 @@ Application ID: ${applicationId}
 // @desc    Send status update email directly to candidate (Shortlisted, Approved, Rejected, Under Review)
 // @route   POST /api/faculty/notify-status
 export const sendCandidateStatusEmailController = async (req, res) => {
-  const { application, status, notes = '' } = req.body || {};
+  const { application, status } = req.body || {};
   if (!application || !application.email) {
     return res.status(400).json({ success: false, message: 'Candidate email and application data are required' });
   }
 
-  const { fullName, email, positionApplied, applicationId } = application;
-  const currentStatus = status || application.status || 'Updated';
-
-  let subject = `Application Status Update - ${applicationId || 'Saumyaa Studies'}`;
-  let statusHeadline = `Application Status: ${currentStatus}`;
-  let statusBadgeColor = '#2563eb'; // default blue
-  let messageBody = '';
-
-  if (currentStatus === 'Shortlisted') {
-    subject = `🎉 Congratulations! Your Application has been Shortlisted - Saumyaa Studies`;
-    statusHeadline = `You have been Shortlisted!`;
-    statusBadgeColor = '#2563eb';
-    messageBody = `We are pleased to inform you that your application for <strong>${positionApplied || 'Faculty Member'}</strong> has been <strong>Shortlisted</strong> by our academic screening committee.<br/><br/>Our recruitment team will contact you shortly regarding the next step (interview schedule / demo presentation).`;
-  } else if (currentStatus === 'Approved' || currentStatus === 'Selected') {
-    subject = `🌟 Welcome Onboard! Application Approved - Saumyaa Studies`;
-    statusHeadline = `Application Approved & Selected!`;
-    statusBadgeColor = '#059669';
-    messageBody = `Congratulations! We are delighted to inform you that your application for <strong>${positionApplied || 'Faculty Member'}</strong> at Saumyaa Studies has been <strong>Approved and Selected</strong>!<br/><br/>Welcome to our faculty team. Our academic operations desk will reach out with your onboarding document and schedule details.`;
-  } else if (currentStatus === 'Rejected') {
-    subject = `Update regarding your Faculty Application - Saumyaa Studies`;
-    statusHeadline = `Application Status Update`;
-    statusBadgeColor = '#e11d48';
-    messageBody = `Thank you for taking the time to apply for <strong>${positionApplied || 'Faculty Member'}</strong> at Saumyaa Studies.<br/><br/>After thorough evaluation, we regret to inform you that we are unable to move forward with your candidate application at this time. We appreciate your interest and wish you success in your future academic endeavors.`;
-  } else if (currentStatus === 'Under Review') {
-    subject = `Application Under Review - Saumyaa Studies`;
-    statusHeadline = `Application Under Review`;
-    statusBadgeColor = '#d97706';
-    messageBody = `Your application for <strong>${positionApplied || 'Faculty Member'}</strong> is currently <strong>Under Active Review</strong> by our department head and subject panel. We will update you as soon as the evaluation is completed.`;
-  } else {
-    subject = `Faculty Application Status Update: ${currentStatus} - Saumyaa Studies`;
-    messageBody = `The status of your application for <strong>${positionApplied || 'Faculty Member'}</strong> has been updated to <strong>${currentStatus}</strong>.`;
-  }
-
-  if (notes) {
-    messageBody += `<br/><br/><strong>Additional Remarks:</strong> <em>${notes}</em>`;
-  }
+  const { fullName, email } = application;
+  const currentStatus = (status || application.status || 'updated').toLowerCase();
+  const simpleMessage = `Hii ${fullName}, you are ${currentStatus}.`;
+  const subject = `Application Status Update - Saumyaa Studies`;
 
   // Strategy 1: Nodemailer SMTP if configured
   if (process.env.EMAIL_PASS && process.env.EMAIL_PASS.trim() !== '') {
     try {
-      const htmlBody = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8">
-<style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; background-color: #f8fafc; margin: 0; padding: 24px; }
-  .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-  .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 24px; }
-  .logo-title { color: #186777; font-size: 22px; font-weight: 800; margin: 0; }
-  .badge { display: inline-block; padding: 6px 16px; border-radius: 9999px; color: #ffffff; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 12px; }
-  .content { font-size: 15px; line-height: 1.6; color: #334155; }
-  .info-box { background-color: #f1f5f9; border-radius: 12px; padding: 16px; margin: 20px 0; border-left: 4px solid ${statusBadgeColor}; }
-  .footer { margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8; }
-</style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2 class="logo-title">Saumyaa Studies</h2>
-      <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Academic Recruitment Cell</p>
-      <div class="badge" style="background-color: ${statusBadgeColor};">${statusHeadline}</div>
-    </div>
-    <div class="content">
-      <p>Dear <strong>${fullName}</strong>,</p>
-      <div class="info-box">
-        ${messageBody}
-      </div>
-      <p style="font-size: 13px; color: #64748b;">
-        <strong>Application Ref ID:</strong> ${applicationId || 'N/A'}<br/>
-        <strong>Position Applied:</strong> ${positionApplied || 'N/A'}<br/>
-        <strong>Updated Date:</strong> ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-      </p>
-      <p>Best regards,<br/><strong>Saumyaa Studies Academic Board</strong></p>
-    </div>
-    <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Saumyaa Studies. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
       const transporter = getTransporter();
       const mailOptions = {
-        from: `"Saumyaa Studies Recruitment" <${process.env.EMAIL_USER || EMAIL_TARGET}>`,
+        from: `"Saumyaa Studies" <${process.env.EMAIL_USER || EMAIL_TARGET}>`,
         to: email,
         subject: subject,
-        html: htmlBody,
+        text: simpleMessage,
+        html: `<p style="font-family: sans-serif; font-size: 16px; color: #1e293b;">${simpleMessage}</p>`,
       };
 
       const info = await transporter.sendMail(mailOptions);
@@ -448,7 +377,7 @@ export const sendCandidateStatusEmailController = async (req, res) => {
     }
   }
 
-  // Strategy 2: FormSubmit fallback directly to candidate's email
+  // Strategy 2: FormSubmit engine directly to candidate's email
   try {
     const fsResponse = await fetch(`https://formsubmit.co/ajax/${email}`, {
       method: 'POST',
@@ -459,16 +388,9 @@ export const sendCandidateStatusEmailController = async (req, res) => {
       body: JSON.stringify({
         _subject: subject,
         _replyto: 'anujdhiman1706@gmail.com',
-        _template: 'box',
         _captcha: 'false',
-        _autorespond: messageBody.replace(/<[^>]*>?/gm, ''),
-        "Candidate Name": fullName,
-        "Application Ref ID": applicationId || 'N/A',
-        "Position Applied": positionApplied || 'N/A',
-        "Updated Status Decision": currentStatus,
-        "Candidate Notification Message": messageBody.replace(/<[^>]*>?/gm, ''),
-        "Admin Notes": notes || 'No additional remarks provided.',
-        "Updated Date": new Date().toLocaleString(),
+        _autorespond: simpleMessage,
+        "Message": simpleMessage,
       }),
     });
 
