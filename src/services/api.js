@@ -465,13 +465,13 @@ export const authService = {
     const currentAdminEmail = (savedAdmin?.email || savedAdmin?.username || 'admin@saumyaa.com').trim().toLowerCase();
     const currentAdminPass = savedAdmin?.password || 'admin123';
 
-    // REJECT OLD USERNAME: If admin changed username in DB (e.g. to jitender0585@gmail.com), block login with old admin@saumyaa.com
-    if (cleanEmail !== currentAdminEmail && currentAdminEmail !== 'admin@saumyaa.com' && (cleanEmail === 'admin@saumyaa.com' || cleanEmail === 'admin')) {
-      throw new Error(`Invalid credentials! Admin username has been updated in database to '${currentAdminEmail}'. Please sign in using '${currentAdminEmail}'.`);
+    // REJECT UNMATCHED / OLD CREDENTIALS with standard secure error message
+    if (cleanEmail !== currentAdminEmail && cleanEmail !== (savedAdmin?.username || '').toLowerCase()) {
+      throw new Error('Invalid email/username or password. Please check your credentials.');
     }
 
     // Match with current active Admin email/username
-    if (cleanEmail === currentAdminEmail || cleanEmail === (savedAdmin?.username || '').toLowerCase() || (cleanEmail === 'admin@saumyaa.com' && currentAdminEmail === 'admin@saumyaa.com')) {
+    if (cleanEmail === currentAdminEmail || cleanEmail === (savedAdmin?.username || '').toLowerCase()) {
       if (password === currentAdminPass || password === 'admin123' || password === 'admin') {
         const loggedUser = {
           id: savedAdmin?.id || 'admin1',
@@ -491,7 +491,7 @@ export const authService = {
 
         return { success: true, user: loggedUser, token: 'mock_jwt_token_admin_2026' };
       } else {
-        throw new Error('Incorrect password. Please verify your admin credentials.');
+        throw new Error('Invalid email/username or password. Please check your credentials.');
       }
     }
 
