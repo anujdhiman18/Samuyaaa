@@ -22,6 +22,7 @@ import AlumniManagement from './pages/admin/AlumniManagement';
 import ToppersManagement from './pages/admin/ToppersManagement';
 import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
+import AdminProfile from './pages/admin/AdminProfile';
 
 // Student Portal Pages
 import StudentLayout from './layouts/StudentLayout';
@@ -126,6 +127,7 @@ export default function App() {
                 <Route path="toppers" element={<ToppersManagement />} />
                 <Route path="fees" element={<FeeManagement />} />
                 <Route path="reminders" element={<FeeReminders />} />
+                <Route path="profile" element={<AdminProfile />} />
               </Route>
 
               {/* Protected Student Portal Shell (/student/* - Isolated Shell) */}

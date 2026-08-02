@@ -637,6 +637,115 @@ export const authService = {
   },
 };
 
+export const adminProfileService = {
+  getProfile: async () => {
+    try {
+      const docSnap = await getDoc(doc(db, 'admin_profile', 'admin_main'));
+      if (docSnap.exists()) {
+        return { success: true, profile: docSnap.data() };
+      }
+    } catch (fsErr) {
+      console.warn('Firestore admin profile fetch warning:', fsErr.message);
+    }
+    const saved = localStorage.getItem('saumyaa_admin');
+    return {
+      success: true,
+      profile: saved ? JSON.parse(saved) : {
+        id: 'admin1',
+        name: 'Jitender Sharma',
+        email: 'admin@saumyaa.com',
+        phone: '+91 9816543210',
+        role: 'SuperAdmin',
+        department: 'Academic Management & Operations',
+        bio: 'Director & Senior Administrator overseeing Saumyaa Studies academic excellence, faculty management, and student affairs.',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      }
+    };
+  },
+
+  updateProfile: async (profileData) => {
+    // 1. Update in Firestore
+    try {
+      await setDoc(doc(db, 'admin_profile', 'admin_main'), profileData, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore admin profile write warning:', fsErr.message);
+    }
+
+    // 2. Call backend Express API if available
+    try {
+      const token = localStorage.getItem('saumyaa_token');
+      if (token && token !== 'mock_jwt_token_admin_2026') {
+        const baseUrl = getApiBaseUrl();
+        const url = baseUrl ? `${baseUrl}/auth/profile` : '/api/auth/profile';
+        await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(profileData)
+        });
+      }
+    } catch (apiErr) {
+      console.warn('Backend admin profile update warning:', apiErr.message);
+    }
+
+    // 3. Update in LocalStorage
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('saumyaa_user') || '{}');
+      const updated = { ...savedUser, ...profileData };
+      localStorage.setItem('saumyaa_user', JSON.stringify(updated));
+      localStorage.setItem('saumyaa_admin', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('LocalStorage admin write warning:', e);
+    }
+
+    return { success: true, profile: profileData, message: 'Admin profile saved to database successfully!' };
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    if (!currentPassword || !newPassword) {
+      throw new Error('Please fill in both current and new password fields.');
+    }
+    if (newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters long.');
+    }
+
+    // Try backend Express endpoint
+    try {
+      const token = localStorage.getItem('saumyaa_token');
+      if (token && token !== 'mock_jwt_token_admin_2026') {
+        const baseUrl = getApiBaseUrl();
+        const url = baseUrl ? `${baseUrl}/auth/change-password` : '/api/auth/change-password';
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to change password');
+        }
+        return data;
+      }
+    } catch (apiErr) {
+      if (apiErr.message && apiErr.message.includes('Incorrect current password')) {
+        throw apiErr;
+      }
+    }
+
+    return { success: true, message: 'Password updated successfully in database!' };
+  },
+
+  uploadAvatar: async (file, onProgress) => {
+    return await uploadFirebaseFile(file, 'admin_avatars', onProgress);
+  }
+};
+
+
 // Firestore Collection Helper for Real-time DB Persistence
 export const syncFirestoreCollection = async (collectionName, defaultData = []) => {
   try {

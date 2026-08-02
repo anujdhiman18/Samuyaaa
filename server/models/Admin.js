@@ -28,6 +28,18 @@ const adminSchema = new mongoose.Schema(
       type: String,
       default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     },
+    phone: {
+      type: String,
+      default: '+91 9816543210',
+    },
+    department: {
+      type: String,
+      default: 'Academic Management & Operations',
+    },
+    bio: {
+      type: String,
+      default: 'Director & Senior Administrator overseeing Saumyaa Studies academic excellence, faculty management, and student affairs.',
+    },
   },
   { timestamps: true }
 );

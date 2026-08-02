@@ -90,6 +90,16 @@ export default function Topbar({ onToggleMobile }) {
               <button
                 onClick={() => {
                   setProfileOpen(false);
+                  navigate('/admin/profile');
+                }}
+                className="w-full text-left px-4 py-2 text-xs text-on-surface hover:bg-surface-container-low flex items-center gap-2 font-bold text-primary"
+              >
+                <span className="material-symbols-outlined text-[16px] text-primary">manage_accounts</span>
+                Admin Profile Settings
+              </button>
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
                   navigate('/admin/students');
                 }}
                 className="w-full text-left px-4 py-2 text-xs text-on-surface hover:bg-surface-container-low flex items-center gap-2 font-medium"
