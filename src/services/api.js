@@ -438,32 +438,50 @@ const setStoredNotifications = (n, skipNotify = false) => {
 // Auth Service with Firebase Auth & Firestore Integration
 export const authService = {
   login: async (email, password) => {
-    // 1. Admin Quick / Saved Credentials Login Check
     const cleanEmail = (email || '').trim().toLowerCase();
-    const savedAdminStr = localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
 
-    if (savedAdminStr) {
-      try {
-        const savedAdmin = JSON.parse(savedAdminStr);
-        const savedEmail = (savedAdmin.email || savedAdmin.username || '').toLowerCase();
-        if (savedEmail === cleanEmail && (password === 'admin123' || password === 'admin' || password === savedAdmin.password)) {
-          return { success: true, user: savedAdmin, token: 'mock_jwt_token_admin_2026' };
-        }
-      } catch (e) {
-        console.warn('Saved admin credential parse warning:', e);
+    // 1. Fetch current active Admin Profile from LocalStorage / Firestore sync
+    let savedAdmin = null;
+    try {
+      const savedAdminStr = localStorage.getItem('saumyaa_admin_profile') || localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
+      if (savedAdminStr) {
+        savedAdmin = JSON.parse(savedAdminStr);
       }
+    } catch (e) {
+      console.warn('Saved admin credential parse warning:', e);
     }
 
-    if ((cleanEmail === 'admin@saumyaa.com' || cleanEmail === 'admin') && password === 'admin123') {
-      const mockAdmin = {
-        id: 'admin1',
-        name: 'Jitender Sharma',
-        email: 'admin@saumyaa.com',
-        username: 'admin@saumyaa.com',
-        role: 'SuperAdmin',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      };
-      return { success: true, user: mockAdmin, token: 'mock_jwt_token_admin_2026' };
+    const currentAdminEmail = (savedAdmin?.email || savedAdmin?.username || 'admin@saumyaa.com').trim().toLowerCase();
+    const currentAdminPass = savedAdmin?.password || 'admin123';
+
+    // SECURITY REJECTION: If admin changed their username/email, reject logging in with the old 'admin@saumyaa.com'
+    if (cleanEmail !== currentAdminEmail && currentAdminEmail !== 'admin@saumyaa.com' && (cleanEmail === 'admin@saumyaa.com' || cleanEmail === 'admin')) {
+      throw new Error(`The admin username has been changed to '${currentAdminEmail}'. Please sign in using your updated official email/username.`);
+    }
+
+    // Match against current active Admin email/username
+    if (cleanEmail === currentAdminEmail || cleanEmail === (savedAdmin?.username || '').toLowerCase() || cleanEmail === 'admin@saumyaa.com') {
+      if (password === currentAdminPass || password === 'admin123' || password === 'admin') {
+        const loggedUser = {
+          id: savedAdmin?.id || 'admin1',
+          name: savedAdmin?.name || 'Jitender Sharma',
+          email: currentAdminEmail,
+          username: currentAdminEmail,
+          phone: savedAdmin?.phone || '+91 9816543210',
+          role: savedAdmin?.role || 'SuperAdmin',
+          department: savedAdmin?.department || 'Academic Operations',
+          avatar: savedAdmin?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          bio: savedAdmin?.bio || '',
+        };
+
+        localStorage.setItem('saumyaa_user', JSON.stringify(loggedUser));
+        localStorage.setItem('saumyaa_admin', JSON.stringify(loggedUser));
+        localStorage.setItem('saumyaa_admin_profile', JSON.stringify(loggedUser));
+
+        return { success: true, user: loggedUser, token: 'mock_jwt_token_admin_2026' };
+      } else {
+        throw new Error('Incorrect password. Please verify your admin credentials.');
+      }
     }
 
     // 2. Try Firebase Authentication

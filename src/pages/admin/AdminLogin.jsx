@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -10,10 +10,26 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [activeAdminEmail, setActiveAdminEmail] = useState('admin@saumyaa.com');
 
   const { login } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('saumyaa_admin_profile') || localStorage.getItem('saumyaa_admin') || localStorage.getItem('saumyaa_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.email || parsed?.username) {
+          const em = parsed.email || parsed.username;
+          setActiveAdminEmail(em);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load saved admin profile in login:', e);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -33,9 +49,9 @@ export default function AdminLogin() {
   };
 
   const handleFillDemo = () => {
-    setEmail('admin@saumyaa.com');
+    setEmail(activeAdminEmail);
     setPassword('admin123');
-    addToast('Demo credentials filled: admin@saumyaa.com / admin123', 'info');
+    addToast(`Admin credentials filled: ${activeAdminEmail} / admin123`, 'info');
   };
 
   return (
@@ -62,15 +78,15 @@ export default function AdminLogin() {
         {/* Demo Credentials Alert Banner */}
         <div className="mb-6 p-3.5 rounded-xl bg-primary-fixed/40 dark:bg-zinc-800 border border-primary/20 flex items-center justify-between text-xs">
           <div>
-            <p className="font-bold text-on-primary-fixed dark:text-zinc-200">Testing Credentials</p>
+            <p className="font-bold text-on-primary-fixed dark:text-zinc-200">Active Admin Username</p>
             <p className="text-[11px] text-on-surface-variant dark:text-zinc-400 font-mono">
-              admin@saumyaa.com / admin123
+              {activeAdminEmail} / admin123
             </p>
           </div>
           <button
             type="button"
             onClick={handleFillDemo}
-            className="bg-primary text-white px-3 py-1.5 rounded-lg text-[11px] font-headings font-bold hover:bg-primary-container transition-colors shadow-sm"
+            className="bg-primary text-white px-3 py-1.5 rounded-lg text-[11px] font-headings font-bold hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
           >
             Auto Fill
           </button>
