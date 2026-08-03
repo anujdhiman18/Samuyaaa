@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { studentService, feeService, getFeeDueDateStatus } from '../../services/api';
+import { studentService, feeService, attendanceService, getFeeDueDateStatus } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -11,7 +11,17 @@ export default function StudentDetail() {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [attendanceList, setAttendanceList] = useState([]);
+  const [attendanceStats, setAttendanceStats] = useState({ presentDays: 0, absentDays: 0, attendancePercentage: 100 });
   const [loading, setLoading] = useState(true);
+
+  // Attendance Modal
+  const [attModalOpen, setAttModalOpen] = useState(false);
+  const [attDate, setAttDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [attStatus, setAttStatus] = useState('Present');
+  const [attSubject, setAttSubject] = useState('Mathematics');
+  const [attRemarks, setAttRemarks] = useState('');
+  const [savingAtt, setSavingAtt] = useState(false);
 
   // Pay Fee Modal
   const [payModalOpen, setPayModalOpen] = useState(false);
@@ -49,10 +59,43 @@ export default function StudentDetail() {
       if (paymentsRes && paymentsRes.payments) {
         setPayments(paymentsRes.payments);
       }
+
+      const attRes = await attendanceService.getStudentAttendance(id);
+      if (attRes && attRes.attendance) {
+        setAttendanceList(attRes.attendance);
+        if (attRes.stats) setAttendanceStats(attRes.stats);
+      }
     } catch (err) {
       addToast('Error loading student profile details', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRecordAttendance = async (e) => {
+    e.preventDefault();
+    setSavingAtt(true);
+    try {
+      const res = await attendanceService.recordIndividualAttendance({
+        studentId: id,
+        date: attDate,
+        subject: attSubject,
+        status: attStatus,
+        remarks: attRemarks,
+      });
+
+      if (res && res.success) {
+        addToast(`Attendance recorded as ${attStatus} for ${attDate}`, 'success');
+        setAttModalOpen(false);
+        setAttRemarks('');
+        fetchStudentData();
+      } else {
+        addToast(res?.message || 'Failed to record attendance', 'error');
+      }
+    } catch (err) {
+      addToast('Error recording attendance', 'error');
+    } finally {
+      setSavingAtt(false);
     }
   };
 
@@ -351,6 +394,86 @@ export default function StudentDetail() {
               </div>
             )}
           </div>
+
+          {/* Student Attendance Overview Card */}
+          <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-headings font-bold text-base text-secondary flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-xl">fact_check</span>
+                  Attendance Summary & Log
+                </h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  Overall performance: {attendanceStats.attendancePercentage || 0}% Attendance Rate
+                </p>
+              </div>
+
+              <button
+                onClick={() => setAttModalOpen(true)}
+                className="px-3.5 py-1.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Mark Attendance
+              </button>
+            </div>
+
+            {/* Attendance Mini Stats */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200/60 text-center">
+                <span className="text-[10px] font-headings font-bold uppercase text-emerald-800 tracking-wider">Present</span>
+                <span className="font-headings font-extrabold text-xl text-emerald-700 block mt-0.5">{attendanceStats.presentDays || 0} Days</span>
+              </div>
+
+              <div className="bg-rose-50 rounded-xl p-3 border border-rose-200/60 text-center">
+                <span className="text-[10px] font-headings font-bold uppercase text-rose-800 tracking-wider">Absent</span>
+                <span className="font-headings font-extrabold text-xl text-rose-700 block mt-0.5">{attendanceStats.absentDays || 0} Days</span>
+              </div>
+
+              <div className="bg-surface-container-low rounded-xl p-3 border border-outline-variant/20 text-center">
+                <span className="text-[10px] font-headings font-bold uppercase text-on-surface-variant tracking-wider">Rate</span>
+                <span className="font-headings font-extrabold text-xl text-primary block mt-0.5">{attendanceStats.attendancePercentage || 0}%</span>
+              </div>
+            </div>
+
+            {/* Recent Attendance Logs */}
+            <div className="pt-2">
+              <h4 className="font-headings font-bold text-xs text-on-surface-variant uppercase tracking-wider mb-2">
+                Recent Class Logs
+              </h4>
+
+              {attendanceList.length === 0 ? (
+                <p className="text-xs text-on-surface-variant text-center py-4 bg-surface-container-lowest rounded-xl border border-outline-variant/15">
+                  No attendance records logged for this student yet.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {attendanceList.map((record) => (
+                    <div
+                      key={record._id}
+                      className="p-3 rounded-xl border border-outline-variant/15 bg-surface-container-lowest flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <span className="font-bold text-secondary">{record.date}</span> &bull; <span className="text-on-surface-variant">{record.subject || 'General'}</span>
+                        {record.remarks && <p className="text-[10px] text-on-surface-variant/80 italic mt-0.5">"{record.remarks}"</p>}
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full font-headings font-bold text-[10px] uppercase ${
+                          record.status === 'Present'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : record.status === 'Absent'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {record.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -491,6 +614,125 @@ export default function StudentDetail() {
               </button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Record Attendance Modal */}
+      {attModalOpen && (
+        <Modal
+          isOpen={attModalOpen}
+          onClose={() => setAttModalOpen(false)}
+          title={`Mark Attendance for ${student?.fullName}`}
+        >
+          <form onSubmit={handleRecordAttendance} className="space-y-4 text-xs font-body">
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Attendance Date *
+              </label>
+              <input
+                type="date"
+                required
+                value={attDate}
+                onChange={(e) => setAttDate(e.target.value)}
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Subject / Class *
+              </label>
+              <select
+                value={attSubject}
+                onChange={(e) => setAttSubject(e.target.value)}
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold"
+              >
+                <option value="Mathematics">Mathematics</option>
+                <option value="Integrated Science">Integrated Science</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Biology">Biology</option>
+                <option value="English">English</option>
+                <option value="General">General Class</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Attendance Status *
+              </label>
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAttStatus('Present')}
+                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
+                    attStatus === 'Present'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-surface-container-low text-emerald-800 border-outline-variant/20 hover:bg-emerald-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Present
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAttStatus('Absent')}
+                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
+                    attStatus === 'Absent'
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                      : 'bg-surface-container-low text-rose-800 border-outline-variant/20 hover:bg-rose-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">cancel</span>
+                  Absent
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAttStatus('Late')}
+                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
+                    attStatus === 'Late'
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                      : 'bg-surface-container-low text-amber-800 border-outline-variant/20 hover:bg-amber-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">schedule</span>
+                  Late
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Notes / Remarks
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Authorized leave, Medical cause, etc."
+                value={attRemarks}
+                onChange={(e) => setAttRemarks(e.target.value)}
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
+              <button
+                type="button"
+                onClick={() => setAttModalOpen(false)}
+                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingAtt}
+                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
+              >
+                {savingAtt ? 'Saving...' : 'Save Attendance Record'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
 

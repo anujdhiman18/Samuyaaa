@@ -16,6 +16,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentManagement from './pages/admin/StudentManagement';
 import StudentDetail from './pages/admin/StudentDetail';
+import AttendanceManagement from './pages/admin/AttendanceManagement';
 import SubjectManagement from './pages/admin/SubjectManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import AlumniManagement from './pages/admin/AlumniManagement';
@@ -121,6 +122,7 @@ export default function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="students/:id" element={<StudentDetail />} />
+                <Route path="attendance" element={<AttendanceManagement />} />
                 <Route path="subjects" element={<SubjectManagement />} />
                 <Route path="faculty" element={<FacultyManagement />} />
                 <Route path="alumni" element={<AlumniManagement />} />

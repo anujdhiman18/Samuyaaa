@@ -1470,7 +1470,117 @@ export const attendanceService = {
       },
     };
   },
+
+  getAllAttendance: async (params = {}) => {
+    const remote = await apiCall('/attendance');
+    if (remote) return remote;
+
+    const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
+    let list = fsAttendance || getStoredAttendance();
+
+    if (params.date) {
+      list = list.filter((a) => a.date === params.date);
+    }
+    if (params.subject && params.subject !== 'All') {
+      list = list.filter((a) => a.subject === params.subject);
+    }
+    if (params.studentId) {
+      list = list.filter((a) => a.student === params.studentId || a.student?._id === params.studentId);
+    }
+
+    return { success: true, attendance: list };
+  },
+
+  saveBatchAttendance: async ({ date, subject, className, records }) => {
+    const remote = await apiCall('/attendance/batch', {
+      method: 'POST',
+      body: JSON.stringify({ date, subject, className, records }),
+    });
+    if (remote) return remote;
+
+    const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
+    let currentList = fsAttendance || getStoredAttendance();
+    const updatedList = [...currentList];
+
+    for (const rec of records) {
+      const studentId = rec.studentId;
+      const status = rec.status || 'Present';
+      const remarks = rec.remarks || '';
+
+      const existingIndex = updatedList.findIndex(
+        (a) =>
+          (a.student === studentId || a.student?._id === studentId) &&
+          a.date === date &&
+          (a.subject === subject || (!a.subject && subject === 'General'))
+      );
+
+      if (existingIndex >= 0) {
+        updatedList[existingIndex] = {
+          ...updatedList[existingIndex],
+          status,
+          remarks,
+          subject: subject || updatedList[existingIndex].subject || 'General',
+          className: className || updatedList[existingIndex].className,
+          updatedAt: new Date().toISOString(),
+        };
+
+        try {
+          await setDoc(doc(db, 'attendance', updatedList[existingIndex]._id), updatedList[existingIndex]);
+        } catch (fsErr) {
+          console.warn('Firestore setDoc attendance error:', fsErr.message);
+        }
+      } else {
+        const id = 'att_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const newRecord = {
+          _id: id,
+          student: studentId,
+          date,
+          status,
+          subject: subject || 'General',
+          className,
+          remarks,
+          createdAt: new Date().toISOString(),
+        };
+        updatedList.push(newRecord);
+
+        try {
+          await setDoc(doc(db, 'attendance', id), newRecord);
+        } catch (fsErr) {
+          console.warn('Firestore setDoc attendance error:', fsErr.message);
+        }
+      }
+    }
+
+    setStoredAttendance(updatedList);
+    return { success: true, message: `Attendance saved for ${records.length} students.`, attendance: updatedList };
+  },
+
+  recordIndividualAttendance: async ({ studentId, date, subject, status, remarks = '' }) => {
+    return attendanceService.saveBatchAttendance({
+      date,
+      subject,
+      records: [{ studentId, status, remarks }],
+    });
+  },
+
+  deleteAttendanceRecord: async (recordId) => {
+    const remote = await apiCall(`/attendance/${recordId}`, { method: 'DELETE' });
+    if (remote) return remote;
+
+    let currentList = getStoredAttendance();
+    const filtered = currentList.filter((a) => a._id !== recordId);
+    setStoredAttendance(filtered);
+
+    try {
+      await deleteDoc(doc(db, 'attendance', recordId));
+    } catch (fsErr) {
+      console.warn('Firestore deleteDoc attendance error:', fsErr.message);
+    }
+
+    return { success: true, message: 'Attendance record deleted successfully' };
+  },
 };
+
 
 // Announcement Service with Firebase Firestore DB
 export const announcementService = {
