@@ -34,6 +34,7 @@ export default function AttendanceManagement() {
   const [students, setStudents] = useState([]);
   const [attendanceMap, setAttendanceMap] = useState({}); // studentId -> { status: 'Present'|'Absent'|'Late', remarks: '' }
   const [existingRecords, setExistingRecords] = useState([]);
+  const [allMonthRecords, setAllMonthRecords] = useState([]);
   const [subjectsList, setSubjectsList] = useState(DEFAULT_SUBJECTS);
 
   const [loading, setLoading] = useState(true);
@@ -76,10 +77,19 @@ export default function AttendanceManagement() {
 
   const fetchAttendanceForDateAndSubject = async () => {
     try {
+      // Fetch date/subject specific records
       const res = await attendanceService.getAllAttendance({
         date,
         subject: selectedSubject,
       });
+
+      // Also fetch month records for date strip visualization
+      const allRes = await attendanceService.getAllAttendance({
+        subject: selectedSubject,
+      });
+      if (allRes && allRes.attendance) {
+        setAllMonthRecords(allRes.attendance);
+      }
 
       const records = res?.attendance || [];
       setExistingRecords(records);
@@ -87,7 +97,6 @@ export default function AttendanceManagement() {
       // Build map of existing statuses for each student
       const newMap = {};
 
-      // First set default 'Present' for filtered students
       const filtered = getFilteredStudents();
       filtered.forEach((st) => {
         const stId = String(st._id || st.id);
@@ -128,6 +137,23 @@ export default function AttendanceManagement() {
 
   const filteredStudents = getFilteredStudents();
 
+  // Date Navigation Helpers
+  const stepDate = (days) => {
+    const d = new Date(date + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    setDate(d.toISOString().split('T')[0]);
+  };
+
+  const setToday = () => {
+    setDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const setYesterday = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    setDate(d.toISOString().split('T')[0]);
+  };
+
   const handleStatusChange = (studentId, status) => {
     setAttendanceMap((prev) => ({
       ...prev,
@@ -163,7 +189,7 @@ export default function AttendanceManagement() {
     addToast(`Marked all ${filteredStudents.length} visible students as ${status}`, 'info');
   };
 
-  const handleSaveAttendance = async () => {
+  const handleSaveAttendance = async (autoAdvance = false) => {
     if (filteredStudents.length === 0) {
       addToast('No students available to save attendance for.', 'warning');
       return;
@@ -189,8 +215,12 @@ export default function AttendanceManagement() {
       });
 
       if (res && res.success) {
-        addToast(`Attendance saved successfully for ${date} (${selectedSubject})!`, 'success');
-        fetchAttendanceForDateAndSubject();
+        addToast(`Attendance saved for ${date} (${selectedSubject})!`, 'success');
+        await fetchAttendanceForDateAndSubject();
+
+        if (autoAdvance) {
+          stepDate(1); // Advance to next day
+        }
       } else {
         addToast(res?.message || 'Failed to save attendance', 'error');
       }
@@ -230,6 +260,23 @@ export default function AttendanceManagement() {
       ? Math.round(((presentCount + lateCount) / totalStudentsCount) * 100)
       : 0;
 
+  // Format readable current date
+  const dateObj = new Date(date + 'T00:00:00');
+  const formattedFullDate = dateObj.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  // Calculate days of current month for the date strip
+  const yearNum = dateObj.getFullYear();
+  const monthNum = dateObj.getMonth();
+  const daysInMonthCount = new Date(yearNum, monthNum + 1, 0).getDate();
+  const currentMonthPrefix = `${yearNum}-${String(monthNum + 1).padStart(2, '0')}`;
+
+  const isSavedForSelectedDate = existingRecords.length > 0;
+
   return (
     <div className="space-y-6 font-body pb-12">
       {/* Header Banner */}
@@ -237,10 +284,10 @@ export default function AttendanceManagement() {
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2.5">
             <span className="material-symbols-outlined text-primary text-3xl">fact_check</span>
-            Student Attendance Management
+            Student Attendance Register
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Record daily batch attendance, track absences, manage subject logs, and view real-time statistics.
+            Easily mark attendance for each day, step through dates, track absences, and save daily batch logs.
           </p>
         </div>
 
@@ -269,20 +316,83 @@ export default function AttendanceManagement() {
         </div>
       </div>
 
-      {/* Control Panel / Filters */}
+      {/* Date Navigation & Control Panel */}
       <div className="bg-white rounded-2xl p-5 shadow-premium border border-outline-variant/15 space-y-4">
+        {/* Quick Date Stepper Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface-container-low rounded-xl border border-outline-variant/15">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => stepDate(-1)}
+              className="px-3 py-1.5 rounded-lg bg-white border border-outline-variant/30 text-secondary hover:bg-primary/10 hover:text-primary font-headings font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+              title="Previous Day"
+            >
+              <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+              Prev Day
+            </button>
+
+            <button
+              type="button"
+              onClick={setYesterday}
+              className="px-3 py-1.5 rounded-lg bg-white border border-outline-variant/30 text-on-surface-variant hover:text-primary font-headings font-bold text-xs transition-colors shadow-sm"
+            >
+              Yesterday
+            </button>
+
+            <button
+              type="button"
+              onClick={setToday}
+              className="px-3.5 py-1.5 rounded-lg bg-primary text-white font-headings font-bold text-xs shadow-sm hover:bg-primary-container transition-all"
+            >
+              Today
+            </button>
+
+            <button
+              type="button"
+              onClick={() => stepDate(1)}
+              className="px-3 py-1.5 rounded-lg bg-white border border-outline-variant/30 text-secondary hover:bg-primary/10 hover:text-primary font-headings font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+              title="Next Day"
+            >
+              Next Day
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="font-headings font-bold text-sm text-secondary block leading-tight">
+                {formattedFullDate}
+              </span>
+              <span className="text-[10px] text-on-surface-variant">
+                {isSavedForSelectedDate ? (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1 justify-end">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                    Attendance Saved ✓
+                  </span>
+                ) : (
+                  <span className="text-amber-700 font-bold flex items-center gap-1 justify-end">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                    Unsaved / Draft Sheet
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Inputs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Date Picker */}
+          {/* Direct Date Picker */}
           <div className="flex flex-col gap-1">
             <label className="font-headings font-bold text-xs text-on-surface-variant flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm text-primary">calendar_today</span>
-              Attendance Date *
+              Select Date *
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
             />
           </div>
 
@@ -295,7 +405,7 @@ export default function AttendanceManagement() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
             >
               {CLASSES.map((cls) => (
                 <option key={cls} value={cls}>
@@ -314,7 +424,7 @@ export default function AttendanceManagement() {
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
             >
               {subjectsList.map((sub) => (
                 <option key={sub} value={sub}>
@@ -335,8 +445,49 @@ export default function AttendanceManagement() {
               placeholder="Search by name or roll no..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-medium text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-medium text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
             />
+          </div>
+        </div>
+
+        {/* Interactive Month Day Strip */}
+        <div className="pt-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant">
+              Quick Day Selector ({dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })})
+            </span>
+            <span className="text-[10px] text-on-surface-variant">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>Saved
+              <span className="inline-block w-2 h-2 rounded-full bg-slate-300 ml-2 mr-1"></span>Unsaved
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+            {Array.from({ length: daysInMonthCount }, (_, i) => i + 1).map((d) => {
+              const dStr = `${currentMonthPrefix}-${String(d).padStart(2, '0')}`;
+              const isSelected = dStr === date;
+              const hasRecordsForDay = allMonthRecords.some((r) => r.date === dStr);
+
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDate(dStr)}
+                  className={`flex-shrink-0 w-9 h-11 rounded-xl flex flex-col items-center justify-center font-bold text-xs transition-all relative ${
+                    isSelected
+                      ? 'bg-primary text-white shadow-md scale-105 border-2 border-primary'
+                      : hasRecordsForDay
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
+                      : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/20 hover:bg-surface-container-low'
+                  }`}
+                >
+                  <span className="text-[10px] font-normal">{d}</span>
+                  {hasRecordsForDay && !isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-0.5"></span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -394,7 +545,7 @@ export default function AttendanceManagement() {
                 Students Attendance Sheet
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
-                {date} &bull; {selectedSubject}
+                {formattedFullDate} &bull; {selectedSubject}
               </span>
             </div>
 
@@ -420,11 +571,22 @@ export default function AttendanceManagement() {
               <button
                 type="button"
                 disabled={saving || filteredStudents.length === 0}
-                onClick={handleSaveAttendance}
-                className="ml-auto sm:ml-2 px-5 py-2 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all disabled:opacity-50 flex items-center gap-1.5"
+                onClick={() => handleSaveAttendance(false)}
+                className="px-4 py-2 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all disabled:opacity-50 flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[18px]">save</span>
-                {saving ? 'Saving Sheet...' : 'Save Attendance'}
+                {saving ? 'Saving...' : 'Save Attendance'}
+              </button>
+
+              <button
+                type="button"
+                disabled={saving || filteredStudents.length === 0}
+                onClick={() => handleSaveAttendance(true)}
+                className="px-4 py-2 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant shadow-premium transition-all disabled:opacity-50 flex items-center gap-1.5"
+                title="Save today's attendance and step to next day"
+              >
+                <span>Save &amp; Next Day</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -561,18 +723,30 @@ export default function AttendanceManagement() {
           {/* Bottom Save Action Bar */}
           <div className="p-4 border-t border-outline-variant/15 bg-surface-container-lowest flex items-center justify-between">
             <span className="text-xs text-on-surface-variant font-medium">
-              Showing {filteredStudents.length} students
+              Showing {filteredStudents.length} students for {formattedFullDate}
             </span>
 
-            <button
-              type="button"
-              disabled={saving || filteredStudents.length === 0}
-              onClick={handleSaveAttendance}
-              className="px-6 py-2.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">save</span>
-              {saving ? 'Saving Attendance Sheet...' : 'Save Attendance Sheet'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={saving || filteredStudents.length === 0}
+                onClick={() => handleSaveAttendance(false)}
+                className="px-5 py-2.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">save</span>
+                {saving ? 'Saving...' : 'Save Attendance Sheet'}
+              </button>
+
+              <button
+                type="button"
+                disabled={saving || filteredStudents.length === 0}
+                onClick={() => handleSaveAttendance(true)}
+                className="px-5 py-2.5 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant shadow-premium transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <span>Save &amp; Advance to Next Day</span>
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -581,7 +755,7 @@ export default function AttendanceManagement() {
           <div className="flex items-center justify-between border-b border-outline-variant/15 pb-4">
             <div>
               <h3 className="font-headings font-bold text-base text-secondary">
-                Recorded Attendance Logs for {date} ({selectedSubject})
+                Recorded Attendance Logs for {formattedFullDate} ({selectedSubject})
               </h3>
               <p className="text-xs text-on-surface-variant mt-0.5">
                 Saved records currently stored in database for this date and subject.
@@ -591,7 +765,7 @@ export default function AttendanceManagement() {
 
           {existingRecords.length === 0 ? (
             <div className="py-12 text-center text-xs text-on-surface-variant">
-              No recorded attendance entries for this date and subject yet.
+              No recorded attendance entries for this date and subject yet. Use the Daily Register tab to mark attendance.
             </div>
           ) : (
             <div className="space-y-3">
