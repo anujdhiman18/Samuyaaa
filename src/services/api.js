@@ -1446,6 +1446,26 @@ export const marksService = {
   },
 };
 
+const getCombinedAttendance = (fsAttendance) => {
+  const localList = getStoredAttendance() || [];
+  if (!fsAttendance || fsAttendance.length === 0) return localList;
+
+  const map = new Map();
+  fsAttendance.forEach((item) => {
+    if (item && item._id) {
+      map.set(String(item._id), item);
+    }
+  });
+
+  localList.forEach((item) => {
+    if (item && item._id) {
+      map.set(String(item._id), item);
+    }
+  });
+
+  return Array.from(map.values());
+};
+
 // Attendance Service with Firebase Firestore DB
 export const attendanceService = {
   getStudentAttendance: async (studentId) => {
@@ -1453,7 +1473,7 @@ export const attendanceService = {
     if (remote) return remote;
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
-    let allRecords = fsAttendance || getStoredAttendance();
+    let allRecords = getCombinedAttendance(fsAttendance);
 
     let list = allRecords;
     if (studentId) {
@@ -1491,7 +1511,7 @@ export const attendanceService = {
     if (remote) return remote;
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
-    let list = fsAttendance || getStoredAttendance();
+    let list = getCombinedAttendance(fsAttendance);
 
     if (params.date) {
       list = list.filter((a) => a.date === params.date);
@@ -1500,7 +1520,13 @@ export const attendanceService = {
       list = list.filter((a) => a.subject === params.subject);
     }
     if (params.studentId) {
-      list = list.filter((a) => a.student === params.studentId || a.student?._id === params.studentId);
+      const targetId = String(params.studentId);
+      list = list.filter(
+        (a) =>
+          String(a.student) === targetId ||
+          String(a.student?._id) === targetId ||
+          String(a.student?.id) === targetId
+      );
     }
 
     return { success: true, attendance: list };
@@ -1514,19 +1540,19 @@ export const attendanceService = {
     if (remote) return remote;
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
-    let currentList = fsAttendance || getStoredAttendance();
+    let currentList = getCombinedAttendance(fsAttendance);
     const updatedList = [...currentList];
 
     for (const rec of records) {
-      const studentId = rec.studentId;
+      const studentId = String(rec.studentId);
       const status = rec.status || 'Present';
       const remarks = rec.remarks || '';
 
       const existingIndex = updatedList.findIndex(
         (a) =>
-          (a.student === studentId || a.student?._id === studentId) &&
+          (String(a.student) === studentId || String(a.student?._id) === studentId || String(a.student?.id) === studentId) &&
           a.date === date &&
-          (a.subject === subject || (!a.subject && subject === 'General'))
+          (a.subject === subject || (!a.subject && (subject === 'General' || !subject)))
       );
 
       if (existingIndex >= 0) {
@@ -1540,7 +1566,7 @@ export const attendanceService = {
         };
 
         try {
-          await setDoc(doc(db, 'attendance', updatedList[existingIndex]._id), updatedList[existingIndex]);
+          await setDoc(doc(db, 'attendance', String(updatedList[existingIndex]._id)), updatedList[existingIndex]);
         } catch (fsErr) {
           console.warn('Firestore setDoc attendance error:', fsErr.message);
         }
@@ -1559,7 +1585,7 @@ export const attendanceService = {
         updatedList.push(newRecord);
 
         try {
-          await setDoc(doc(db, 'attendance', id), newRecord);
+          await setDoc(doc(db, 'attendance', String(id)), newRecord);
         } catch (fsErr) {
           console.warn('Firestore setDoc attendance error:', fsErr.message);
         }
@@ -1583,11 +1609,11 @@ export const attendanceService = {
     if (remote) return remote;
 
     let currentList = getStoredAttendance();
-    const filtered = currentList.filter((a) => a._id !== recordId);
+    const filtered = currentList.filter((a) => String(a._id) !== String(recordId));
     setStoredAttendance(filtered);
 
     try {
-      await deleteDoc(doc(db, 'attendance', recordId));
+      await deleteDoc(doc(db, 'attendance', String(recordId)));
     } catch (fsErr) {
       console.warn('Firestore deleteDoc attendance error:', fsErr.message);
     }
