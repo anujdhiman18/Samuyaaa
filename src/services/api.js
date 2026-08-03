@@ -1529,6 +1529,23 @@ const getCombinedAttendance = (fsAttendance) => {
   return Array.from(map.values());
 };
 
+const normalizeDateKey = (rawDate) => {
+  if (!rawDate) return '';
+  if (typeof rawDate === 'string') {
+    if (rawDate.includes('T')) return rawDate.split('T')[0];
+    return rawDate.trim();
+  }
+  try {
+    const d = new Date(rawDate);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return String(rawDate);
+  }
+};
+
 // Attendance Service with Firebase Firestore DB
 export const attendanceService = {
   getStudentAttendance: async (studentId) => {
@@ -1577,7 +1594,8 @@ export const attendanceService = {
     let list = getCombinedAttendance(fsAttendance);
 
     if (params.date) {
-      list = list.filter((a) => a.date === params.date);
+      const targetDateStr = normalizeDateKey(params.date);
+      list = list.filter((a) => normalizeDateKey(a.date) === targetDateStr);
     }
     if (params.subject && params.subject !== 'All') {
       list = list.filter((a) => a.subject === params.subject);
@@ -1605,18 +1623,20 @@ export const attendanceService = {
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
     let currentList = getCombinedAttendance(fsAttendance);
     const updatedList = [...currentList];
+    const targetDateStr = normalizeDateKey(date);
 
     for (const rec of records) {
       const studentId = String(rec.studentId);
       const status = rec.status || 'Present';
       const remarks = rec.remarks || '';
 
-      const existingIndex = updatedList.findIndex(
-        (a) =>
-          (String(a.student) === studentId || String(a.student?._id) === studentId || String(a.student?.id) === studentId) &&
-          a.date === date &&
-          (a.subject === subject || (!a.subject && (subject === 'General' || !subject)))
-      );
+      const existingIndex = updatedList.findIndex((a) => {
+        const aStId = String(a.student?._id || a.student?.id || a.student);
+        const aDateStr = normalizeDateKey(a.date);
+        const aSub = a.subject || 'General';
+        const targetSub = subject || 'General';
+        return aStId === studentId && aDateStr === targetDateStr && (aSub === targetSub || targetSub === 'All');
+      });
 
       if (existingIndex >= 0) {
         updatedList[existingIndex] = {
@@ -1638,7 +1658,7 @@ export const attendanceService = {
         const newRecord = {
           _id: id,
           student: studentId,
-          date,
+          date: targetDateStr,
           status,
           subject: subject || 'General',
           className,
@@ -1653,10 +1673,28 @@ export const attendanceService = {
           console.warn('Firestore setDoc attendance error:', fsErr.message);
         }
       }
+
+      // Update local student attendancePercentage for real-time sync
+      try {
+        const studentAtts = updatedList.filter((a) => {
+          const aStId = String(a.student?._id || a.student?.id || a.student);
+          return aStId === studentId;
+        });
+        const presentCount = studentAtts.filter((a) => a.status === 'Present' || a.status === 'Late').length;
+        const totalCount = studentAtts.length;
+        const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;
+
+        const storedStudents = getStoredStudents();
+        const sIdx = storedStudents.findIndex((s) => String(s._id || s.id) === studentId);
+        if (sIdx !== -1) {
+          storedStudents[sIdx].attendancePercentage = pct;
+          setStoredStudents(storedStudents);
+        }
+      } catch (e) {}
     }
 
     setStoredAttendance(updatedList);
-    return { success: true, message: `Attendance saved for ${records.length} students.`, attendance: updatedList };
+    return { success: true, message: `Attendance saved for ${records.length} students on ${targetDateStr}.`, attendance: updatedList };
   },
 
   recordIndividualAttendance: async ({ studentId, date, subject, status, remarks = '' }) => {

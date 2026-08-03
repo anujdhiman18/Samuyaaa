@@ -23,10 +23,25 @@ const DEFAULT_SUBJECTS = [
   'General',
 ];
 
+const getTodayLocalString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateLocal = (d) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function AttendanceManagement() {
   const { addToast } = useToast();
 
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => getTodayLocalString());
   const [selectedClass, setSelectedClass] = useState('All');
   const [selectedSubject, setSelectedSubject] = useState('Mathematics');
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,15 +115,16 @@ export default function AttendanceManagement() {
       const filtered = getFilteredStudents();
       filtered.forEach((st) => {
         const stId = String(st._id || st.id);
-        const existing = records.find(
-          (r) => String(r.student === stId ? stId : r.student?._id) === stId
-        );
+        const existing = records.find((r) => {
+          const rStudentId = String(r.student?._id || r.student?.id || r.student);
+          return rStudentId === stId;
+        });
 
         if (existing) {
           newMap[stId] = {
             status: existing.status || 'Present',
             remarks: existing.remarks || '',
-            recordId: existing._id,
+            recordId: existing._id || existing.id,
           };
         } else {
           newMap[stId] = {
@@ -139,19 +155,20 @@ export default function AttendanceManagement() {
 
   // Date Navigation Helpers
   const stepDate = (days) => {
-    const d = new Date(date + 'T00:00:00');
+    const parts = date.split('-');
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     d.setDate(d.getDate() + days);
-    setDate(d.toISOString().split('T')[0]);
+    setDate(formatDateLocal(d));
   };
 
   const setToday = () => {
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(getTodayLocalString());
   };
 
   const setYesterday = () => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    setDate(d.toISOString().split('T')[0]);
+    setDate(formatDateLocal(d));
   };
 
   const handleStatusChange = (studentId, status) => {

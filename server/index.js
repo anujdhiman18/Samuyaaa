@@ -17,6 +17,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import feedbackRoutes from './routes/feedback.js';
 import facultyRoutes from './routes/facultyRoutes.js';
 import alumniRoutes from './routes/alumniRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
@@ -56,6 +57,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/fees', feeRoutes);
+app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/faculty', facultyRoutes);
