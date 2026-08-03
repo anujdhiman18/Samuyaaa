@@ -69,9 +69,39 @@ const studentSchema = new mongoose.Schema(
       min: 1,
       max: 31,
     },
+    admissionNumber: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
+    course: {
+      type: String,
+      default: 'General Science',
+      trim: true,
+    },
+    batch: {
+      type: String,
+      default: '2024-2026',
+      trim: true,
+    },
+    semester: {
+      type: String,
+      default: 'Semester 1',
+      trim: true,
+    },
+    photo: {
+      type: String,
+      default: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+    },
+    attendancePercentage: {
+      type: Number,
+      default: 90,
+      min: 0,
+      max: 100,
+    },
     status: {
       type: String,
-      enum: ['Active', 'Inactive'],
+      enum: ['Active', 'Inactive', 'Alumni', 'Suspended'],
       default: 'Active',
     },
     paidTillMonth: {

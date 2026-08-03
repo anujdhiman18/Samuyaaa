@@ -11,6 +11,7 @@ export const initialMockStudents = [
   {
     _id: 's_anuj',
     fullName: 'Anuj Dhiman',
+    admissionNumber: 'ADM-2025-001',
     fatherName: 'Sunil Dhiman',
     motherName: 'Meena Dhiman',
     phone: '9816001122',
@@ -19,12 +20,16 @@ export const initialMockStudents = [
     password: 'student123',
     address: 'Chitkara University Campus / Himachal Pradesh',
     className: '12th (+2)',
+    course: 'Computer Science',
+    batch: '2024-2026',
+    semester: 'Semester 4',
     rollNumber: 'SAU-12-005',
     subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
     dateOfAdmission: '2025-04-01',
     monthlyFee: 3000,
     monthlyDueDay: 5,
     status: 'Active',
+    attendancePercentage: 96,
     paidTillMonth: 'July 2026',
     feesPaid: true,
     dob: '2006-11-12',
@@ -35,6 +40,7 @@ export const initialMockStudents = [
   {
     _id: 's1',
     fullName: 'Rahul Gupta',
+    admissionNumber: 'ADM-2025-002',
     fatherName: 'Rajesh Gupta',
     motherName: 'Sunita Gupta',
     phone: '9816012345',
@@ -42,22 +48,27 @@ export const initialMockStudents = [
     email: 'rahul.g@gmail.com',
     address: 'House #42, Main Market, Jamula, Palampur',
     className: '10th',
+    course: 'Science',
+    batch: '2025-2026',
+    semester: '10th Standard',
     rollNumber: 'SAU-10-001',
     subjects: ['Mathematics Advanced', 'Integrated Science'],
     dateOfAdmission: '2025-04-10',
     monthlyFee: 2500,
     monthlyDueDay: 5,
     status: 'Active',
+    attendancePercentage: 88,
     paidTillMonth: 'June 2026',
     feesPaid: false,
     dob: '2009-08-15',
     bloodGroup: 'B+',
     emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
   },
   {
     _id: 's2',
     fullName: 'Damini Sharma',
+    admissionNumber: 'ADM-2025-003',
     fatherName: 'Subhash Sharma',
     motherName: 'Kamlesh Sharma',
     phone: '9876543210',
@@ -65,12 +76,16 @@ export const initialMockStudents = [
     email: 'damini.s@gmail.com',
     address: 'Bagru Garh, Palaid, HP 176093',
     className: '10th',
+    course: 'Science',
+    batch: '2025-2026',
+    semester: '10th Standard',
     rollNumber: 'SAU-10-002',
     subjects: ['Mathematics Advanced'],
     dateOfAdmission: '2025-03-15',
     monthlyFee: 2000,
     monthlyDueDay: 5,
     status: 'Active',
+    attendancePercentage: 92,
     paidTillMonth: 'July 2026',
     feesPaid: true,
     dob: '2009-11-20',
@@ -81,6 +96,7 @@ export const initialMockStudents = [
   {
     _id: 's3',
     fullName: 'Aryan Mehta',
+    admissionNumber: 'ADM-2024-045',
     fatherName: 'Vikas Mehta',
     motherName: 'Priya Mehta',
     phone: '9816112233',
@@ -88,39 +104,50 @@ export const initialMockStudents = [
     email: 'aryan.m@gmail.com',
     address: 'Ward No 4, Civil Lines, HP',
     className: '11th',
+    course: 'Commerce',
+    batch: '2024-2026',
+    semester: 'Semester 2',
     rollNumber: 'SAU-11-003',
     subjects: ['Physics IIT-JEE Prep', 'Chemistry Foundation'],
     dateOfAdmission: '2025-05-01',
     monthlyFee: 3000,
     monthlyDueDay: 5,
-    status: 'Active',
+    status: 'Suspended',
+    attendancePercentage: 64,
     paidTillMonth: 'June 2026',
     feesPaid: false,
     dob: '2008-05-10',
     bloodGroup: 'A+',
     emergencyContact: '8894190175',
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
   },
   {
     _id: 's4',
     fullName: 'Aditya Sharma',
+    admissionNumber: 'ADM-2023-012',
     fatherName: 'Ramesh Sharma',
     motherName: 'Geeta Sharma',
     phone: '9816223344',
     parentPhone: '8894190175',
     email: 'aditya.s@gmail.com',
     address: 'Palaid Road, Palampur, HP',
-    className: '10th',
+    className: '12th (+2)',
+    course: 'Arts',
+    batch: '2023-2025',
+    semester: 'Alumni Batch',
     rollNumber: 'SAU-10-004',
     subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
     dateOfAdmission: '2025-06-01',
     monthlyFee: 2500,
     monthlyDueDay: 5,
-    status: 'Active',
+    status: 'Alumni',
+    attendancePercentage: 95,
     paidTillMonth: 'June 2026',
-    feesPaid: false,
+    feesPaid: true,
     dob: '2009-02-14',
     bloodGroup: 'AB+',
     emergencyContact: '8894190175',
+    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
   },
 ];
 
@@ -1056,6 +1083,42 @@ export const studentService = {
     const list = getStoredStudents().filter((s) => String(s._id) !== String(id) && String(s.id) !== String(id));
     setStoredStudents(list);
     return { success: true, message: 'Student deleted successfully' };
+  },
+
+  bulkActionStudents: async ({ action, studentIds, newStatus }) => {
+    if (!studentIds || studentIds.length === 0) return { success: false, message: 'No students selected' };
+
+    try {
+      const remote = await apiCall('/students/bulk-action', {
+        method: 'POST',
+        body: JSON.stringify({ action, studentIds, newStatus }),
+      });
+      if (remote) return remote;
+    } catch (err) {
+      console.warn('Remote bulk action failed, applying local fallback:', err);
+    }
+
+    if (action === 'delete') {
+      studentIds.forEach((id) => addDeletedId('students', id));
+      const list = getStoredStudents().filter(
+        (s) => !studentIds.includes(String(s._id)) && !studentIds.includes(String(s.id))
+      );
+      setStoredStudents(list);
+      return { success: true, message: `${studentIds.length} students deleted successfully` };
+    }
+
+    if (action === 'status') {
+      const list = getStoredStudents().map((s) => {
+        if (studentIds.includes(String(s._id)) || studentIds.includes(String(s.id))) {
+          return { ...s, status: newStatus || 'Active' };
+        }
+        return s;
+      });
+      setStoredStudents(list);
+      return { success: true, message: `Status updated to ${newStatus} for ${studentIds.length} students` };
+    }
+
+    return { success: false, message: 'Invalid action' };
   },
 
   resetStudentData: () => {

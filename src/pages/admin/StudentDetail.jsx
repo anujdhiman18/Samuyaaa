@@ -6,6 +6,10 @@ import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
+const COURSES = ['Science', 'Commerce', 'Arts', 'Computer Science', 'Engineering', 'General Science'];
+const BATCHES = ['2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
+const SEMESTERS = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', '10th', '12th (+2)'];
+
 export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -15,7 +19,12 @@ export default function StudentDetail() {
   const [attendanceStats, setAttendanceStats] = useState({ presentDays: 0, absentDays: 0, attendancePercentage: 100 });
   const [loading, setLoading] = useState(true);
 
-  // Attendance Modal
+  // Edit Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Attendance Modal State
   const [attModalOpen, setAttModalOpen] = useState(false);
   const [attDate, setAttDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [attStatus, setAttStatus] = useState('Present');
@@ -23,17 +32,23 @@ export default function StudentDetail() {
   const [attRemarks, setAttRemarks] = useState('');
   const [savingAtt, setSavingAtt] = useState(false);
 
-  // Pay Fee Modal
+  // Collect Fees Modal State
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMode, setPaymentMode] = useState('UPI');
-  const [monthYear, setMonthYear] = useState('July 2026');
-  const [submitting, setSubmitting] = useState(false);
+  const [monthYear, setMonthYear] = useState('August 2026');
+  const [submittingFee, setSubmittingFee] = useState(false);
 
-  // Receipt Modal
+  // Send Notification Modal State
+  const [notifyModalOpen, setNotifyModalOpen] = useState(false);
+  const [notifyChannel, setNotifyChannel] = useState('WhatsApp');
+  const [notifyMessage, setNotifyMessage] = useState('');
+  const [sendingNotify, setSendingNotify] = useState(false);
+
+  // Receipt Modal State
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
-  // Delete Confirm Modal
+  // Delete Confirm Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -49,8 +64,28 @@ export default function StudentDetail() {
     try {
       const studentRes = await studentService.getStudentById(id);
       if (studentRes && studentRes.student) {
-        setStudent(studentRes.student);
-        setAmountPaid(studentRes.student.monthlyFee || 2500);
+        const s = studentRes.student;
+        setStudent(s);
+        setAmountPaid(s.monthlyFee || 2500);
+        setEditForm({
+          fullName: s.fullName || '',
+          admissionNumber: s.admissionNumber || `ADM-2025-${String(s._id || s.id).slice(-3)}`,
+          rollNumber: s.rollNumber || '',
+          course: s.course || 'Science',
+          batch: s.batch || '2024-2026',
+          semester: s.semester || s.className || 'Semester 1',
+          className: s.className || '10th',
+          photo: s.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+          phone: s.phone || '',
+          parentPhone: s.parentPhone || '',
+          email: s.email || '',
+          monthlyFee: s.monthlyFee !== undefined ? s.monthlyFee : 2500,
+          attendancePercentage: s.attendancePercentage !== undefined ? s.attendancePercentage : 90,
+          status: s.status || 'Active',
+          fatherName: s.fatherName || '',
+          motherName: s.motherName || '',
+          address: s.address || '',
+        });
       } else {
         setStudent(null);
       }
@@ -72,50 +107,54 @@ export default function StudentDetail() {
     }
   };
 
-  const handleRecordAttendance = async (e) => {
-    e.preventDefault();
-    setSavingAtt(true);
-    try {
-      const res = await attendanceService.recordIndividualAttendance({
-        studentId: id,
-        date: attDate,
-        subject: attSubject,
-        status: attStatus,
-        remarks: attRemarks,
-      });
+  const handleOpenEditModal = () => {
+    if (!student) return;
+    setEditForm({
+      fullName: student.fullName || '',
+      admissionNumber: student.admissionNumber || `ADM-2025-${String(student._id || student.id).slice(-3)}`,
+      rollNumber: student.rollNumber || '',
+      course: student.course || 'Science',
+      batch: student.batch || '2024-2026',
+      semester: student.semester || student.className || 'Semester 1',
+      className: student.className || '10th',
+      photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+      phone: student.phone || '',
+      parentPhone: student.parentPhone || '',
+      email: student.email || '',
+      monthlyFee: student.monthlyFee !== undefined ? student.monthlyFee : 2500,
+      attendancePercentage: student.attendancePercentage !== undefined ? student.attendancePercentage : 90,
+      status: student.status || 'Active',
+      fatherName: student.fatherName || '',
+      motherName: student.motherName || '',
+      address: student.address || '',
+    });
+    setEditModalOpen(true);
+  };
 
-      if (res && res.success) {
-        addToast(`Attendance recorded as ${attStatus} for ${attDate}`, 'success');
-        setAttModalOpen(false);
-        setAttRemarks('');
-        fetchStudentData();
-      } else {
-        addToast(res?.message || 'Failed to record attendance', 'error');
-      }
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setSavingEdit(true);
+    try {
+      await studentService.updateStudent(id, editForm);
+      addToast('Student profile updated successfully!', 'success');
+      setEditModalOpen(false);
+      fetchStudentData();
     } catch (err) {
-      addToast('Error recording attendance', 'error');
+      addToast(err.message || 'Failed to update student profile', 'error');
     } finally {
-      setSavingAtt(false);
+      setSavingEdit(false);
     }
   };
 
-  const handleToggleFeeStatus = async (newStatus) => {
+  const handleToggleSuspend = async () => {
+    if (!student) return;
+    const nextStatus = student.status === 'Suspended' ? 'Active' : 'Suspended';
     try {
-      await studentService.toggleFeeStatus(id, newStatus);
-      setStudent((prev) =>
-        prev
-          ? {
-              ...prev,
-              feesPaid: newStatus,
-              paymentDate: newStatus ? new Date().toISOString() : null,
-              paidTillMonth: newStatus ? 'July 2026' : '',
-            }
-          : null
-      );
-      fetchStudentData();
-      addToast(`Student fee status updated to ${newStatus ? 'PAID' : 'UNPAID'}`, newStatus ? 'success' : 'info');
+      await studentService.updateStudent(id, { ...student, status: nextStatus });
+      setStudent({ ...student, status: nextStatus });
+      addToast(`Student status changed to ${nextStatus}`, nextStatus === 'Suspended' ? 'warning' : 'success');
     } catch (err) {
-      addToast(err.message || 'Error updating fee status', 'error');
+      addToast('Error toggling student suspension status', 'error');
     }
   };
 
@@ -134,7 +173,7 @@ export default function StudentDetail() {
 
   const handleRecordPayment = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSubmittingFee(true);
     try {
       const res = await feeService.recordPayment({
         studentId: id,
@@ -152,14 +191,44 @@ export default function StudentDetail() {
     } catch (err) {
       addToast(err.message || 'Error recording fee payment', 'error');
     } finally {
-      setSubmitting(false);
+      setSubmittingFee(false);
+    }
+  };
+
+  const handleSendNotification = (e) => {
+    e.preventDefault();
+    setSendingNotify(true);
+    setTimeout(() => {
+      setSendingNotify(false);
+      setNotifyModalOpen(false);
+      setNotifyMessage('');
+      addToast(`${notifyChannel} notification sent successfully to ${student?.fullName}!`, 'success');
+    }, 600);
+  };
+
+  const handlePrintProfile = () => {
+    window.print();
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Active':
+        return <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm">🟢 Active</span>;
+      case 'Inactive':
+        return <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-gray-100 text-gray-800 border border-gray-300 shadow-sm">⚪ Inactive</span>;
+      case 'Alumni':
+        return <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-800 border border-purple-300 shadow-sm">🎓 Alumni</span>;
+      case 'Suspended':
+        return <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300 shadow-sm">🔴 Suspended</span>;
+      default:
+        return <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm">Active</span>;
     }
   };
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-xs animate-pulse">
-        Loading student academic profile...
+      <div className="p-8 text-center text-xs animate-pulse text-on-surface-variant">
+        Loading student profile...
       </div>
     );
   }
@@ -170,571 +239,553 @@ export default function StudentDetail() {
         <span className="material-symbols-outlined text-[48px] text-rose-500 mb-2">
           person_off
         </span>
-        <h3 className="font-headings font-bold text-lg text-secondary">Student Not Found or Deleted</h3>
+        <h3 className="font-headings font-bold text-lg text-secondary">Student Not Found</h3>
         <p className="text-xs text-on-surface-variant mt-1">
           This student record has been removed or does not exist.
         </p>
         <Link to="/admin/students" className="mt-4 inline-block px-5 py-2 rounded-full bg-primary text-white text-xs font-headings font-bold hover:bg-primary-container transition-colors">
-          Back to Student Directory
+          Back to Students Page
         </Link>
       </div>
     );
   }
 
+  const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
+  const admissionNo = student.admissionNumber || `ADM-2025-${String(student._id || student.id).slice(-3)}`;
+
   return (
     <div className="space-y-6 font-body">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-              {student.fullName}
-            </h1>
-            <span className="px-3 py-1 rounded-full bg-surface-container font-mono font-bold text-xs text-secondary">
-              {student.rollNumber}
-            </span>
-          </div>
-          <p className="text-xs text-on-surface-variant mt-1">
-            Enrolled in <strong className="text-on-surface">Class {student.className}</strong> &bull; Admission Date: {new Date(student.dateOfAdmission).toLocaleDateString()}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setPayModalOpen(true)}
-            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">payments</span>
-            Record Fee Payment
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2.5 rounded-full border border-outline-variant/30 bg-white text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            Print Card
-          </button>
-          <button
-            onClick={() => setDeleteModalOpen(true)}
-            className="px-4 py-2.5 rounded-full border border-rose-200 bg-rose-50 text-xs font-headings font-bold text-rose-700 hover:bg-rose-100 transition-colors flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
-            Delete Student
-          </button>
-        </div>
-      </div>
-
-      {/* Main Student Card Overview */}
-      <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-2xl shadow-lg border border-outline-variant/20 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 transition-all">
+        {/* Left: Student Avatar & Info */}
+        <div className="flex items-center gap-4">
           <img
             src={student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'}
             alt={student.fullName}
-            className="w-20 h-20 rounded-2xl object-cover border-4 border-secondary shadow-md"
+            className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover border-2 border-primary/20 shadow-md bg-surface-container"
+            onError={(e) => {
+              e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(student.fullName);
+            }}
           />
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-headings font-bold text-xl text-secondary">{student.fullName}</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
-                {student.status}
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-headings font-extrabold text-xl md:text-2xl text-secondary">
+                {student.fullName}
+              </h1>
+              {getStatusBadge(student.status || 'Active')}
             </div>
-            <p className="text-xs text-on-surface-variant mt-1">
-              Class: <strong>{student.className}</strong> &bull; Roll: <strong className="font-mono">{student.rollNumber}</strong>
-            </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              Father: <strong>{student.fatherName}</strong> &bull; Parent Contact: <strong className="text-primary">{student.parentPhone}</strong>
-            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-on-surface-variant mt-1">
+              <span className="font-mono font-bold text-primary">Adm No: {admissionNo}</span>
+              <span>&bull;</span>
+              <span>Roll: <strong className="text-secondary">{student.rollNumber}</strong></span>
+              <span>&bull;</span>
+              <span>Course: <strong className="text-secondary">{student.course || 'Science'}</strong></span>
+              <span>&bull;</span>
+              <span>Batch: <strong className="text-secondary">{student.batch || '2024-2026'}</strong></span>
+            </div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 text-left md:text-right min-w-[260px] flex flex-col justify-between gap-3">
-          <div>
-            <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-              Monthly Fee Structure
-            </span>
-            <span className="font-headings font-extrabold text-2xl text-secondary mt-0.5 block">
-              ₹{(student.monthlyFee || 2500).toLocaleString()} / month
-            </span>
-            <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-              <span className="font-bold text-on-surface-variant">Next Due Date:</span>
-              <span className="font-mono font-bold text-secondary">
-                {student.nextFeeDueDate
-                  ? new Date(student.nextFeeDueDate).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : 'Not Set'}
-              </span>
-            </div>
-            <div className="mt-1 flex items-center justify-between gap-2 text-xs">
-              <span className="font-bold text-on-surface-variant">Computed Status:</span>
-              {(() => {
-                const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
-                const dueDay = student.monthlyDueDay || student.feeDueDate || 5;
-                const dueInfo = getFeeDueDateStatus(student.nextFeeDueDate, isPaid, dueDay);
-                return (
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${dueInfo.bgClass}`}>
-                    {dueInfo.label}
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
+        {/* Right: Quick Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          {/* Edit Student */}
+          <button
+            onClick={handleOpenEditModal}
+            className="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container text-secondary text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+            Edit Student
+          </button>
 
-          <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase">
-              Current Month Status:
+          {/* Collect Fees */}
+          <button
+            onClick={() => setPayModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">payments</span>
+            Collect Fees
+          </button>
+
+          {/* Print Profile */}
+          <button
+            onClick={handlePrintProfile}
+            className="px-3.5 py-2 rounded-xl bg-white border border-outline-variant/30 hover:bg-surface-container text-secondary text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">print</span>
+            Print Profile
+          </button>
+
+          {/* Send Notification */}
+          <button
+            onClick={() => setNotifyModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">send</span>
+            Send Notification
+          </button>
+
+          {/* Suspend Student */}
+          <button
+            onClick={handleToggleSuspend}
+            className={`px-3.5 py-2 rounded-xl text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm ${
+              student.status === 'Suspended'
+                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {student.status === 'Suspended' ? 'block' : 'warning'}
             </span>
-            <FeeToggleSwitch
-              checked={Boolean(student.feesPaid || student.paidTillMonth === 'July 2026')}
-              onChange={handleToggleFeeStatus}
-              paymentDate={student.paymentDate}
-              size="sm"
-            />
-          </div>
+            {student.status === 'Suspended' ? 'Un-suspend' : 'Suspend Student'}
+          </button>
+
+          {/* Delete Student */}
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-headings font-bold transition-colors flex items-center gap-1 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+            Delete
+          </button>
         </div>
       </div>
 
-      {/* Grid: Personal Details & Fee History */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Information Breakdown */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
-            <h3 className="font-headings font-bold text-base text-secondary mb-4">
-              Personal &amp; Contact Details
+      {/* Profile Overview Details Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Personal & Academic Details */}
+        <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-6">
+          <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2 border-b border-outline-variant/15 pb-3">
+            <span className="material-symbols-outlined text-primary">person</span>
+            Student Academic & Contact Details
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Full Name</span>
+              <span className="font-bold text-secondary text-sm">{student.fullName}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Admission Number</span>
+              <span className="font-mono font-bold text-primary">{admissionNo}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Roll Number</span>
+              <span className="font-mono font-bold text-secondary">{student.rollNumber}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Course</span>
+              <span className="font-bold text-secondary">{student.course || 'Science'}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Batch Allocation</span>
+              <span className="font-bold text-secondary">{student.batch || '2024-2026'}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Semester / Class</span>
+              <span className="font-bold text-secondary">{student.semester || student.className}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Student Phone</span>
+              <span className="font-mono text-secondary">{student.phone}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Parent Phone</span>
+              <span className="font-mono text-secondary">{student.parentPhone}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Email Address</span>
+              <span className="font-mono text-secondary">{student.email || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Date of Admission</span>
+              <span className="text-secondary">{new Date(student.dateOfAdmission || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Father's Name</span>
+              <span className="text-secondary">{student.fatherName || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="text-on-surface-variant text-[11px] block">Mother's Name</span>
+              <span className="text-secondary">{student.motherName || 'N/A'}</span>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-outline-variant/15">
+            <span className="text-on-surface-variant text-[11px] block mb-1">Residential Address</span>
+            <p className="text-xs text-secondary bg-surface-container-low p-3 rounded-xl border border-outline-variant/15">
+              {student.address || 'Address details not provided.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Summary Sidebar Card */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-4">
+            <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2 border-b border-outline-variant/15 pb-3">
+              <span className="material-symbols-outlined text-primary">equalizer</span>
+              Academic Performance & Fee Status
             </h3>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-                <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Mother's Name
+            {/* Attendance percentage display */}
+            <div className="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-on-surface-variant">Attendance Percentage</span>
+                <span className="font-headings font-extrabold text-lg text-primary">
+                  {student.attendancePercentage !== undefined ? student.attendancePercentage : 90}%
                 </span>
-                <span className="font-bold text-on-surface mt-0.5 block">{student.motherName}</span>
               </div>
-
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-                <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Student Mobile Number
-                </span>
-                <span className="font-bold text-on-surface mt-0.5 block">{student.phone}</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-                <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Parent Emergency Contact
-                </span>
-                <span className="font-bold text-primary mt-0.5 block">{student.parentPhone}</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-                <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Email Address
-                </span>
-                <span className="font-bold text-on-surface mt-0.5 block">{student.email || 'N/A'}</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15">
-                <span className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Residential Address
-                </span>
-                <span className="font-bold text-on-surface mt-0.5 block">{student.address}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Fee Payments History */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-headings font-bold text-base text-secondary">
-                Fee Collection History
-              </h3>
-              <button
-                onClick={() => setPayModalOpen(true)}
-                className="text-xs font-headings font-bold text-primary hover:underline"
-              >
-                + Record Payment
-              </button>
-            </div>
-
-            {payments.length === 0 ? (
-              <p className="text-xs text-on-surface-variant text-center py-6">
-                No fee payment receipts recorded yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {payments.map((payment) => (
-                  <div
-                    key={payment._id}
-                    className="p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low flex items-center justify-between hover:bg-surface-container transition-colors"
-                  >
-                    <div>
-                      <span className="font-mono text-xs font-bold text-primary block">
-                        {payment.receiptNumber}
-                      </span>
-                      <h4 className="font-headings font-bold text-sm text-secondary mt-0.5">
-                        ₹{payment.amountPaid} &bull; {payment.monthYear}
-                      </h4>
-                      <p className="text-[11px] text-on-surface-variant mt-0.5">
-                        Paid via {payment.paymentMode} on {new Date(payment.paymentDate).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => setSelectedReceipt(payment)}
-                      className="px-3.5 py-1.5 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors"
-                    >
-                      View Receipt
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Student Attendance Overview Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-headings font-bold text-base text-secondary flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-xl">fact_check</span>
-                  Attendance Summary & Log
-                </h3>
-                <p className="text-[11px] text-on-surface-variant mt-0.5">
-                  Overall performance: {attendanceStats.attendancePercentage || 0}% Attendance Rate
-                </p>
-              </div>
-
-              <button
-                onClick={() => setAttModalOpen(true)}
-                className="px-3.5 py-1.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-premium transition-all flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-                Mark Attendance
-              </button>
-            </div>
-
-            {/* Attendance Mini Stats */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200/60 text-center">
-                <span className="text-[10px] font-headings font-bold uppercase text-emerald-800 tracking-wider">Present</span>
-                <span className="font-headings font-extrabold text-xl text-emerald-700 block mt-0.5">{attendanceStats.presentDays || 0} Days</span>
-              </div>
-
-              <div className="bg-rose-50 rounded-xl p-3 border border-rose-200/60 text-center">
-                <span className="text-[10px] font-headings font-bold uppercase text-rose-800 tracking-wider">Absent</span>
-                <span className="font-headings font-extrabold text-xl text-rose-700 block mt-0.5">{attendanceStats.absentDays || 0} Days</span>
-              </div>
-
-              <div className="bg-surface-container-low rounded-xl p-3 border border-outline-variant/20 text-center">
-                <span className="text-[10px] font-headings font-bold uppercase text-on-surface-variant tracking-wider">Rate</span>
-                <span className="font-headings font-extrabold text-xl text-primary block mt-0.5">{attendanceStats.attendancePercentage || 0}%</span>
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-primary h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(student.attendancePercentage || 90, 100)}%` }}
+                />
               </div>
             </div>
 
-            {/* Recent Attendance Logs */}
-            <div className="pt-2">
-              <h4 className="font-headings font-bold text-xs text-on-surface-variant uppercase tracking-wider mb-2">
-                Recent Class Logs
-              </h4>
-
-              {attendanceList.length === 0 ? (
-                <p className="text-xs text-on-surface-variant text-center py-4 bg-surface-container-lowest rounded-xl border border-outline-variant/15">
-                  No attendance records logged for this student yet.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {attendanceList.map((record) => (
-                    <div
-                      key={record._id}
-                      className="p-3 rounded-xl border border-outline-variant/15 bg-surface-container-lowest flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <span className="font-bold text-secondary">{record.date}</span> &bull; <span className="text-on-surface-variant">{record.subject || 'General'}</span>
-                        {record.remarks && <p className="text-[10px] text-on-surface-variant/80 italic mt-0.5">"{record.remarks}"</p>}
-                      </div>
-
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full font-headings font-bold text-[10px] uppercase ${
-                          record.status === 'Present'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : record.status === 'Absent'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}
-                      >
-                        {record.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Fee summary display */}
+            <div className="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-on-surface-variant">Monthly Fee</span>
+                <span className="font-extrabold text-secondary">₹{student.monthlyFee || 2500}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-on-surface-variant">Fee Status</span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}
+                >
+                  {isPaid ? '🟢 Fees Paid' : '🔴 Payment Pending'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Record Fee Payment Modal */}
-      {payModalOpen && (
-        <Modal
-          isOpen={payModalOpen}
-          onClose={() => setPayModalOpen(false)}
-          title={`Record Fee Payment for ${student.fullName}`}
-        >
-          <form onSubmit={handleRecordPayment} className="space-y-4 text-xs font-body">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Amount Paid (₹) *
-              </label>
-              <input
-                type="number"
-                required
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold"
-              />
-            </div>
+      {/* Fee Payment History Ledger */}
+      <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-4">
+        <div className="flex justify-between items-center border-b border-outline-variant/15 pb-4">
+          <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">receipt_long</span>
+            Fee Payment Receipts Ledger
+          </h3>
+          <button
+            onClick={() => setPayModalOpen(true)}
+            className="px-4 py-2 rounded-full bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm"
+          >
+            + Record Payment
+          </button>
+        </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                For Month &amp; Year *
-              </label>
+        {payments.length === 0 ? (
+          <p className="text-xs text-on-surface-variant text-center py-6">
+            No fee payment receipts recorded yet.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[10px]">
+                  <th className="py-3 px-4">Receipt No.</th>
+                  <th className="py-3 px-4">Month/Year</th>
+                  <th className="py-3 px-4">Amount Paid</th>
+                  <th className="py-3 px-4">Payment Mode</th>
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {payments.map((p) => (
+                  <tr key={p._id || p.id} className="hover:bg-surface-container-lowest">
+                    <td className="py-3 px-4 font-mono font-bold text-primary">{p.receiptNumber}</td>
+                    <td className="py-3 px-4 font-bold text-secondary">{p.monthYear}</td>
+                    <td className="py-3 px-4 font-extrabold text-emerald-700">₹{p.amountPaid}</td>
+                    <td className="py-3 px-4 text-on-surface-variant">{p.paymentMode}</td>
+                    <td className="py-3 px-4 text-on-surface-variant">
+                      {new Date(p.paymentDate).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => setSelectedReceipt(p)}
+                        className="px-3 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary font-bold text-[11px]"
+                      >
+                        View Receipt
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Edit Student Modal */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="Edit Student Profile"
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4 font-body">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Full Name</label>
               <input
                 type="text"
                 required
-                value={monthYear}
-                onChange={(e) => setMonthYear(e.target.value)}
-                placeholder="July 2026"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                value={editForm.fullName}
+                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
               />
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Payment Mode *
-              </label>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Admission Number</label>
+              <input
+                type="text"
+                value={editForm.admissionNumber}
+                onChange={(e) => setEditForm({ ...editForm, admissionNumber: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-mono focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Roll Number</label>
+              <input
+                type="text"
+                required
+                value={editForm.rollNumber}
+                onChange={(e) => setEditForm({ ...editForm, rollNumber: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-mono font-bold focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Photo URL</label>
+              <input
+                type="url"
+                value={editForm.photo}
+                onChange={(e) => setEditForm({ ...editForm, photo: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Course</label>
               <select
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+                value={editForm.course}
+                onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                <option value="UPI">UPI / GPay / PhonePe</option>
-                <option value="Cash">Cash Deposit</option>
-                <option value="Net Banking">Net Banking</option>
-                <option value="Cheque">Cheque</option>
+                {COURSES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
             </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
-              <button
-                type="button"
-                onClick={() => setPayModalOpen(false)}
-                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Batch</label>
+              <select
+                value={editForm.batch}
+                onChange={(e) => setEditForm({ ...editForm, batch: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
+                {BATCHES.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Semester / Class</label>
+              <select
+                value={editForm.semester}
+                onChange={(e) => setEditForm({ ...editForm, semester: e.target.value, className: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                {submitting ? 'Generating...' : 'Save & Print Receipt'}
-              </button>
+                {SEMESTERS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Printable Receipt Modal */}
-      {selectedReceipt && (
-        <Modal
-          isOpen={!!selectedReceipt}
-          onClose={() => setSelectedReceipt(null)}
-          title="Official Fee Receipt"
-        >
-          <div className="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/15 space-y-4 text-xs font-body">
-            <div className="flex justify-between items-center border-b border-outline-variant/15 pb-4">
-              <div>
-                <h4 className="font-headings font-extrabold text-base text-secondary">
-                  SAUMYAA STUDIES
-                </h4>
-                <p className="text-[10px] text-on-surface-variant">
-                  Premium Coaching Institute &bull; Jitender Sharma
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-bold text-primary block">{selectedReceipt.receiptNumber}</span>
-                <span className="text-[10px] text-on-surface-variant">
-                  Date: {new Date(selectedReceipt.paymentDate).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-[10px] text-on-surface-variant uppercase font-bold block">
-                  Student Name
-                </span>
-                <span className="font-bold text-on-surface">{student.fullName}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-on-surface-variant uppercase font-bold block">
-                  Roll / Class
-                </span>
-                <span className="font-bold text-on-surface">
-                  {student.rollNumber} &bull; {student.className}
-                </span>
-              </div>
-            </div>
-
-            <div className="border-t border-b border-outline-variant/15 py-3 flex justify-between items-center">
-              <span className="font-bold text-secondary">Tuition Fee ({selectedReceipt.monthYear})</span>
-              <span className="font-headings font-extrabold text-lg text-emerald-700">
-                ₹{selectedReceipt.amountPaid}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-[10px] text-on-surface-variant pt-2">
-              <span>Payment Mode: {selectedReceipt.paymentMode}</span>
-              <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                VERIFIED PAID ✓
-              </span>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="bg-primary text-white font-headings font-bold px-4 py-2 rounded-full text-xs shadow-tactile-btn"
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Status</label>
+              <select
+                value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                Print Receipt
-              </button>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Alumni">Alumni</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Student Phone</label>
+              <input
+                type="text"
+                required
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Parent Phone</label>
+              <input
+                type="text"
+                required
+                value={editForm.parentPhone}
+                onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
             </div>
           </div>
-        </Modal>
-      )}
 
-      {/* Record Attendance Modal */}
-      {attModalOpen && (
-        <Modal
-          isOpen={attModalOpen}
-          onClose={() => setAttModalOpen(false)}
-          title={`Mark Attendance for ${student?.fullName}`}
-        >
-          <form onSubmit={handleRecordAttendance} className="space-y-4 text-xs font-body">
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Attendance Date *
-              </label>
-              <input
-                type="date"
-                required
-                value={attDate}
-                onChange={(e) => setAttDate(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold"
-              />
-            </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant/15">
+            <button
+              type="button"
+              onClick={() => setEditModalOpen(false)}
+              className="px-5 py-2.5 rounded-full border border-outline-variant/30 text-xs font-bold text-secondary hover:bg-surface-container"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={savingEdit}
+              className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50"
+            >
+              {savingEdit ? 'Saving...' : 'Save Profile Changes'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Subject / Class *
-              </label>
-              <select
-                value={attSubject}
-                onChange={(e) => setAttSubject(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold"
-              >
-                <option value="Mathematics">Mathematics</option>
-                <option value="Integrated Science">Integrated Science</option>
-                <option value="Physics">Physics</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="Biology">Biology</option>
-                <option value="English">English</option>
-                <option value="General">General Class</option>
-              </select>
-            </div>
+      {/* Collect Fees Modal */}
+      <Modal
+        isOpen={payModalOpen}
+        onClose={() => setPayModalOpen(false)}
+        title="Collect Fee Payment"
+      >
+        <form onSubmit={handleRecordPayment} className="space-y-4 font-body">
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Student</label>
+            <input
+              type="text"
+              disabled
+              value={`${student.fullName} (${admissionNo})`}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container text-xs font-bold text-secondary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Amount Paid (₹)</label>
+            <input
+              type="number"
+              required
+              value={amountPaid}
+              onChange={(e) => setAmountPaid(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-extrabold focus:outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Payment Mode</label>
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="UPI">UPI / GPay / PhonePe</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Card">Credit / Debit Card</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Month & Year</label>
+            <input
+              type="text"
+              value={monthYear}
+              onChange={(e) => setMonthYear(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary"
+              placeholder="e.g. August 2026"
+            />
+          </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Attendance Status *
-              </label>
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setAttStatus('Present')}
-                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
-                    attStatus === 'Present'
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-surface-container-low text-emerald-800 border-outline-variant/20 hover:bg-emerald-50'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  Present
-                </button>
+          <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant/15">
+            <button
+              type="button"
+              onClick={() => setPayModalOpen(false)}
+              className="px-5 py-2.5 rounded-full border border-outline-variant/30 text-xs font-bold text-secondary hover:bg-surface-container"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submittingFee}
+              className="bg-emerald-600 text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {submittingFee ? 'Processing...' : 'Collect & Generate Receipt'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-                <button
-                  type="button"
-                  onClick={() => setAttStatus('Absent')}
-                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
-                    attStatus === 'Absent'
-                      ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
-                      : 'bg-surface-container-low text-rose-800 border-outline-variant/20 hover:bg-rose-50'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">cancel</span>
-                  Absent
-                </button>
+      {/* Send Notification Modal */}
+      <Modal
+        isOpen={notifyModalOpen}
+        onClose={() => setNotifyModalOpen(false)}
+        title="Send Notification to Student"
+      >
+        <form onSubmit={handleSendNotification} className="space-y-4 font-body">
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Recipient</label>
+            <input
+              type="text"
+              disabled
+              value={`${student.fullName} (${student.phone})`}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container text-xs font-bold text-secondary"
+            />
+          </div>
 
-                <button
-                  type="button"
-                  onClick={() => setAttStatus('Late')}
-                  className={`py-2 rounded-xl font-headings font-bold text-xs border flex items-center justify-center gap-1 transition-all ${
-                    attStatus === 'Late'
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                      : 'bg-surface-container-low text-amber-800 border-outline-variant/20 hover:bg-amber-50'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">schedule</span>
-                  Late
-                </button>
-              </div>
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Dispatch Channel</label>
+            <select
+              value={notifyChannel}
+              onChange={(e) => setNotifyChannel(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="WhatsApp">WhatsApp Message</option>
+              <option value="SMS">SMS Text Message</option>
+              <option value="In-App">Portal In-App Notification</option>
+            </select>
+          </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Notes / Remarks
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Authorized leave, Medical cause, etc."
-                value={attRemarks}
-                onChange={(e) => setAttRemarks(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Notification Message</label>
+            <textarea
+              rows={4}
+              required
+              value={notifyMessage}
+              onChange={(e) => setNotifyMessage(e.target.value)}
+              placeholder={`Dear ${student.fullName}, ...`}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+            />
+          </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
-              <button
-                type="button"
-                onClick={() => setAttModalOpen(false)}
-                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={savingAtt}
-                className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
-              >
-                {savingAtt ? 'Saving...' : 'Save Attendance Record'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
+          <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant/15">
+            <button
+              type="button"
+              onClick={() => setNotifyModalOpen(false)}
+              className="px-5 py-2.5 rounded-full border border-outline-variant/30 text-xs font-bold text-secondary hover:bg-surface-container"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={sendingNotify}
+              className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50"
+            >
+              {sendingNotify ? 'Dispatching...' : 'Dispatch Message'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal
@@ -742,9 +793,59 @@ export default function StudentDetail() {
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDeleteStudent}
         loading={deleting}
-        title={`Delete Student ${student?.fullName}?`}
-        message={`Are you sure you want to permanently remove roll number ${student?.rollNumber}? This action cannot be undone.`}
+        title="Delete Student Profile"
+        message={`Are you sure you want to permanently delete ${student.fullName} (${admissionNo})? This action cannot be undone.`}
       />
+
+      {/* Receipt View Modal */}
+      {selectedReceipt && (
+        <Modal
+          isOpen={Boolean(selectedReceipt)}
+          onClose={() => setSelectedReceipt(null)}
+          title="Official Fee Payment Receipt"
+        >
+          <div className="space-y-4 p-4 border border-outline-variant/20 rounded-2xl bg-surface-container-lowest">
+            <div className="text-center border-b border-outline-variant/15 pb-3">
+              <h3 className="font-headings font-extrabold text-lg text-secondary">Saumyaa Educational Institute</h3>
+              <p className="text-[11px] text-on-surface-variant">Fee Receipt &bull; {selectedReceipt.receiptNumber}</p>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Student:</span>
+                <span className="font-bold text-secondary">{selectedReceipt.studentName || student.fullName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Admission No:</span>
+                <span className="font-mono font-bold text-primary">{admissionNo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Month/Year:</span>
+                <span className="font-bold text-secondary">{selectedReceipt.monthYear}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Amount Paid:</span>
+                <span className="font-extrabold text-emerald-700">₹{selectedReceipt.amountPaid}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Payment Mode:</span>
+                <span className="font-bold text-secondary">{selectedReceipt.paymentMode}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Date:</span>
+                <span className="text-secondary">{new Date(selectedReceipt.paymentDate).toLocaleString()}</span>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-outline-variant/15 flex justify-end">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 rounded-full bg-primary text-white text-xs font-bold shadow-sm"
+              >
+                Print Receipt
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

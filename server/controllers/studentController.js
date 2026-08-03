@@ -1,6 +1,6 @@
 import Student from '../models/Student.js';
 
-// @desc    Get all students with filter, search, pagination
+// @desc    Get all students with filter, search, pagination, sorting
 // @route   GET /api/students
 export const getStudents = async (req, res) => {
   try {
@@ -8,7 +8,7 @@ export const getStudents = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, className, status } = req.query;
+    const { search, className, course, batch, semester, status, feeStatus, sortBy, sortOrder } = req.query;
 
     const query = {};
 
@@ -16,22 +16,46 @@ export const getStudents = async (req, res) => {
       query.className = className;
     }
 
+    if (course && course !== 'All') {
+      query.course = course;
+    }
+
+    if (batch && batch !== 'All') {
+      query.batch = batch;
+    }
+
+    if (semester && semester !== 'All') {
+      query.semester = semester;
+    }
+
     if (status && status !== 'All') {
       query.status = status;
+    }
+
+    if (feeStatus && feeStatus !== 'All') {
+      query.feesPaid = feeStatus === 'paid';
     }
 
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: 'i' } },
         { rollNumber: { $regex: search, $options: 'i' } },
+        { admissionNumber: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
         { parentPhone: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
     }
 
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sortOptions.createdAt = -1;
+    }
+
     const total = await Student.countDocuments(query);
-    const students = await Student.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const students = await Student.find(query).sort(sortOptions).skip(skip).limit(limit);
 
     res.json({
       success: true,
@@ -63,7 +87,7 @@ export const getStudentById = async (req, res) => {
 // @route   POST /api/students
 export const createStudent = async (req, res) => {
   try {
-    let { rollNumber, className } = req.body;
+    let { rollNumber, className, admissionNumber } = req.body;
 
     // Auto-generate sequential Roll Number if missing or blank
     if (!rollNumber || rollNumber.trim() === '') {
@@ -83,11 +107,17 @@ export const createStudent = async (req, res) => {
       rollNumber = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
       req.body.rollNumber = rollNumber;
     } else {
-      // Check duplicate roll number
       const existing = await Student.findOne({ rollNumber });
       if (existing) {
         return res.status(400).json({ success: false, message: `Roll number ${rollNumber} already exists` });
       }
+    }
+
+    // Auto-generate Admission Number if missing
+    if (!admissionNumber || admissionNumber.trim() === '') {
+      const count = await Student.countDocuments();
+      const year = new Date().getFullYear();
+      req.body.admissionNumber = `ADM-${year}-${String(count + 1).padStart(3, '0')}`;
     }
 
     const student = await Student.create(req.body);
@@ -106,7 +136,6 @@ export const updateStudent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Check duplicate roll number if updated
     if (req.body.rollNumber && req.body.rollNumber !== student.rollNumber) {
       const existing = await Student.findOne({ rollNumber: req.body.rollNumber });
       if (existing) {
@@ -132,6 +161,31 @@ export const deleteStudent = async (req, res) => {
 
     await Student.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Student record deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Bulk actions on students (delete, change status)
+// @route   POST /api/students/bulk-action
+export const bulkActionStudents = async (req, res) => {
+  try {
+    const { action, studentIds, newStatus } = req.body;
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No student IDs provided' });
+    }
+
+    if (action === 'delete') {
+      await Student.deleteMany({ _id: { $in: studentIds } });
+      return res.json({ success: true, message: `${studentIds.length} student records deleted successfully` });
+    }
+
+    if (action === 'status') {
+      await Student.updateMany({ _id: { $in: studentIds } }, { $set: { status: newStatus || 'Active' } });
+      return res.json({ success: true, message: `Status updated to ${newStatus} for ${studentIds.length} students` });
+    }
+
+    return res.status(400).json({ success: false, message: 'Invalid bulk action specified' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

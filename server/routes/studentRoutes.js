@@ -6,6 +6,7 @@ import {
   updateStudent,
   deleteStudent,
   toggleFeeStatus,
+  bulkActionStudents,
   remindWhatsApp,
   remindSMS,
   getReminderLogs,
@@ -17,6 +18,7 @@ const router = express.Router();
 router.use(protect); // All student routes require JWT auth
 
 router.get('/reminder-logs', getReminderLogs);
+router.post('/bulk-action', bulkActionStudents);
 router.post('/:id/remind-whatsapp', remindWhatsApp);
 router.post('/:id/remind-sms', remindSMS);
 
