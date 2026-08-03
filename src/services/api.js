@@ -1453,20 +1453,35 @@ export const attendanceService = {
     if (remote) return remote;
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
-    let list = fsAttendance || getStoredAttendance();
+    let allRecords = fsAttendance || getStoredAttendance();
+
+    let list = allRecords;
     if (studentId) {
-      list = list.filter((a) => a.student === studentId || a.student?._id === studentId);
+      const targetId = String(studentId);
+      list = allRecords.filter(
+        (a) =>
+          String(a.student) === targetId ||
+          String(a.student?._id) === targetId ||
+          String(a.student?.id) === targetId
+      );
     }
-    setStoredAttendance(list);
+
     const presentCount = list.filter((a) => a.status === 'Present').length;
-    const totalCount = list.length || 1;
+    const absentCount = list.filter((a) => a.status === 'Absent').length;
+    const lateCount = list.filter((a) => a.status === 'Late').length;
+    const totalCount = list.length;
+
+    const percentage = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : 100;
+
     return {
       success: true,
       attendance: list,
       stats: {
         presentDays: presentCount,
-        absentDays: totalCount - presentCount,
-        attendancePercentage: Math.round((presentCount / totalCount) * 100)
+        absentDays: absentCount,
+        lateDays: lateCount,
+        totalDays: totalCount,
+        attendancePercentage: percentage,
       },
     };
   },

@@ -16,20 +16,25 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchStudentDashboardData();
+
+    const handleDataUpdate = () => fetchStudentDashboardData();
+    window.addEventListener('saumyaa_data_updated', handleDataUpdate);
+    return () => window.removeEventListener('saumyaa_data_updated', handleDataUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchStudentDashboardData = async () => {
     setLoading(true);
     try {
-      const studentId = user?.id || 's1';
+      const studentId = user?._id || user?.id || 's1';
       const attRes = await attendanceService.getStudentAttendance(studentId);
       const annRes = await announcementService.getAnnouncements();
 
       if (attRes && attRes.stats) {
         setStats((prev) => ({
           ...prev,
-          attendancePercentage: attRes.stats.attendancePercentage || 92,
+          attendancePercentage:
+            attRes.stats.attendancePercentage !== undefined ? attRes.stats.attendancePercentage : 100,
         }));
       }
 
