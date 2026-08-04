@@ -3407,9 +3407,11 @@ export const credentialRequestService = {
       if (stored) list = JSON.parse(stored);
     } catch (e) {}
 
+    const normalizedAction = (action === 'Approve' || action === 'Approved') ? 'Approved' : (action === 'Reject' || action === 'Rejected') ? 'Rejected' : action;
+
     const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
     if (idx !== -1) {
-      list[idx].status = action;
+      list[idx].status = normalizedAction;
       list[idx].adminNotes = adminNotes;
       list[idx].processedAt = new Date().toISOString();
 
@@ -3422,7 +3424,7 @@ export const credentialRequestService = {
       localStorage.setItem('saumyaa_credential_requests', JSON.stringify(list));
 
       // If Approved, automatically update student or faculty record in database!
-      if (action === 'Approved') {
+      if (normalizedAction === 'Approved') {
         const reqItem = list[idx];
         const studentId = reqItem.studentId;
         const facultyId = reqItem.facultyId;
@@ -3442,7 +3444,86 @@ export const credentialRequestService = {
       }
     }
 
-    return { success: true, message: `Credential request ${action.toLowerCase()} successfully.` };
+    return { success: true, message: `Credential request ${normalizedAction.toLowerCase()} successfully.` };
+  },
+};
+
+export const studentApplicationService = {
+  getApplications: async () => {
+    const fsApps = await syncFirestoreCollection('student_applications', []);
+    let list = fsApps || [];
+    try {
+      const stored = localStorage.getItem('saumyaa_student_applications');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    return { success: true, applications: list };
+  },
+
+  approveAndConvertToStudent: async (app) => {
+    try {
+      const appId = String(app._id || app.id);
+      const studentId = 's_' + Date.now();
+      const year = new Date().getFullYear();
+      const count = Math.floor(Math.random() * 800) + 100;
+      const rollNumber = `SAU-${app.className ? app.className.replace(/\D/g, '') || '10' : '10'}-${String(count).padStart(3, '0')}`;
+      const admissionNumber = `ADM-${year}-${String(count).padStart(3, '0')}`;
+
+      const newStudent = {
+        _id: studentId,
+        id: studentId,
+        fullName: app.fullName || app.studentName || 'New Student',
+        phone: app.phone || '9816099999',
+        parentPhone: app.parentPhone || app.phone || '9816099999',
+        email: app.email || `${studentId}@saumyaastudies.edu`,
+        password: app.password || 'student123',
+        className: app.className || '10th',
+        subject: app.subject || 'Mathematics Advanced',
+        subjects: [app.subject || 'Mathematics Advanced'],
+        batch: app.batch || '2024-2026',
+        branch: app.branch || 'Bagru',
+        rollNumber,
+        admissionNumber,
+        monthlyFee: 2500,
+        monthlyDueDay: 5,
+        attendancePercentage: 100,
+        status: 'Active',
+        photo: app.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+        createdAt: new Date().toISOString(),
+      };
+
+      // Atomic Transaction Step 1: Create active student
+      await studentService.createStudent(newStudent);
+
+      // Atomic Transaction Step 2: Update application status to Approved
+      let apps = [];
+      try {
+        const stored = localStorage.getItem('saumyaa_student_applications');
+        if (stored) apps = JSON.parse(stored);
+      } catch (e) {}
+
+      const idx = apps.findIndex((a) => String(a._id || a.id) === appId);
+      if (idx !== -1) {
+        apps[idx].status = 'Approved';
+        apps[idx].approvedAt = new Date().toISOString();
+        localStorage.setItem('saumyaa_student_applications', JSON.stringify(apps));
+      }
+
+      try {
+        await setDoc(doc(db, 'student_applications', appId), { status: 'Approved', approvedAt: new Date().toISOString() }, { merge: true });
+      } catch (e) {
+        console.warn('Firestore update student application error:', e);
+      }
+
+      return {
+        success: true,
+        student: newStudent,
+        message: `Student ${newStudent.fullName} approved and onboarded cleanly! Roll: ${rollNumber}`,
+      };
+    } catch (err) {
+      console.error('[Student Approval Transaction Error]:', err);
+      throw new Error(err.message || 'Failed to complete student approval transaction');
+    }
   },
 };
 

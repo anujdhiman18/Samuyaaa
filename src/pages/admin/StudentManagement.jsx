@@ -283,14 +283,25 @@ export default function StudentManagement() {
     }
   };
 
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+
   const handleProcessRequest = async (requestId, action) => {
+    if (processingRequestId) return;
+    setProcessingRequestId(requestId);
     try {
       const res = await credentialRequestService.processRequest(requestId, action);
-      addToast(res.message || `Request ${action} successfully!`, 'success');
-      fetchRequests();
-      fetchStudents();
+      if (typeof addToast === 'function') {
+        addToast(res.message || `Request ${action} successfully!`, 'success');
+      }
+      await fetchRequests();
+      await fetchStudents();
     } catch (err) {
-      addToast(err.message || 'Error processing request', 'error');
+      console.error('[Student Credential Approval Error]:', err);
+      if (typeof addToast === 'function') {
+        addToast(err.message || 'Error processing request', 'error');
+      }
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -1443,16 +1454,18 @@ export default function StudentManagement() {
                   {req.status === 'Pending' && (
                     <div className="flex gap-2 pt-2 justify-end">
                       <button
-                        onClick={() => handleProcessRequest(req._id || req.id, 'Reject')}
-                        className="px-3 py-1 rounded-lg border border-rose-300 text-rose-700 text-[11px] font-bold hover:bg-rose-50"
+                        disabled={Boolean(processingRequestId)}
+                        onClick={() => handleProcessRequest(req._id || req.id, 'Approved')}
+                        className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 shadow-sm disabled:opacity-50 cursor-pointer"
                       >
-                        Reject
+                        {processingRequestId === (req._id || req.id) ? 'Approving...' : 'Approve'}
                       </button>
                       <button
-                        onClick={() => handleProcessRequest(req._id || req.id, 'Approve')}
-                        className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 shadow-sm"
+                        disabled={Boolean(processingRequestId)}
+                        onClick={() => handleProcessRequest(req._id || req.id, 'Rejected')}
+                        className="px-3 py-1 rounded-lg border border-rose-300 text-rose-700 text-[11px] font-bold hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
                       >
-                        Approve
+                        Reject
                       </button>
                     </div>
                   )}
