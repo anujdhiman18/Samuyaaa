@@ -6,6 +6,7 @@ import facultyRoutes from '../facultyRoutes.js';
 import alumniRoutes from '../alumniRoutes.js';
 import dashboardRoutes from '../dashboardRoutes.js';
 import { getAllFacultyLeaves, updateFacultyLeaveStatus } from '../../controllers/facultyController.js';
+import { getAllStudentLeaves, updateStudentLeaveStatus } from '../../controllers/studentController.js';
 
 const router = express.Router();
 
@@ -16,6 +17,8 @@ router.use('/subjects', subjectRoutes);
 router.use('/faculty', facultyRoutes);
 router.get('/faculty-leaves', getAllFacultyLeaves);
 router.put('/faculty-leaves/:id/status', updateFacultyLeaveStatus);
+router.get('/student-leaves', getAllStudentLeaves);
+router.put('/student-leaves/:id/status', updateStudentLeaveStatus);
 router.use('/alumni', alumniRoutes);
 router.use('/dashboard', dashboardRoutes);
 

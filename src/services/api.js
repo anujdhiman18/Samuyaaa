@@ -1005,6 +1005,57 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
   );
 };
 
+const initialMockStudentLeaves = [
+  {
+    _id: 'slv_1',
+    studentId: 's_demo_1',
+    admissionNo: 'ADM-2025-089',
+    studentName: 'Varun Sharma',
+    parentPhone: '9816099999',
+    className: '10th',
+    section: 'Section A',
+    branch: 'Bagru',
+    leaveType: 'Sick Leave',
+    startDate: '2026-08-10',
+    endDate: '2026-08-12',
+    numberOfDays: 3,
+    reason: 'Severe viral fever and doctor advised 3 days complete bed rest',
+    supportingDocument: 'https://example.com/medical-fitness-cert.pdf',
+    status: 'Pending',
+    createdAt: '2026-08-04T10:00:00.000Z',
+  },
+  {
+    _id: 'slv_2',
+    studentId: 's_demo_2',
+    admissionNo: 'ADM-2025-092',
+    studentName: 'Ananya Gupta',
+    parentPhone: '9816088888',
+    className: '12th (+2)',
+    section: 'Medical',
+    branch: 'Bagru',
+    leaveType: 'Casual Leave',
+    startDate: '2026-08-15',
+    endDate: '2026-08-16',
+    numberOfDays: 2,
+    reason: 'Attending family wedding ceremony in Shimla',
+    supportingDocument: '',
+    status: 'Approved',
+    adminRemarks: 'Approved by Class Teacher. Make up missed assignments.',
+    createdAt: '2026-08-03T09:00:00.000Z',
+  },
+];
+
+const getStoredStudentLeaves = () => {
+  try {
+    const list = JSON.parse(localStorage.getItem('mock_student_leaves'));
+    if (Array.isArray(list) && list.length > 0) return list;
+    return initialMockStudentLeaves;
+  } catch (e) {
+    return initialMockStudentLeaves;
+  }
+};
+const setStoredStudentLeaves = (data) => localStorage.setItem('mock_student_leaves', JSON.stringify(data));
+
 // Student Service with Firebase Firestore DB Integration
 export const studentService = {
   getStudents: async (params = {}) => {
@@ -1244,6 +1295,157 @@ export const studentService = {
       student: list[idx],
       message: `Fee status updated to ${feesPaid ? 'PAID' : 'UNPAID'}`,
     };
+  },
+
+  getStudentLeaves: async () => {
+    let remoteLeaves = [];
+    try {
+      const remote = await apiCall('/student-panel/leaves');
+      if (remote && remote.success && Array.isArray(remote.leaves)) {
+        remoteLeaves = remote.leaves;
+      }
+    } catch (e) {}
+
+    const fsLeaves = await syncFirestoreCollection('student_leaves', initialMockStudentLeaves);
+    const localLeaves = getStoredStudentLeaves();
+
+    const mergedMap = new Map();
+    [...initialMockStudentLeaves, ...localLeaves, ...(fsLeaves || []), ...remoteLeaves].forEach((item) => {
+      const key = String(item._id || item.id || '');
+      if (key) {
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        } else {
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, { ...existing, ...item });
+        }
+      }
+    });
+
+    const combined = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.createdAt || b.updatedAt || Date.now()) - new Date(a.createdAt || a.updatedAt || Date.now())
+    );
+
+    setStoredStudentLeaves(combined);
+    return { success: true, leaves: combined };
+  },
+
+  getAllStudentLeaves: async () => {
+    let remoteLeaves = [];
+    try {
+      const remote = await apiCall('/admin/student-leaves');
+      if (remote && remote.success && Array.isArray(remote.leaves)) {
+        remoteLeaves = remote.leaves;
+      }
+    } catch (e) {}
+
+    let remotePanelLeaves = [];
+    try {
+      const remote2 = await apiCall('/student-panel/leaves');
+      if (remote2 && remote2.success && Array.isArray(remote2.leaves)) {
+        remotePanelLeaves = remote2.leaves;
+      }
+    } catch (e) {}
+
+    const fsLeaves = await syncFirestoreCollection('student_leaves', initialMockStudentLeaves);
+    const localLeaves = getStoredStudentLeaves();
+
+    const mergedMap = new Map();
+    [...initialMockStudentLeaves, ...localLeaves, ...(fsLeaves || []), ...remoteLeaves, ...remotePanelLeaves].forEach((item) => {
+      const key = String(item._id || item.id || '');
+      if (key) {
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        } else {
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, { ...existing, ...item });
+        }
+      }
+    });
+
+    const combined = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.createdAt || b.updatedAt || Date.now()) - new Date(a.createdAt || a.updatedAt || Date.now())
+    );
+
+    setStoredStudentLeaves(combined);
+    return { success: true, leaves: combined };
+  },
+
+  applyStudentLeave: async (data) => {
+    const id = 'slv_' + Date.now();
+    const start = new Date(data.startDate || Date.now());
+    const end = new Date(data.endDate || Date.now());
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const numberOfDays = data.numberOfDays || (isNaN(diffDays) ? 1 : diffDays);
+
+    const newLeave = {
+      _id: id,
+      id,
+      studentId: data.studentId || 's_demo',
+      admissionNo: data.admissionNo || 'ADM-2025-089',
+      studentName: data.studentName || 'Varun Sharma',
+      parentPhone: data.parentPhone || '9816099999',
+      className: data.className || '10th',
+      section: data.section || 'Section A',
+      branch: data.branch || 'Bagru',
+      leaveType: data.leaveType || 'Sick Leave',
+      startDate: data.startDate,
+      endDate: data.endDate,
+      numberOfDays,
+      reason: data.reason || 'Leave requested',
+      supportingDocument: data.supportingDocument || data.documentUrl || '',
+      status: 'Pending',
+      adminRemarks: '',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const remote = await apiCall('/student-panel/leaves', {
+        method: 'POST',
+        body: JSON.stringify(newLeave),
+      });
+      if (remote && remote.leave) {
+        if (remote.leave._id || remote.leave.id) {
+          newLeave._id = String(remote.leave._id || remote.leave.id);
+          newLeave.id = String(remote.leave._id || remote.leave.id);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      await setDoc(doc(db, 'student_leaves', String(newLeave._id)), newLeave);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc student leave error:', fsErr.message);
+    }
+
+    const list = getStoredStudentLeaves();
+    const filtered = list.filter((l) => String(l._id || l.id) !== String(newLeave._id));
+    setStoredStudentLeaves([newLeave, ...filtered]);
+
+    return { success: true, leave: newLeave, message: 'Student leave application submitted successfully!' };
+  },
+
+  updateStudentLeaveStatus: async (leaveId, status, adminRemarks = '', adminNote = '') => {
+    try {
+      await apiCall(`/admin/student-leaves/${leaveId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status, adminRemarks, adminNote }),
+      });
+    } catch (e) {}
+
+    const list = getStoredStudentLeaves().map((l) =>
+      String(l._id || l.id) === String(leaveId)
+        ? { ...l, status, adminRemarks, adminNote, updatedAt: new Date().toISOString() }
+        : l
+    );
+    setStoredStudentLeaves(list);
+
+    try {
+      await setDoc(doc(db, 'student_leaves', String(leaveId)), { status, adminRemarks, adminNote, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e) {}
+
+    return { success: true, message: `Student leave application ${status} successfully` };
   },
 };
 

@@ -6,7 +6,6 @@ const links = [
   { href: '#about', label: 'About Founder' },
   { href: '#courses', label: 'Academic Programs' },
   { href: '#faculty', label: 'Faculty Roster' },
-  { to: '/apply', label: '💼 Join as Faculty', isRoute: true, highlight: true },
   { href: '#alumni', label: 'Proud Alumni' },
   { href: '#results', label: 'Wall of Excellence' },
   { href: '#testimonials', label: 'Student Testimonials' },

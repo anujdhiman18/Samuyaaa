@@ -33,6 +33,7 @@ import StudentAttendance from './pages/student/StudentAttendance';
 import StudentPerformance from './pages/student/StudentPerformance';
 import StudentProfile from './pages/student/StudentProfile';
 import StudentFee from './pages/student/StudentFee';
+import StudentLeave from './pages/student/StudentLeave';
 import StudentAnnouncements from './pages/student/StudentAnnouncements';
 import StudentNotifications from './pages/student/StudentNotifications';
 
@@ -187,6 +188,7 @@ export default function App() {
                 <Route path="performance" element={<StudentPerformance />} />
                 <Route path="subjects" element={<StudentMarks />} />
                 <Route path="fees" element={<StudentFee />} />
+                <Route path="leave" element={<StudentLeave />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="announcements" element={<StudentAnnouncements />} />
                 <Route path="notifications" element={<StudentNotifications />} />

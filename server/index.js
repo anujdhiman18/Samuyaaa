@@ -47,6 +47,8 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Step 2: Physically Separated & Isolated Route Mounts
+import { applyStudentLeave, getStudentLeaves } from './controllers/studentController.js';
+
 // Public Website & Auth API Namespace
 app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
@@ -54,6 +56,8 @@ app.use('/api/auth', authRoutes);
 // Admin & Faculty Portal API Namespaces
 app.use('/api/admin', adminRoutes);
 app.use('/api/faculty-panel', facultyPanelRoutes);
+app.post('/api/student-panel/leaves', applyStudentLeave);
+app.get('/api/student-panel/leaves', getStudentLeaves);
 
 // Backward Compatibility Direct Mappings
 app.use('/api/students', studentRoutes);

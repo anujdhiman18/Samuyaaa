@@ -386,3 +386,146 @@ export const getReminderLogs = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Apply for Student Leave
+// @route   POST /api/student-panel/leaves
+export const applyStudentLeave = async (req, res) => {
+  try {
+    const StudentLeave = (await import('../models/StudentLeave.js')).default;
+    const studentId = req.body.studentId || req.user?._id || req.user?.id || 's_demo';
+    const admissionNo = req.body.admissionNo || req.user?.admissionNo || 'ADM-2025-089';
+    const studentName = req.body.studentName || req.user?.name || req.user?.fullName || 'Varun Sharma';
+    const parentPhone = req.body.parentPhone || req.user?.phone || req.user?.parentPhone || '9816099999';
+    const className = req.body.className || req.user?.className || '10th';
+    const section = req.body.section || req.user?.section || 'Section A';
+    const branch = req.body.branch || req.user?.branch || 'Bagru';
+    const leaveType = req.body.leaveType || 'Sick Leave';
+    const startDate = req.body.startDate || new Date().toISOString().split('T')[0];
+    const endDate = req.body.endDate || new Date().toISOString().split('T')[0];
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const numberOfDays = req.body.numberOfDays || (isNaN(diffDays) ? 1 : diffDays);
+
+    const reason = req.body.reason || 'Leave requested';
+    const supportingDocument = req.body.supportingDocument || req.body.documentUrl || '';
+
+    const leave = await StudentLeave.create({
+      studentId,
+      admissionNo,
+      studentName,
+      parentPhone,
+      className,
+      section,
+      branch,
+      leaveType,
+      startDate,
+      endDate,
+      numberOfDays,
+      reason,
+      supportingDocument,
+      status: 'Pending',
+    });
+
+    res.status(201).json({ success: true, leave, message: 'Student leave application submitted successfully' });
+  } catch (error) {
+    console.error('applyStudentLeave error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get Student Leaves for student panel
+// @route   GET /api/student-panel/leaves
+export const getStudentLeaves = async (req, res) => {
+  try {
+    const StudentLeave = (await import('../models/StudentLeave.js')).default;
+    const leaves = await StudentLeave.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: leaves.length, leaves });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all student leaves for Admin
+// @route   GET /api/admin/student-leaves
+export const getAllStudentLeaves = async (req, res) => {
+  try {
+    const StudentLeave = (await import('../models/StudentLeave.js')).default;
+    let leaves = await StudentLeave.find().sort({ createdAt: -1 });
+
+    if (!leaves || leaves.length === 0) {
+      const demoLeaves = [
+        {
+          studentId: 's_demo_1',
+          admissionNo: 'ADM-2025-089',
+          studentName: 'Varun Sharma',
+          parentPhone: '9816099999',
+          className: '10th',
+          section: 'Section A',
+          branch: 'Bagru',
+          leaveType: 'Sick Leave',
+          startDate: '2026-08-10',
+          endDate: '2026-08-12',
+          numberOfDays: 3,
+          reason: 'Severe viral fever and doctor advised 3 days complete bed rest',
+          supportingDocument: 'https://example.com/medical-fitness-cert.pdf',
+          status: 'Pending',
+        },
+        {
+          studentId: 's_demo_2',
+          admissionNo: 'ADM-2025-092',
+          studentName: 'Ananya Gupta',
+          parentPhone: '9816088888',
+          className: '12th (+2)',
+          section: 'Medical',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-15',
+          endDate: '2026-08-16',
+          numberOfDays: 2,
+          reason: 'Attending family wedding ceremony in Shimla',
+          supportingDocument: '',
+          status: 'Approved',
+          adminRemarks: 'Approved by Class Teacher. Make up missed assignments.',
+        },
+      ];
+      leaves = await StudentLeave.insertMany(demoLeaves);
+    }
+
+    res.json({ success: true, count: leaves.length, leaves });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update Student Leave Status (Approve/Reject)
+// @route   PUT /api/admin/student-leaves/:id/status
+export const updateStudentLeaveStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminRemarks, adminNote } = req.body;
+    const StudentLeave = (await import('../models/StudentLeave.js')).default;
+
+    const leave = await StudentLeave.findById(id);
+    if (!leave) {
+      return res.status(404).json({ success: false, message: 'Student leave application not found' });
+    }
+
+    leave.status = status || 'Approved';
+    if (adminRemarks !== undefined) leave.adminRemarks = adminRemarks;
+    if (adminNote !== undefined) leave.adminNote = adminNote;
+    await leave.save();
+
+    try {
+      const { sendGenericSMS } = await import('../services/twilioService.js');
+      const smsMsg = `Saumyaa Studies: Leave application (${leave.leaveType}) for ${leave.studentName} from ${leave.startDate} to ${leave.endDate} has been ${leave.status}. ${leave.adminRemarks ? 'Remarks: ' + leave.adminRemarks : ''}`;
+      await sendGenericSMS(leave.parentPhone || '9816099999', smsMsg);
+    } catch (smsErr) {}
+
+    res.json({ success: true, leave, message: `Student leave application ${leave.status} successfully` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
