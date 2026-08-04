@@ -14,7 +14,7 @@ export default function FacultyLayout() {
   // STRICT ROLE-BASED ACCESS CONTROL (RBAC)
   // If not logged in or role is not Faculty, block access & redirect to faculty login!
   if (!isAuthenticated || !isFaculty) {
-    return <Navigate to="/faculty/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return (

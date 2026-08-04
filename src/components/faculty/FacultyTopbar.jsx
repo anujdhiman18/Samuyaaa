@@ -11,7 +11,7 @@ export default function FacultyTopbar({ onToggleMobile }) {
 
   const handleLogout = () => {
     logout();
-    navigate('/faculty/login');
+    navigate('/login');
   };
 
   return (
