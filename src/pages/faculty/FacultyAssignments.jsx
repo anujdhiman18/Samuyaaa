@@ -12,7 +12,7 @@ export default function FacultyAssignments() {
 
   const availableClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
+    : (user?.assignedClasses || []);
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,13 +21,13 @@ export default function FacultyAssignments() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newClass, setNewClass] = useState(() => availableClasses[0] || '10th');
+  const [newClass, setNewClass] = useState(() => availableClasses[0] || '');
 
   const availableSubjects = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.filter((r) => !newClass || r.className === newClass).map((r) => r.subject)))
-    : (user?.assignedSubjects?.length > 0 ? user.assignedSubjects : ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+    : (user?.assignedSubjects || []);
 
-  const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
+  const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || '');
   const [newDueDate, setNewDueDate] = useState('2026-08-15');
   const [newMarks, setNewMarks] = useState(50);
   const [submitting, setSubmitting] = useState(false);

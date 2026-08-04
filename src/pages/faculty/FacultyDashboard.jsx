@@ -45,14 +45,14 @@ export default function FacultyDashboard() {
   const responsibilities = user?.responsibilities || [];
   const derivedClasses = responsibilities.length > 0 
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || ['10th', '11th (+1)', '12th (+2)']);
+    : (user?.assignedClasses || []);
 
   const derivedSubjects = responsibilities.length > 0 
     ? Array.from(new Set(responsibilities.map((r) => r.subject)))
-    : (user?.assignedSubjects || ['Mathematics', 'Physics']);
+    : (user?.assignedSubjects || []);
 
-  const assignedClassesStr = derivedClasses.join(', ');
-  const assignedSubjectsStr = derivedSubjects.join(', ');
+  const assignedClassesStr = derivedClasses.length > 0 ? derivedClasses.join(', ') : 'None assigned yet by Admin';
+  const assignedSubjectsStr = derivedSubjects.length > 0 ? derivedSubjects.join(', ') : 'None assigned yet by Admin';
 
   return (
     <div className="space-y-6 font-body">
@@ -60,10 +60,10 @@ export default function FacultyDashboard() {
       <div className="bg-gradient-to-r from-primary to-secondary text-white p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider">
-            Faculty Workspace &bull; {user?.department || 'Science & Mathematics'}
+            Faculty Workspace &bull; {user?.department || 'Academic Faculty'}
           </span>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl mt-2">
-            Welcome back, {user?.name || 'Prof. Jitender Sharma'}!
+            Welcome back, {user?.name || 'Faculty Member'}!
           </h1>
           <p className="text-xs text-surface-container mt-1">
             Assigned Classes: <strong className="text-white">{assignedClassesStr}</strong> &bull; Assigned Subjects: <strong className="text-white">{assignedSubjectsStr}</strong>
@@ -94,7 +94,7 @@ export default function FacultyDashboard() {
             <span className="material-symbols-outlined">class</span>
           </div>
           <span className="text-[11px] font-bold text-on-surface-variant block">Today's Classes</span>
-          <span className="font-headings font-extrabold text-2xl text-secondary block">{stats.todayClassesCount}</span>
+          <span className="font-headings font-extrabold text-2xl text-secondary block">{data?.todayTimetable?.length || 0}</span>
         </div>
 
         {/* Assigned Students */}
@@ -103,7 +103,7 @@ export default function FacultyDashboard() {
             <span className="material-symbols-outlined">groups</span>
           </div>
           <span className="text-[11px] font-bold text-on-surface-variant block">Assigned Students</span>
-          <span className="font-headings font-extrabold text-2xl text-secondary block">{stats.totalAssignedStudents}</span>
+          <span className="font-headings font-extrabold text-2xl text-secondary block">{stats.totalAssignedStudents || 0}</span>
         </div>
 
         {/* Pending Attendance */}
@@ -112,7 +112,7 @@ export default function FacultyDashboard() {
             <span className="material-symbols-outlined">fact_check</span>
           </div>
           <span className="text-[11px] font-bold text-on-surface-variant block">Pending Attendance</span>
-          <span className="font-headings font-extrabold text-2xl text-amber-700 block">{stats.pendingAttendanceCount}</span>
+          <span className="font-headings font-extrabold text-2xl text-amber-700 block">{stats.pendingAttendanceCount || 0}</span>
         </div>
 
         {/* Pending Grading */}
@@ -121,7 +121,7 @@ export default function FacultyDashboard() {
             <span className="material-symbols-outlined">assignment_turned_in</span>
           </div>
           <span className="text-[11px] font-bold text-on-surface-variant block">Pending Grading</span>
-          <span className="font-headings font-extrabold text-2xl text-rose-700 block">{stats.pendingGradingCount}</span>
+          <span className="font-headings font-extrabold text-2xl text-rose-700 block">{stats.pendingGradingCount || 0}</span>
         </div>
 
         {/* Active Notices */}
@@ -130,28 +130,33 @@ export default function FacultyDashboard() {
             <span className="material-symbols-outlined">campaign</span>
           </div>
           <span className="text-[11px] font-bold text-on-surface-variant block">Class Announcements</span>
-          <span className="font-headings font-extrabold text-2xl text-emerald-700 block">{stats.activeAnnouncementsCount}</span>
+          <span className="font-headings font-extrabold text-2xl text-emerald-700 block">{stats.activeAnnouncementsCount || 0}</span>
         </div>
       </div>
 
       {/* Active Academic Responsibilities Widget */}
-      {responsibilities.length > 0 && (
-        <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-3">
-          <div className="flex justify-between items-center border-b border-outline-variant/15 pb-3">
-            <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">assignment_ind</span>
-              Assigned Academic Responsibilities ({responsibilities.length})
-            </h3>
-            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              Assigned by Admin
-            </span>
-          </div>
+      <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-3">
+        <div className="flex justify-between items-center border-b border-outline-variant/15 pb-3">
+          <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">assignment_ind</span>
+            Assigned Academic Responsibilities ({responsibilities.length})
+          </h3>
+          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${responsibilities.length > 0 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
+            {responsibilities.length > 0 ? 'Assigned by Admin' : 'Awaiting Admin Allocation'}
+          </span>
+        </div>
 
+        {responsibilities.length === 0 ? (
+          <div className="p-6 text-center rounded-xl bg-surface-container-low border border-dashed border-outline-variant/30 space-y-1">
+            <p className="font-bold text-xs text-secondary">No Academic Responsibilities Assigned Yet</p>
+            <p className="text-[11px] text-on-surface-variant">Please contact your System Administrator to allocate courses, classes, sections, and subjects to your profile.</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {responsibilities.map((resp, idx) => (
               <div key={resp.id || resp._id || idx} className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest space-y-1 hover:border-primary/40 transition-all">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-secondary">{resp.className} &bull; {resp.section || 'Sec A'}</span>
+                  <span className="font-bold text-xs text-secondary">Class {resp.className} &bull; {resp.section || 'Sec A'}</span>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">{resp.academicSession || '2026-2027'}</span>
                 </div>
                 <p className="text-xs font-semibold text-primary">{resp.subject}</p>
@@ -162,8 +167,8 @@ export default function FacultyDashboard() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -180,28 +185,36 @@ export default function FacultyDashboard() {
           </div>
 
           <div className="space-y-3">
-            {(data?.todayTimetable || []).map((slot) => (
-              <div
-                key={slot.id}
-                className="p-4 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-primary/30 transition-colors"
-              >
-                <div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-extrabold text-[11px]">
-                    {slot.time}
-                  </span>
-                  <h4 className="font-bold text-sm text-secondary mt-1">{slot.subject}</h4>
-                  <p className="text-xs text-on-surface-variant">Class: {slot.className} &bull; Location: {slot.room}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Link
-                    to="/faculty/attendance"
-                    className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-container transition-colors"
-                  >
-                    Mark Attendance
-                  </Link>
-                </div>
+            {(!data?.todayTimetable || data.todayTimetable.length === 0) ? (
+              <div className="p-8 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/15 space-y-1">
+                <span className="material-symbols-outlined text-3xl text-on-surface-variant">event_busy</span>
+                <p className="font-bold text-xs text-secondary mt-1">No Class Lectures Scheduled For Today</p>
+                <p className="text-[11px] text-on-surface-variant">Once academic responsibilities are assigned by Admin, your schedule will appear here.</p>
               </div>
-            ))}
+            ) : (
+              data.todayTimetable.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="p-4 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-primary/30 transition-colors"
+                >
+                  <div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono font-extrabold text-[11px]">
+                      {slot.time}
+                    </span>
+                    <h4 className="font-bold text-sm text-secondary mt-1">{slot.subject}</h4>
+                    <p className="text-xs text-on-surface-variant">{slot.className} &bull; Location: {slot.room}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      to="/faculty/attendance"
+                      className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-container transition-colors"
+                    >
+                      Mark Attendance
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

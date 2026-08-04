@@ -46,11 +46,11 @@ export const facultyLogin = async (req, res) => {
 
     const derivedClasses = faculty.responsibilities && faculty.responsibilities.length > 0
       ? Array.from(new Set(faculty.responsibilities.map((r) => r.className)))
-      : (faculty.assignedClasses || ['10th', '11th (+1)', '12th (+2)']);
+      : (faculty.assignedClasses || []);
 
     const derivedSubjects = faculty.responsibilities && faculty.responsibilities.length > 0
       ? Array.from(new Set(faculty.responsibilities.map((r) => r.subject)))
-      : (faculty.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+      : (faculty.assignedSubjects || []);
 
     res.json({
       success: true,
@@ -79,42 +79,49 @@ export const facultyLogin = async (req, res) => {
 export const getFacultyDashboard = async (req, res) => {
   try {
     const facultyId = req.user?.id || 'f_jitender';
+    const faculty = await Faculty.findById(facultyId);
+    const responsibilities = faculty?.responsibilities || [];
 
-    const assignedClasses = ['10th', '11th (+1)', '12th (+2)'];
-    const assignedSubjects = ['Mathematics Advanced', 'Physics IIT-JEE Prep'];
+    const assignedClasses = Array.from(new Set(responsibilities.map((r) => r.className)));
 
     // 1. Total assigned students
-    const totalStudents = await Student.countDocuments({ className: { $in: assignedClasses } });
+    const totalStudents = assignedClasses.length > 0
+      ? await Student.countDocuments({ className: { $in: assignedClasses } })
+      : 0;
 
     // 2. Pending grading
     const assignments = await Assignment.find({ facultyId });
     let pendingGradingCount = 0;
     assignments.forEach((a) => {
-      a.submissions.forEach((s) => {
+      a.submissions?.forEach((s) => {
         if (s.status === 'Submitted') pendingGradingCount++;
       });
     });
 
     // 3. Active announcements
-    const announcements = await Announcement.find({
-      $or: [{ targetClass: 'All' }, { targetClass: { $in: assignedClasses } }],
-    }).sort({ createdAt: -1 }).limit(5);
+    const announcements = assignedClasses.length > 0
+      ? await Announcement.find({
+          $or: [{ targetClass: 'All' }, { targetClass: { $in: assignedClasses } }],
+        }).sort({ createdAt: -1 }).limit(5)
+      : [];
 
-    // 4. Timetable Slots
-    const todayTimetable = [
-      { id: 't1', time: '09:00 AM - 10:30 AM', className: '10th Standard', subject: 'Mathematics Advanced', room: 'Hall A' },
-      { id: 't2', time: '11:00 AM - 12:30 PM', className: '11th (+1)', subject: 'Physics IIT-JEE Prep', room: 'Lab 2' },
-      { id: 't3', time: '02:00 PM - 03:30 PM', className: '12th (+2)', subject: 'Mathematics Advanced', room: 'Hall C' },
-    ];
+    // 4. Timetable Slots dynamically built from real assigned responsibilities
+    const todayTimetable = responsibilities.map((r, idx) => ({
+      id: r.id || r._id || `t_${idx}`,
+      time: idx === 0 ? '09:00 AM - 10:30 AM' : idx === 1 ? '11:00 AM - 12:30 PM' : '02:00 PM - 03:30 PM',
+      className: `Class ${r.className} (${r.section || 'Sec A'})`,
+      subject: r.subject,
+      room: `Hall ${String.fromCharCode(65 + (idx % 4))}`,
+    }));
 
     res.json({
       success: true,
       stats: {
         todayClassesCount: todayTimetable.length,
-        totalAssignedStudents: totalStudents || 45,
-        pendingAttendanceCount: 1,
-        pendingGradingCount: pendingGradingCount || 3,
-        activeAnnouncementsCount: announcements.length || 4,
+        totalAssignedStudents: totalStudents,
+        pendingAttendanceCount: responsibilities.length > 0 ? 1 : 0,
+        pendingGradingCount: pendingGradingCount,
+        activeAnnouncementsCount: announcements.length,
       },
       todayTimetable,
       announcements,
@@ -129,7 +136,14 @@ export const getFacultyDashboard = async (req, res) => {
 export const getAssignedStudents = async (req, res) => {
   try {
     const { className, search } = req.query;
-    const assignedClasses = ['10th', '11th (+1)', '12th (+2)'];
+    const facultyId = req.user?.id;
+    const faculty = await Faculty.findById(facultyId);
+    const responsibilities = faculty?.responsibilities || [];
+    const assignedClasses = Array.from(new Set(responsibilities.map((r) => r.className)));
+
+    if (assignedClasses.length === 0) {
+      return res.json({ success: true, students: [] });
+    }
 
     const query = { className: { $in: assignedClasses } };
     if (className && className !== 'All') {

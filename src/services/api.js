@@ -3669,6 +3669,15 @@ export const facultyPanelService = {
     if (facultyMember) {
       const assignedPass = facultyMember.password || 'faculty123';
       if (cleanPass === assignedPass || cleanPass === 'faculty123' || cleanPass === 'faculty') {
+        const resps = facultyMember.responsibilities || [];
+        const derivedClasses = resps.length > 0
+          ? Array.from(new Set(resps.map((r) => r.className)))
+          : (facultyMember.assignedClasses || []);
+
+        const derivedSubjects = resps.length > 0
+          ? Array.from(new Set(resps.map((r) => r.subject)))
+          : (facultyMember.assignedSubjects || []);
+
         const facultyUserObj = {
           _id: facultyMember._id || facultyMember.id || 'fac_1',
           id: facultyMember._id || facultyMember.id || 'fac_1',
@@ -3678,8 +3687,9 @@ export const facultyPanelService = {
           role: 'Faculty',
           designation: facultyMember.designation || 'Senior Faculty Member',
           department: facultyMember.department || 'Science & Mathematics',
-          assignedClasses: facultyMember.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
-          assignedSubjects: facultyMember.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+          responsibilities: resps,
+          assignedClasses: derivedClasses,
+          assignedSubjects: derivedSubjects,
           photo_url: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
           avatar: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
         };
@@ -3705,20 +3715,33 @@ export const facultyPanelService = {
       });
     });
 
+    const currentUserStr = localStorage.getItem('saumyaa_user');
+    let resps = [];
+    if (currentUserStr) {
+      try {
+        const u = JSON.parse(currentUserStr);
+        resps = u.responsibilities || [];
+      } catch (e) {}
+    }
+
+    const todayTimetable = resps.map((r, idx) => ({
+      id: r.id || r._id || `t_${idx}`,
+      time: idx === 0 ? '09:00 AM - 10:30 AM' : idx === 1 ? '11:00 AM - 12:30 PM' : '02:00 PM - 03:30 PM',
+      className: `Class ${r.className} (${r.section || 'Sec A'})`,
+      subject: r.subject,
+      room: `Hall ${String.fromCharCode(65 + (idx % 4))}`,
+    }));
+
     return {
       success: true,
       stats: {
-        todayClassesCount: 3,
-        totalAssignedStudents: 45,
-        pendingAttendanceCount: 1,
-        pendingGradingCount: pendingGrading,
-        activeAnnouncementsCount: 4,
+        todayClassesCount: todayTimetable.length,
+        totalAssignedStudents: resps.length > 0 ? 45 : 0,
+        pendingAttendanceCount: resps.length > 0 ? 1 : 0,
+        pendingGradingCount: resps.length > 0 ? pendingGrading : 0,
+        activeAnnouncementsCount: resps.length > 0 ? 4 : 0,
       },
-      todayTimetable: [
-        { id: 't1', time: '09:00 AM - 10:30 AM', className: '10th Standard', subject: 'Mathematics Advanced', room: 'Hall A' },
-        { id: 't2', time: '11:00 AM - 12:30 PM', className: '11th (+1)', subject: 'Physics IIT-JEE Prep', room: 'Lab 2' },
-        { id: 't3', time: '02:00 PM - 03:30 PM', className: '12th (+2)', subject: 'Mathematics Advanced', room: 'Hall C' },
-      ],
+      todayTimetable,
     };
   },
 
@@ -3727,8 +3750,21 @@ export const facultyPanelService = {
     const remote = await apiCall(`/faculty-panel/students?${query}`);
     if (remote) return remote;
 
+    const currentUserStr = localStorage.getItem('saumyaa_user');
+    let resps = [];
+    if (currentUserStr) {
+      try {
+        const u = JSON.parse(currentUserStr);
+        resps = u.responsibilities || [];
+      } catch (e) {}
+    }
+
+    const assignedClasses = Array.from(new Set(resps.map((r) => r.className)));
+    if (assignedClasses.length === 0) {
+      return { success: true, students: [] };
+    }
+
     const allStudents = getStoredStudents();
-    const assignedClasses = ['10th', '11th (+1)', '12th (+2)'];
     let filtered = allStudents.filter((s) => assignedClasses.includes(s.className));
 
     if (params.className && params.className !== 'All') {

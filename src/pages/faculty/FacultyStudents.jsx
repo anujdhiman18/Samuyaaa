@@ -9,7 +9,7 @@ export default function FacultyStudents() {
 
   const availableClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
+    : (user?.assignedClasses || []);
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);

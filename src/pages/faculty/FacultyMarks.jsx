@@ -11,15 +11,15 @@ export default function FacultyMarks() {
 
   const availableClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
+    : (user?.assignedClasses || []);
 
-  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '10th');
+  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '');
 
   const availableSubjects = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || r.className === selectedClass).map((r) => r.subject)))
-    : (user?.assignedSubjects?.length > 0 ? user.assignedSubjects : ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+    : (user?.assignedSubjects || []);
 
-  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
+  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || '');
   const [examType, setExamType] = useState('Internal Assessment 1');
   const [students, setStudents] = useState([]);
   const [marksMap, setMarksMap] = useState({}); // studentId -> { marksObtained: '', practicalMarks: '', assignmentMarks: '', totalMax: 100 }
@@ -153,9 +153,13 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableClasses.map((cls) => (
-              <option key={cls} value={cls}>Class {cls}</option>
-            ))}
+            {availableClasses.length === 0 ? (
+              <option value="">No Assigned Classes</option>
+            ) : (
+              availableClasses.map((cls) => (
+                <option key={cls} value={cls}>Class {cls}</option>
+              ))
+            )}
           </select>
         </div>
 
@@ -166,9 +170,13 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableSubjects.map((sub) => (
-              <option key={sub} value={sub}>{sub}</option>
-            ))}
+            {availableSubjects.length === 0 ? (
+              <option value="">No Assigned Subjects</option>
+            ) : (
+              availableSubjects.map((sub) => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))
+            )}
           </select>
         </div>
 

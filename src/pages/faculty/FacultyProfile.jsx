@@ -224,18 +224,22 @@ export default function FacultyProfile() {
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : (user?.assignedClasses && user.assignedClasses.length > 0) ? (
                 <div className="flex flex-wrap gap-2 text-[11px]">
-                  {(user?.assignedClasses || ['10th', '11th (+1)', '12th (+2)']).map((cls, idx) => (
+                  {user.assignedClasses.map((cls, idx) => (
                     <span key={idx} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
                       Class {cls}
                     </span>
                   ))}
-                  {(user?.assignedSubjects || ['Mathematics', 'Physics']).map((sub, idx) => (
+                  {(user?.assignedSubjects || []).map((sub, idx) => (
                     <span key={idx} className="px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold">
                       Subject: {sub}
                     </span>
                   ))}
+                </div>
+              ) : (
+                <div className="p-3 text-center text-xs text-on-surface-variant italic rounded-lg bg-surface-container-lowest border border-outline-variant/15">
+                  No academic responsibilities allocated yet by System Admin.
                 </div>
               )}
             </div>
