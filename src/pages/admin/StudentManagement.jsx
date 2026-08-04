@@ -6,30 +6,19 @@ import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
-const COURSES = ['All', 'Science', 'Commerce', 'Arts', 'Computer Science', 'Engineering', 'General Science'];
-const BATCHES = ['All', '2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
-const SEMESTERS = [
+const SUBJECTS = [
   'All',
-  'Semester 1',
-  'Semester 2',
-  'Semester 3',
-  'Semester 4',
-  'Nursery',
-  'LKG',
-  'UKG',
-  '1st',
-  '2nd',
-  '3rd',
-  '4th',
-  '5th',
-  '6th',
-  '7th',
-  '8th',
-  '9th',
-  '10th',
-  '11th (+1)',
-  '12th (+2)',
+  'Mathematics Advanced',
+  'Physics IIT-JEE Prep',
+  'Organic & Physical Chemistry',
+  'Biology NEET Prep',
+  'Computer Science',
+  'Integrated Science',
+  'English Literature',
+  'Accountancy & Business',
 ];
+const BATCHES = ['All', '2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
+const CLASSES = ['All', '9th', '10th', '11th (+1)', '12th (+2)'];
 const STATUSES = ['All', 'Active', 'Inactive', 'Alumni', 'Suspended'];
 
 const initialStudentForm = {
@@ -43,9 +32,9 @@ const initialStudentForm = {
   password: 'student123',
   address: '',
   className: '10th',
-  course: 'Science',
+  subjects: ['Mathematics Advanced'],
+  subject: 'Mathematics Advanced',
   batch: '2024-2026',
-  semester: 'Semester 1',
   rollNumber: '',
   photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   monthlyFee: 2500,
@@ -74,9 +63,9 @@ export default function StudentManagement() {
 
   // Filters & Search
   const [search, setSearch] = useState(initialSearch);
-  const [selectedCourse, setSelectedCourse] = useState('All');
+  const [selectedSubject, setSelectedSubject] = useState('All');
   const [selectedBatch, setSelectedBatch] = useState('All');
-  const [selectedSemester, setSelectedSemester] = useState('All');
+  const [selectedClass, setSelectedClass] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [feeStatusFilter, setFeeStatusFilter] = useState(initialFeeFilter);
 
@@ -199,11 +188,16 @@ export default function StudentManagement() {
 
   const handleOpenEdit = (student) => {
     setEditingStudent(student);
+    const subList = Array.isArray(student.subjects) && student.subjects.length > 0
+      ? student.subjects
+      : [student.subject || student.course || 'Mathematics Advanced'];
+
     setForm({
       ...student,
-      course: student.course || 'Science',
+      subjects: subList,
+      subject: subList[0] || 'Mathematics Advanced',
       batch: student.batch || '2024-2026',
-      semester: student.semester || student.className || 'Semester 1',
+      className: student.className || '10th',
       admissionNumber: student.admissionNumber || `ADM-2025-${String(student._id || student.id).slice(-3)}`,
       photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       attendancePercentage: student.attendancePercentage !== undefined ? student.attendancePercentage : 90,
@@ -274,14 +268,17 @@ export default function StudentManagement() {
         if (!matchName && !matchRoll && !matchAdmission && !matchPhone && !matchEmail) return false;
       }
 
-      // Course Filter
-      if (selectedCourse !== 'All' && s.course !== selectedCourse) return false;
+      // Subject Filter
+      if (selectedSubject !== 'All') {
+        const studentSubs = Array.isArray(s.subjects) ? s.subjects : [s.subject || s.course];
+        if (!studentSubs.includes(selectedSubject)) return false;
+      }
 
       // Batch Filter
       if (selectedBatch !== 'All' && s.batch !== selectedBatch) return false;
 
-      // Semester/Class Filter
-      if (selectedSemester !== 'All' && s.semester !== selectedSemester && s.className !== selectedSemester) {
+      // Class Filter
+      if (selectedClass !== 'All' && s.className !== selectedClass) {
         return false;
       }
 
@@ -317,12 +314,12 @@ export default function StudentManagement() {
     });
 
     return result;
-  }, [students, search, selectedCourse, selectedBatch, selectedSemester, selectedStatus, feeStatusFilter, sortBy, sortOrder]);
+  }, [students, search, selectedSubject, selectedBatch, selectedClass, selectedStatus, feeStatusFilter, sortBy, sortOrder]);
 
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedCourse, selectedBatch, selectedSemester, selectedStatus, feeStatusFilter, itemsPerPage]);
+  }, [search, selectedSubject, selectedBatch, selectedClass, selectedStatus, feeStatusFilter, itemsPerPage]);
 
   // Paginated Students
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage) || 1;
@@ -372,9 +369,9 @@ export default function StudentManagement() {
       'Full Name',
       'Admission Number',
       'Roll Number',
-      'Course',
+      'Subject(s)',
       'Batch',
-      'Semester/Class',
+      'Class',
       'Contact Number',
       'Parent Phone',
       'Email',
@@ -387,9 +384,9 @@ export default function StudentManagement() {
       `"${s.fullName}"`,
       `"${s.admissionNumber || s.rollNumber}"`,
       `"${s.rollNumber}"`,
-      `"${s.course || 'Science'}"`,
+      `"${Array.isArray(s.subjects) ? s.subjects.join('; ') : (s.subject || s.course || 'Mathematics Advanced')}"`,
       `"${s.batch || '2024-2026'}"`,
-      `"${s.semester || s.className}"`,
+      `"${s.className || '10th'}"`,
       `"${s.phone}"`,
       `"${s.parentPhone}"`,
       `"${s.email || ''}"`,
@@ -532,18 +529,18 @@ export default function StudentManagement() {
 
         {/* Filter Dropdowns Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-outline-variant/15">
-          {/* Course */}
+          {/* Subject */}
           <div>
             <label className="block text-[10px] font-headings font-bold uppercase tracking-wider text-on-surface-variant/70 mb-1">
-              Course
+              Subject
             </label>
             <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              {COURSES.map((c) => (
-                <option key={c} value={c}>{c === 'All' ? 'All Courses' : c}</option>
+              {SUBJECTS.map((sub) => (
+                <option key={sub} value={sub}>{sub === 'All' ? 'All Subjects' : sub}</option>
               ))}
             </select>
           </div>
@@ -564,18 +561,18 @@ export default function StudentManagement() {
             </select>
           </div>
 
-          {/* Semester / Class */}
+          {/* Class */}
           <div>
             <label className="block text-[10px] font-headings font-bold uppercase tracking-wider text-on-surface-variant/70 mb-1">
-              Semester / Class
+              Class
             </label>
             <select
-              value={selectedSemester}
-              onChange={(e) => setSelectedSemester(e.target.value)}
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              {SEMESTERS.map((s) => (
-                <option key={s} value={s}>{s === 'All' ? 'All Semesters/Classes' : s}</option>
+              {CLASSES.map((c) => (
+                <option key={c} value={c}>{c === 'All' ? 'All Classes' : `Class ${c}`}</option>
               ))}
             </select>
           </div>
@@ -697,9 +694,9 @@ export default function StudentManagement() {
                     <th className="py-3.5 px-4 whitespace-nowrap">Full Name</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Admission No.</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Course</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Subject(s)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Batch</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Semester/Class</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Contact No.</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Email</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Fee Status</th>
@@ -754,14 +751,16 @@ export default function StudentManagement() {
                           {s.rollNumber}
                         </td>
                         <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap font-medium">
-                          {s.course || 'Science'}
+                          {Array.isArray(s.subjects) && s.subjects.length > 0
+                            ? s.subjects.join(', ')
+                            : (s.subject || s.course || 'Mathematics Advanced')}
                         </td>
                         <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap font-medium">
                           {s.batch || '2024-2026'}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-secondary font-bold text-[11px]">
-                            {s.semester || s.className}
+                            Class {s.className || '10th'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap font-mono">
@@ -924,14 +923,14 @@ export default function StudentManagement() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Course</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Enrolled Subject / Stream</label>
               <select
-                value={form.course || 'Science'}
-                onChange={(e) => setForm({ ...form, course: e.target.value })}
+                value={form.subject || (Array.isArray(form.subjects) ? form.subjects[0] : '') || 'Mathematics Advanced'}
+                onChange={(e) => setForm({ ...form, subject: e.target.value, subjects: [e.target.value] })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-bold"
               >
-                {COURSES.filter((c) => c !== 'All').map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {SUBJECTS.filter((sub) => sub !== 'All').map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>
             </div>
@@ -950,14 +949,14 @@ export default function StudentManagement() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Semester / Class</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Class</label>
               <select
-                value={form.semester || form.className || 'Semester 1'}
-                onChange={(e) => setForm({ ...form, semester: e.target.value, className: e.target.value })}
+                value={form.className || '10th'}
+                onChange={(e) => setForm({ ...form, className: e.target.value, semester: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-bold"
               >
-                {SEMESTERS.filter((s) => s !== 'All').map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                {CLASSES.filter((c) => c !== 'All').map((c) => (
+                  <option key={c} value={c}>Class {c}</option>
                 ))}
               </select>
             </div>

@@ -6,9 +6,18 @@ import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 
-const COURSES = ['Science', 'Commerce', 'Arts', 'Computer Science', 'Engineering', 'General Science'];
+const SUBJECTS = [
+  'Mathematics Advanced',
+  'Physics IIT-JEE Prep',
+  'Organic & Physical Chemistry',
+  'Biology NEET Prep',
+  'Computer Science',
+  'Integrated Science',
+  'English Literature',
+  'Accountancy & Business',
+];
 const BATCHES = ['2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
-const SEMESTERS = ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', '10th', '12th (+2)'];
+const CLASSES = ['9th', '10th', '11th (+1)', '12th (+2)'];
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -53,6 +62,8 @@ export default function StudentDetail() {
   const [deleting, setDeleting] = useState(false);
 
   const [studentMarks, setStudentMarks] = useState([]);
+  
+  const addToast = useToast()?.addToast || (() => {});
 
   useEffect(() => {
     fetchStudentData();
@@ -79,9 +90,8 @@ export default function StudentDetail() {
           fullName: s.fullName || '',
           admissionNumber: s.admissionNumber || `ADM-2025-${String(s._id || s.id).slice(-3)}`,
           rollNumber: s.rollNumber || '',
-          course: s.course || 'Science',
+          subjects: s.subjects || [],
           batch: s.batch || '2024-2026',
-          semester: s.semester || s.className || 'Semester 1',
           className: s.className || '10th',
           photo: s.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
           phone: s.phone || '',
@@ -121,9 +131,8 @@ export default function StudentDetail() {
       fullName: student.fullName || '',
       admissionNumber: student.admissionNumber || `ADM-2025-${String(student._id || student.id).slice(-3)}`,
       rollNumber: student.rollNumber || '',
-      course: student.course || 'Science',
+      subjects: student.subjects || [],
       batch: student.batch || '2024-2026',
-      semester: student.semester || student.className || 'Semester 1',
       className: student.className || '10th',
       photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       phone: student.phone || '',
@@ -287,7 +296,7 @@ export default function StudentDetail() {
               <span>&bull;</span>
               <span>Roll: <strong className="text-secondary">{student.rollNumber}</strong></span>
               <span>&bull;</span>
-              <span>Course: <strong className="text-secondary">{student.course || 'Science'}</strong></span>
+              <span>Class: <strong className="text-secondary">Class {student.className || '10th'}</strong></span>
               <span>&bull;</span>
               <span>Batch: <strong className="text-secondary">{student.batch || '2024-2026'}</strong></span>
             </div>
@@ -381,16 +390,16 @@ export default function StudentDetail() {
               <span className="font-mono font-bold text-secondary">{student.rollNumber}</span>
             </div>
             <div>
-              <span className="text-on-surface-variant text-[11px] block">Course</span>
-              <span className="font-bold text-secondary">{student.course || 'Science'}</span>
+              <span className="text-on-surface-variant text-[11px] block">Subject(s)</span>
+              <span className="font-bold text-secondary">{displaySubjects}</span>
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Batch Allocation</span>
               <span className="font-bold text-secondary">{student.batch || '2024-2026'}</span>
             </div>
             <div>
-              <span className="text-on-surface-variant text-[11px] block">Semester / Class</span>
-              <span className="font-bold text-secondary">{student.semester || student.className}</span>
+              <span className="text-on-surface-variant text-[11px] block">Class</span>
+              <span className="font-bold text-secondary">Class {student.className || '10th'}</span>
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Student Phone</span>
@@ -632,21 +641,21 @@ export default function StudentDetail() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Course</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Enrolled Subject / Stream</label>
               <select
-                value={editForm.course}
-                onChange={(e) => setEditForm({ ...editForm, course: e.target.value })}
+                value={editForm.subject || (Array.isArray(editForm.subjects) ? editForm.subjects[0] : '') || 'Mathematics Advanced'}
+                onChange={(e) => setEditForm({ ...editForm, subject: e.target.value, subjects: [e.target.value] })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                {COURSES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {SUBJECTS.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Batch</label>
               <select
-                value={editForm.batch}
+                value={editForm.batch || '2024-2026'}
                 onChange={(e) => setEditForm({ ...editForm, batch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
@@ -656,14 +665,14 @@ export default function StudentDetail() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Semester / Class</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Class</label>
               <select
-                value={editForm.semester}
-                onChange={(e) => setEditForm({ ...editForm, semester: e.target.value, className: e.target.value })}
+                value={editForm.className || '10th'}
+                onChange={(e) => setEditForm({ ...editForm, className: e.target.value, semester: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                {SEMESTERS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                {CLASSES.map((c) => (
+                  <option key={c} value={c}>Class {c}</option>
                 ))}
               </select>
             </div>
