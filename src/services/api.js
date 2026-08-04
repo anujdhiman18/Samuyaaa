@@ -2464,6 +2464,152 @@ export const facultyService = {
     return { success: true, faculty: list[idx], message: 'Faculty credentials & details updated successfully!' };
   },
 
+  assignResponsibilities: async (facultyId, newItems = [], assignedBy = 'System Admin') => {
+    const remote = await apiCall(`/faculty/${facultyId}/responsibilities`, {
+      method: 'POST',
+      body: JSON.stringify({ responsibilities: newItems, assignedBy }),
+    });
+    if (remote) return remote;
+
+    const list = getStoredFaculty();
+    const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+    if (idx !== -1) {
+      const fac = list[idx];
+      if (!fac.responsibilities) fac.responsibilities = [];
+      if (!fac.auditLog) fac.auditLog = [];
+
+      let addedCount = 0;
+      const addedDetails = [];
+
+      for (const item of newItems) {
+        const respId = item.id || 'resp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        const exists = fac.responsibilities.some(
+          (r) =>
+            r.className === item.className &&
+            r.subject === item.subject &&
+            r.section === item.section &&
+            r.course === item.course
+        );
+
+        if (!exists) {
+          const newResp = {
+            id: respId,
+            course: item.course || 'Science (PCM)',
+            batch: item.batch || 'Batch A (Morning)',
+            className: item.className || '10th',
+            semester: item.semester || 'Term 1',
+            section: item.section || 'Section A',
+            subject: item.subject || 'Mathematics Advanced',
+            academicSession: item.academicSession || '2026-2027',
+            assignedAt: new Date().toISOString(),
+            assignedBy,
+          };
+          fac.responsibilities.push(newResp);
+          addedCount++;
+          addedDetails.push(`${item.className} ${item.section} (${item.subject})`);
+        }
+      }
+
+      if (addedCount > 0) {
+        fac.auditLog.unshift({
+          id: 'audit_' + Date.now(),
+          actionType: newItems.length > 1 ? 'BULK_ASSIGNED' : 'ASSIGNED',
+          details: `Assigned ${addedCount} responsibility/responsibilities: ${addedDetails.join(', ')}`,
+          performedBy: assignedBy,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Derive updated assignedClasses and assignedSubjects arrays
+        const allClasses = Array.from(new Set(fac.responsibilities.map((r) => r.className)));
+        const allSubjects = Array.from(new Set(fac.responsibilities.map((r) => r.subject)));
+        fac.assignedClasses = allClasses;
+        fac.assignedSubjects = allSubjects;
+
+        setStoredFaculty(list);
+
+        // Sync with active session if user is logged in
+        try {
+          const currentUserStr = localStorage.getItem('saumyaa_user');
+          if (currentUserStr) {
+            const curr = JSON.parse(currentUserStr);
+            if (String(curr._id || curr.id) === String(facultyId)) {
+              curr.responsibilities = fac.responsibilities;
+              curr.assignedClasses = allClasses;
+              curr.assignedSubjects = allSubjects;
+              localStorage.setItem('saumyaa_user', JSON.stringify(curr));
+            }
+          }
+        } catch (e) {}
+      }
+
+      return {
+        success: true,
+        faculty: fac,
+        addedCount,
+        message: addedCount > 0 ? `Assigned ${addedCount} responsibility/responsibilities successfully!` : 'No new responsibilities added (duplicate detected).',
+      };
+    }
+    return { success: false, message: 'Faculty member not found' };
+  },
+
+  removeResponsibility: async (facultyId, respId, performedBy = 'System Admin') => {
+    const remote = await apiCall(`/faculty/${facultyId}/responsibilities/${respId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ performedBy }),
+    });
+    if (remote) return remote;
+
+    const list = getStoredFaculty();
+    const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+    if (idx !== -1) {
+      const fac = list[idx];
+      if (fac.responsibilities) {
+        const target = fac.responsibilities.find((r) => r.id === respId || String(r._id) === String(respId));
+        fac.responsibilities = fac.responsibilities.filter((r) => r.id !== respId && String(r._id) !== String(respId));
+
+        if (target) {
+          if (!fac.auditLog) fac.auditLog = [];
+          fac.auditLog.unshift({
+            id: 'audit_' + Date.now(),
+            actionType: 'REMOVED',
+            details: `Revoked responsibility: Class ${target.className} ${target.section} (${target.subject})`,
+            performedBy,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        const allClasses = Array.from(new Set(fac.responsibilities.map((r) => r.className)));
+        const allSubjects = Array.from(new Set(fac.responsibilities.map((r) => r.subject)));
+        fac.assignedClasses = allClasses;
+        fac.assignedSubjects = allSubjects;
+
+        setStoredFaculty(list);
+
+        // Sync active user session
+        try {
+          const currentUserStr = localStorage.getItem('saumyaa_user');
+          if (currentUserStr) {
+            const curr = JSON.parse(currentUserStr);
+            if (String(curr._id || curr.id) === String(facultyId)) {
+              curr.responsibilities = fac.responsibilities;
+              curr.assignedClasses = allClasses;
+              curr.assignedSubjects = allSubjects;
+              localStorage.setItem('saumyaa_user', JSON.stringify(curr));
+            }
+          }
+        } catch (e) {}
+      }
+      return { success: true, faculty: fac, message: 'Academic responsibility revoked successfully!' };
+    }
+    return { success: false, message: 'Faculty member not found' };
+  },
+
+  getAuditLogs: async (facultyId) => {
+    const list = getStoredFaculty();
+    const fac = list.find((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+    return { success: true, auditLog: fac?.auditLog || [] };
+  },
+
   deleteFaculty: async (id, photoUrl) => {
     if (photoUrl) {
       deleteFirebaseFile(photoUrl).catch(() => {});

@@ -61,6 +61,21 @@ export default function FacultyManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Academic Responsibilities Management Modal State
+  const [respMember, setRespMember] = useState(null);
+  const [respTab, setRespTab] = useState('assigned'); // 'assigned' | 'add' | 'audit'
+  const [course, setCourse] = useState('Science (PCM)');
+  const [batch, setBatch] = useState('Batch A (Morning)');
+  const [className, setClassName] = useState('10th');
+  const [semester, setSemester] = useState('Term 1');
+  const [section, setSection] = useState('Section A');
+  const [subject, setSubject] = useState('Mathematics Advanced');
+  const [academicSession, setAcademicSession] = useState('2026-2027');
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedBulkClasses, setSelectedBulkClasses] = useState(['10th', '11th (+1)']);
+  const [selectedBulkSections, setSelectedBulkSections] = useState(['Section A']);
+  const [assigningResp, setAssigningResp] = useState(false);
+
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -122,6 +137,79 @@ export default function FacultyManagement() {
       }
     } catch (err) {
       addToast('Error processing request', 'error');
+    }
+  };
+
+  const handleOpenResponsibilities = (member) => {
+    setRespMember(member);
+    setRespTab('assigned');
+    setIsBulkMode(false);
+  };
+
+  const handleAssignResponsibilitiesSubmit = async (e) => {
+    e.preventDefault();
+    if (!respMember) return;
+
+    setAssigningResp(true);
+    try {
+      let itemsToAssign = [];
+      if (isBulkMode) {
+        // Generate Cartesian product of selectedBulkClasses x selectedBulkSections
+        selectedBulkClasses.forEach((cls) => {
+          selectedBulkSections.forEach((sec) => {
+            itemsToAssign.push({
+              course,
+              batch,
+              className: cls,
+              semester,
+              section: sec,
+              subject,
+              academicSession,
+            });
+          });
+        });
+      } else {
+        itemsToAssign.push({
+          course,
+          batch,
+          className,
+          semester,
+          section,
+          subject,
+          academicSession,
+        });
+      }
+
+      const id = respMember._id || respMember.id;
+      const res = await facultyService.assignResponsibilities(id, itemsToAssign, 'System Admin');
+
+      if (res && res.success) {
+        addToast(res.message, res.addedCount > 0 ? 'success' : 'info');
+        setRespMember(res.faculty || respMember);
+        setRespTab('assigned');
+        fetchFaculty();
+      } else {
+        addToast(res.message || 'Error assigning responsibilities', 'error');
+      }
+    } catch (err) {
+      addToast('Error assigning responsibilities', 'error');
+    } finally {
+      setAssigningResp(false);
+    }
+  };
+
+  const handleRevokeResponsibility = async (respId) => {
+    if (!respMember) return;
+    try {
+      const id = respMember._id || respMember.id;
+      const res = await facultyService.removeResponsibility(id, respId, 'System Admin');
+      if (res && res.success) {
+        addToast('Academic responsibility revoked successfully!', 'success');
+        setRespMember(res.faculty || respMember);
+        fetchFaculty();
+      }
+    } catch (err) {
+      addToast('Error revoking responsibility', 'error');
     }
   };
 
@@ -478,6 +566,14 @@ export default function FacultyManagement() {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenResponsibilities(member)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                            title="Assign & Manage Academic Responsibilities"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">assignment_add</span>
+                            Responsibilities ({member.responsibilities?.length || 2})
+                          </button>
                           <a
                             href="/faculty"
                             target="_blank"
@@ -1120,6 +1216,367 @@ export default function FacultyManagement() {
         confirmText={deleting ? 'Deleting...' : 'Delete Faculty'}
         isDanger={true}
       />
+
+      {/* ASSIGN ACADEMIC RESPONSIBILITIES MODAL */}
+      {respMember && (
+        <Modal
+          isOpen={Boolean(respMember)}
+          onClose={() => setRespMember(null)}
+          title={`Assign Academic Responsibilities — ${respMember.name}`}
+        >
+          <div className="space-y-5 font-body text-xs">
+            {/* Faculty Header Pill */}
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-surface-container-low border border-outline-variant/15">
+              <img
+                src={respMember.photo_url}
+                alt={respMember.name}
+                className="w-11 h-11 rounded-full object-cover border border-outline-variant/30 shrink-0"
+              />
+              <div>
+                <h4 className="font-headings font-extrabold text-sm text-secondary">{respMember.name}</h4>
+                <p className="text-[11px] text-on-surface-variant">
+                  {respMember.designation} &bull; <span className="font-mono text-primary">{respMember.email}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Internal Tabs */}
+            <div className="flex border-b border-outline-variant/15 gap-4">
+              <button
+                type="button"
+                onClick={() => setRespTab('assigned')}
+                className={`pb-2.5 text-xs font-headings font-bold relative transition-colors ${
+                  respTab === 'assigned'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+                    : 'text-on-surface-variant hover:text-secondary'
+                }`}
+              >
+                Active Responsibilities ({respMember.responsibilities?.length || 0})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRespTab('add')}
+                className={`pb-2.5 text-xs font-headings font-bold relative transition-colors ${
+                  respTab === 'add'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+                    : 'text-on-surface-variant hover:text-secondary'
+                }`}
+              >
+                + Assign New Responsibility
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRespTab('audit')}
+                className={`pb-2.5 text-xs font-headings font-bold relative transition-colors ${
+                  respTab === 'audit'
+                    ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+                    : 'text-on-surface-variant hover:text-secondary'
+                }`}
+              >
+                Audit Log ({respMember.auditLog?.length || 0})
+              </button>
+            </div>
+
+            {/* TAB 1: ACTIVE RESPONSIBILITIES TABLE */}
+            {respTab === 'assigned' && (
+              <div className="space-y-3">
+                {!respMember.responsibilities || respMember.responsibilities.length === 0 ? (
+                  <div className="p-8 text-center bg-surface-container-low rounded-2xl border border-outline-variant/15">
+                    <span className="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-1">assignment_late</span>
+                    <p className="font-bold text-secondary text-xs">No Responsibilities Assigned Yet</p>
+                    <p className="text-[11px] text-on-surface-variant mt-1">
+                      Click <strong>"+ Assign New Responsibility"</strong> above to assign courses, classes, sections, and subjects.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-outline-variant/15">
+                    <table className="w-full text-left border-collapse text-[11px]">
+                      <thead>
+                        <tr className="bg-surface-container-low text-on-surface-variant font-headings font-bold uppercase tracking-wider border-b border-outline-variant/15">
+                          <th className="py-2.5 px-3">Class & Section</th>
+                          <th className="py-2.5 px-3">Subject</th>
+                          <th className="py-2.5 px-3">Course / Batch</th>
+                          <th className="py-2.5 px-3">Term / Session</th>
+                          <th className="py-2.5 px-3 text-right">Revoke Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/10 font-body">
+                        {respMember.responsibilities.map((resp) => (
+                          <tr key={resp.id || resp._id} className="hover:bg-surface-container-lowest transition-colors">
+                            <td className="py-2.5 px-3 font-bold text-secondary whitespace-nowrap">
+                              {resp.className} &bull; {resp.section}
+                            </td>
+                            <td className="py-2.5 px-3 font-bold text-primary whitespace-nowrap">
+                              {resp.subject}
+                            </td>
+                            <td className="py-2.5 px-3 text-on-surface-variant whitespace-nowrap">
+                              {resp.course} ({resp.batch})
+                            </td>
+                            <td className="py-2.5 px-3 text-on-surface-variant whitespace-nowrap">
+                              {resp.semester} &bull; {resp.academicSession}
+                            </td>
+                            <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleRevokeResponsibility(resp.id || resp._id)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-[10px] font-bold transition-colors cursor-pointer"
+                              >
+                                Revoke Access
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setRespTab('add')}
+                    className="px-4 py-2 rounded-full bg-primary text-white font-bold text-xs shadow-sm hover:bg-primary-container"
+                  >
+                    + Add More Responsibilities
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: ASSIGN NEW RESPONSIBILITY FORM */}
+            {respTab === 'add' && (
+              <form onSubmit={handleAssignResponsibilitiesSubmit} className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant/15">
+                  <span className="font-bold text-secondary text-xs">Assignment Mode:</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkMode(false)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                        !isBulkMode ? 'bg-primary text-white shadow-sm' : 'bg-surface-container text-on-surface-variant'
+                      }`}
+                    >
+                      Single Assignment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkMode(true)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                        isBulkMode ? 'bg-primary text-white shadow-sm' : 'bg-surface-container text-on-surface-variant'
+                      }`}
+                    >
+                      ⚡ Bulk Multi-Class Mode
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-secondary mb-1">Course Program</label>
+                    <select
+                      value={course}
+                      onChange={(e) => setCourse(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                    >
+                      <option value="Science (PCM)">Science (PCM - Physics, Chemistry, Math)</option>
+                      <option value="Science (PCB)">Science (PCB - Physics, Chemistry, Biology)</option>
+                      <option value="Commerce">Commerce & Accountancy</option>
+                      <option value="Arts & Humanities">Arts & Humanities</option>
+                      <option value="Foundation & Olympiad">Foundation & Olympiad</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-secondary mb-1">Batch / Shift</label>
+                    <select
+                      value={batch}
+                      onChange={(e) => setBatch(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                    >
+                      <option value="Batch A (Morning)">Batch A (Morning Shift)</option>
+                      <option value="Batch B (Evening)">Batch B (Evening Shift)</option>
+                      <option value="JEE Main/Adv Focus">JEE Main/Adv Focus Batch</option>
+                      <option value="NEET Target Batch">NEET Target Batch</option>
+                    </select>
+                  </div>
+                </div>
+
+                {isBulkMode ? (
+                  <div className="space-y-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5">
+                    <label className="block font-bold text-primary text-xs">
+                      Select Multiple Classes & Sections to Bulk Assign:
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="font-bold text-secondary text-[11px] block mb-1">Classes:</span>
+                        {['9th', '10th', '11th (+1)', '12th (+2)'].map((c) => (
+                          <label key={c} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                            <input
+                              type="checkbox"
+                              checked={selectedBulkClasses.includes(c)}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedBulkClasses([...selectedBulkClasses, c]);
+                                else setSelectedBulkClasses(selectedBulkClasses.filter((x) => x !== c));
+                              }}
+                              className="rounded text-primary focus:ring-primary"
+                            />
+                            <span>Class {c}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-secondary text-[11px] block mb-1">Sections:</span>
+                        {['Section A', 'Section B', 'Section C'].map((sec) => (
+                          <label key={sec} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                            <input
+                              type="checkbox"
+                              checked={selectedBulkSections.includes(sec)}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedBulkSections([...selectedBulkSections, sec]);
+                                else setSelectedBulkSections(selectedBulkSections.filter((x) => x !== sec));
+                              }}
+                              className="rounded text-primary focus:ring-primary"
+                            />
+                            <span>{sec}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block font-bold text-secondary mb-1">Class</label>
+                      <select
+                        value={className}
+                        onChange={(e) => setClassName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                      >
+                        <option value="9th">Class 9th</option>
+                        <option value="10th">Class 10th</option>
+                        <option value="11th (+1)">Class 11th (+1)</option>
+                        <option value="12th (+2)">Class 12th (+2)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-secondary mb-1">Section</label>
+                      <select
+                        value={section}
+                        onChange={(e) => setSection(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                      >
+                        <option value="Section A">Section A</option>
+                        <option value="Section B">Section B</option>
+                        <option value="Section C">Section C</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-secondary mb-1">Subject</label>
+                    <select
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                    >
+                      <option value="Mathematics Advanced">Mathematics Advanced</option>
+                      <option value="Physics IIT-JEE Prep">Physics IIT-JEE Prep</option>
+                      <option value="Organic Chemistry">Organic Chemistry</option>
+                      <option value="Biology NEET Prep">Biology NEET Prep</option>
+                      <option value="English Literature">English Literature</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-secondary mb-1">Semester / Term</label>
+                    <select
+                      value={semester}
+                      onChange={(e) => setSemester(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                    >
+                      <option value="Term 1">Term 1</option>
+                      <option value="Term 2">Term 2</option>
+                      <option value="Semester 1">Semester 1</option>
+                      <option value="Semester 2">Semester 2</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-secondary mb-1">Academic Session</label>
+                    <select
+                      value={academicSession}
+                      onChange={(e) => setAcademicSession(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
+                    >
+                      <option value="2025-2026">2025-2026</option>
+                      <option value="2026-2027">2026-2027</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-outline-variant/15 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRespTab('assigned')}
+                    className="px-4 py-2 rounded-full border border-outline-variant/30 text-secondary font-bold text-xs hover:bg-surface-container"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={assigningResp}
+                    className="px-6 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-premium disabled:opacity-50 cursor-pointer"
+                  >
+                    {assigningResp ? 'Assigning...' : 'Save & Assign Responsibilities'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* TAB 3: AUDIT LOG HISTORY */}
+            {respTab === 'audit' && (
+              <div className="space-y-3">
+                {!respMember.auditLog || respMember.auditLog.length === 0 ? (
+                  <div className="p-8 text-center bg-surface-container-low rounded-2xl border border-outline-variant/15 text-on-surface-variant text-xs">
+                    No assignment audit history recorded yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {respMember.auditLog.map((log) => (
+                      <div key={log.id || log._id} className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/15 space-y-1">
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-extrabold ${
+                              log.actionType === 'REMOVED'
+                                ? 'bg-rose-100 text-rose-800'
+                                : log.actionType === 'BULK_ASSIGNED'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {log.actionType}
+                          </span>
+                          <span className="text-on-surface-variant font-mono">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-secondary">{log.details}</p>
+                        <p className="text-[10px] text-on-surface-variant">Performed by: {log.performedBy}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -7,6 +7,9 @@ import {
   notifyFacultyApplication,
   sendFacultyApplicationEmailController,
   sendCandidateStatusEmailController,
+  assignResponsibilities,
+  removeResponsibility,
+  getAuditLogs,
 } from '../controllers/facultyController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -24,9 +27,13 @@ router.post('/notify-status', sendCandidateStatusEmailController);
 // Backward compatible notification route
 router.post('/notify', notifyFacultyApplication);
 
-// Admin protected routes for CUD operations
+// Admin protected routes for CUD operations & Responsibility management
 router.post('/', protect, createFaculty);
 router.put('/:id', protect, updateFaculty);
 router.delete('/:id', protect, deleteFaculty);
+
+router.post('/:id/responsibilities', protect, assignResponsibilities);
+router.delete('/:id/responsibilities/:respId', protect, removeResponsibility);
+router.get('/:id/audit-log', protect, getAuditLogs);
 
 export default router;

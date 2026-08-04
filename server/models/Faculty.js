@@ -62,6 +62,29 @@ const facultySchema = new mongoose.Schema(
       type: String,
       default: 'Faculty',
     },
+    responsibilities: [
+      {
+        id: String,
+        course: { type: String, default: 'Science (PCM)' },
+        batch: { type: String, default: 'Batch A (Morning)' },
+        className: { type: String, default: '10th' },
+        semester: { type: String, default: 'Term 1' },
+        section: { type: String, default: 'Section A' },
+        subject: { type: String, default: 'Mathematics Advanced' },
+        academicSession: { type: String, default: '2026-2027' },
+        assignedAt: { type: Date, default: Date.now },
+        assignedBy: { type: String, default: 'System Admin' },
+      },
+    ],
+    auditLog: [
+      {
+        id: String,
+        actionType: { type: String, enum: ['ASSIGNED', 'UPDATED', 'REMOVED', 'BULK_ASSIGNED'] },
+        details: String,
+        performedBy: { type: String, default: 'System Admin' },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
     display_order: {
       type: Number,
       default: 1,

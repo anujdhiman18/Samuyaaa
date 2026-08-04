@@ -411,3 +411,119 @@ export const sendCandidateStatusEmailController = async (req, res) => {
   });
 };
 
+// @desc    Assign Academic Responsibilities (Single / Bulk)
+// @route   POST /api/faculty/:id/responsibilities
+export const assignResponsibilities = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { responsibilities = [], assignedBy = 'System Admin' } = req.body;
+
+    const faculty = await Faculty.findById(id);
+    if (!faculty) return res.status(404).json({ success: false, message: 'Faculty member not found' });
+
+    if (!faculty.responsibilities) faculty.responsibilities = [];
+    if (!faculty.auditLog) faculty.auditLog = [];
+
+    let addedCount = 0;
+    const addedDetails = [];
+
+    for (const item of responsibilities) {
+      const respId = item.id || 'resp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+      // Check for duplicate assignment
+      const exists = faculty.responsibilities.some(
+        (r) =>
+          r.className === item.className &&
+          r.subject === item.subject &&
+          r.section === item.section &&
+          r.course === item.course
+      );
+
+      if (!exists) {
+        const newResp = {
+          id: respId,
+          course: item.course || 'Science (PCM)',
+          batch: item.batch || 'Batch A (Morning)',
+          className: item.className || '10th',
+          semester: item.semester || 'Term 1',
+          section: item.section || 'Section A',
+          subject: item.subject || 'Mathematics Advanced',
+          academicSession: item.academicSession || '2026-2027',
+          assignedAt: new Date(),
+          assignedBy,
+        };
+        faculty.responsibilities.push(newResp);
+        addedCount++;
+        addedDetails.push(`${item.className} - ${item.section} (${item.subject})`);
+      }
+    }
+
+    if (addedCount > 0) {
+      faculty.auditLog.unshift({
+        id: 'audit_' + Date.now(),
+        actionType: responsibilities.length > 1 ? 'BULK_ASSIGNED' : 'ASSIGNED',
+        details: `Assigned ${addedCount} responsibility/responsibilities: ${addedDetails.join(', ')}`,
+        performedBy: assignedBy,
+        timestamp: new Date(),
+      });
+      await faculty.save();
+    }
+
+    res.json({
+      success: true,
+      faculty,
+      addedCount,
+      message: `Successfully assigned ${addedCount} responsibility/responsibilities`,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Remove an Academic Responsibility
+// @route   DELETE /api/faculty/:id/responsibilities/:respId
+export const removeResponsibility = async (req, res) => {
+  try {
+    const { id, respId } = req.params;
+    const { performedBy = 'System Admin' } = req.body || {};
+
+    const faculty = await Faculty.findById(id);
+    if (!faculty) return res.status(404).json({ success: false, message: 'Faculty member not found' });
+
+    const target = faculty.responsibilities.find((r) => r.id === respId || String(r._id) === String(respId));
+    if (target) {
+      faculty.responsibilities = faculty.responsibilities.filter(
+        (r) => r.id !== respId && String(r._id) !== String(respId)
+      );
+
+      faculty.auditLog.unshift({
+        id: 'audit_' + Date.now(),
+        actionType: 'REMOVED',
+        details: `Revoked responsibility: Class ${target.className} ${target.section} (${target.subject})`,
+        performedBy,
+        timestamp: new Date(),
+      });
+
+      await faculty.save();
+    }
+
+    res.json({ success: true, faculty, message: 'Academic responsibility revoked successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get Faculty Responsibility Audit Log
+// @route   GET /api/faculty/:id/audit-log
+export const getAuditLogs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const faculty = await Faculty.findById(id).select('auditLog name');
+    if (!faculty) return res.status(404).json({ success: false, message: 'Faculty member not found' });
+
+    res.json({ success: true, auditLog: faculty.auditLog || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
