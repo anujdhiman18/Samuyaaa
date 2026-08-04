@@ -66,7 +66,12 @@ export default function FacultyAttendance() {
       const newMap = {};
       studentList.forEach((st) => {
         const stId = String(st._id || st.id);
-        const existing = records.find((r) => String(r.student?._id || r.student?.id || r.student) === stId);
+        const existing = records.find(
+          (r) =>
+            String(r.student?._id || r.student?.id || r.student) === stId ||
+            (r.rollNumber && st.rollNumber && r.rollNumber === st.rollNumber) ||
+            (r.student?.rollNumber && st.rollNumber && r.student.rollNumber === st.rollNumber)
+        );
         newMap[stId] = {
           status: existing ? existing.status || 'Present' : 'Present',
           remarks: existing ? existing.remarks || '' : '',
@@ -106,7 +111,7 @@ export default function FacultyAttendance() {
       const recordsToSave = students.map((st) => {
         const stId = String(st._id || st.id);
         const data = attendanceMap[stId] || { status: 'Present', remarks: '' };
-        return { studentId: stId, status: data.status, remarks: data.remarks };
+        return { studentId: stId, rollNumber: st.rollNumber, status: data.status, remarks: data.remarks };
       });
 
       const currentUserStr = localStorage.getItem('saumyaa_user');
@@ -138,7 +143,7 @@ export default function FacultyAttendance() {
   };
 
   return (
-    <div className="space-y-6 font-body">
+    <div className="space-y-6 font-body pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
@@ -154,10 +159,10 @@ export default function FacultyAttendance() {
         <button
           onClick={handleSaveAttendance}
           disabled={saving || students.length === 0}
-          className="bg-primary text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+          className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">save</span>
-          {saving ? 'Saving...' : 'Save Attendance Register'}
+          {saving ? 'Saving Records...' : 'Save & Submit Attendance'}
         </button>
       </div>
 
@@ -209,18 +214,29 @@ export default function FacultyAttendance() {
       </div>
 
       {/* Quick Mark Toolbar */}
-      <div className="flex gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleMarkAll('Present')}
+            className="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold hover:bg-emerald-200 transition-colors cursor-pointer"
+          >
+            Mark All Present
+          </button>
+          <button
+            onClick={() => handleMarkAll('Absent')}
+            className="px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 text-xs font-bold hover:bg-rose-200 transition-colors cursor-pointer"
+          >
+            Mark All Absent
+          </button>
+        </div>
+
         <button
-          onClick={() => handleMarkAll('Present')}
-          className="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold hover:bg-emerald-200 transition-colors"
+          onClick={handleSaveAttendance}
+          disabled={saving || students.length === 0}
+          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs rounded-xl flex items-center gap-1 shadow-sm active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
         >
-          Mark All Present
-        </button>
-        <button
-          onClick={() => handleMarkAll('Absent')}
-          className="px-3.5 py-1.5 rounded-xl bg-rose-100 text-rose-800 text-xs font-bold hover:bg-rose-200 transition-colors"
-        >
-          Mark All Absent
+          <span className="material-symbols-outlined text-[16px]">save</span>
+          {saving ? 'Saving...' : 'Save Attendance'}
         </button>
       </div>
 
@@ -285,6 +301,24 @@ export default function FacultyAttendance() {
           </div>
         )}
       </div>
+
+      {/* Sticky Bottom Save Action Bar */}
+      {students.length > 0 && (
+        <div className="sticky bottom-4 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-outline-variant/20 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="text-xs font-headings">
+            <span className="font-bold text-secondary">Class {selectedClass}</span> &bull; <span className="text-primary font-bold">{selectedSubject}</span>
+            <span className="text-on-surface-variant ml-2">({students.length} Students)</span>
+          </div>
+          <button
+            onClick={handleSaveAttendance}
+            disabled={saving}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            {saving ? 'Saving Records...' : 'Save & Submit Attendance'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

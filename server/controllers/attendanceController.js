@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Attendance from '../models/Attendance.js';
 import Student from '../models/Student.js';
 
@@ -9,7 +10,12 @@ export const getAttendance = async (req, res) => {
     const query = {};
 
     if (studentId) {
-      query.student = studentId;
+      if (mongoose.Types.ObjectId.isValid(studentId)) {
+        query.student = studentId;
+      } else {
+        const st = await Student.findOne({ $or: [{ id: studentId }, { rollNumber: studentId }] });
+        if (st) query.student = st._id;
+      }
     }
 
     if (date) {
@@ -69,16 +75,32 @@ export const saveBatchAttendance = async (req, res) => {
     const savedRecords = [];
 
     for (const rec of records) {
-      const { studentId, status, remarks } = rec;
+      const { studentId, status, remarks, rollNumber: recRoll } = rec;
       if (!studentId) continue;
 
-      const student = await Student.findById(studentId);
+      let student = null;
+      if (mongoose.Types.ObjectId.isValid(studentId)) {
+        student = await Student.findById(studentId);
+      }
+      if (!student) {
+        student = await Student.findOne({
+          $or: [
+            { id: studentId },
+            { rollNumber: recRoll || studentId },
+            { admissionNumber: studentId },
+          ],
+        });
+      }
+
+      const studentMongoId = student ? student._id : (mongoose.Types.ObjectId.isValid(studentId) ? studentId : null);
+      if (!studentMongoId) continue;
+
       const studentName = student ? student.fullName : 'Student';
-      const rollNumber = student ? student.rollNumber : '';
+      const rollNumber = student ? student.rollNumber : (recRoll || '');
 
       // Find existing attendance record for this student, date, and subject
       const query = {
-        student: studentId,
+        student: studentMongoId,
         date: { $gte: startOfDay, $lte: endOfDay },
       };
       if (subject && subject !== 'All') {
@@ -95,7 +117,7 @@ export const saveBatchAttendance = async (req, res) => {
         savedRecords.push(existing);
       } else {
         const created = await Attendance.create({
-          student: studentId,
+          student: studentMongoId,
           studentName,
           rollNumber,
           date: targetDate,
@@ -107,7 +129,7 @@ export const saveBatchAttendance = async (req, res) => {
       }
 
       // Update student's overall attendance percentage
-      const allStudentAtt = await Attendance.find({ student: studentId });
+      const allStudentAtt = await Attendance.find({ student: studentMongoId });
       const presentCount = allStudentAtt.filter((a) => a.status === 'Present' || a.status === 'Late').length;
       const totalCount = allStudentAtt.length;
       const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;

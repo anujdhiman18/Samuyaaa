@@ -1702,8 +1702,31 @@ export const attendanceService = {
   },
 
   getAllAttendance: async (params = {}) => {
-    const remote = await apiCall('/attendance');
-    if (remote) return remote;
+    const query = new URLSearchParams(params).toString();
+    const remote = await apiCall(`/attendance?${query}`);
+    if (remote && remote.success) {
+      if (Array.isArray(remote.attendance)) {
+        let currentLocal = getStoredAttendance();
+        remote.attendance.forEach((remRec) => {
+          const remStId = String(remRec.student?._id || remRec.student?.id || remRec.student);
+          const remDate = normalizeDateKey(remRec.date);
+          const remSub = remRec.subject || 'General';
+          const idx = currentLocal.findIndex(
+            (l) =>
+              (String(l.student?._id || l.student?.id || l.student) === remStId || (l.rollNumber && remRec.rollNumber && l.rollNumber === remRec.rollNumber)) &&
+              normalizeDateKey(l.date) === remDate &&
+              (l.subject || 'General') === remSub
+          );
+          if (idx >= 0) {
+            currentLocal[idx] = { ...currentLocal[idx], ...remRec };
+          } else {
+            currentLocal.push(remRec);
+          }
+        });
+        setStoredAttendance(currentLocal);
+      }
+      return remote;
+    }
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
     let list = getCombinedAttendance(fsAttendance);
@@ -1733,7 +1756,6 @@ export const attendanceService = {
       method: 'POST',
       body: JSON.stringify({ date, subject, className, records, markedBy }),
     });
-    if (remote) return remote;
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
     let currentList = getCombinedAttendance(fsAttendance);
@@ -1750,7 +1772,11 @@ export const attendanceService = {
         const aDateStr = normalizeDateKey(a.date);
         const aSub = a.subject || 'General';
         const targetSub = subject || 'General';
-        return aStId === studentId && aDateStr === targetDateStr && (aSub === targetSub || targetSub === 'All');
+        return (
+          (aStId === studentId || (rec.rollNumber && a.rollNumber === rec.rollNumber)) &&
+          aDateStr === targetDateStr &&
+          (aSub === targetSub || targetSub === 'All')
+        );
       });
 
       if (existingIndex >= 0) {
@@ -1774,6 +1800,7 @@ export const attendanceService = {
         const newRecord = {
           _id: id,
           student: studentId,
+          rollNumber: rec.rollNumber || '',
           date: targetDateStr,
           status,
           subject: subject || 'General',
@@ -1795,14 +1822,14 @@ export const attendanceService = {
       try {
         const studentAtts = updatedList.filter((a) => {
           const aStId = String(a.student?._id || a.student?.id || a.student);
-          return aStId === studentId;
+          return aStId === studentId || (rec.rollNumber && a.rollNumber === rec.rollNumber);
         });
         const presentCount = studentAtts.filter((a) => a.status === 'Present' || a.status === 'Late').length;
         const totalCount = studentAtts.length;
         const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;
 
         const storedStudents = getStoredStudents();
-        const sIdx = storedStudents.findIndex((s) => String(s._id || s.id) === studentId);
+        const sIdx = storedStudents.findIndex((s) => String(s._id || s.id) === studentId || (rec.rollNumber && s.rollNumber === rec.rollNumber));
         if (sIdx !== -1) {
           storedStudents[sIdx].attendancePercentage = pct;
           setStoredStudents(storedStudents);
@@ -1811,6 +1838,7 @@ export const attendanceService = {
     }
 
     setStoredAttendance(updatedList);
+    if (remote && remote.success) return remote;
     return { success: true, message: `Attendance saved for ${records.length} students on ${targetDateStr}.`, attendance: updatedList };
   },
 
