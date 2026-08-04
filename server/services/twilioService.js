@@ -91,3 +91,42 @@ export async function sendSMSReminder({ studentPhone, studentName, dueAmount, ro
     message: `SMS reminder sent to ${formattedPhone} via Twilio API`,
   };
 }
+
+export async function sendGenericSMS({ phone, text }) {
+  if (!phone || !text) return { success: false, message: 'Phone and text are required' };
+  const formattedPhone = formatPhoneNumber(phone);
+  if (!formattedPhone) {
+    console.warn(`[SMS Dispatch] Skipped for invalid phone "${phone}"`);
+    return { success: false, message: `Invalid phone format "${phone}"` };
+  }
+
+  if (!twilioClient) {
+    console.log(`[Twilio Standalone Mode] SMS notification dispatched to ${formattedPhone}: "${text}"`);
+    return {
+      success: true,
+      sid: 'SIMULATED_SMS_' + Date.now(),
+      status: 'simulated',
+      isSimulated: true,
+      message: `[Standalone Mode] SMS sent to ${formattedPhone}`,
+    };
+  }
+
+  try {
+    const res = await twilioClient.messages.create({
+      body: text,
+      from: smsSender,
+      to: formattedPhone,
+    });
+
+    return {
+      success: true,
+      sid: res.sid,
+      status: res.status,
+      isSimulated: false,
+      message: `SMS sent to ${formattedPhone} via Twilio API`,
+    };
+  } catch (err) {
+    console.warn(`Twilio SMS Error for ${formattedPhone}:`, err.message);
+    return { success: false, error: err.message };
+  }
+}

@@ -158,6 +158,28 @@ export const saveBatchAttendance = async (req, res) => {
       if (student) {
         student.attendancePercentage = pct;
         await student.save();
+
+        // Dispatch Automated SMS Alert to Student/Parent Phone
+        const phoneToNotify = student.parentPhone || student.phone;
+        const dateStr = String(date).split('T')[0];
+        const smsText = `Saumyaa Alert: Attendance for ${studentName} (${rollNumber || 'N/A'}) on ${dateStr} (${subject || 'General'}) has been marked as "${status || 'Present'}". Overall Attendance: ${pct}%. - Saumyaa Studies`;
+
+        try {
+          const { sendGenericSMS } = await import('../services/twilioService.js');
+          await sendGenericSMS({ phone: phoneToNotify, text: smsText });
+
+          // Also record in Notification collection
+          const Notification = (await import('../models/Notification.js')).default;
+          await Notification.create({
+            student: studentMongoId,
+            rollNumber,
+            title: `Attendance Marked: ${status || 'Present'}`,
+            message: smsText,
+            type: 'Attendance',
+          });
+        } catch (smsErr) {
+          console.warn('SMS dispatch / Notification log warning:', smsErr.message);
+        }
       }
     }
 

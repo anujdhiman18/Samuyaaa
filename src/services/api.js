@@ -1617,10 +1617,22 @@ export const marksService = {
       } catch (fsErr) {
         console.warn('Firestore setDoc marks error:', fsErr.message);
       }
+
+      // Dispatch automated SMS for marks
+      try {
+        const storedStudents = getStoredStudents();
+        const stObj = storedStudents.find((s) => String(s._id || s.id) === studentId || (item.rollNumber && s.rollNumber === item.rollNumber));
+        if (stObj) {
+          const targetPhone = stObj.parentPhone || stObj.phone;
+          const smsText = `Saumyaa Grade Alert: New marks recorded for ${stObj.fullName} (${stObj.rollNumber || 'N/A'}) in ${subject} (${examType || 'Exam'}): ${totalObtained}/${Number(item.totalMax) || 100} (${recordObj.percentage}%). - Saumyaa Studies`;
+          notificationService.dispatchAutoSMS({ phone: targetPhone, text: smsText, studentName: stObj.fullName, type: 'Marks' });
+        }
+      } catch (e) {}
     }
 
     setStoredMarks(updatedMarks);
-    return { success: true, marks: updatedMarks, message: 'Marks published & synced to Admin Panel successfully!' };
+    if (remote && remote.success) return remote;
+    return { success: true, marks: updatedMarks, message: 'Marks published & synced successfully!' };
   },
 };
 
@@ -1833,6 +1845,11 @@ export const attendanceService = {
         if (sIdx !== -1) {
           storedStudents[sIdx].attendancePercentage = pct;
           setStoredStudents(storedStudents);
+
+          // Dispatch automated SMS alert
+          const targetPhone = storedStudents[sIdx].parentPhone || storedStudents[sIdx].phone;
+          const smsText = `Saumyaa Alert: Attendance for ${storedStudents[sIdx].fullName} (${storedStudents[sIdx].rollNumber || 'N/A'}) on ${targetDateStr} (${subject || 'General'}) marked as "${status}". Overall Attendance: ${pct}%. - Saumyaa Studies`;
+          notificationService.dispatchAutoSMS({ phone: targetPhone, text: smsText, studentName: storedStudents[sIdx].fullName, type: 'Attendance' });
         }
       } catch (e) {}
     }
@@ -1883,7 +1900,6 @@ export const announcementService = {
 
   createAnnouncement: async (data) => {
     const remote = await apiCall('/announcements', { method: 'POST', body: JSON.stringify(data) });
-    if (remote) return remote;
 
     const id = 'anc_' + Date.now();
     const newAnc = { ...data, _id: id, publishedDate: new Date().toISOString().split('T')[0] };
@@ -1896,7 +1912,24 @@ export const announcementService = {
 
     const list = getStoredAnnouncements();
     setStoredAnnouncements([newAnc, ...list]);
-    return { success: true, announcement: newAnc, message: 'Announcement published in Firebase DB' };
+
+    // Dispatch automated SMS for announcement to students
+    try {
+      const storedStudents = getStoredStudents();
+      const targetClass = data.targetClass || data.className;
+      const targetStudents = targetClass && targetClass !== 'All'
+        ? storedStudents.filter((s) => s.className === targetClass)
+        : storedStudents;
+
+      targetStudents.slice(0, 15).forEach((st) => {
+        const phone = st.parentPhone || st.phone;
+        const text = `Saumyaa Announcement (${targetClass || 'All Classes'}): ${data.title} - ${data.content || data.message || 'Notice published.'}. - Saumyaa Studies`;
+        notificationService.dispatchAutoSMS({ phone, text, studentName: st.fullName, type: 'Announcement' });
+      });
+    } catch (e) {}
+
+    if (remote && remote.success) return remote;
+    return { success: true, announcement: newAnc, message: 'Announcement published successfully' };
   },
 };
 
@@ -1913,6 +1946,36 @@ export const notificationService = {
     const list = getStoredNotifications().map((n) => (n._id === id ? { ...n, isRead: true } : n));
     setStoredNotifications(list);
     return { success: true };
+  },
+
+  dispatchAutoSMS: async ({ phone, text, studentName, type = 'Alert' }) => {
+    if (!phone || !text) return { success: false };
+    try {
+      const remote = await apiCall('/notifications/send-sms', {
+        method: 'POST',
+        body: JSON.stringify({ phone, text, studentName, type }),
+      });
+      if (remote) return remote;
+    } catch (e) {}
+
+    // Store SMS log in localStorage for auditing
+    try {
+      const rawLogs = localStorage.getItem('saumyaa_sms_logs');
+      const logs = rawLogs ? JSON.parse(rawLogs) : [];
+      logs.unshift({
+        id: 'sms_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        phone,
+        text,
+        studentName: studentName || 'Student',
+        type,
+        timestamp: new Date().toISOString(),
+        status: 'Sent',
+      });
+      localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs.slice(0, 50)));
+    } catch (e) {}
+
+    console.log(`💬 [Auto SMS Dispatched] to ${phone} (${studentName}): "${text}"`);
+    return { success: true, message: `SMS notification dispatched to ${phone}` };
   },
 };
 

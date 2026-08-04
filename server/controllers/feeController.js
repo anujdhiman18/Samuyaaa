@@ -69,6 +69,23 @@ export const recordFeePayment = async (req, res) => {
     student.paidTillMonth = payment.monthYear;
     await student.save();
 
+    // Dispatch automated SMS for fee payment receipt
+    try {
+      const phoneToNotify = student.parentPhone || student.phone;
+      const smsText = `Saumyaa Fee Receipt: Received ₹${amountPaid} for ${student.fullName} (${student.rollNumber || 'N/A'}) for ${payment.monthYear}. Receipt No: ${receiptNumber}. - Saumyaa Studies`;
+      const { sendGenericSMS } = await import('../services/twilioService.js');
+      await sendGenericSMS({ phone: phoneToNotify, text: smsText });
+
+      const Notification = (await import('../models/Notification.js')).default;
+      await Notification.create({
+        student: student._id,
+        rollNumber: student.rollNumber,
+        title: `Fee Payment Received: ₹${amountPaid}`,
+        message: smsText,
+        type: 'Fee',
+      });
+    } catch (smsErr) {}
+
     res.status(201).json({ success: true, payment, message: 'Fee payment recorded successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

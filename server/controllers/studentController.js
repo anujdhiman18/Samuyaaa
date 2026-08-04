@@ -144,6 +144,24 @@ export const updateStudent = async (req, res) => {
     }
 
     const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    // Dispatch automated SMS alert
+    try {
+      const phoneToNotify = updated.parentPhone || updated.phone;
+      const smsText = `Saumyaa Update: Profile details updated for ${updated.fullName} (${updated.rollNumber || 'N/A'}, Class ${updated.className || '10th'}). - Saumyaa Studies`;
+      const { sendGenericSMS } = await import('../services/twilioService.js');
+      await sendGenericSMS({ phone: phoneToNotify, text: smsText });
+
+      const Notification = (await import('../models/Notification.js')).default;
+      await Notification.create({
+        student: updated._id,
+        rollNumber: updated.rollNumber,
+        title: 'Profile Updated',
+        message: smsText,
+        type: 'Performance',
+      });
+    } catch (e) {}
+
     res.json({ success: true, student: updated, message: 'Student updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
