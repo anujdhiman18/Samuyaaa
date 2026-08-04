@@ -535,17 +535,17 @@ export default function StudentManagement() {
 
         {/* Filter Dropdowns Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 border-t border-outline-variant/15">
-          {/* Branch Filter */}
+          {/* Location Filter */}
           <div>
             <label className="block text-[10px] font-headings font-bold uppercase tracking-wider text-on-surface-variant/70 mb-1">
-              Branch
+              Location
             </label>
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              <option value="All">All Branches</option>
+              <option value="All">All Locations</option>
               <option value="Bagru">Bagru (Main)</option>
               <option value="Daroh">Daroh (Child)</option>
             </select>
@@ -981,14 +981,14 @@ export default function StudentManagement() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Branch *</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Preferred Location *</label>
               <select
                 value={form.branch || 'Bagru'}
                 onChange={(e) => setForm({ ...form, branch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-bold bg-white"
               >
-                <option value="Bagru">Bagru (Main Branch)</option>
-                <option value="Daroh">Daroh (Child Branch)</option>
+                <option value="Bagru">Bagru (Main Location)</option>
+                <option value="Daroh">Daroh (Child Location)</option>
               </select>
             </div>
 
