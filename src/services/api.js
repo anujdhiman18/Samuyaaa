@@ -341,13 +341,13 @@ export const apiCall = async (endpoint, options = {}) => {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) return null;
 
-  if (Date.now() - lastBackendFailureTime < 15000) {
+  if (Date.now() - lastBackendFailureTime < 2000) {
     return null;
   }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 400);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
@@ -2474,8 +2474,14 @@ export const facultyService = {
       return remote;
     }
 
-    const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
-    let list = fsFaculty || getStoredFaculty();
+    let list = getStoredFaculty();
+    if (!list || !Array.isArray(list) || list.length === 0) {
+      const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
+      list = fsFaculty || initialMockFaculty;
+      if (list && list.length > 0) {
+        setStoredFaculty(list);
+      }
+    }
     if (activeOnly) {
       list = list.filter((f) => f.is_active !== false);
     }
@@ -2558,7 +2564,12 @@ export const facultyService = {
       if (remote.faculty) {
         // Sync local storage saumyaa_faculty immediately
         const list = getStoredFaculty();
-        const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+        const idx = list.findIndex(
+          (f) =>
+            String(f._id) === String(facultyId) ||
+            String(f.id) === String(facultyId) ||
+            String(f._id) === String(remote.faculty?._id)
+        );
         if (idx !== -1) {
           list[idx] = remote.faculty;
         } else {
@@ -2568,7 +2579,9 @@ export const facultyService = {
 
         // Sync Firestore
         try {
-          await setDoc(doc(db, 'faculty', String(facultyId)), remote.faculty, { merge: true });
+          if (remote.faculty._id) await setDoc(doc(db, 'faculty', String(remote.faculty._id)), remote.faculty, { merge: true });
+          if (remote.faculty.id) await setDoc(doc(db, 'faculty', String(remote.faculty.id)), remote.faculty, { merge: true });
+          if (facultyId) await setDoc(doc(db, 'faculty', String(facultyId)), remote.faculty, { merge: true });
         } catch (e) {}
 
         // Sync active user session
