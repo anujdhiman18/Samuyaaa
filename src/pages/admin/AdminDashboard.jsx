@@ -312,13 +312,29 @@ export default function AdminDashboard() {
               Latest enrolled students across Nursery - 12th
             </p>
           </div>
-          <Link
-            to="/admin/students"
-            className="text-xs font-headings font-bold text-primary hover:underline flex items-center gap-1"
-          >
-            View All Students
-            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/students?tab=leaves"
+              className="text-xs font-headings font-bold text-primary hover:underline flex items-center gap-1 bg-primary/10 px-3.5 py-1.5 rounded-full transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">event_busy</span>
+              Student Leaves
+            </Link>
+            <Link
+              to="/admin/faculty?tab=leaves"
+              className="text-xs font-headings font-bold text-secondary hover:underline flex items-center gap-1 bg-secondary/10 px-3.5 py-1.5 rounded-full transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">badge</span>
+              Faculty Leaves
+            </Link>
+            <Link
+              to="/admin/students"
+              className="text-xs font-headings font-bold text-primary hover:underline flex items-center gap-1"
+            >
+              View All Students
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </Link>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
