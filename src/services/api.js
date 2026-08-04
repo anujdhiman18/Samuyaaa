@@ -2858,6 +2858,14 @@ export const facultyService = {
     return { success: true, auditLog: fac?.auditLog || [] };
   },
 
+  getAllFacultyLeaves: async () => {
+    return facultyPanelService.getAllFacultyLeaves();
+  },
+
+  updateFacultyLeaveStatus: async (leaveId, status, adminRemarks = '', adminNote = '') => {
+    return facultyPanelService.updateFacultyLeaveStatus(leaveId, status, adminRemarks, adminNote);
+  },
+
   deleteFaculty: async (id, photoUrl) => {
     if (photoUrl) {
       deleteFirebaseFile(photoUrl).catch(() => {});
