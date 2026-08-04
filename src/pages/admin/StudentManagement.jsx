@@ -114,11 +114,14 @@ export default function StudentManagement() {
     if (showLoading) setLoadingLeaves(true);
     try {
       const res = await studentService.getAllStudentLeaves();
-      if (res && res.leaves) {
+      if (res && res.leaves && Array.isArray(res.leaves)) {
         setStudentLeaves(res.leaves);
+      } else {
+        setStudentLeaves([]);
       }
     } catch (err) {
       console.warn('Error fetching student leaves:', err);
+      setStudentLeaves([]);
     } finally {
       if (showLoading) setLoadingLeaves(false);
     }
@@ -544,7 +547,7 @@ export default function StudentManagement() {
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">group</span>
-          Student Directory ({students.length})
+          Student Directory ({(students || []).length})
         </button>
 
         <button
@@ -558,10 +561,10 @@ export default function StudentManagement() {
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">event_busy</span>
-          Student Leaves ({studentLeaves.length})
-          {studentLeaves.filter((l) => l.status === 'Pending').length > 0 && (
+          Student Leaves ({(Array.isArray(studentLeaves) ? studentLeaves : []).length})
+          {(Array.isArray(studentLeaves) ? studentLeaves.filter((l) => l && l.status === 'Pending') : []).length > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-extrabold text-[10px]">
-              {studentLeaves.filter((l) => l.status === 'Pending').length} Pending
+              {(Array.isArray(studentLeaves) ? studentLeaves.filter((l) => l && l.status === 'Pending') : []).length} Pending
             </span>
           )}
         </button>
