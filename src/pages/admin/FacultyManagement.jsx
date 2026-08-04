@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
@@ -23,7 +24,9 @@ const initialForm = {
 };
 
 export default function FacultyManagement() {
-  const [activeTab, setActiveTab] = useState('directory'); // 'directory' | 'applications' | 'requests'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'directory';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Credential Requests State
   const [credentialRequests, setCredentialRequests] = useState([]);
@@ -90,6 +93,13 @@ export default function FacultyManagement() {
     fetchLeaves();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const fetchFaculty = async () => {
     setLoading(true);

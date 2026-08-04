@@ -7,6 +7,7 @@ const navItems = [
   { path: '/admin/attendance', label: 'Attendance Register', icon: 'fact_check' },
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
+  { path: '/admin/faculty?tab=leaves', label: 'Faculty Leaves', icon: 'event_busy' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
   { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
@@ -17,11 +18,18 @@ const navItems = [
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const location = useLocation();
 
-  const isLinkActive = (path) => {
-    if (path === '/admin') {
+  const isLinkActive = (itemPath) => {
+    if (itemPath === '/admin') {
       return location.pathname === '/admin';
     }
-    return location.pathname.startsWith(path);
+    if (itemPath.includes('?tab=')) {
+      const tabParam = itemPath.split('?tab=')[1];
+      return location.pathname.startsWith('/admin/faculty') && location.search.includes(`tab=${tabParam}`);
+    }
+    if (itemPath === '/admin/faculty') {
+      return location.pathname === '/admin/faculty' && (!location.search || !location.search.includes('tab=leaves'));
+    }
+    return location.pathname.startsWith(itemPath);
   };
 
   return (
