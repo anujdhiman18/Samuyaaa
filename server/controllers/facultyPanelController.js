@@ -261,23 +261,37 @@ export const getFacultyLeaves = async (req, res) => {
 export const applyFacultyLeave = async (req, res) => {
   try {
     const facultyId = req.body.facultyId || req.user?._id || req.user?.id || 'f_jitender';
+    const employeeId = req.body.employeeId || req.user?.employeeId || 'EMP-2025-014';
     const facultyName = req.body.facultyName || req.user?.name || req.user?.fullName || 'Prof. Jitender Sharma';
     const facultyEmail = req.body.facultyEmail || req.user?.email || 'jitender.sharma@saumyaa.edu.in';
+    const department = req.body.department || req.user?.department || 'Science & Mathematics';
     const branch = req.body.branch || req.user?.branch || 'Bagru';
     const leaveType = req.body.leaveType || 'Casual Leave';
     const startDate = req.body.startDate || new Date().toISOString().split('T')[0];
     const endDate = req.body.endDate || new Date().toISOString().split('T')[0];
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const numberOfDays = req.body.numberOfDays || (isNaN(diffDays) ? 1 : diffDays);
+
     const reason = req.body.reason || 'Leave requested';
+    const supportingDocument = req.body.supportingDocument || req.body.documentUrl || '';
 
     const leave = await FacultyLeave.create({
       facultyId,
+      employeeId,
       facultyName,
       facultyEmail,
+      department,
       branch,
       leaveType,
       startDate,
       endDate,
+      numberOfDays,
       reason,
+      supportingDocument,
       status: 'Pending',
     });
 

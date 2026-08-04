@@ -637,7 +637,7 @@ export const getAllFacultyLeaves = async (req, res) => {
 export const updateFacultyLeaveStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, adminNote } = req.body;
+    const { status, adminRemarks, adminNote } = req.body;
     const FacultyLeave = (await import('../models/FacultyLeave.js')).default;
 
     const leave = await FacultyLeave.findById(id);
@@ -646,8 +646,16 @@ export const updateFacultyLeaveStatus = async (req, res) => {
     }
 
     leave.status = status || 'Approved';
-    if (adminNote) leave.adminNote = adminNote;
+    if (adminRemarks !== undefined) leave.adminRemarks = adminRemarks;
+    if (adminNote !== undefined) leave.adminNote = adminNote;
     await leave.save();
+
+    // Send automated notification to Faculty
+    try {
+      const { sendGenericSMS } = await import('../services/twilioService.js');
+      const smsMsg = `Saumyaa Studies: Your leave application (${leave.leaveType}) from ${leave.startDate} to ${leave.endDate} has been ${leave.status}. ${leave.adminRemarks ? 'Remarks: ' + leave.adminRemarks : ''}`;
+      await sendGenericSMS('9816099999', smsMsg);
+    } catch (smsErr) {}
 
     res.json({ success: true, leave, message: `Leave application ${leave.status} successfully` });
   } catch (error) {

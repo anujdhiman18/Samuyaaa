@@ -80,9 +80,14 @@ export default function FacultyManagement() {
   const [selectedBulkSections, setSelectedBulkSections] = useState(['Section A']);
   const [assigningResp, setAssigningResp] = useState(false);
 
-  // Faculty Leaves State
+  // Faculty Leaves Management State
   const [leavesList, setLeavesList] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(false);
+  const [leaveSearchQuery, setLeaveSearchQuery] = useState('');
+  const [leaveStatusFilter, setLeaveStatusFilter] = useState('All');
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState('All');
+  const [selectedLeaveApp, setSelectedLeaveApp] = useState(null);
+  const [adminRemarksInput, setAdminRemarksInput] = useState('');
 
   const { addToast } = useToast();
 
@@ -142,10 +147,12 @@ export default function FacultyManagement() {
     }
   };
 
-  const handleUpdateLeaveStatus = async (leaveId, status) => {
+  const handleUpdateLeaveStatus = async (leaveId, status, remarks = '') => {
     try {
-      const res = await facultyService.updateFacultyLeaveStatus(leaveId, status);
+      const res = await facultyService.updateFacultyLeaveStatus(leaveId, status, remarks);
       addToast(res.message || `Leave application ${status} successfully`, 'success');
+      setSelectedLeaveApp(null);
+      setAdminRemarksInput('');
       fetchLeaves();
     } catch (err) {
       addToast('Error updating leave status', 'error');
@@ -871,23 +878,84 @@ export default function FacultyManagement() {
       {/* TAB 4: FACULTY LEAVE APPLICATIONS & MESSAGES */}
       {activeTab === 'leaves' && (
         <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 p-6 space-y-4 font-body">
+          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant/15 pb-4">
             <div>
               <h3 className="font-headings font-extrabold text-lg text-secondary flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">event_busy</span>
-                Faculty Leave Applications & Messages
+                Faculty Leave Management System
               </h3>
               <p className="text-xs text-on-surface-variant">
-                Review, approve, or reject leave applications submitted by faculty members.
+                Search, filter, review, approve or reject leave applications submitted by faculty members.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold">
+              <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold shadow-sm border border-amber-300">
                 {leavesList.filter((l) => l.status === 'Pending').length} Pending Requests
               </span>
             </div>
           </div>
 
+          {/* Search & Multi-Filters Toolbar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/15 text-xs">
+            {/* Search Input */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search faculty, ID, department..."
+                value={leaveSearchQuery}
+                onChange={(e) => setLeaveSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-medium bg-white"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <select
+                value={leaveStatusFilter}
+                onChange={(e) => setLeaveStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+
+            {/* Leave Type Filter */}
+            <div>
+              <select
+                value={leaveTypeFilter}
+                onChange={(e) => setLeaveTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="All">All Leave Types</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Duty Leave">Duty Leave</option>
+                <option value="Earned Leave">Earned Leave</option>
+              </select>
+            </div>
+
+            {/* Reset Filters */}
+            <button
+              onClick={() => {
+                setLeaveSearchQuery('');
+                setLeaveStatusFilter('All');
+                setLeaveTypeFilter('All');
+              }}
+              className="px-4 py-2 rounded-xl border border-outline-variant/30 bg-white hover:bg-surface-container font-bold text-xs text-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+              Reset Filters
+            </button>
+          </div>
+
+          {/* Leave Table */}
           {loadingLeaves ? (
             <div className="p-8 text-center text-xs animate-pulse text-on-surface-variant">
               Loading faculty leave requests...
@@ -902,87 +970,230 @@ export default function FacultyManagement() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
-                    <th className="py-3.5 px-4 whitespace-nowrap">Faculty Name</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Faculty Member</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Department & Branch</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Leave Type</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Duration (Dates)</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Reason / Message</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Branch</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Duration & Days</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Reason / Statement</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Document</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
-                  {leavesList.map((l) => {
-                    const lId = String(l._id || l.id);
-                    return (
-                      <tr key={lId} className="hover:bg-surface-container-lowest transition-colors">
-                        <td className="py-3 px-4 font-bold text-secondary whitespace-nowrap">
-                          <div>
-                            <span className="block">{l.facultyName || 'Faculty Member'}</span>
-                            <span className="text-[10px] font-mono text-on-surface-variant">{l.facultyEmail || ''}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-800 font-bold text-[11px] border border-purple-200">
-                            {l.leaveType || 'Casual Leave'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-mono whitespace-nowrap">
-                          {l.startDate} to {l.endDate}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/60 text-secondary font-medium text-xs max-w-xs md:max-w-md">
-                            💬 "{l.reason || l.message || 'No reason specified'}"
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
-                            (l.branch || 'Bagru') === 'Daroh'
-                              ? 'bg-teal-100 text-teal-800 border border-teal-200'
-                              : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                          }`}>
-                            🏢 {l.branch || 'Bagru'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          {l.status === 'Approved' ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Approved</span>
-                          ) : l.status === 'Rejected' ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">🔴 Rejected</span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">🟡 Pending Approval</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          {l.status === 'Pending' ? (
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleUpdateLeaveStatus(lId, 'Approved')}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleUpdateLeaveStatus(lId, 'Rejected')}
-                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-                              >
-                                <span className="material-symbols-outlined text-[16px]">cancel</span>
-                                Reject
-                              </button>
+                  {leavesList
+                    .filter((l) => {
+                      const query = leaveSearchQuery.toLowerCase().trim();
+                      const matchesSearch =
+                        !query ||
+                        (l.facultyName || '').toLowerCase().includes(query) ||
+                        (l.employeeId || '').toLowerCase().includes(query) ||
+                        (l.department || '').toLowerCase().includes(query) ||
+                        (l.reason || '').toLowerCase().includes(query);
+                      const matchesStatus = leaveStatusFilter === 'All' || l.status === leaveStatusFilter;
+                      const matchesType = leaveTypeFilter === 'All' || l.leaveType === leaveTypeFilter;
+                      return matchesSearch && matchesStatus && matchesType;
+                    })
+                    .map((l) => {
+                      const lId = String(l._id || l.id);
+                      return (
+                        <tr key={lId} className="hover:bg-surface-container-lowest transition-colors">
+                          <td className="py-3 px-4 font-bold text-secondary whitespace-nowrap">
+                            <div>
+                              <span className="block">{l.facultyName || 'Prof. Jitender Sharma'}</span>
+                              <span className="text-[10px] font-mono text-primary font-semibold">
+                                {l.employeeId || 'EMP-2025-014'} &bull; {l.facultyEmail || ''}
+                              </span>
                             </div>
-                          ) : (
-                            <span className="text-xs text-on-surface-variant font-bold italic">Decision Saved</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div>
+                              <span className="block font-medium text-secondary text-[11px]">
+                                {l.department || 'Science & Mathematics'}
+                              </span>
+                              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                                (l.branch || 'Bagru') === 'Daroh'
+                                  ? 'bg-teal-100 text-teal-800 border border-teal-200'
+                                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                              }`}>
+                                🏢 {l.branch || 'Bagru'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-800 font-bold text-[11px] border border-purple-200">
+                              {l.leaveType || 'Casual Leave'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span className="block font-mono text-[11px]">
+                              {l.startDate} to {l.endDate}
+                            </span>
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-extrabold text-[10px]">
+                              {l.numberOfDays || 1} Day(s)
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 max-w-xs">
+                            <div className="p-2 rounded-xl bg-amber-50/80 border border-amber-200/60 text-secondary font-medium text-xs truncate">
+                              💬 "{l.reason || l.message || 'No reason specified'}"
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            {l.supportingDocument ? (
+                              <a
+                                href={l.supportingDocument}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-bold text-[10px] flex items-center gap-1 hover:underline w-fit"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">description</span>
+                                View Doc
+                              </a>
+                            ) : (
+                              <span className="text-on-surface-variant text-[11px] italic">None</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            {l.status === 'Approved' ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Approved</span>
+                            ) : l.status === 'Rejected' ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">🔴 Rejected</span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">🟡 Pending Approval</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                setSelectedLeaveApp(l);
+                                setAdminRemarksInput(l.adminRemarks || l.adminNote || '');
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">pageview</span>
+                              Review & Manage
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
+      )}
+
+      {/* LEAVE REVIEW & MANAGEMENT MODAL */}
+      {selectedLeaveApp && (
+        <Modal
+          isOpen={Boolean(selectedLeaveApp)}
+          onClose={() => setSelectedLeaveApp(null)}
+          title={`Review Leave Application: ${selectedLeaveApp.leaveType}`}
+        >
+          <div className="space-y-4 font-body text-xs text-on-surface">
+            {/* Header profile info */}
+            <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="text-[11px] text-on-surface-variant block">Faculty Name</span>
+                <span className="font-bold text-secondary text-sm">{selectedLeaveApp.facultyName || 'Prof. Jitender Sharma'}</span>
+                <span className="block font-mono text-[11px] text-primary mt-0.5">{selectedLeaveApp.employeeId || 'EMP-2025-014'}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-on-surface-variant block">Department & Branch</span>
+                <span className="font-bold text-secondary">{selectedLeaveApp.department || 'Science & Mathematics'}</span>
+                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
+              </div>
+            </div>
+
+            {/* Leave Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl border border-outline-variant/15 bg-white">
+              <div>
+                <span className="text-[11px] text-on-surface-variant block">Leave Type</span>
+                <span className="font-extrabold text-purple-800">{selectedLeaveApp.leaveType}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-on-surface-variant block">Date Range</span>
+                <span className="font-mono font-bold text-secondary">{selectedLeaveApp.startDate} to {selectedLeaveApp.endDate}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-on-surface-variant block">Duration</span>
+                <span className="font-extrabold text-primary">{selectedLeaveApp.numberOfDays || 1} Day(s)</span>
+              </div>
+            </div>
+
+            {/* Reason Statement */}
+            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/60 space-y-1">
+              <span className="font-bold text-amber-900 block text-xs flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">chat</span>
+                Reason Statement from Faculty:
+              </span>
+              <p className="text-secondary italic text-xs font-medium leading-relaxed">
+                "{selectedLeaveApp.reason || selectedLeaveApp.message || 'No reason specified'}"
+              </p>
+            </div>
+
+            {/* Supporting Document */}
+            {selectedLeaveApp.supportingDocument && (
+              <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/60 flex items-center justify-between">
+                <span className="font-bold text-blue-900 text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px]">attachment</span>
+                  Supporting Medical / Official Document Attached
+                </span>
+                <a
+                  href={selectedLeaveApp.supportingDocument}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                  Open Document
+                </a>
+              </div>
+            )}
+
+            {/* Admin Remarks Input */}
+            <div className="space-y-1 pt-2">
+              <label className="font-bold text-secondary block text-xs">
+                Admin Remarks / Feedback (Visible to Faculty)
+              </label>
+              <textarea
+                rows={3}
+                value={adminRemarksInput}
+                onChange={(e) => setAdminRemarksInput(e.target.value)}
+                placeholder="Enter remarks for the faculty member (e.g. Approved by Principal. Please arrange substitute classes)..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-medium"
+              />
+            </div>
+
+            {/* Action Bar */}
+            <div className="pt-4 border-t border-outline-variant/15 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedLeaveApp(null)}
+                className="px-5 py-2 rounded-full border border-outline-variant/30 text-xs font-bold text-secondary hover:bg-surface-container"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateLeaveStatus(selectedLeaveApp._id || selectedLeaveApp.id, 'Rejected', adminRemarksInput)}
+                className="px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm flex items-center gap-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">cancel</span>
+                Reject Application
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateLeaveStatus(selectedLeaveApp._id || selectedLeaveApp.id, 'Approved', adminRemarksInput)}
+                className="px-6 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                Approve Leave
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* APPLICATION DETAILS & REVIEW MODAL */}

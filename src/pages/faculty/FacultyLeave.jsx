@@ -17,6 +17,7 @@ export default function FacultyLeave() {
   const [startDate, setStartDate] = useState('2026-08-20');
   const [endDate, setEndDate] = useState('2026-08-21');
   const [reason, setReason] = useState('');
+  const [supportingDocument, setSupportingDocument] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -37,19 +38,31 @@ export default function FacultyLeave() {
     }
   };
 
+  const getCalculatedDays = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return isNaN(diffDays) ? 1 : diffDays;
+  };
+
   const handleApply = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const res = await facultyPanelService.applyFacultyLeave({
         facultyId: user?._id || user?.id || 'f_jitender',
-        facultyName: user?.name || 'Prof. Jitender Sharma',
+        employeeId: user?.employeeId || 'EMP-2025-014',
+        facultyName: user?.name || user?.fullName || 'Prof. Jitender Sharma',
         facultyEmail: user?.email || 'jitender.sharma@saumyaa.edu.in',
+        department: user?.department || 'Science & Mathematics',
         branch: user?.branch || 'Bagru',
         leaveType,
         startDate,
         endDate,
+        numberOfDays: getCalculatedDays(),
         reason,
+        supportingDocument,
         status: 'Pending',
       });
 
@@ -57,6 +70,7 @@ export default function FacultyLeave() {
         addToast('Leave application submitted for admin approval!', 'success');
         setApplyModalOpen(false);
         setReason('');
+        setSupportingDocument('');
         fetchLeaves();
       }
     } catch (err) {
@@ -89,7 +103,7 @@ export default function FacultyLeave() {
             Faculty Leave Applications
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Apply for leave (Casual, Sick, Duty Leave) & track application approvals.
+            Apply for leave (Casual, Sick, Duty Leave) & track application approvals in real-time.
           </p>
         </div>
 
@@ -118,23 +132,45 @@ export default function FacultyLeave() {
               <thead>
                 <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[11px]">
                   <th className="py-3.5 px-4 whitespace-nowrap">Leave Type</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Start Date</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">End Date</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Reason</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Duration (Dates)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Days</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Reason / Statement</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Document</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Submitted On</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Admin Remarks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
                 {leaves.map((l) => (
                   <tr key={l._id || l.id} className="hover:bg-surface-container-lowest transition-colors">
                     <td className="py-3 px-4 font-bold text-secondary whitespace-nowrap">{l.leaveType}</td>
-                    <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap">{l.startDate}</td>
-                    <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap">{l.endDate}</td>
+                    <td className="py-3 px-4 font-mono text-on-surface-variant whitespace-nowrap">
+                      {l.startDate} to {l.endDate}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-extrabold text-[11px]">
+                        {l.numberOfDays || 1} Day(s)
+                      </span>
+                    </td>
                     <td className="py-3 px-4 text-secondary max-w-xs truncate">{l.reason}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {l.supportingDocument ? (
+                        <a
+                          href={l.supportingDocument}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold text-[10px] flex items-center gap-1 hover:underline w-fit"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">attachment</span>
+                          View Doc
+                        </a>
+                      ) : (
+                        <span className="text-on-surface-variant text-[11px] italic">None</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 whitespace-nowrap">{getStatusBadge(l.status)}</td>
-                    <td className="py-3 px-4 font-mono text-on-surface-variant whitespace-nowrap text-[11px]">
-                      {new Date(l.createdAt || Date.now()).toLocaleDateString()}
+                    <td className="py-3 px-4 text-xs italic text-secondary">
+                      {l.adminRemarks || l.adminNote || 'No remarks yet'}
                     </td>
                   </tr>
                 ))}
@@ -150,17 +186,17 @@ export default function FacultyLeave() {
         onClose={() => setApplyModalOpen(false)}
         title="Apply for Faculty Leave"
       >
-        <form onSubmit={handleApply} className="space-y-4 font-body">
+        <form onSubmit={handleApply} className="space-y-4 font-body text-xs">
           <div>
             <label className="block text-xs font-bold text-secondary mb-1">Leave Type *</label>
             <select
               value={leaveType}
               onChange={(e) => setLeaveType(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
             >
               <option value="Casual Leave">Casual Leave</option>
-              <option value="Sick Leave">Sick Leave</option>
-              <option value="Duty Leave">Duty Leave (Conference/Official)</option>
+              <option value="Sick Leave">Sick Leave (Medical Emergency)</option>
+              <option value="Duty Leave">Duty Leave (Official / Conference)</option>
               <option value="Earned Leave">Earned Leave</option>
             </select>
           </div>
@@ -173,7 +209,7 @@ export default function FacultyLeave() {
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -183,9 +219,14 @@ export default function FacultyLeave() {
                 required
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
               />
             </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between">
+            <span className="font-bold text-secondary text-xs">Total Duration:</span>
+            <span className="font-headings font-extrabold text-primary text-xs">{getCalculatedDays()} Day(s)</span>
           </div>
 
           <div>
@@ -196,8 +237,20 @@ export default function FacultyLeave() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
-              placeholder="State clear reason for your leave request..."
+              placeholder="State clear reason for your leave request (e.g. High fever, doctor advised 2 days rest)..."
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-secondary mb-1">Supporting Document / Certificate URL (Optional)</label>
+            <input
+              type="url"
+              value={supportingDocument}
+              onChange={(e) => setSupportingDocument(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              placeholder="https://example.com/medical-certificate.pdf"
+            />
+            <p className="text-[10px] text-on-surface-variant mt-1">Upload medical fitness certificate or official event invitation link if applicable.</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant/15">
@@ -211,7 +264,7 @@ export default function FacultyLeave() {
             <button
               type="submit"
               disabled={submitting}
-              className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50"
+              className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50 cursor-pointer"
             >
               {submitting ? 'Submitting...' : 'Submit Application'}
             </button>

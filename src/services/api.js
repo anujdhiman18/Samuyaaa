@@ -4162,21 +4162,23 @@ export const facultyPanelService = {
     return { success: true, leaves: combined };
   },
 
-  updateFacultyLeaveStatus: async (leaveId, status, adminNote = '') => {
+  updateFacultyLeaveStatus: async (leaveId, status, adminRemarks = '', adminNote = '') => {
     try {
       await apiCall(`/admin/faculty-leaves/${leaveId}/status`, {
         method: 'PUT',
-        body: JSON.stringify({ status, adminNote }),
+        body: JSON.stringify({ status, adminRemarks, adminNote }),
       });
     } catch (e) {}
 
     const list = getStoredLeaves().map((l) =>
-      String(l._id || l.id) === String(leaveId) ? { ...l, status, adminNote, updatedAt: new Date().toISOString() } : l
+      String(l._id || l.id) === String(leaveId)
+        ? { ...l, status, adminRemarks, adminNote, updatedAt: new Date().toISOString() }
+        : l
     );
     setStoredLeaves(list);
 
     try {
-      await setDoc(doc(db, 'faculty_leaves', String(leaveId)), { status, adminNote, updatedAt: new Date().toISOString() }, { merge: true });
+      await setDoc(doc(db, 'faculty_leaves', String(leaveId)), { status, adminRemarks, adminNote, updatedAt: new Date().toISOString() }, { merge: true });
     } catch (e) {}
 
     return { success: true, message: `Leave application ${status} successfully` };
@@ -4184,25 +4186,36 @@ export const facultyPanelService = {
 
   applyFacultyLeave: async (data) => {
     const id = 'flv_' + Date.now();
+    const start = new Date(data.startDate || Date.now());
+    const end = new Date(data.endDate || Date.now());
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const numberOfDays = data.numberOfDays || (isNaN(diffDays) ? 1 : diffDays);
+
     const newLeave = {
       _id: id,
       id,
       facultyId: data.facultyId || 'f_jitender',
+      employeeId: data.employeeId || 'EMP-2025-014',
       facultyName: data.facultyName || 'Prof. Jitender Sharma',
       facultyEmail: data.facultyEmail || 'jitender.sharma@saumyaa.edu.in',
+      department: data.department || 'Science & Mathematics',
       branch: data.branch || 'Bagru',
       leaveType: data.leaveType || 'Casual Leave',
       startDate: data.startDate,
       endDate: data.endDate,
+      numberOfDays,
       reason: data.reason || 'Leave requested',
+      supportingDocument: data.supportingDocument || data.documentUrl || '',
       status: 'Pending',
+      adminRemarks: '',
       createdAt: new Date().toISOString(),
     };
 
     try {
       const remote = await apiCall('/faculty-panel/leaves', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(newLeave),
       });
       if (remote && remote.leave) {
         if (remote.leave._id || remote.leave.id) {
