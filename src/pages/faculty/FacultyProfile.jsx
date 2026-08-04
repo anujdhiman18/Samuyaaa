@@ -208,12 +208,36 @@ export default function FacultyProfile() {
             </div>
 
             <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/15 space-y-2">
-              <span className="text-xs font-bold text-secondary block">Assigned Classes & Courses (Admin Allocated)</span>
-              <div className="flex flex-wrap gap-2 text-[11px]">
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Class 10th (Mathematics)</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Class 11th (+1 Physics)</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Class 12th (+2 Mathematics)</span>
-              </div>
+              <span className="text-xs font-bold text-secondary block">Assigned Academic Responsibilities (Admin Allocated)</span>
+              {user?.responsibilities && user.responsibilities.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    {user.responsibilities.map((r, i) => (
+                      <div key={r.id || r._id || i} className="p-2.5 rounded-lg border border-outline-variant/20 bg-white space-y-0.5">
+                        <div className="flex justify-between font-bold text-secondary text-xs">
+                          <span>Class {r.className} ({r.section || 'Sec A'})</span>
+                          <span className="text-[10px] text-primary">{r.academicSession || '2026-2027'}</span>
+                        </div>
+                        <p className="text-primary font-semibold">{r.subject}</p>
+                        <p className="text-[10px] text-on-surface-variant">{r.course || 'Science'} &bull; {r.batch || 'Batch A'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 text-[11px]">
+                  {(user?.assignedClasses || ['10th', '11th (+1)', '12th (+2)']).map((cls, idx) => (
+                    <span key={idx} className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                      Class {cls}
+                    </span>
+                  ))}
+                  {(user?.assignedSubjects || ['Mathematics', 'Physics']).map((sub, idx) => (
+                    <span key={idx} className="px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold">
+                      Subject: {sub}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-outline-variant/15 flex justify-end">

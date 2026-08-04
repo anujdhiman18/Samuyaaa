@@ -42,6 +42,18 @@ export default function FacultyDashboard() {
     activeAnnouncementsCount: 4,
   };
 
+  const responsibilities = user?.responsibilities || [];
+  const derivedClasses = responsibilities.length > 0 
+    ? Array.from(new Set(responsibilities.map((r) => r.className)))
+    : (user?.assignedClasses || ['10th', '11th (+1)', '12th (+2)']);
+
+  const derivedSubjects = responsibilities.length > 0 
+    ? Array.from(new Set(responsibilities.map((r) => r.subject)))
+    : (user?.assignedSubjects || ['Mathematics', 'Physics']);
+
+  const assignedClassesStr = derivedClasses.join(', ');
+  const assignedSubjectsStr = derivedSubjects.join(', ');
+
   return (
     <div className="space-y-6 font-body">
       {/* Welcome Banner */}
@@ -54,7 +66,7 @@ export default function FacultyDashboard() {
             Welcome back, {user?.name || 'Prof. Jitender Sharma'}!
           </h1>
           <p className="text-xs text-surface-container mt-1">
-            Assigned Classes: <strong className="text-white">10th, 11th (+1), 12th (+2)</strong> &bull; Assigned Subjects: <strong className="text-white">Mathematics, Physics</strong>
+            Assigned Classes: <strong className="text-white">{assignedClassesStr}</strong> &bull; Assigned Subjects: <strong className="text-white">{assignedSubjectsStr}</strong>
           </p>
         </div>
 
@@ -121,6 +133,37 @@ export default function FacultyDashboard() {
           <span className="font-headings font-extrabold text-2xl text-emerald-700 block">{stats.activeAnnouncementsCount}</span>
         </div>
       </div>
+
+      {/* Active Academic Responsibilities Widget */}
+      {responsibilities.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-3">
+          <div className="flex justify-between items-center border-b border-outline-variant/15 pb-3">
+            <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">assignment_ind</span>
+              Assigned Academic Responsibilities ({responsibilities.length})
+            </h3>
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              Assigned by Admin
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {responsibilities.map((resp, idx) => (
+              <div key={resp.id || resp._id || idx} className="p-3.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest space-y-1 hover:border-primary/40 transition-all">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-xs text-secondary">{resp.className} &bull; {resp.section || 'Sec A'}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">{resp.academicSession || '2026-2027'}</span>
+                </div>
+                <p className="text-xs font-semibold text-primary">{resp.subject}</p>
+                <div className="flex justify-between items-center text-[10px] text-on-surface-variant pt-1 border-t border-outline-variant/10">
+                  <span>{resp.course || 'Science'}</span>
+                  <span>{resp.batch || 'Batch A'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

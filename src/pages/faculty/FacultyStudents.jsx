@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService } from '../../services/api';
 import Modal from '../../components/admin/Modal';
+import { useAuth } from '../../context/AuthContext';
 
 export default function FacultyStudents() {
+  const { user } = useAuth();
+  const responsibilities = user?.responsibilities || [];
+
+  const availableClasses = responsibilities.length > 0
+    ? Array.from(new Set(responsibilities.map((r) => r.className)))
+    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -44,7 +52,7 @@ export default function FacultyStudents() {
             </span>
           </div>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Enrolled students across your assigned classes (10th, 11th, 12th). View academic performance & attendance.
+            Enrolled students across your assigned classes ({availableClasses.join(', ')}). View academic performance & attendance.
           </p>
         </div>
 
@@ -56,9 +64,9 @@ export default function FacultyStudents() {
             className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
           >
             <option value="All">All Assigned Classes</option>
-            <option value="10th">Class 10th</option>
-            <option value="11th (+1)">Class 11th (+1)</option>
-            <option value="12th (+2)">Class 12th (+2)</option>
+            {availableClasses.map((cls) => (
+              <option key={cls} value={cls}>Class {cls}</option>
+            ))}
           </select>
         </div>
       </div>

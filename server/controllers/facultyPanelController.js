@@ -44,6 +44,14 @@ export const facultyLogin = async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    const derivedClasses = faculty.responsibilities && faculty.responsibilities.length > 0
+      ? Array.from(new Set(faculty.responsibilities.map((r) => r.className)))
+      : (faculty.assignedClasses || ['10th', '11th (+1)', '12th (+2)']);
+
+    const derivedSubjects = faculty.responsibilities && faculty.responsibilities.length > 0
+      ? Array.from(new Set(faculty.responsibilities.map((r) => r.subject)))
+      : (faculty.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+
     res.json({
       success: true,
       token,
@@ -55,8 +63,9 @@ export const facultyLogin = async (req, res) => {
         role: 'Faculty',
         designation: faculty.designation,
         department: faculty.department,
-        assignedClasses: faculty.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
-        assignedSubjects: faculty.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+        responsibilities: faculty.responsibilities || [],
+        assignedClasses: derivedClasses,
+        assignedSubjects: derivedSubjects,
         photo_url: faculty.photo_url,
       },
     });

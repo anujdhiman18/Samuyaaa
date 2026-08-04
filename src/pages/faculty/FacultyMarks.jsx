@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService, marksService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function FacultyMarks() {
   const { addToast } = useToast();
+  const { user } = useAuth();
 
-  const [selectedClass, setSelectedClass] = useState('10th');
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics Advanced');
+  const responsibilities = user?.responsibilities || [];
+
+  const availableClasses = responsibilities.length > 0
+    ? Array.from(new Set(responsibilities.map((r) => r.className)))
+    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
+
+  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '10th');
+
+  const availableSubjects = responsibilities.length > 0
+    ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || r.className === selectedClass).map((r) => r.subject)))
+    : (user?.assignedSubjects?.length > 0 ? user.assignedSubjects : ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+
+  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [examType, setExamType] = useState('Internal Assessment 1');
   const [students, setStudents] = useState([]);
   const [marksMap, setMarksMap] = useState({}); // studentId -> { marksObtained: '', practicalMarks: '', assignmentMarks: '', totalMax: 100 }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (availableClasses.length > 0 && !availableClasses.includes(selectedClass)) {
+      setSelectedClass(availableClasses[0]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(selectedSubject)) {
+      setSelectedSubject(availableSubjects[0]);
+    }
+  }, [selectedClass, user]);
 
   useEffect(() => {
     fetchClassStudents();
@@ -128,9 +153,9 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            <option value="10th">Class 10th</option>
-            <option value="11th (+1)">Class 11th (+1)</option>
-            <option value="12th (+2)">Class 12th (+2)</option>
+            {availableClasses.map((cls) => (
+              <option key={cls} value={cls}>Class {cls}</option>
+            ))}
           </select>
         </div>
 
@@ -141,8 +166,9 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            <option value="Mathematics Advanced">Mathematics Advanced</option>
-            <option value="Physics IIT-JEE Prep">Physics IIT-JEE Prep</option>
+            {availableSubjects.map((sub) => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
           </select>
         </div>
 

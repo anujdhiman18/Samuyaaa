@@ -466,6 +466,11 @@ export const assignResponsibilities = async (req, res) => {
         performedBy: assignedBy,
         timestamp: new Date(),
       });
+
+      // Sync derived assignedClasses and assignedSubjects
+      faculty.assignedClasses = Array.from(new Set(faculty.responsibilities.map((r) => r.className)));
+      faculty.assignedSubjects = Array.from(new Set(faculty.responsibilities.map((r) => r.subject)));
+
       await faculty.save();
     }
 
@@ -495,6 +500,10 @@ export const removeResponsibility = async (req, res) => {
       faculty.responsibilities = faculty.responsibilities.filter(
         (r) => r.id !== respId && String(r._id) !== String(respId)
       );
+
+      // Sync derived assignedClasses and assignedSubjects
+      faculty.assignedClasses = Array.from(new Set(faculty.responsibilities.map((r) => r.className)));
+      faculty.assignedSubjects = Array.from(new Set(faculty.responsibilities.map((r) => r.subject)));
 
       faculty.auditLog.unshift({
         id: 'audit_' + Date.now(),

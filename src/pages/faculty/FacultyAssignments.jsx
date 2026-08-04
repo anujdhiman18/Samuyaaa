@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { facultyPanelService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
+import { useAuth } from '../../context/AuthContext';
 
 export default function FacultyAssignments() {
   const { addToast } = useToast();
+  const { user } = useAuth();
+
+  const responsibilities = user?.responsibilities || [];
+
+  const availableClasses = responsibilities.length > 0
+    ? Array.from(new Set(responsibilities.map((r) => r.className)))
+    : (user?.assignedClasses?.length > 0 ? user.assignedClasses : ['10th', '11th (+1)', '12th (+2)']);
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,11 +21,28 @@ export default function FacultyAssignments() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newClass, setNewClass] = useState('10th');
-  const [newSubject, setNewSubject] = useState('Mathematics Advanced');
+  const [newClass, setNewClass] = useState(() => availableClasses[0] || '10th');
+
+  const availableSubjects = responsibilities.length > 0
+    ? Array.from(new Set(responsibilities.filter((r) => !newClass || r.className === newClass).map((r) => r.subject)))
+    : (user?.assignedSubjects?.length > 0 ? user.assignedSubjects : ['Mathematics Advanced', 'Physics IIT-JEE Prep']);
+
+  const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [newDueDate, setNewDueDate] = useState('2026-08-15');
   const [newMarks, setNewMarks] = useState(50);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (availableClasses.length > 0 && !availableClasses.includes(newClass)) {
+      setNewClass(availableClasses[0]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(newSubject)) {
+      setNewSubject(availableSubjects[0]);
+    }
+  }, [newClass, user]);
 
   // Review Submissions Modal
   const [reviewAssignment, setReviewAssignment] = useState(null);
@@ -203,9 +228,9 @@ export default function FacultyAssignments() {
                 onChange={(e) => setNewClass(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                <option value="10th">Class 10th</option>
-                <option value="11th (+1)">Class 11th (+1)</option>
-                <option value="12th (+2)">Class 12th (+2)</option>
+                {availableClasses.map((cls) => (
+                  <option key={cls} value={cls}>Class {cls}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -215,8 +240,9 @@ export default function FacultyAssignments() {
                 onChange={(e) => setNewSubject(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                <option value="Mathematics Advanced">Mathematics Advanced</option>
-                <option value="Physics IIT-JEE Prep">Physics IIT-JEE Prep</option>
+                {availableSubjects.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
               </select>
             </div>
           </div>

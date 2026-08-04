@@ -2545,7 +2545,23 @@ export const facultyService = {
       method: 'POST',
       body: JSON.stringify({ responsibilities: newItems, assignedBy }),
     });
-    if (remote) return remote;
+    if (remote && remote.success) {
+      if (remote.faculty) {
+        try {
+          const currentUserStr = localStorage.getItem('saumyaa_user');
+          if (currentUserStr) {
+            const curr = JSON.parse(currentUserStr);
+            if (String(curr._id || curr.id) === String(facultyId)) {
+              curr.responsibilities = remote.faculty.responsibilities || [];
+              curr.assignedClasses = remote.faculty.assignedClasses || Array.from(new Set(curr.responsibilities.map(r => r.className)));
+              curr.assignedSubjects = remote.faculty.assignedSubjects || Array.from(new Set(curr.responsibilities.map(r => r.subject)));
+              localStorage.setItem('saumyaa_user', JSON.stringify(curr));
+            }
+          }
+        } catch (e) {}
+      }
+      return remote;
+    }
 
     const list = getStoredFaculty();
     const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
@@ -2633,7 +2649,23 @@ export const facultyService = {
       method: 'DELETE',
       body: JSON.stringify({ performedBy }),
     });
-    if (remote) return remote;
+    if (remote && remote.success) {
+      if (remote.faculty) {
+        try {
+          const currentUserStr = localStorage.getItem('saumyaa_user');
+          if (currentUserStr) {
+            const curr = JSON.parse(currentUserStr);
+            if (String(curr._id || curr.id) === String(facultyId)) {
+              curr.responsibilities = remote.faculty.responsibilities || [];
+              curr.assignedClasses = remote.faculty.assignedClasses || Array.from(new Set(curr.responsibilities.map(r => r.className)));
+              curr.assignedSubjects = remote.faculty.assignedSubjects || Array.from(new Set(curr.responsibilities.map(r => r.subject)));
+              localStorage.setItem('saumyaa_user', JSON.stringify(curr));
+            }
+          }
+        } catch (e) {}
+      }
+      return remote;
+    }
 
     const list = getStoredFaculty();
     const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
