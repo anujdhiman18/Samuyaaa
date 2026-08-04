@@ -3849,7 +3849,9 @@ const setStoredMaterials = (data) => localStorage.setItem('mock_faculty_material
 
 const getStoredLeaves = () => {
   try {
-    return JSON.parse(localStorage.getItem('mock_faculty_leaves')) || initialMockFacultyLeaves;
+    const list = JSON.parse(localStorage.getItem('mock_faculty_leaves'));
+    if (Array.isArray(list) && list.length > 0) return list;
+    return initialMockFacultyLeaves;
   } catch (e) {
     return initialMockFacultyLeaves;
   }
@@ -4119,15 +4121,20 @@ export const facultyPanelService = {
     const localLeaves = getStoredLeaves();
 
     const mergedMap = new Map();
-    [...remoteLeaves, ...(fsLeaves || []), ...localLeaves].forEach((item) => {
+    [...initialMockFacultyLeaves, ...localLeaves, ...(fsLeaves || []), ...remoteLeaves].forEach((item) => {
       const key = String(item._id || item.id || '');
-      if (key && !mergedMap.has(key)) {
-        mergedMap.set(key, item);
+      if (key) {
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        } else {
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, { ...existing, ...item });
+        }
       }
     });
 
     const combined = Array.from(mergedMap.values()).sort(
-      (a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now())
+      (a, b) => new Date(b.createdAt || b.updatedAt || Date.now()) - new Date(a.createdAt || a.updatedAt || Date.now())
     );
 
     setStoredLeaves(combined);
@@ -4143,19 +4150,32 @@ export const facultyPanelService = {
       }
     } catch (e) {}
 
+    let remotePanelLeaves = [];
+    try {
+      const remote2 = await apiCall('/faculty-panel/leaves');
+      if (remote2 && remote2.success && Array.isArray(remote2.leaves)) {
+        remotePanelLeaves = remote2.leaves;
+      }
+    } catch (e) {}
+
     const fsLeaves = await syncFirestoreCollection('faculty_leaves', initialMockFacultyLeaves);
     const localLeaves = getStoredLeaves();
 
     const mergedMap = new Map();
-    [...remoteLeaves, ...(fsLeaves || []), ...localLeaves].forEach((item) => {
+    [...initialMockFacultyLeaves, ...localLeaves, ...(fsLeaves || []), ...remoteLeaves, ...remotePanelLeaves].forEach((item) => {
       const key = String(item._id || item.id || '');
-      if (key && !mergedMap.has(key)) {
-        mergedMap.set(key, item);
+      if (key) {
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        } else {
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, { ...existing, ...item });
+        }
       }
     });
 
     const combined = Array.from(mergedMap.values()).sort(
-      (a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now())
+      (a, b) => new Date(b.createdAt || b.updatedAt || Date.now()) - new Date(a.createdAt || a.updatedAt || Date.now())
     );
 
     setStoredLeaves(combined);
