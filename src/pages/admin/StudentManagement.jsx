@@ -47,6 +47,8 @@ const initialStudentForm = {
 
 export default function StudentManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  const initialFeeFilter = searchParams.get('feeStatus') || 'All';
   const activeTab = searchParams.get('tab') || 'students';
 
   // Student Leaves Management State
@@ -381,7 +383,8 @@ export default function StudentManagement() {
   }, [filteredStudents, currentPage, itemsPerPage]);
 
   const filteredStudentLeaves = useMemo(() => {
-    return studentLeaves.filter((l) => {
+    const list = Array.isArray(studentLeaves) ? studentLeaves : [];
+    return list.filter((l) => {
       const matchSearch =
         !leaveSearch ||
         (l.studentName && l.studentName.toLowerCase().includes(leaveSearch.toLowerCase())) ||
