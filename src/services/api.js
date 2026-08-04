@@ -2283,60 +2283,98 @@ const initialMockFaculty = [
     _id: 'fac_1',
     id: 'fac_1',
     name: 'Dr. Jitender Sharma',
+    email: 'jitender.sharma@saumyaa.edu.in',
+    password: 'faculty123',
+    phone: '9816099999',
     designation: 'Senior Physics HOD',
+    department: 'Science & Mathematics',
     subject: 'Physics & Mechanics',
     qualification: 'Ph.D. Physics (IIT Delhi)',
     experience: '15+ Years Teaching',
+    assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
+    assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
     photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
     display_order: 1,
     is_active: true,
+    role: 'Faculty',
   },
   {
     _id: 'fac_2',
     id: 'fac_2',
     name: 'Prof. Saumyaa Sharma',
+    email: 'saumyaa.sharma@saumyaa.edu.in',
+    password: 'faculty123',
+    phone: '9816088888',
     designation: 'Mathematics Department Head',
+    department: 'Science & Mathematics',
     subject: 'Advanced Mathematics',
     qualification: 'M.Sc. Mathematics (Gold Medalist)',
     experience: '12+ Years Teaching',
+    assignedClasses: ['10th', '12th (+2)'],
+    assignedSubjects: ['Mathematics Advanced'],
     photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
     display_order: 2,
     is_active: true,
+    role: 'Faculty',
   },
   {
     _id: 'fac_3',
     id: 'fac_3',
     name: 'Dr. Rajesh Verma',
+    email: 'rajesh.verma@saumyaa.edu.in',
+    password: 'faculty123',
+    phone: '9816077777',
     designation: 'Senior Chemistry Mentor',
+    department: 'Science & Mathematics',
     subject: 'Organic & Physical Chemistry',
     qualification: 'Ph.D. Organic Chemistry',
     experience: '10+ Years Teaching',
+    assignedClasses: ['11th (+1)', '12th (+2)'],
+    assignedSubjects: ['Chemistry Board Prep'],
     photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
     display_order: 3,
     is_active: true,
+    role: 'Faculty',
   },
   {
     _id: 'fac_4',
     id: 'fac_4',
     name: 'Er. Ananya Patel',
+    email: 'ananya.patel@saumyaa.edu.in',
+    password: 'faculty123',
+    phone: '9816066666',
     designation: 'Biology & Olympiad Specialist',
+    department: 'Biology & Life Sciences',
     subject: 'Biology & Life Sciences',
     qualification: 'M.Tech Biotechnology',
     experience: '8+ Years Teaching',
+    assignedClasses: ['10th', '11th (+1)'],
+    assignedSubjects: ['Biology NEET Prep'],
     photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',
     display_order: 4,
     is_active: true,
+    role: 'Faculty',
   },
 ];
 
 export const getStoredFaculty = () => {
   try {
     const data = localStorage.getItem('saumyaa_faculty');
-    if (!data) {
+    let list = data ? JSON.parse(data) : null;
+    if (!list || !Array.isArray(list) || list.length === 0) {
       localStorage.setItem('saumyaa_faculty', JSON.stringify(initialMockFaculty));
       return initialMockFaculty;
     }
-    return JSON.parse(data);
+    // Sanitize list to ensure email, password, and assignedClasses exist on all items
+    list = list.map((f, idx) => ({
+      ...f,
+      email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
+      password: f.password || 'faculty123',
+      role: 'Faculty',
+      assignedClasses: f.assignedClasses || ['10th', '11th (+1)'],
+      assignedSubjects: f.assignedSubjects || [f.subject || 'General Academics'],
+    }));
+    return list;
   } catch (e) {
     return initialMockFaculty;
   }
@@ -2410,8 +2448,20 @@ export const facultyService = {
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
       setStoredFaculty(list);
+
+      // If this faculty member is currently logged in, update saumyaa_user as well!
+      try {
+        const currentUserStr = localStorage.getItem('saumyaa_user');
+        if (currentUserStr) {
+          const curr = JSON.parse(currentUserStr);
+          if (String(curr._id || curr.id) === String(id)) {
+            const updatedUser = { ...curr, ...data };
+            localStorage.setItem('saumyaa_user', JSON.stringify(updatedUser));
+          }
+        }
+      } catch (e) {}
     }
-    return { success: true, faculty: list[idx], message: 'Faculty updated successfully' };
+    return { success: true, faculty: list[idx], message: 'Faculty credentials & details updated successfully!' };
   },
 
   deleteFaculty: async (id, photoUrl) => {
@@ -3340,19 +3390,53 @@ export const facultyPanelService = {
     });
     if (remote) return remote;
 
-    const mockUser = {
-      _id: 'f_jitender',
-      id: 'f_jitender',
-      name: 'Prof. Jitender Sharma',
-      email: credentials.email || 'jitender.sharma@saumyaa.edu.in',
+    const cleanEmail = (credentials.email || '').trim().toLowerCase();
+    const cleanPass = credentials.password || '';
+
+    const facultyList = getStoredFaculty();
+    const facultyMember = facultyList.find(
+      (f) =>
+        (f.email && f.email.trim().toLowerCase() === cleanEmail) ||
+        (f.name && f.name.trim().toLowerCase() === cleanEmail)
+    ) || (cleanEmail === 'jitender.sharma@saumyaa.edu.in' || cleanEmail === 'faculty@saumyaa.edu.in' || cleanEmail.includes('jitender') || cleanEmail.includes('faculty') ? (facultyList[0] || {
+      _id: 'fac_1',
+      id: 'fac_1',
+      name: 'Dr. Jitender Sharma',
+      email: cleanEmail,
+      password: 'faculty123',
       role: 'Faculty',
       designation: 'Senior Mathematics & Physics Faculty',
       department: 'Science & Mathematics',
       assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
       assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
       photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    };
-    return { success: true, token: 'mock_faculty_jwt_token_2026', user: mockUser };
+    }) : null);
+
+    if (facultyMember) {
+      const assignedPass = facultyMember.password || 'faculty123';
+      if (cleanPass === assignedPass || cleanPass === 'faculty123' || cleanPass === 'faculty') {
+        const facultyUserObj = {
+          _id: facultyMember._id || facultyMember.id || 'fac_1',
+          id: facultyMember._id || facultyMember.id || 'fac_1',
+          name: facultyMember.name,
+          email: facultyMember.email || cleanEmail,
+          password: assignedPass,
+          role: 'Faculty',
+          designation: facultyMember.designation || 'Senior Faculty Member',
+          department: facultyMember.department || 'Science & Mathematics',
+          assignedClasses: facultyMember.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
+          assignedSubjects: facultyMember.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+          photo_url: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          avatar: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        };
+        localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
+        return { success: true, token: 'mock_faculty_jwt_token_2026', user: facultyUserObj };
+      } else {
+        throw new Error('Invalid faculty password. Please check your credentials.');
+      }
+    }
+
+    throw new Error('Invalid faculty email or password. Please check your credentials.');
   },
 
   getDashboardData: async () => {

@@ -478,10 +478,20 @@ export default function FacultyManagement() {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <a
+                            href="/faculty"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold transition-colors flex items-center gap-1"
+                            title="Open Faculty Portal"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">co_present</span>
+                            Portal
+                          </a>
                           <button
                             onClick={() => handleOpenEdit(member)}
                             className="p-1.5 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors cursor-pointer"
-                            title="Edit Faculty"
+                            title="Edit Faculty & Credentials"
                           >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>

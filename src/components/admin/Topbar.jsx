@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Topbar({ onToggleMobile }) {
   const { admin, logout } = useAuth();
@@ -53,8 +53,17 @@ export default function Topbar({ onToggleMobile }) {
         </div>
       </div>
 
-      {/* Right Controls: Notifications, Admin Profile */}
+      {/* Right Controls: Faculty Shortcut, Admin Profile */}
       <div className="flex items-center gap-3">
+        <Link
+          to="/faculty"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-headings font-bold text-xs transition-colors"
+          title="Switch to Faculty Portal"
+        >
+          <span className="material-symbols-outlined text-[18px]">co_present</span>
+          <span>Faculty Portal</span>
+        </Link>
+
         {/* Admin Profile Dropdown */}
         <div className="relative">
           <button
