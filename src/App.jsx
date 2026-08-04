@@ -70,7 +70,7 @@ class PortalErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-surface-container-low p-6 font-body text-center">
-          <div className="max-w-md bg-white p-8 rounded-3xl shadow-premium border border-outline-variant/15 space-y-4">
+          <div className="max-w-xl bg-white p-8 rounded-3xl shadow-premium border border-outline-variant/15 space-y-4">
             <span className="material-symbols-outlined text-5xl text-rose-500">warning</span>
             <h2 className="font-headings font-extrabold text-xl text-secondary">
               {this.props.portalName || 'Portal'} Temporary Error
@@ -78,10 +78,18 @@ class PortalErrorBoundary extends React.Component {
             <p className="text-xs text-on-surface-variant leading-relaxed">
               An isolated issue occurred within this section. Other parts of the application remain fully operational.
             </p>
+
+            {this.state.error && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-left font-mono text-[11px] text-rose-800 space-y-1 overflow-x-auto">
+                <div className="font-bold">Error Trace:</div>
+                <div>{this.state.error.toString()}</div>
+              </div>
+            )}
+
             <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
               <button
-                onClick={() => this.setState({ hasError: false })}
-                className="bg-primary text-white font-headings font-bold text-xs px-5 py-2.5 rounded-full shadow-premium hover:bg-primary-container transition-all"
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="bg-primary text-white font-headings font-bold text-xs px-5 py-2.5 rounded-full shadow-premium hover:bg-primary-container transition-all cursor-pointer"
               >
                 Retry Portal
               </button>

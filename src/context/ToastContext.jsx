@@ -63,7 +63,10 @@ export const ToastProvider = ({ children }) => {
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    return {
+      addToast: (msg, type = 'info') => console.log(`[Toast ${type}]:`, msg),
+      removeToast: () => {},
+    };
   }
   return context;
 };
