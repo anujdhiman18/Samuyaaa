@@ -46,18 +46,14 @@ const facultySchema = new mongoose.Schema(
       type: String,
       default: 'Science & Mathematics',
     },
-    assignedClasses: [
-      {
-        type: String,
-        default: '10th',
-      },
-    ],
-    assignedSubjects: [
-      {
-        type: String,
-        default: 'Mathematics',
-      },
-    ],
+    assignedClasses: {
+      type: [String],
+      default: [],
+    },
+    assignedSubjects: {
+      type: [String],
+      default: [],
+    },
     role: {
       type: String,
       default: 'Faculty',

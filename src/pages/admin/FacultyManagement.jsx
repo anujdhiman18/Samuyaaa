@@ -572,7 +572,7 @@ export default function FacultyManagement() {
                             title="Assign & Manage Academic Responsibilities"
                           >
                             <span className="material-symbols-outlined text-[14px]">assignment_add</span>
-                            Responsibilities ({member.responsibilities?.length || 2})
+                            Responsibilities ({member.responsibilities?.length || 0})
                           </button>
                           <a
                             href="/faculty"

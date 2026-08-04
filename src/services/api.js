@@ -2447,8 +2447,9 @@ export const getStoredFaculty = () => {
       email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
       password: f.password || 'faculty123',
       role: 'Faculty',
-      assignedClasses: f.assignedClasses || ['10th', '11th (+1)'],
-      assignedSubjects: f.assignedSubjects || [f.subject || 'General Academics'],
+      assignedClasses: f.assignedClasses || [],
+      assignedSubjects: f.assignedSubjects || [],
+      responsibilities: f.responsibilities || [],
     }));
     return list;
   } catch (e) {
@@ -2492,8 +2493,9 @@ export const facultyService = {
       subject: data.subject || 'General Academics',
       qualification: data.qualification || 'Master’s Degree',
       experience: data.experience || '5+ Years',
-      assignedClasses: data.assignedClasses && data.assignedClasses.length > 0 ? data.assignedClasses : ['10th', '11th (+1)'],
-      assignedSubjects: data.assignedSubjects && data.assignedSubjects.length > 0 ? data.assignedSubjects : [data.subject || 'Mathematics Advanced'],
+      assignedClasses: data.assignedClasses && data.assignedClasses.length > 0 ? data.assignedClasses : [],
+      assignedSubjects: data.assignedSubjects && data.assignedSubjects.length > 0 ? data.assignedSubjects : [],
+      responsibilities: [],
       photo_url: data.photo_url,
       display_order: Number(data.display_order) || 1,
       is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
