@@ -109,15 +109,13 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity duration-300 ${
-          animateIn ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity duration-300 ${animateIn ? 'opacity-100' : 'opacity-0'
+          }`}
       />
 
       <div
-        className={`bg-white w-full max-w-lg mx-gutter rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/10 relative transform transition-all duration-300 ease-out z-10 ${
-          animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-        }`}
+        className={`bg-white w-full max-w-lg mx-gutter rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/10 relative transform transition-all duration-300 ease-out z-10 ${animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
       >
         <div className="bg-surface-container-low px-6 py-4 border-b border-surface-container flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -193,7 +191,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="preferred-branch">
-                  Preferred Location *
+                  Preferred LOCATION *
                 </label>
                 <select
                   id="preferred-branch"
@@ -202,8 +200,8 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                   onChange={(e) => updateField('branch', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
                 >
-                  <option value="Bagru">Bagru (Main Location)</option>
-                  <option value="Daroh">Daroh (Child Location)</option>
+                  <option value="Bagru">Bagru (Main Branch)</option>
+                  <option value="Daroh">Daroh (Child Branch)</option>
                 </select>
               </div>
             </div>
@@ -311,11 +309,10 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                       key={d.label}
                       type="button"
                       onClick={() => setSelectedDate(d.label)}
-                      className={`date-btn border rounded-lg py-2 flex flex-col items-center justify-center transition-all hover:border-secondary hover:bg-surface-container-low ${
-                        selectedDate === d.label
-                          ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
-                          : 'border-outline-variant/60'
-                      }`}
+                      className={`date-btn border rounded-lg py-2 flex flex-col items-center justify-center transition-all hover:border-secondary hover:bg-surface-container-low ${selectedDate === d.label
+                        ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
+                        : 'border-outline-variant/60'
+                        }`}
                     >
                       <span className="text-[10px] text-on-surface-variant font-medium">{d.dayShort}</span>
                       <span className="text-sm font-bold text-on-surface">{d.dayNum}</span>
@@ -333,11 +330,10 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                       key={slot}
                       type="button"
                       onClick={() => setSelectedTime(slot)}
-                      className={`time-btn border py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                        selectedTime === slot
-                          ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
-                          : 'border-outline-variant/60 hover:border-secondary'
-                      }`}
+                      className={`time-btn border py-2.5 rounded-lg text-xs font-semibold transition-all ${selectedTime === slot
+                        ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
+                        : 'border-outline-variant/60 hover:border-secondary'
+                        }`}
                     >
                       {slot}
                     </button>

@@ -201,7 +201,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="contact-email" className="font-body text-xs font-semibold text-on-surface-variant">
                     Email Address
@@ -233,6 +233,21 @@ export default function Contact() {
                     <option value="Demo Class Request">Demo Class Booking</option>
                     <option value="Fee Structure">Fee Structure Inquiry</option>
                     <option value="Counseling">Career &amp; Academic Counseling</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="contact-branch" className="font-body text-xs font-semibold text-on-surface-variant">
+                    Preferred LOCATION *
+                  </label>
+                  <select
+                    id="contact-branch"
+                    required
+                    value={form.branch || 'Bagru'}
+                    onChange={(e) => updateField('branch', e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
+                  >
+                    <option value="Bagru">Bagru (Main Branch)</option>
+                    <option value="Daroh">Daroh (Child Branch)</option>
                   </select>
                 </div>
               </div>

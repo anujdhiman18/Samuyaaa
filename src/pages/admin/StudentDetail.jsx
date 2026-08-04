@@ -62,8 +62,8 @@ export default function StudentDetail() {
   const [deleting, setDeleting] = useState(false);
 
   const [studentMarks, setStudentMarks] = useState([]);
-  
-  const addToast = useToast()?.addToast || (() => {});
+
+  const addToast = useToast()?.addToast || (() => { });
 
   useEffect(() => {
     fetchStudentData();
@@ -84,7 +84,7 @@ export default function StudentDetail() {
           if (marksRes && marksRes.marks) {
             setStudentMarks(marksRes.marks);
           }
-        } catch (mErr) {}
+        } catch (mErr) { }
         setAmountPaid(s.monthlyFee || 2500);
         setEditForm({
           fullName: s.fullName || '',
@@ -349,11 +349,10 @@ export default function StudentDetail() {
           {/* Suspend Student */}
           <button
             onClick={handleToggleSuspend}
-            className={`px-3.5 py-2 rounded-xl text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm ${
-              student.status === 'Suspended'
+            className={`px-3.5 py-2 rounded-xl text-xs font-headings font-bold transition-colors flex items-center gap-1.5 shadow-sm ${student.status === 'Suspended'
                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                 : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-            }`}
+              }`}
           >
             <span className="material-symbols-outlined text-[18px]">
               {student.status === 'Suspended' ? 'block' : 'warning'}
@@ -477,9 +476,8 @@ export default function StudentDetail() {
               <div className="flex justify-between items-center text-xs">
                 <span className="font-bold text-on-surface-variant">Fee Status</span>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                    isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                  }`}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}
                 >
                   {isPaid ? '🟢 Fees Paid' : '🔴 Payment Pending'}
                 </span>
@@ -674,14 +672,14 @@ export default function StudentDetail() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Preferred Location *</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Preferred LOCATION *</label>
               <select
                 value={editForm.branch || 'Bagru'}
                 onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none bg-white"
               >
-                <option value="Bagru">Bagru (Main Location)</option>
-                <option value="Daroh">Daroh (Child Location)</option>
+                <option value="Bagru">Bagru (Main Branch)</option>
+                <option value="Daroh">Daroh (Child Branch)</option>
               </select>
             </div>
             <div>

@@ -737,9 +737,8 @@ export default function StudentManagement() {
                     return (
                       <tr
                         key={studentId}
-                        className={`hover:bg-surface-container-lowest transition-colors ${
-                          isSelected ? 'bg-primary/5' : ''
-                        }`}
+                        className={`hover:bg-surface-container-lowest transition-colors ${isSelected ? 'bg-primary/5' : ''
+                          }`}
                       >
                         <td className="py-3 px-4 text-center">
                           <input
@@ -787,11 +786,10 @@ export default function StudentManagement() {
                           </span>
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
-                            (s.branch || 'Bagru') === 'Daroh'
+                          <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${(s.branch || 'Bagru') === 'Daroh'
                               ? 'bg-teal-100 text-teal-800 border border-teal-200'
                               : 'bg-purple-100 text-purple-800 border border-purple-200'
-                          }`}>
+                            }`}>
                             🏢 {s.branch || 'Bagru'}
                           </span>
                         </td>
@@ -879,11 +877,10 @@ export default function StudentManagement() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      currentPage === page
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${currentPage === page
                         ? 'bg-primary text-white'
                         : 'hover:bg-surface-container text-secondary'
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -981,14 +978,14 @@ export default function StudentManagement() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Preferred Location *</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Preferred LOCATION *</label>
               <select
                 value={form.branch || 'Bagru'}
                 onChange={(e) => setForm({ ...form, branch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-bold bg-white"
               >
-                <option value="Bagru">Bagru (Main Location)</option>
-                <option value="Daroh">Daroh (Child Location)</option>
+                <option value="Bagru">Bagru (Main Branch)</option>
+                <option value="Daroh">Daroh (Child Branch)</option>
               </select>
             </div>
 
@@ -1152,13 +1149,12 @@ export default function StudentManagement() {
                       </p>
                     </div>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        req.status === 'Pending'
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${req.status === 'Pending'
                           ? 'bg-amber-100 text-amber-700'
                           : req.status === 'Approved'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-rose-100 text-rose-700'
-                      }`}
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-rose-100 text-rose-700'
+                        }`}
                     >
                       {req.status}
                     </span>

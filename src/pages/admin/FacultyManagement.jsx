@@ -1491,14 +1491,14 @@ export default function FacultyManagement() {
               </div>
 
               <div>
-                <label className="font-bold text-secondary block mb-1">Preferred Location *</label>
+                <label className="font-bold text-secondary block mb-1">Preferred LOCATION *</label>
                 <select
                   value={form.branch || 'Bagru'}
                   onChange={(e) => setForm({ ...form, branch: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
                 >
-                  <option value="Bagru">Bagru (Main Location)</option>
-                  <option value="Daroh">Daroh (Child Location)</option>
+                  <option value="Bagru">Bagru (Main Branch)</option>
+                  <option value="Daroh">Daroh (Child Branch)</option>
                 </select>
               </div>
 
