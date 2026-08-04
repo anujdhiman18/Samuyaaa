@@ -36,6 +36,21 @@ import StudentFee from './pages/student/StudentFee';
 import StudentAnnouncements from './pages/student/StudentAnnouncements';
 import StudentNotifications from './pages/student/StudentNotifications';
 
+// Faculty Panel Pages
+import FacultyLayout from './layouts/FacultyLayout';
+import FacultyLogin from './pages/auth/FacultyLogin';
+import FacultyDashboard from './pages/faculty/FacultyDashboard';
+import FacultyStudents from './pages/faculty/FacultyStudents';
+import FacultyAttendance from './pages/faculty/FacultyAttendance';
+import FacultyMarks from './pages/faculty/FacultyMarks';
+import FacultyAssignments from './pages/faculty/FacultyAssignments';
+import FacultyMaterials from './pages/faculty/FacultyMaterials';
+import FacultyTimetable from './pages/faculty/FacultyTimetable';
+import FacultyAnnouncements from './pages/faculty/FacultyAnnouncements';
+import FacultyLeave from './pages/faculty/FacultyLeave';
+import FacultyReports from './pages/faculty/FacultyReports';
+import FacultyProfile from './pages/faculty/FacultyProfile';
+
 class PortalErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -101,14 +116,38 @@ export default function App() {
                 }
               />
 
-              {/* Faculty Application Routes */}
+              {/* Faculty Application & Auth Routes */}
               <Route path="/apply" element={<FacultyApplicationPage />} />
               <Route path="/faculty/apply" element={<FacultyApplicationPage />} />
+              <Route path="/faculty/login" element={<FacultyLogin />} />
 
               {/* Authentication Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/admin/login" element={<LoginPage />} />
+
+              {/* Protected Faculty Panel Shell (/faculty/* - Isolated Shell with Strict RBAC) */}
+              <Route
+                path="/faculty"
+                element={
+                  <PortalErrorBoundary portalName="Faculty Panel">
+                    <FacultyLayout />
+                  </PortalErrorBoundary>
+                }
+              >
+                <Route index element={<FacultyDashboard />} />
+                <Route path="dashboard" element={<FacultyDashboard />} />
+                <Route path="students" element={<FacultyStudents />} />
+                <Route path="attendance" element={<FacultyAttendance />} />
+                <Route path="marks" element={<FacultyMarks />} />
+                <Route path="assignments" element={<FacultyAssignments />} />
+                <Route path="materials" element={<FacultyMaterials />} />
+                <Route path="timetable" element={<FacultyTimetable />} />
+                <Route path="announcements" element={<FacultyAnnouncements />} />
+                <Route path="leave" element={<FacultyLeave />} />
+                <Route path="reports" element={<FacultyReports />} />
+                <Route path="profile" element={<FacultyProfile />} />
+              </Route>
 
               {/* Protected Admin Portal Shell (/admin/* - Isolated Shell) */}
               <Route

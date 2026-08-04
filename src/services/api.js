@@ -3132,3 +3132,329 @@ export const topperService = {
     return await uploadFirebaseFile(file, 'toppers', onProgress);
   },
 };
+
+// Initial Mock Data for Faculty Panel
+const initialMockAssignments = [
+  {
+    _id: 'asgn1',
+    title: 'Calculus & Derivatives Practice Problem Set #3',
+    description: 'Solve all questions from Section 4.2. Show step-by-step differentiation and limits evaluation.',
+    subject: 'Mathematics Advanced',
+    className: '10th',
+    dueDate: '2026-08-15',
+    totalMarks: 50,
+    facultyId: 'f_jitender',
+    facultyName: 'Prof. Jitender Sharma',
+    createdAt: '2026-08-01',
+    submissions: [
+      {
+        _id: 'subm1',
+        student: 's1',
+        studentName: 'Rahul Gupta',
+        rollNumber: 'SAU-10-001',
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileName: 'Rahul_Gupta_Math_Assignment.pdf',
+        submittedAt: '2026-08-03T14:20:00Z',
+        score: 48,
+        feedback: 'Excellent work! Great precision on quotient rule.',
+        status: 'Graded',
+      },
+      {
+        _id: 'subm2',
+        student: 's2',
+        studentName: 'Damini Sharma',
+        rollNumber: 'SAU-10-002',
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileName: 'Damini_Sharma_Math_Assignment.pdf',
+        submittedAt: '2026-08-04T09:15:00Z',
+        score: null,
+        feedback: '',
+        status: 'Submitted',
+      },
+    ],
+  },
+  {
+    _id: 'asgn2',
+    title: 'Newtonian Dynamics & Momentum Lab Report',
+    description: 'Prepare a 3-page experiment summary detailing force vectors and momentum conservation.',
+    subject: 'Physics IIT-JEE Prep',
+    className: '11th (+1)',
+    dueDate: '2026-08-18',
+    totalMarks: 100,
+    facultyId: 'f_jitender',
+    facultyName: 'Prof. Jitender Sharma',
+    createdAt: '2026-08-02',
+    submissions: [
+      {
+        _id: 'subm3',
+        student: 's3',
+        studentName: 'Aryan Mehta',
+        rollNumber: 'SAU-11-003',
+        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        fileName: 'Aryan_Physics_Report.pdf',
+        submittedAt: '2026-08-04T11:00:00Z',
+        score: null,
+        feedback: '',
+        status: 'Submitted',
+      },
+    ],
+  },
+];
+
+const initialMockStudyMaterials = [
+  {
+    _id: 'mat1',
+    title: 'Comprehensive Calculus Study Notes & Solved Examples',
+    description: 'Detailed lecture slides and key formulas for Board & JEE Foundation exams.',
+    subject: 'Mathematics Advanced',
+    className: '10th',
+    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileName: 'Calculus_Notes_2026.pdf',
+    fileType: 'PDF',
+    facultyId: 'f_jitender',
+    uploadedAt: '2026-08-01T10:00:00Z',
+  },
+  {
+    _id: 'mat2',
+    title: 'Electromagnetism Lecture Slides (PPTX)',
+    description: 'Presentation slides covering Magnetic Induction and Faraday Laws.',
+    subject: 'Physics IIT-JEE Prep',
+    className: '11th (+1)',
+    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileName: 'Physics_Electromagnetism.pptx',
+    fileType: 'PPT',
+    facultyId: 'f_jitender',
+    uploadedAt: '2026-08-02T15:30:00Z',
+  },
+  {
+    _id: 'mat3',
+    title: 'IIT-JEE Physics 3D Motion Video Demonstration',
+    description: 'High resolution video tutorial explaining 3D relative motion vector equations.',
+    subject: 'Physics IIT-JEE Prep',
+    className: '12th (+2)',
+    fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    fileName: '3D_Motion_Tutorial.mp4',
+    fileType: 'Video',
+    facultyId: 'f_jitender',
+    uploadedAt: '2026-08-03T11:20:00Z',
+  },
+];
+
+const initialMockFacultyLeaves = [
+  {
+    _id: 'flv1',
+    facultyId: 'f_jitender',
+    facultyName: 'Prof. Jitender Sharma',
+    leaveType: 'Casual Leave',
+    startDate: '2026-08-20',
+    endDate: '2026-08-21',
+    reason: 'Attending National Teachers Mathematics Conference in Shimla',
+    status: 'Approved',
+    createdAt: '2026-08-01',
+  },
+];
+
+const getStoredAssignments = () => {
+  try {
+    return JSON.parse(localStorage.getItem('mock_faculty_assignments')) || initialMockAssignments;
+  } catch (e) {
+    return initialMockAssignments;
+  }
+};
+const setStoredAssignments = (data) => localStorage.setItem('mock_faculty_assignments', JSON.stringify(data));
+
+const getStoredMaterials = () => {
+  try {
+    return JSON.parse(localStorage.getItem('mock_faculty_materials')) || initialMockStudyMaterials;
+  } catch (e) {
+    return initialMockStudyMaterials;
+  }
+};
+const setStoredMaterials = (data) => localStorage.setItem('mock_faculty_materials', JSON.stringify(data));
+
+const getStoredLeaves = () => {
+  try {
+    return JSON.parse(localStorage.getItem('mock_faculty_leaves')) || initialMockFacultyLeaves;
+  } catch (e) {
+    return initialMockFacultyLeaves;
+  }
+};
+const setStoredLeaves = (data) => localStorage.setItem('mock_faculty_leaves', JSON.stringify(data));
+
+export const facultyPanelService = {
+  loginFaculty: async (credentials) => {
+    const remote = await apiCall('/faculty-panel/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+    if (remote) return remote;
+
+    const mockUser = {
+      _id: 'f_jitender',
+      id: 'f_jitender',
+      name: 'Prof. Jitender Sharma',
+      email: credentials.email || 'jitender.sharma@saumyaa.edu.in',
+      role: 'Faculty',
+      designation: 'Senior Mathematics & Physics Faculty',
+      department: 'Science & Mathematics',
+      assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
+      assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    };
+    return { success: true, token: 'mock_faculty_jwt_token_2026', user: mockUser };
+  },
+
+  getDashboardData: async () => {
+    const remote = await apiCall('/faculty-panel/dashboard');
+    if (remote) return remote;
+
+    const assignments = getStoredAssignments();
+    let pendingGrading = 0;
+    assignments.forEach((a) => {
+      a.submissions?.forEach((s) => {
+        if (s.status === 'Submitted') pendingGrading++;
+      });
+    });
+
+    return {
+      success: true,
+      stats: {
+        todayClassesCount: 3,
+        totalAssignedStudents: 45,
+        pendingAttendanceCount: 1,
+        pendingGradingCount: pendingGrading,
+        activeAnnouncementsCount: 4,
+      },
+      todayTimetable: [
+        { id: 't1', time: '09:00 AM - 10:30 AM', className: '10th Standard', subject: 'Mathematics Advanced', room: 'Hall A' },
+        { id: 't2', time: '11:00 AM - 12:30 PM', className: '11th (+1)', subject: 'Physics IIT-JEE Prep', room: 'Lab 2' },
+        { id: 't3', time: '02:00 PM - 03:30 PM', className: '12th (+2)', subject: 'Mathematics Advanced', room: 'Hall C' },
+      ],
+    };
+  },
+
+  getAssignedStudents: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const remote = await apiCall(`/faculty-panel/students?${query}`);
+    if (remote) return remote;
+
+    const allStudents = getStoredStudents();
+    const assignedClasses = ['10th', '11th (+1)', '12th (+2)'];
+    let filtered = allStudents.filter((s) => assignedClasses.includes(s.className));
+
+    if (params.className && params.className !== 'All') {
+      filtered = filtered.filter((s) => s.className === params.className);
+    }
+    if (params.search) {
+      const term = params.search.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.fullName?.toLowerCase().includes(term) ||
+          s.rollNumber?.toLowerCase().includes(term) ||
+          s.admissionNumber?.toLowerCase().includes(term)
+      );
+    }
+
+    return { success: true, students: filtered };
+  },
+
+  getAssignments: async () => {
+    const remote = await apiCall('/faculty-panel/assignments');
+    if (remote) return remote;
+
+    return { success: true, assignments: getStoredAssignments() };
+  },
+
+  createAssignment: async (data) => {
+    const remote = await apiCall('/faculty-panel/assignments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (remote) return remote;
+
+    const newAsgn = {
+      _id: 'asgn_' + Date.now(),
+      ...data,
+      facultyId: 'f_jitender',
+      facultyName: 'Prof. Jitender Sharma',
+      createdAt: new Date().toISOString(),
+      submissions: [],
+    };
+    const list = getStoredAssignments();
+    setStoredAssignments([newAsgn, ...list]);
+    return { success: true, assignment: newAsgn, message: 'Assignment created successfully!' };
+  },
+
+  gradeSubmission: async (assignmentId, submissionId, score, feedback) => {
+    const list = getStoredAssignments();
+    const asgn = list.find((a) => String(a._id) === String(assignmentId));
+    if (asgn && asgn.submissions) {
+      const sub = asgn.submissions.find((s) => String(s._id) === String(submissionId));
+      if (sub) {
+        sub.score = Number(score);
+        sub.feedback = feedback;
+        sub.status = 'Graded';
+        setStoredAssignments(list);
+      }
+    }
+    return { success: true, message: 'Student submission graded successfully!' };
+  },
+
+  getStudyMaterials: async () => {
+    const remote = await apiCall('/faculty-panel/materials');
+    if (remote) return remote;
+
+    return { success: true, materials: getStoredMaterials() };
+  },
+
+  uploadStudyMaterial: async (data) => {
+    const remote = await apiCall('/faculty-panel/materials', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (remote) return remote;
+
+    const newMat = {
+      _id: 'mat_' + Date.now(),
+      ...data,
+      facultyId: 'f_jitender',
+      uploadedAt: new Date().toISOString(),
+    };
+    const list = getStoredMaterials();
+    setStoredMaterials([newMat, ...list]);
+    return { success: true, material: newMat, message: 'Study material uploaded successfully!' };
+  },
+
+  deleteStudyMaterial: async (id) => {
+    const list = getStoredMaterials().filter((m) => String(m._id) !== String(id));
+    setStoredMaterials(list);
+    return { success: true, message: 'Study material deleted' };
+  },
+
+  getFacultyLeaves: async () => {
+    const remote = await apiCall('/faculty-panel/leaves');
+    if (remote) return remote;
+
+    return { success: true, leaves: getStoredLeaves() };
+  },
+
+  applyFacultyLeave: async (data) => {
+    const remote = await apiCall('/faculty-panel/leaves', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    if (remote) return remote;
+
+    const newLeave = {
+      _id: 'flv_' + Date.now(),
+      facultyId: 'f_jitender',
+      facultyName: 'Prof. Jitender Sharma',
+      ...data,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    };
+    const list = getStoredLeaves();
+    setStoredLeaves([newLeave, ...list]);
+    return { success: true, leave: newLeave, message: 'Leave application submitted successfully!' };
+  },
+};

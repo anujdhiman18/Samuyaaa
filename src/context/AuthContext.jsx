@@ -60,6 +60,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('saumyaa_admin');
   };
 
+  const isFaculty = Boolean(user && user.role === 'Faculty');
+  const isAdmin = Boolean(user && (user.role === 'Admin' || user.role === 'SuperAdmin'));
+
   return (
     <AuthContext.Provider
       value={{
@@ -67,6 +70,8 @@ export const AuthProvider = ({ children }) => {
         admin: user, // Alias for backwards compatibility
         token,
         isAuthenticated: !!token && !!user,
+        isFaculty,
+        isAdmin,
         login,
         updateUser,
         logout,

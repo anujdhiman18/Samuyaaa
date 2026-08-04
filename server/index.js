@@ -18,6 +18,7 @@ import feedbackRoutes from './routes/feedback.js';
 import facultyRoutes from './routes/facultyRoutes.js';
 import alumniRoutes from './routes/alumniRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
+import facultyPanelRoutes from './routes/facultyPanelRoutes.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
@@ -50,8 +51,9 @@ app.use('/api', limiter);
 app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 
-// Admin Portal API Namespace
+// Admin & Faculty Portal API Namespaces
 app.use('/api/admin', adminRoutes);
+app.use('/api/faculty-panel', facultyPanelRoutes);
 
 // Backward Compatibility Direct Mappings
 app.use('/api/students', studentRoutes);
