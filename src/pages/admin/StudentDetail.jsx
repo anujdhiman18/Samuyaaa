@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { studentService, feeService, attendanceService, getFeeDueDateStatus } from '../../services/api';
+import { studentService, feeService, attendanceService, marksService, getFeeDueDateStatus } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -52,7 +52,7 @@ export default function StudentDetail() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const { addToast } = useToast();
+  const [studentMarks, setStudentMarks] = useState([]);
 
   useEffect(() => {
     fetchStudentData();
@@ -66,6 +66,14 @@ export default function StudentDetail() {
       if (studentRes && studentRes.student) {
         const s = studentRes.student;
         setStudent(s);
+
+        // Fetch marks entered by Faculty
+        try {
+          const marksRes = await marksService.getStudentMarks(id);
+          if (marksRes && marksRes.marks) {
+            setStudentMarks(marksRes.marks);
+          }
+        } catch (mErr) {}
         setAmountPaid(s.monthlyFee || 2500);
         setEditForm({
           fullName: s.fullName || '',
@@ -512,6 +520,62 @@ export default function StudentDetail() {
                       >
                         View Receipt
                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Faculty Internal Marks & Gradebook Card */}
+      <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 space-y-4">
+        <div className="flex justify-between items-center border-b border-outline-variant/15 pb-4">
+          <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">edit_note</span>
+            Faculty Published Marks & Gradebook
+          </h3>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Synced from Faculty Panel
+          </span>
+        </div>
+
+        {studentMarks.length === 0 ? (
+          <p className="text-xs text-on-surface-variant text-center py-6">
+            No published examination marks or internal assessment records found yet for this student.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[10px]">
+                  <th className="py-3 px-4">Subject</th>
+                  <th className="py-3 px-4">Assessment / Exam</th>
+                  <th className="py-3 px-4 text-center">Theory</th>
+                  <th className="py-3 px-4 text-center">Practical</th>
+                  <th className="py-3 px-4 text-center">Assignment</th>
+                  <th className="py-3 px-4 text-center">Total Marks</th>
+                  <th className="py-3 px-4 text-right">Published By</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {studentMarks.map((m) => (
+                  <tr key={m._id || m.id} className="hover:bg-surface-container-lowest">
+                    <td className="py-3 px-4 font-bold text-secondary">{m.subject}</td>
+                    <td className="py-3 px-4 font-semibold text-primary">{m.examType || m.title || 'Internal Test'}</td>
+                    <td className="py-3 px-4 text-center font-mono">{m.theoryMarks ?? '-'}</td>
+                    <td className="py-3 px-4 text-center font-mono">{m.practicalMarks ?? '-'}</td>
+                    <td className="py-3 px-4 text-center font-mono">{m.assignmentMarks ?? '-'}</td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">
+                        {m.marksObtained} / {m.totalMarks || 100} ({m.percentage || 0}%)
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right font-medium text-on-surface-variant">
+                      <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
+                        {m.publishedBy || 'Faculty'}
+                      </span>
                     </td>
                   </tr>
                 ))}

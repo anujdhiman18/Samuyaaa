@@ -53,11 +53,46 @@ export default function FacultyMarks() {
   };
 
   const handleSaveMarks = async () => {
+    if (students.length === 0) return;
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const currentUserStr = localStorage.getItem('saumyaa_user');
+      let facultyName = 'Faculty Member';
+      if (currentUserStr) {
+        try {
+          const u = JSON.parse(currentUserStr);
+          facultyName = u.name || facultyName;
+        } catch (e) {}
+      }
+
+      const marksList = students.map((st) => {
+        const stId = String(st._id || st.id);
+        const m = marksMap[stId] || { theoryMarks: 40, practicalMarks: 15, assignmentMarks: 15, totalMax: 100 };
+        return {
+          studentId: stId,
+          theoryMarks: m.theoryMarks,
+          practicalMarks: m.practicalMarks,
+          assignmentMarks: m.assignmentMarks,
+          totalMax: m.totalMax || 100,
+        };
+      });
+
+      const res = await marksService.saveBatchMarks({
+        className: selectedClass,
+        subject: selectedSubject,
+        examType,
+        marksList,
+        publishedBy: facultyName,
+      });
+
+      if (res && res.success) {
+        addToast(`Marks published & synced to Admin Panel for ${selectedClass} (${selectedSubject})!`, 'success');
+      }
+    } catch (err) {
+      addToast('Error publishing marks', 'error');
+    } finally {
       setSaving(false);
-      addToast(`Marks published successfully for ${selectedClass} (${selectedSubject})!`, 'success');
-    }, 600);
+    }
   };
 
   return (

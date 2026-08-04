@@ -1543,10 +1543,84 @@ export const marksService = {
     const fsMarks = await syncFirestoreCollection('marks', initialMockMarks);
     let list = fsMarks || getStoredMarks();
     if (studentId) {
-      list = list.filter((m) => m.student === studentId || m.student?._id === studentId);
+      list = list.filter((m) => String(m.student) === String(studentId) || String(m.student?._id) === String(studentId));
     }
     setStoredMarks(list);
     return { success: true, marks: list };
+  },
+
+  getAllMarks: async ({ className, subject } = {}) => {
+    const remote = await apiCall('/marks');
+    if (remote) return remote;
+
+    const fsMarks = await syncFirestoreCollection('marks', initialMockMarks);
+    let list = fsMarks || getStoredMarks();
+    if (className && className !== 'All') {
+      list = list.filter((m) => m.className === className);
+    }
+    if (subject && subject !== 'All') {
+      list = list.filter((m) => m.subject === subject);
+    }
+    return { success: true, marks: list };
+  },
+
+  saveBatchMarks: async ({ className, subject, examType, marksList = [], publishedBy = 'Faculty Member' }) => {
+    const remote = await apiCall('/marks/batch', {
+      method: 'POST',
+      body: JSON.stringify({ className, subject, examType, marksList, publishedBy }),
+    });
+    if (remote) return remote;
+
+    const fsMarks = await syncFirestoreCollection('marks', initialMockMarks);
+    let currentMarks = fsMarks || getStoredMarks();
+    const updatedMarks = [...currentMarks];
+
+    for (const item of marksList) {
+      const studentId = String(item.studentId);
+      const theory = Number(item.theoryMarks) || 0;
+      const practical = Number(item.practicalMarks) || 0;
+      const assignment = Number(item.assignmentMarks) || 0;
+      const totalObtained = theory + practical + assignment;
+
+      const existingIdx = updatedMarks.findIndex(
+        (m) =>
+          (String(m.student) === studentId || String(m.student?._id) === studentId) &&
+          m.subject === subject &&
+          (m.examType === examType || m.title === examType)
+      );
+
+      const recordObj = {
+        _id: existingIdx >= 0 ? updatedMarks[existingIdx]._id : 'mark_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        student: studentId,
+        className,
+        subject,
+        examType: examType || 'Internal Assessment',
+        title: examType || 'Internal Assessment',
+        theoryMarks: theory,
+        practicalMarks: practical,
+        assignmentMarks: assignment,
+        marksObtained: totalObtained,
+        totalMarks: Number(item.totalMax) || 100,
+        percentage: Math.min(100, Math.round((totalObtained / (Number(item.totalMax) || 100)) * 100)),
+        publishedBy,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (existingIdx >= 0) {
+        updatedMarks[existingIdx] = recordObj;
+      } else {
+        updatedMarks.push(recordObj);
+      }
+
+      try {
+        await setDoc(doc(db, 'marks', recordObj._id), recordObj);
+      } catch (fsErr) {
+        console.warn('Firestore setDoc marks error:', fsErr.message);
+      }
+    }
+
+    setStoredMarks(updatedMarks);
+    return { success: true, marks: updatedMarks, message: 'Marks published & synced to Admin Panel successfully!' };
   },
 };
 
@@ -1654,10 +1728,10 @@ export const attendanceService = {
     return { success: true, attendance: list };
   },
 
-  saveBatchAttendance: async ({ date, subject, className, records }) => {
+  saveBatchAttendance: async ({ date, subject, className, records, markedBy = 'Faculty Member' }) => {
     const remote = await apiCall('/attendance/batch', {
       method: 'POST',
-      body: JSON.stringify({ date, subject, className, records }),
+      body: JSON.stringify({ date, subject, className, records, markedBy }),
     });
     if (remote) return remote;
 
@@ -1686,6 +1760,7 @@ export const attendanceService = {
           remarks,
           subject: subject || updatedList[existingIndex].subject || 'General',
           className: className || updatedList[existingIndex].className,
+          markedBy: markedBy || updatedList[existingIndex].markedBy || 'Faculty Member',
           updatedAt: new Date().toISOString(),
         };
 
@@ -1704,6 +1779,7 @@ export const attendanceService = {
           subject: subject || 'General',
           className,
           remarks,
+          markedBy,
           createdAt: new Date().toISOString(),
         };
         updatedList.push(newRecord);
@@ -1711,7 +1787,7 @@ export const attendanceService = {
         try {
           await setDoc(doc(db, 'attendance', String(id)), newRecord);
         } catch (fsErr) {
-          console.warn('Firestore setDoc attendance error:', fsErr.message);
+          console.warn('Firestore setDoc new attendance error:', fsErr.message);
         }
       }
 
@@ -2286,11 +2362,11 @@ const initialMockFaculty = [
     email: 'jitender.sharma@saumyaa.edu.in',
     password: 'faculty123',
     phone: '9816099999',
-    designation: 'Senior Physics HOD',
-    department: 'Science & Mathematics',
-    subject: 'Physics & Mechanics',
+    designation: 'Founder & Managing Director | Senior Physics HOD',
+    department: 'Executive Board & Science',
+    subject: 'Physics & Mechanics (IIT-JEE)',
     qualification: 'Ph.D. Physics (IIT Delhi)',
-    experience: '15+ Years Teaching',
+    experience: '15+ Years Teaching & Leadership',
     assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
     assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
     photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',

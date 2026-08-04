@@ -84,15 +84,25 @@ export default function FacultyAttendance() {
         return { studentId: stId, status: data.status, remarks: data.remarks };
       });
 
+      const currentUserStr = localStorage.getItem('saumyaa_user');
+      let facultyName = 'Faculty Member';
+      if (currentUserStr) {
+        try {
+          const u = JSON.parse(currentUserStr);
+          facultyName = u.name || facultyName;
+        } catch (e) {}
+      }
+
       const res = await attendanceService.saveBatchAttendance({
         date,
         subject: selectedSubject,
         className: selectedClass,
         records: recordsToSave,
+        markedBy: facultyName,
       });
 
       if (res && res.success) {
-        addToast(`Attendance saved for ${date} (${selectedSubject})!`, 'success');
+        addToast(`Attendance saved & synced to Admin Panel for ${date} (${selectedSubject})!`, 'success');
         fetchClassData();
       }
     } catch (err) {

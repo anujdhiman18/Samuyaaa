@@ -805,6 +805,9 @@ export default function AttendanceManagement() {
                         </h4>
                         <p className="text-[11px] text-on-surface-variant">
                           Roll: <span className="font-mono text-primary font-bold">{studentObj?.rollNumber || 'N/A'}</span> &bull; Subject: {rec.subject || selectedSubject} &bull; Date: {rec.date}
+                          <span className="ml-2 px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
+                            Marked by: {rec.markedBy || 'Faculty Member'}
+                          </span>
                         </p>
                         {rec.remarks && (
                           <p className="text-[10px] text-on-surface-variant/80 italic mt-0.5">
