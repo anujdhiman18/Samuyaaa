@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
-  { path: '/admin/students?tab=leaves', label: 'Student Leaves', icon: 'event_busy' },
+  { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/attendance', label: 'Attendance Register', icon: 'fact_check' },
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },

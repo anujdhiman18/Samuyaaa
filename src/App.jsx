@@ -15,6 +15,7 @@ import SignupPage from './pages/auth/SignupPage';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentManagement from './pages/admin/StudentManagement';
+import StudentLeaveManagement from './pages/admin/StudentLeaveManagement';
 import StudentDetail from './pages/admin/StudentDetail';
 import AttendanceManagement from './pages/admin/AttendanceManagement';
 import SubjectManagement from './pages/admin/SubjectManagement';
@@ -169,8 +170,8 @@ export default function App() {
               >
                 <Route index element={<AdminDashboard />} />
                 <Route path="students" element={<StudentManagement />} />
-                <Route path="student-leaves" element={<Navigate to="/admin/students?tab=leaves" replace />} />
-                <Route path="student/leaves" element={<Navigate to="/admin/students?tab=leaves" replace />} />
+                <Route path="student-leaves" element={<StudentLeaveManagement />} />
+                <Route path="student/leaves" element={<StudentLeaveManagement />} />
                 <Route path="faculty-leaves" element={<Navigate to="/admin/faculty?tab=leaves" replace />} />
                 <Route path="faculty/leaves" element={<Navigate to="/admin/faculty?tab=leaves" replace />} />
                 <Route path="students/:id" element={<StudentDetail />} />
