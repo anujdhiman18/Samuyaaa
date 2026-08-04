@@ -251,9 +251,8 @@ export const uploadStudyMaterial = async (req, res) => {
 // @route   GET / POST /api/faculty-panel/leaves
 export const getFacultyLeaves = async (req, res) => {
   try {
-    const facultyId = req.user?.id || 'f_jitender';
-    const leaves = await FacultyLeave.find({ facultyId }).sort({ createdAt: -1 });
-    res.json({ success: true, leaves });
+    const leaves = await FacultyLeave.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: leaves.length, leaves });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -261,10 +260,30 @@ export const getFacultyLeaves = async (req, res) => {
 
 export const applyFacultyLeave = async (req, res) => {
   try {
-    const facultyId = req.user?.id || 'f_jitender';
-    const leave = await FacultyLeave.create({ ...req.body, facultyId, status: 'Pending' });
+    const facultyId = req.body.facultyId || req.user?._id || req.user?.id || 'f_jitender';
+    const facultyName = req.body.facultyName || req.user?.name || req.user?.fullName || 'Prof. Jitender Sharma';
+    const facultyEmail = req.body.facultyEmail || req.user?.email || 'jitender.sharma@saumyaa.edu.in';
+    const branch = req.body.branch || req.user?.branch || 'Bagru';
+    const leaveType = req.body.leaveType || 'Casual Leave';
+    const startDate = req.body.startDate || new Date().toISOString().split('T')[0];
+    const endDate = req.body.endDate || new Date().toISOString().split('T')[0];
+    const reason = req.body.reason || 'Leave requested';
+
+    const leave = await FacultyLeave.create({
+      facultyId,
+      facultyName,
+      facultyEmail,
+      branch,
+      leaveType,
+      startDate,
+      endDate,
+      reason,
+      status: 'Pending',
+    });
+
     res.status(201).json({ success: true, leave, message: 'Leave application submitted successfully' });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    console.error('applyFacultyLeave Mongo Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

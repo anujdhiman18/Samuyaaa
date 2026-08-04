@@ -4,33 +4,44 @@ const facultyLeaveSchema = new mongoose.Schema(
   {
     facultyId: {
       type: String,
-      required: true,
+      default: 'f_jitender',
     },
     facultyName: {
       type: String,
-      required: true,
+      default: 'Prof. Jitender Sharma',
+    },
+    facultyEmail: {
+      type: String,
+      default: 'jitender.sharma@saumyaa.edu.in',
+    },
+    branch: {
+      type: String,
+      default: 'Bagru',
     },
     leaveType: {
       type: String,
-      enum: ['Casual Leave', 'Sick Leave', 'Duty Leave', 'Earned Leave'],
       default: 'Casual Leave',
     },
     startDate: {
       type: String,
-      required: true,
+      default: () => new Date().toISOString().split('T')[0],
     },
     endDate: {
       type: String,
-      required: true,
+      default: () => new Date().toISOString().split('T')[0],
     },
     reason: {
       type: String,
-      required: true,
+      default: 'Leave requested',
     },
     status: {
       type: String,
       enum: ['Pending', 'Approved', 'Rejected'],
       default: 'Pending',
+    },
+    adminNote: {
+      type: String,
+      default: '',
     },
   },
   { timestamps: true }
