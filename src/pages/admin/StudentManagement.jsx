@@ -126,10 +126,13 @@ export default function StudentManagement() {
 
   const handleUpdateLeaveStatus = async (status) => {
     if (!selectedLeaveApp) return;
+    const targetId = selectedLeaveApp._id || selectedLeaveApp.id;
+    if (!targetId) return;
+
     setUpdatingLeave(true);
     try {
       const res = await studentService.updateStudentLeaveStatus(
-        selectedLeaveApp._id || selectedLeaveApp.id,
+        targetId,
         status,
         adminRemarks
       );
@@ -140,6 +143,7 @@ export default function StudentManagement() {
         fetchStudentLeaves(false);
       }
     } catch (err) {
+      console.error('handleUpdateLeaveStatus error:', err);
       addToast('Failed to update leave status', 'error');
     } finally {
       setUpdatingLeave(false);
@@ -1471,13 +1475,13 @@ export default function StudentManagement() {
             <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl border border-outline-variant/15 bg-surface-container-low">
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Student Name</span>
-                <span className="font-bold text-secondary text-sm">{selectedLeaveApp.studentName}</span>
-                <span className="block font-mono text-[11px] text-primary mt-0.5">{selectedLeaveApp.admissionNo}</span>
+                <span className="font-bold text-secondary text-sm">{selectedLeaveApp.studentName || 'Student Name'}</span>
+                <span className="block font-mono text-[11px] text-primary mt-0.5">{selectedLeaveApp.admissionNo || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Class &amp; Location</span>
-                <span className="font-bold text-secondary">Class {selectedLeaveApp.className}</span>
-                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch}</span>
+                <span className="font-bold text-secondary">Class {selectedLeaveApp.className || '10th'}</span>
+                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
               </div>
             </div>
 
@@ -1485,11 +1489,11 @@ export default function StudentManagement() {
             <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl border border-outline-variant/15 bg-white">
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Leave Type</span>
-                <span className="font-extrabold text-purple-800">{selectedLeaveApp.leaveType}</span>
+                <span className="font-extrabold text-purple-800">{selectedLeaveApp.leaveType || 'Sick Leave'}</span>
               </div>
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Duration</span>
-                <span className="font-mono font-bold text-secondary">{selectedLeaveApp.startDate} to {selectedLeaveApp.endDate}</span>
+                <span className="font-mono font-bold text-secondary">{selectedLeaveApp.startDate || ''} to {selectedLeaveApp.endDate || ''}</span>
               </div>
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Total Days</span>
@@ -1501,7 +1505,7 @@ export default function StudentManagement() {
             <div>
               <span className="text-[11px] font-bold text-secondary block mb-1">Reason for Leave</span>
               <p className="p-3 rounded-xl border border-outline-variant/20 bg-surface-container-lowest text-secondary leading-relaxed">
-                {selectedLeaveApp.reason}
+                {selectedLeaveApp.reason || 'No reason provided'}
               </p>
             </div>
 
