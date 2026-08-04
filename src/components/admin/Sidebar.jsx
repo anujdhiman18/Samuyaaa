@@ -7,7 +7,6 @@ const navItems = [
   { path: '/admin/attendance', label: 'Attendance Register', icon: 'fact_check' },
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
-  { path: '/faculty', label: 'Faculty Panel Portal', icon: 'co_present' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
   { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
