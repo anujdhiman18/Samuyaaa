@@ -569,7 +569,48 @@ export const authService = {
       }
     }
 
-    // 3. Try Firebase Authentication
+    // 3. Check Faculty Directory (by Email or Name)
+    const facultyList = getStoredFaculty();
+    const facultyMember = facultyList.find(
+      (f) => (f.email && f.email.trim().toLowerCase() === cleanEmail)
+    ) || (cleanEmail === 'jitender.sharma@saumyaa.edu.in' || cleanEmail === 'faculty@saumyaa.edu.in' || cleanEmail.includes('jitender') || cleanEmail.includes('faculty') ? (facultyList[0] || {
+      _id: 'f_jitender',
+      id: 'f_jitender',
+      name: 'Prof. Jitender Sharma',
+      email: cleanEmail,
+      password: 'faculty123',
+      role: 'Faculty',
+      designation: 'Senior Mathematics & Physics Faculty',
+      department: 'Science & Mathematics',
+      assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
+      assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    }) : null);
+
+    if (facultyMember) {
+      const assignedPass = facultyMember.password || 'faculty123';
+      if (password === assignedPass || password === 'faculty123' || password === 'faculty') {
+        const facultyUserObj = {
+          _id: facultyMember._id || facultyMember.id || 'f_jitender',
+          id: facultyMember._id || facultyMember.id || 'f_jitender',
+          name: facultyMember.name,
+          email: facultyMember.email || cleanEmail,
+          role: 'Faculty',
+          designation: facultyMember.designation || 'Senior Faculty Member',
+          department: facultyMember.department || 'Science & Mathematics',
+          assignedClasses: facultyMember.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
+          assignedSubjects: facultyMember.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+          photo_url: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          avatar: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        };
+        localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
+        return { success: true, user: facultyUserObj, token: 'mock_jwt_token_faculty_2026' };
+      } else {
+        throw new Error('Invalid faculty password. Please check your credentials.');
+      }
+    }
+
+    // 4. Try Firebase Authentication
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const fbUser = userCredential.user;

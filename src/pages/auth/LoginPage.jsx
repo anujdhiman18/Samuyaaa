@@ -25,9 +25,11 @@ export default function LoginPage() {
       login(loggedUser, data.token);
       addToast(`Welcome back, ${loggedUser.name}!`, 'success');
 
-      const isAdmin = Boolean(loggedUser && loggedUser.role !== 'Student');
+      const isAdmin = Boolean(loggedUser && (loggedUser.role === 'Admin' || loggedUser.role === 'SuperAdmin'));
 
-      if (isAdmin) {
+      if (loggedUser && loggedUser.role === 'Faculty') {
+        navigate('/faculty/dashboard');
+      } else if (isAdmin) {
         navigate('/admin');
       } else {
         navigate('/student/dashboard');
