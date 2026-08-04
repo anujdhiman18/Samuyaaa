@@ -541,7 +541,91 @@ export const getAuditLogs = async (req, res) => {
 export const getAllFacultyLeaves = async (req, res) => {
   try {
     const FacultyLeave = (await import('../models/FacultyLeave.js')).default;
-    const leaves = await FacultyLeave.find().sort({ createdAt: -1 });
+    let leaves = await FacultyLeave.find().sort({ createdAt: -1 });
+
+    if (!leaves || leaves.length === 0) {
+      const demoLeaves = [
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'jbjbjbj',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'rnrrnur',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'i3ejs8jnes',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'knkkn',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'h dh dh',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'h h h',
+          status: 'Pending',
+        },
+        {
+          facultyId: 'f_jitender',
+          facultyName: 'Prof. Jitender Sharma',
+          facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+          branch: 'Bagru',
+          leaveType: 'Casual Leave',
+          startDate: '2026-08-20',
+          endDate: '2026-08-21',
+          reason: 'Attending National Teachers Mathematics Conference in Shimla',
+          status: 'Approved',
+        },
+      ];
+      leaves = await FacultyLeave.insertMany(demoLeaves);
+    }
+
     res.json({ success: true, count: leaves.length, leaves });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
