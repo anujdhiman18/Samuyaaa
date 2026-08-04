@@ -116,16 +116,60 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-primary hover:bg-primary-container text-white font-headings font-bold py-3.5 rounded-full text-xs transition-all shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn flex items-center justify-center gap-2 disabled:opacity-70"
+            className="w-full mt-2 bg-primary hover:bg-primary-container text-white font-headings font-bold py-3.5 rounded-full text-xs transition-all shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">login</span>
             {loading ? 'Authenticating...' : 'Sign In to Account'}
           </button>
         </form>
 
+        {/* Demo Credentials Quick-Fill Selector */}
+        <div className="mt-4 pt-4 border-t border-outline-variant/15 space-y-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/80 block text-center">
+            Fill Demo Credentials:
+          </span>
+          <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('jitender.sharma@saumyaa.edu.in');
+                setPassword('faculty123');
+                addToast('Filled Faculty Demo Credentials!', 'info');
+              }}
+              className="py-1.5 px-2 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 font-bold text-center hover:bg-purple-100 transition-colors cursor-pointer"
+            >
+              🎓 Faculty
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@saumyaa.com');
+                setPassword('admin123');
+                addToast('Filled Admin Demo Credentials!', 'info');
+              }}
+              className="py-1.5 px-2 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 font-bold text-center hover:bg-blue-100 transition-colors cursor-pointer"
+            >
+              🛡️ Admin
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('rahul.gupta@student.saumyaa.com');
+                setPassword('student123');
+                addToast('Filled Student Demo Credentials!', 'info');
+              }}
+              className="py-1.5 px-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-center hover:bg-emerald-100 transition-colors cursor-pointer"
+            >
+              👨‍🎓 Student
+            </button>
+          </div>
+        </div>
+
         <div className="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between text-xs">
-          <Link to="/signup" className="text-primary font-headings font-bold hover:underline">
-            New Student? Register
+          <Link to="/faculty/login" className="text-primary font-headings font-bold hover:underline">
+            Faculty Dedicated Portal
           </Link>
           <Link to="/" className="text-secondary font-headings font-bold hover:underline">
             Back to Website

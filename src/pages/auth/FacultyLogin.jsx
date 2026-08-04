@@ -103,16 +103,31 @@ export default function FacultyLogin() {
           </button>
         </form>
 
-        {/* Demo Fast Login Shortcut */}
+        {/* Demo Fast Fill & Login Shortcuts */}
         <div className="pt-4 border-t border-outline-variant/15 text-center space-y-3">
-          <button
-            onClick={handleDemoLogin}
-            type="button"
-            className="w-full py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary font-headings font-bold text-xs hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">verified_user</span>
-            Quick Demo Login (Faculty Account)
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                setEmail('jitender.sharma@saumyaa.edu.in');
+                setPassword('faculty123');
+                addToast('Filled Faculty Demo Credentials!', 'info');
+              }}
+              type="button"
+              className="py-2.5 px-3 rounded-full border border-primary/30 bg-primary/10 text-primary font-headings font-bold text-xs hover:bg-primary/20 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit_note</span>
+              Fill Demo Info
+            </button>
+
+            <button
+              onClick={handleDemoLogin}
+              type="button"
+              className="py-2.5 px-3 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-secondary/90 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">bolt</span>
+              Auto Sign In
+            </button>
+          </div>
 
           <div className="flex justify-between text-xs font-bold text-on-surface-variant pt-2">
             <Link to="/login" className="hover:text-primary">Admin / General Login</Link>
