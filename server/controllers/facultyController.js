@@ -536,3 +536,38 @@ export const getAuditLogs = async (req, res) => {
   }
 };
 
+// @desc    Get all faculty leave applications for Admin
+// @route   GET /api/admin/faculty-leaves or /api/faculty/leaves
+export const getAllFacultyLeaves = async (req, res) => {
+  try {
+    const FacultyLeave = (await import('../models/FacultyLeave.js')).default;
+    const leaves = await FacultyLeave.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: leaves.length, leaves });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update faculty leave status (Approve / Reject)
+// @route   PUT /api/admin/faculty-leaves/:id/status or /api/faculty/leaves/:id/status
+export const updateFacultyLeaveStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNote } = req.body;
+    const FacultyLeave = (await import('../models/FacultyLeave.js')).default;
+
+    const leave = await FacultyLeave.findById(id);
+    if (!leave) {
+      return res.status(404).json({ success: false, message: 'Leave application not found' });
+    }
+
+    leave.status = status || 'Approved';
+    if (adminNote) leave.adminNote = adminNote;
+    await leave.save();
+
+    res.json({ success: true, leave, message: `Leave application ${leave.status} successfully` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

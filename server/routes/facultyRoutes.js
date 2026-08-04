@@ -10,6 +10,8 @@ import {
   assignResponsibilities,
   removeResponsibility,
   getAuditLogs,
+  getAllFacultyLeaves,
+  updateFacultyLeaveStatus,
 } from '../controllers/facultyController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -17,6 +19,10 @@ const router = express.Router();
 
 // Public route to fetch active faculty for website
 router.get('/', getFaculty);
+
+// Admin Faculty Leaves Endpoints
+router.get('/leaves', getAllFacultyLeaves);
+router.put('/leaves/:id/status', updateFacultyLeaveStatus);
 
 // Public route to send faculty application email via Nodemailer
 router.post('/send-email', sendFacultyApplicationEmailController);
