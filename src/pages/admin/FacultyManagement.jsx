@@ -101,6 +101,19 @@ export default function FacultyManagement() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (activeTab === 'leaves') {
+      fetchLeaves();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLeaves();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchFaculty = async () => {
     setLoading(true);
     try {

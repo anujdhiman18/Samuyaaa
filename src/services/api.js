@@ -4027,36 +4027,68 @@ export const facultyPanelService = {
   },
 
   getFacultyLeaves: async () => {
-    const remote = await apiCall('/faculty-panel/leaves');
-    if (remote && remote.success && Array.isArray(remote.leaves)) {
-      setStoredLeaves(remote.leaves);
-      return remote;
-    }
+    let remoteLeaves = [];
+    try {
+      const remote = await apiCall('/faculty-panel/leaves');
+      if (remote && remote.success && Array.isArray(remote.leaves)) {
+        remoteLeaves = remote.leaves;
+      }
+    } catch (e) {}
 
     const fsLeaves = await syncFirestoreCollection('faculty_leaves', initialMockFacultyLeaves);
-    const list = fsLeaves || getStoredLeaves();
-    setStoredLeaves(list);
-    return { success: true, leaves: list };
+    const localLeaves = getStoredLeaves();
+
+    const mergedMap = new Map();
+    [...remoteLeaves, ...(fsLeaves || []), ...localLeaves].forEach((item) => {
+      const key = String(item._id || item.id || '');
+      if (key && !mergedMap.has(key)) {
+        mergedMap.set(key, item);
+      }
+    });
+
+    const combined = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now())
+    );
+
+    setStoredLeaves(combined);
+    return { success: true, leaves: combined };
   },
 
   getAllFacultyLeaves: async () => {
-    const remote = await apiCall('/admin/faculty-leaves');
-    if (remote && remote.success && Array.isArray(remote.leaves)) {
-      setStoredLeaves(remote.leaves);
-      return remote;
-    }
+    let remoteLeaves = [];
+    try {
+      const remote = await apiCall('/admin/faculty-leaves');
+      if (remote && remote.success && Array.isArray(remote.leaves)) {
+        remoteLeaves = remote.leaves;
+      }
+    } catch (e) {}
 
     const fsLeaves = await syncFirestoreCollection('faculty_leaves', initialMockFacultyLeaves);
-    const list = fsLeaves || getStoredLeaves();
-    setStoredLeaves(list);
-    return { success: true, leaves: list };
+    const localLeaves = getStoredLeaves();
+
+    const mergedMap = new Map();
+    [...remoteLeaves, ...(fsLeaves || []), ...localLeaves].forEach((item) => {
+      const key = String(item._id || item.id || '');
+      if (key && !mergedMap.has(key)) {
+        mergedMap.set(key, item);
+      }
+    });
+
+    const combined = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now())
+    );
+
+    setStoredLeaves(combined);
+    return { success: true, leaves: combined };
   },
 
   updateFacultyLeaveStatus: async (leaveId, status, adminNote = '') => {
-    const remote = await apiCall(`/admin/faculty-leaves/${leaveId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status, adminNote }),
-    });
+    try {
+      await apiCall(`/admin/faculty-leaves/${leaveId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status, adminNote }),
+      });
+    } catch (e) {}
 
     const list = getStoredLeaves().map((l) =>
       String(l._id || l.id) === String(leaveId) ? { ...l, status, adminNote, updatedAt: new Date().toISOString() } : l
@@ -4067,16 +4099,10 @@ export const facultyPanelService = {
       await setDoc(doc(db, 'faculty_leaves', String(leaveId)), { status, adminNote, updatedAt: new Date().toISOString() }, { merge: true });
     } catch (e) {}
 
-    if (remote && remote.success) return remote;
     return { success: true, message: `Leave application ${status} successfully` };
   },
 
   applyFacultyLeave: async (data) => {
-    const remote = await apiCall('/faculty-panel/leaves', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-
     const id = 'flv_' + Date.now();
     const newLeave = {
       _id: id,
@@ -4094,14 +4120,28 @@ export const facultyPanelService = {
     };
 
     try {
-      await setDoc(doc(db, 'faculty_leaves', id), newLeave);
+      const remote = await apiCall('/faculty-panel/leaves', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (remote && remote.leave) {
+        if (remote.leave._id || remote.leave.id) {
+          newLeave._id = String(remote.leave._id || remote.leave.id);
+          newLeave.id = String(remote.leave._id || remote.leave.id);
+        }
+      }
+    } catch (e) {}
+
+    try {
+      await setDoc(doc(db, 'faculty_leaves', String(newLeave._id)), newLeave);
     } catch (fsErr) {
       console.warn('Firestore setDoc leave error:', fsErr.message);
     }
 
     const list = getStoredLeaves();
-    setStoredLeaves([newLeave, ...list]);
-    if (remote && remote.success) return remote;
+    const filtered = list.filter((l) => String(l._id || l.id) !== String(newLeave._id));
+    setStoredLeaves([newLeave, ...filtered]);
+
     return { success: true, leave: newLeave, message: 'Leave application submitted successfully!' };
   },
 };
