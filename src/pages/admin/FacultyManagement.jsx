@@ -95,7 +95,7 @@ export default function FacultyManagement() {
     fetchFaculty();
     fetchApplications();
     fetchRequests();
-    fetchLeaves();
+    fetchLeaves(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -108,16 +108,16 @@ export default function FacultyManagement() {
 
   useEffect(() => {
     if (activeTab === 'leaves') {
-      fetchLeaves();
+      fetchLeaves(true);
     }
   }, [activeTab]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchLeaves();
-    }, 3000);
+      fetchLeaves(false);
+    }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [facultyList]);
 
   const fetchFaculty = async () => {
     setLoading(true);
@@ -133,17 +133,34 @@ export default function FacultyManagement() {
     }
   };
 
-  const fetchLeaves = async () => {
-    setLoadingLeaves(true);
+  const fetchLeaves = async (showLoading = false) => {
+    if (showLoading) setLoadingLeaves(true);
     try {
       const res = await facultyService.getAllFacultyLeaves();
       if (res && res.leaves) {
-        setLeavesList(res.leaves);
+        const enriched = res.leaves.map((l) => {
+          const matched = facultyList.find(
+            (f) =>
+              String(f._id || f.id) === String(l.facultyId) ||
+              (f.email && l.facultyEmail && f.email.toLowerCase() === l.facultyEmail.toLowerCase())
+          );
+
+          return {
+            ...l,
+            facultyName: l.facultyName || matched?.name || matched?.fullName || 'Prof. Jitender Sharma',
+            employeeId: l.employeeId || matched?.employeeId || matched?.empId || 'EMP-2025-014',
+            department: l.department || matched?.department || matched?.dept || 'Science & Mathematics',
+            facultyEmail: l.facultyEmail || matched?.email || 'jitender.sharma@saumyaa.edu.in',
+            branch: l.branch || matched?.branch || 'Bagru',
+          };
+        });
+
+        setLeavesList(enriched);
       }
     } catch (err) {
       console.warn('Error fetching faculty leaves:', err);
     } finally {
-      setLoadingLeaves(false);
+      if (showLoading) setLoadingLeaves(false);
     }
   };
 

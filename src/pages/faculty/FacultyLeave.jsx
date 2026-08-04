@@ -27,9 +27,27 @@ export default function FacultyLeave() {
   const fetchLeaves = async () => {
     setLoading(true);
     try {
+      let currentUser = user;
+      if (!currentUser || (!currentUser.email && !currentUser.name)) {
+        try {
+          currentUser = JSON.parse(localStorage.getItem('saumyaa_user')) || {};
+        } catch (e) {}
+      }
+
       const res = await facultyPanelService.getFacultyLeaves();
       if (res && res.leaves) {
-        setLeaves(res.leaves);
+        const curId = String(currentUser?._id || currentUser?.id || '');
+        const curEmail = String(currentUser?.email || currentUser?.facultyEmail || '').toLowerCase();
+        
+        // Filter to show ONLY the logged-in faculty member's own leave applications
+        const myLeaves = res.leaves.filter((l) => {
+          const lId = String(l.facultyId || '');
+          const lEmail = String(l.facultyEmail || '').toLowerCase();
+          return (curId && lId === curId) || (curEmail && lEmail === curEmail);
+        });
+
+        // Show logged-in faculty's leaves if any, else return all demo leaves
+        setLeaves(myLeaves.length > 0 ? myLeaves : res.leaves);
       }
     } catch (err) {
       console.warn('Error fetching leave applications:', err);
@@ -50,13 +68,27 @@ export default function FacultyLeave() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      let currentUser = user;
+      if (!currentUser || (!currentUser.email && !currentUser.name)) {
+        try {
+          currentUser = JSON.parse(localStorage.getItem('saumyaa_user')) || {};
+        } catch (e) {}
+      }
+
+      const facultyId = currentUser?._id || currentUser?.id || 'f_' + Date.now();
+      const employeeId = currentUser?.employeeId || currentUser?.empId || 'EMP-2025-0' + Math.floor(10 + Math.random() * 89);
+      const facultyName = currentUser?.name || currentUser?.fullName || currentUser?.facultyName || 'Prof. Jitender Sharma';
+      const facultyEmail = currentUser?.email || currentUser?.facultyEmail || 'jitender.sharma@saumyaa.edu.in';
+      const department = currentUser?.department || currentUser?.dept || 'Science & Mathematics';
+      const branch = currentUser?.branch || 'Bagru';
+
       const res = await facultyPanelService.applyFacultyLeave({
-        facultyId: user?._id || user?.id || 'f_jitender',
-        employeeId: user?.employeeId || 'EMP-2025-014',
-        facultyName: user?.name || user?.fullName || 'Prof. Jitender Sharma',
-        facultyEmail: user?.email || 'jitender.sharma@saumyaa.edu.in',
-        department: user?.department || 'Science & Mathematics',
-        branch: user?.branch || 'Bagru',
+        facultyId,
+        employeeId,
+        facultyName,
+        facultyEmail,
+        department,
+        branch,
         leaveType,
         startDate,
         endDate,
