@@ -2329,14 +2329,21 @@ export const facultyService = {
       _id: id,
       id,
       name: data.name,
+      email: data.email ? data.email.toLowerCase() : `${data.name.toLowerCase().replace(/ /g, '.')}@saumyaa.edu.in`,
+      password: data.password || 'faculty123',
+      phone: data.phone || '9816099999',
       designation: data.designation || 'Senior Faculty Member',
+      department: data.department || 'Science & Mathematics',
       subject: data.subject || 'General Academics',
       qualification: data.qualification || 'Master’s Degree',
       experience: data.experience || '5+ Years',
+      assignedClasses: data.assignedClasses && data.assignedClasses.length > 0 ? data.assignedClasses : ['10th', '11th (+1)'],
+      assignedSubjects: data.assignedSubjects && data.assignedSubjects.length > 0 ? data.assignedSubjects : [data.subject || 'Mathematics Advanced'],
       photo_url: data.photo_url,
       display_order: Number(data.display_order) || 1,
       is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
       created_at: new Date().toISOString(),
+      role: 'Faculty',
     };
 
     try {
@@ -2347,7 +2354,7 @@ export const facultyService = {
 
     const list = getStoredFaculty();
     setStoredFaculty([...list, newFaculty]);
-    return { success: true, faculty: newFaculty, message: 'Faculty added successfully to Firebase' };
+    return { success: true, faculty: newFaculty, message: 'Faculty account created and assigned successfully!' };
   },
 
   updateFaculty: async (id, data) => {
@@ -2719,10 +2726,11 @@ export const credentialRequestService = {
 
       localStorage.setItem('saumyaa_credential_requests', JSON.stringify(list));
 
-      // If Approved, automatically update student record in students database!
+      // If Approved, automatically update student or faculty record in database!
       if (action === 'Approved') {
         const reqItem = list[idx];
         const studentId = reqItem.studentId;
+        const facultyId = reqItem.facultyId;
         const updatePayload = {};
 
         if (reqItem.requestType === 'Username / Email Change') {
@@ -2733,6 +2741,8 @@ export const credentialRequestService = {
 
         if (studentId && Object.keys(updatePayload).length > 0) {
           await studentService.updateStudent(studentId, updatePayload);
+        } else if (facultyId && Object.keys(updatePayload).length > 0) {
+          await facultyService.updateFaculty(facultyId, updatePayload);
         }
       }
     }

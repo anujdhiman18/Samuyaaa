@@ -1,22 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { facultyService, facultyApplicationService, getStoredFaculty } from '../../services/api';
+import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const initialForm = {
   name: '',
-  designation: '',
-  subject: '',
-  qualification: '',
-  experience: '',
+  email: '',
+  password: 'faculty123',
+  phone: '9816099999',
+  designation: 'Senior Faculty Member',
+  department: 'Science & Mathematics',
+  subject: 'Mathematics Advanced',
+  qualification: 'Master’s Degree',
+  experience: '5+ Years',
+  assignedClasses: ['10th', '11th (+1)'],
+  assignedSubjects: ['Mathematics Advanced'],
   photo_url: '',
   display_order: 1,
   is_active: true,
 };
 
 export default function FacultyManagement() {
-  const [activeTab, setActiveTab] = useState('directory'); // 'directory' | 'applications'
+  const [activeTab, setActiveTab] = useState('directory'); // 'directory' | 'applications' | 'requests'
+
+  // Credential Requests State
+  const [credentialRequests, setCredentialRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
 
   // Faculty Directory State
   const [facultyList, setFacultyList] = useState(() => {
@@ -56,6 +66,7 @@ export default function FacultyManagement() {
   useEffect(() => {
     fetchFaculty();
     fetchApplications();
+    fetchRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -87,6 +98,33 @@ export default function FacultyManagement() {
     }
   };
 
+  const fetchRequests = async () => {
+    setLoadingRequests(true);
+    try {
+      const res = await credentialRequestService.getRequests();
+      if (res && res.requests) {
+        setCredentialRequests(res.requests);
+      }
+    } catch (err) {
+      console.warn('Error fetching credential requests:', err);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleProcessCredentialRequest = async (requestId, action) => {
+    try {
+      const res = await credentialRequestService.processRequest(requestId, action, `Admin ${action.toLowerCase()} credential update.`);
+      if (res && res.success) {
+        addToast(`Credential change request ${action.toLowerCase()}!`, 'success');
+        fetchRequests();
+        fetchFaculty();
+      }
+    } catch (err) {
+      addToast('Error processing request', 'error');
+    }
+  };
+
   const handleOpenAdd = () => {
     setEditingMember(null);
     setForm({ ...initialForm, display_order: facultyList.length + 1 });
@@ -99,10 +137,16 @@ export default function FacultyManagement() {
     setEditingMember(member);
     setForm({
       name: member.name || '',
-      designation: member.designation || '',
-      subject: member.subject || '',
-      qualification: member.qualification || '',
-      experience: member.experience || '',
+      email: member.email || '',
+      password: member.password || 'faculty123',
+      phone: member.phone || '9816099999',
+      designation: member.designation || 'Senior Faculty Member',
+      department: member.department || 'Science & Mathematics',
+      subject: member.subject || 'Mathematics Advanced',
+      qualification: member.qualification || 'Master’s Degree',
+      experience: member.experience || '5+ Years',
+      assignedClasses: member.assignedClasses || ['10th', '11th (+1)'],
+      assignedSubjects: member.assignedSubjects || [member.subject || 'Mathematics Advanced'],
       photo_url: member.photo_url || '',
       display_order: member.display_order !== undefined ? member.display_order : 1,
       is_active: member.is_active !== undefined ? Boolean(member.is_active) : true,
@@ -323,6 +367,23 @@ export default function FacultyManagement() {
           {applications.filter((a) => a.status === 'Pending').length > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
               {applications.filter((a) => a.status === 'Pending').length} new
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+            activeTab === 'requests'
+              ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              : 'text-on-surface-variant hover:text-secondary'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">key</span>
+          Credential Requests ({credentialRequests.filter((r) => r.status === 'Pending').length})
+          {credentialRequests.filter((r) => r.status === 'Pending').length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              {credentialRequests.filter((r) => r.status === 'Pending').length} pending
             </span>
           )}
         </button>
@@ -547,6 +608,87 @@ export default function FacultyManagement() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* TAB 3: CREDENTIAL CHANGE REQUESTS (ADMIN PERMISSION) */}
+      {activeTab === 'requests' && (
+        <div className="bg-white rounded-2xl border border-outline-variant/15 shadow-premium overflow-hidden">
+          {loadingRequests ? (
+            <div className="p-8 text-center text-xs animate-pulse text-on-surface-variant">
+              Loading credential requests...
+            </div>
+          ) : credentialRequests.length === 0 ? (
+            <div className="p-12 text-center text-xs text-on-surface-variant">
+              No pending credential change requests found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[11px]">
+                    <th className="py-3.5 px-4">Requester Name</th>
+                    <th className="py-3.5 px-4">User Type</th>
+                    <th className="py-3.5 px-4">Request Type</th>
+                    <th className="py-3.5 px-4">Current Username / Password</th>
+                    <th className="py-3.5 px-4">Requested New Value</th>
+                    <th className="py-3.5 px-4 text-center">Status</th>
+                    <th className="py-3.5 px-4 text-right">Admin Decision</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/10 font-body">
+                  {credentialRequests.map((req) => (
+                    <tr key={req._id || req.id} className="hover:bg-surface-container-lowest transition-colors">
+                      <td className="py-3 px-4 font-bold text-secondary">
+                        {req.facultyName || req.studentName || 'Faculty Member'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
+                          {req.userType || 'Faculty'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-bold text-secondary">{req.requestType}</td>
+                      <td className="py-3 px-4 font-mono text-on-surface-variant">{req.oldValue || '••••••••'}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-primary">{req.newValue}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            req.status === 'Approved'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : req.status === 'Rejected'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {req.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right space-x-2">
+                        {req.status === 'Pending' ? (
+                          <>
+                            <button
+                              onClick={() => handleProcessCredentialRequest(req._id || req.id, 'Approved')}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleProcessCredentialRequest(req._id || req.id, 'Rejected')}
+                              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[11px] font-bold text-on-surface-variant">Processed</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -781,6 +923,61 @@ export default function FacultyManagement() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Managed Credentials & Scoping Section */}
+          <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-3">
+            <h4 className="font-headings font-bold text-xs text-primary uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px]">lock_reset</span>
+              Admin Account Credentials & Class Allocations
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="font-bold text-secondary block mb-1">Faculty Login Email (Username) *</label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="jitender.sharma@saumyaa.edu.in"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-mono focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-secondary block mb-1">Faculty Password *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="faculty123"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-mono focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-secondary block mb-1">Assigned Department</label>
+                <input
+                  type="text"
+                  value={form.department}
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                  placeholder="Science & Mathematics"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-secondary block mb-1">Assigned Classes (Comma Separated)</label>
+                <input
+                  type="text"
+                  value={Array.isArray(form.assignedClasses) ? form.assignedClasses.join(', ') : form.assignedClasses}
+                  onChange={(e) => setForm({ ...form, assignedClasses: e.target.value.split(',').map((s) => s.trim()) })}
+                  placeholder="10th, 11th (+1), 12th (+2)"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary bg-white"
+                />
               </div>
             </div>
           </div>
