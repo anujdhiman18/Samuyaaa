@@ -3754,7 +3754,14 @@ export const facultyPanelService = {
 
   getDashboardData: async () => {
     const remote = await apiCall('/faculty-panel/dashboard');
-    if (remote) return remote;
+    if (remote && remote.success) {
+      if (remote.user) {
+        try {
+          localStorage.setItem('saumyaa_user', JSON.stringify(remote.user));
+        } catch (e) {}
+      }
+      return remote;
+    }
 
     const assignments = getStoredAssignments();
     let pendingGrading = 0;
@@ -3766,10 +3773,32 @@ export const facultyPanelService = {
 
     const currentUserStr = localStorage.getItem('saumyaa_user');
     let resps = [];
+    let activeUser = null;
+
     if (currentUserStr) {
       try {
         const u = JSON.parse(currentUserStr);
-        resps = u.responsibilities || [];
+        activeUser = u;
+        const list = getStoredFaculty();
+        const found = list.find(
+          (f) =>
+            String(f._id) === String(u._id || u.id) ||
+            String(f.id) === String(u._id || u.id) ||
+            (f.email && u.email && f.email.toLowerCase() === u.email.toLowerCase())
+        );
+
+        if (found) {
+          resps = found.responsibilities || [];
+          activeUser = {
+            ...u,
+            responsibilities: resps,
+            assignedClasses: Array.from(new Set(resps.map((r) => r.className))),
+            assignedSubjects: Array.from(new Set(resps.map((r) => r.subject))),
+          };
+          localStorage.setItem('saumyaa_user', JSON.stringify(activeUser));
+        } else {
+          resps = u.responsibilities || [];
+        }
       } catch (e) {}
     }
 
@@ -3783,6 +3812,7 @@ export const facultyPanelService = {
 
     return {
       success: true,
+      user: activeUser,
       stats: {
         todayClassesCount: todayTimetable.length,
         totalAssignedStudents: resps.length > 0 ? 45 : 0,

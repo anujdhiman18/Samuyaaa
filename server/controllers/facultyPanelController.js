@@ -114,8 +114,23 @@ export const getFacultyDashboard = async (req, res) => {
       room: `Hall ${String.fromCharCode(65 + (idx % 4))}`,
     }));
 
+    const derivedSubjects = Array.from(new Set(responsibilities.map((r) => r.subject)));
+
     res.json({
       success: true,
+      user: faculty ? {
+        _id: faculty._id || faculty.id,
+        id: faculty._id || faculty.id,
+        name: faculty.name,
+        email: faculty.email,
+        role: 'Faculty',
+        designation: faculty.designation,
+        department: faculty.department,
+        responsibilities,
+        assignedClasses,
+        assignedSubjects: derivedSubjects,
+        photo_url: faculty.photo_url,
+      } : null,
       stats: {
         todayClassesCount: todayTimetable.length,
         totalAssignedStudents: totalStudents,

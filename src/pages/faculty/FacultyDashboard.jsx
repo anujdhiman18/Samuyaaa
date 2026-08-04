@@ -4,7 +4,7 @@ import { facultyPanelService } from '../../services/api';
 import { Link } from 'react-router-dom';
 
 export default function FacultyDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,6 +18,9 @@ export default function FacultyDashboard() {
       const res = await facultyPanelService.getDashboardData();
       if (res && res.success) {
         setData(res);
+        if (res.user && updateUser) {
+          updateUser(res.user);
+        }
       }
     } catch (err) {
       console.warn('Dashboard fetch error:', err);
@@ -42,14 +45,15 @@ export default function FacultyDashboard() {
     activeAnnouncementsCount: 4,
   };
 
-  const responsibilities = user?.responsibilities || [];
+  const activeUser = data?.user || user;
+  const responsibilities = activeUser?.responsibilities || [];
   const derivedClasses = responsibilities.length > 0 
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || []);
+    : (activeUser?.assignedClasses && activeUser.assignedClasses.length > 0 ? activeUser.assignedClasses : []);
 
   const derivedSubjects = responsibilities.length > 0 
     ? Array.from(new Set(responsibilities.map((r) => r.subject)))
-    : (user?.assignedSubjects || []);
+    : (activeUser?.assignedSubjects && activeUser.assignedSubjects.length > 0 ? activeUser.assignedSubjects : []);
 
   const assignedClassesStr = derivedClasses.length > 0 ? derivedClasses.join(', ') : 'None assigned yet by Admin';
   const assignedSubjectsStr = derivedSubjects.length > 0 ? derivedSubjects.join(', ') : 'None assigned yet by Admin';
