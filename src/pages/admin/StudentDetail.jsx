@@ -269,6 +269,9 @@ export default function StudentDetail() {
 
   const isPaid = Boolean(student.feesPaid || student.paidTillMonth === 'July 2026');
   const admissionNo = student.admissionNumber || `ADM-2025-${String(student._id || student.id).slice(-3)}`;
+  const displaySubjects = Array.isArray(student.subjects) && student.subjects.length > 0
+    ? student.subjects.join(', ')
+    : (student.subject || student.course || 'Mathematics Advanced');
 
   return (
     <div className="space-y-6 font-body">
