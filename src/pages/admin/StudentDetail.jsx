@@ -403,7 +403,7 @@ export default function StudentDetail() {
               <span className="font-bold text-secondary">{student.batch || '2024-2026'}</span>
             </div>
             <div>
-              <span className="text-on-surface-variant text-[11px] block">Branch</span>
+              <span className="text-on-surface-variant text-[11px] block">Location</span>
               <span className="font-extrabold text-primary">🏢 {student.branch || 'Bagru'}</span>
             </div>
             <div>

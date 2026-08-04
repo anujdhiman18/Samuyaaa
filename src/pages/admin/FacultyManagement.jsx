@@ -988,7 +988,7 @@ export default function FacultyManagement() {
                 <thead>
                   <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                     <th className="py-3.5 px-4 whitespace-nowrap">Faculty Member</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Department & Branch</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Department & Location</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Leave Type</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Duration & Days</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Reason / Statement</th>
@@ -1117,7 +1117,7 @@ export default function FacultyManagement() {
                 <span className="block font-mono text-[11px] text-primary mt-0.5">{selectedLeaveApp.employeeId || 'EMP-2025-014'}</span>
               </div>
               <div>
-                <span className="text-[11px] text-on-surface-variant block">Department & Branch</span>
+                <span className="text-[11px] text-on-surface-variant block">Department & Location</span>
                 <span className="font-bold text-secondary">{selectedLeaveApp.department || 'Science & Mathematics'}</span>
                 <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
               </div>

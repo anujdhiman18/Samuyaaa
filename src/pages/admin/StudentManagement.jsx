@@ -719,7 +719,7 @@ export default function StudentManagement() {
                     <th className="py-3.5 px-4 whitespace-nowrap">Subject(s)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Batch</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">Branch</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Location</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Contact No.</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Email</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Fee Status</th>
