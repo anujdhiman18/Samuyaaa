@@ -2467,6 +2467,13 @@ const setStoredFaculty = (list) => {
 
 export const facultyService = {
   getFaculty: async ({ activeOnly = false } = {}) => {
+    const query = activeOnly ? '?activeOnly=true' : '';
+    const remote = await apiCall(`/faculty${query}`);
+    if (remote && remote.success && Array.isArray(remote.faculty)) {
+      setStoredFaculty(remote.faculty);
+      return remote;
+    }
+
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
     let list = fsFaculty || getStoredFaculty();
     if (activeOnly) {
@@ -2549,6 +2556,22 @@ export const facultyService = {
     });
     if (remote && remote.success) {
       if (remote.faculty) {
+        // Sync local storage saumyaa_faculty immediately
+        const list = getStoredFaculty();
+        const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+        if (idx !== -1) {
+          list[idx] = remote.faculty;
+        } else {
+          list.push(remote.faculty);
+        }
+        setStoredFaculty(list);
+
+        // Sync Firestore
+        try {
+          await setDoc(doc(db, 'faculty', String(facultyId)), remote.faculty, { merge: true });
+        } catch (e) {}
+
+        // Sync active user session
         try {
           const currentUserStr = localStorage.getItem('saumyaa_user');
           if (currentUserStr) {
@@ -2653,6 +2676,17 @@ export const facultyService = {
     });
     if (remote && remote.success) {
       if (remote.faculty) {
+        const list = getStoredFaculty();
+        const idx = list.findIndex((f) => String(f._id) === String(facultyId) || String(f.id) === String(facultyId));
+        if (idx !== -1) {
+          list[idx] = remote.faculty;
+          setStoredFaculty(list);
+        }
+
+        try {
+          await setDoc(doc(db, 'faculty', String(facultyId)), remote.faculty, { merge: true });
+        } catch (e) {}
+
         try {
           const currentUserStr = localStorage.getItem('saumyaa_user');
           if (currentUserStr) {
