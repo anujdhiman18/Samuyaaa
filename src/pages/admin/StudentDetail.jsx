@@ -92,6 +92,7 @@ export default function StudentDetail() {
           rollNumber: s.rollNumber || '',
           subjects: s.subjects || [],
           batch: s.batch || '2024-2026',
+          branch: s.branch || 'Bagru',
           className: s.className || '10th',
           photo: s.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
           phone: s.phone || '',
@@ -133,6 +134,7 @@ export default function StudentDetail() {
       rollNumber: student.rollNumber || '',
       subjects: student.subjects || [],
       batch: student.batch || '2024-2026',
+      branch: student.branch || 'Bagru',
       className: student.className || '10th',
       photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       phone: student.phone || '',
@@ -401,6 +403,10 @@ export default function StudentDetail() {
               <span className="font-bold text-secondary">{student.batch || '2024-2026'}</span>
             </div>
             <div>
+              <span className="text-on-surface-variant text-[11px] block">Branch</span>
+              <span className="font-extrabold text-primary">🏢 {student.branch || 'Bagru'}</span>
+            </div>
+            <div>
               <span className="text-on-surface-variant text-[11px] block">Class</span>
               <span className="font-bold text-secondary">Class {student.className || '10th'}</span>
             </div>
@@ -665,6 +671,17 @@ export default function StudentDetail() {
                 {BATCHES.map((b) => (
                   <option key={b} value={b}>{b}</option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Branch *</label>
+              <select
+                value={editForm.branch || 'Bagru'}
+                onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none bg-white"
+              >
+                <option value="Bagru">Bagru (Main Branch)</option>
+                <option value="Daroh">Daroh (Child Branch)</option>
               </select>
             </div>
             <div>

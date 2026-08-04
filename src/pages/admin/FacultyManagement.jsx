@@ -14,6 +14,7 @@ const initialForm = {
   subject: 'Mathematics Advanced',
   qualification: 'Master’s Degree',
   experience: '5+ Years',
+  branch: 'Bagru',
   assignedClasses: ['10th', '11th (+1)'],
   assignedSubjects: ['Mathematics Advanced'],
   photo_url: '',
@@ -1073,6 +1074,18 @@ export default function FacultyManagement() {
                   placeholder="Science & Mathematics"
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary bg-white"
                 />
+              </div>
+
+              <div>
+                <label className="font-bold text-secondary block mb-1">Branch *</label>
+                <select
+                  value={form.branch || 'Bagru'}
+                  onChange={(e) => setForm({ ...form, branch: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
+                >
+                  <option value="Bagru">Bagru (Main Branch)</option>
+                  <option value="Daroh">Daroh (Child Branch)</option>
+                </select>
               </div>
 
               <div>

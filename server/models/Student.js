@@ -104,6 +104,11 @@ const studentSchema = new mongoose.Schema(
       enum: ['Active', 'Inactive', 'Alumni', 'Suspended'],
       default: 'Active',
     },
+    branch: {
+      type: String,
+      enum: ['Bagru', 'Daroh'],
+      default: 'Bagru',
+    },
     paidTillMonth: {
       type: String,
       default: '',

@@ -20,6 +20,7 @@ const SUBJECTS = [
 const BATCHES = ['All', '2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
 const CLASSES = ['All', '9th', '10th', '11th (+1)', '12th (+2)'];
 const STATUSES = ['All', 'Active', 'Inactive', 'Alumni', 'Suspended'];
+const BRANCHES = ['All', 'Bagru', 'Daroh'];
 
 const initialStudentForm = {
   fullName: '',
@@ -35,6 +36,7 @@ const initialStudentForm = {
   subjects: ['Mathematics Advanced'],
   subject: 'Mathematics Advanced',
   batch: '2024-2026',
+  branch: 'Bagru',
   rollNumber: '',
   photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   monthlyFee: 2500,
@@ -67,6 +69,7 @@ export default function StudentManagement() {
   const [selectedBatch, setSelectedBatch] = useState('All');
   const [selectedClass, setSelectedClass] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedBranch, setSelectedBranch] = useState('All');
   const [feeStatusFilter, setFeeStatusFilter] = useState(initialFeeFilter);
 
   // Sorting & Pagination State
@@ -284,6 +287,9 @@ export default function StudentManagement() {
 
       // Status Filter
       if (selectedStatus !== 'All' && s.status !== selectedStatus) return false;
+
+      // Branch Filter
+      if (selectedBranch !== 'All' && (s.branch || 'Bagru') !== selectedBranch) return false;
 
       // Fee Status Filter
       if (feeStatusFilter !== 'All') {
@@ -528,7 +534,23 @@ export default function StudentManagement() {
         </div>
 
         {/* Filter Dropdowns Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-outline-variant/15">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 border-t border-outline-variant/15">
+          {/* Branch Filter */}
+          <div>
+            <label className="block text-[10px] font-headings font-bold uppercase tracking-wider text-on-surface-variant/70 mb-1">
+              Branch
+            </label>
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
+            >
+              <option value="All">All Branches</option>
+              <option value="Bagru">Bagru (Main)</option>
+              <option value="Daroh">Daroh (Child)</option>
+            </select>
+          </div>
+
           {/* Subject */}
           <div>
             <label className="block text-[10px] font-headings font-bold uppercase tracking-wider text-on-surface-variant/70 mb-1">
@@ -697,6 +719,7 @@ export default function StudentManagement() {
                     <th className="py-3.5 px-4 whitespace-nowrap">Subject(s)</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Batch</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Class</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Branch</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Contact No.</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Email</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">Fee Status</th>
@@ -761,6 +784,15 @@ export default function StudentManagement() {
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-secondary font-bold text-[11px]">
                             Class {s.className || '10th'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                            (s.branch || 'Bagru') === 'Daroh'
+                              ? 'bg-teal-100 text-teal-800 border border-teal-200'
+                              : 'bg-purple-100 text-purple-800 border border-purple-200'
+                          }`}>
+                            🏢 {s.branch || 'Bagru'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap font-mono">
@@ -945,6 +977,18 @@ export default function StudentManagement() {
                 {BATCHES.filter((b) => b !== 'All').map((b) => (
                   <option key={b} value={b}>{b}</option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Branch *</label>
+              <select
+                value={form.branch || 'Bagru'}
+                onChange={(e) => setForm({ ...form, branch: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary font-bold bg-white"
+              >
+                <option value="Bagru">Bagru (Main Branch)</option>
+                <option value="Daroh">Daroh (Child Branch)</option>
               </select>
             </div>
 

@@ -24,6 +24,7 @@ const initialFields = {
   parentPhone: '',
   parentEmail: '',
   grade: '',
+  branch: 'Bagru',
   subject: subjectOptions[0],
 };
 
@@ -189,6 +190,21 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                   placeholder="example@domain.com"
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="preferred-branch">
+                  Preferred Branch *
+                </label>
+                <select
+                  id="preferred-branch"
+                  required
+                  value={fields.branch || 'Bagru'}
+                  onChange={(e) => updateField('branch', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
+                >
+                  <option value="Bagru">Bagru (Main Branch)</option>
+                  <option value="Daroh">Daroh (Child Branch)</option>
+                </select>
               </div>
             </div>
 
