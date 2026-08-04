@@ -1646,18 +1646,18 @@ const getCombinedAttendance = (fsAttendance) => {
 
 const normalizeDateKey = (rawDate) => {
   if (!rawDate) return '';
-  if (typeof rawDate === 'string') {
-    if (rawDate.includes('T')) return rawDate.split('T')[0];
+  if (typeof rawDate === 'string' && rawDate.length === 10 && rawDate.includes('-')) {
     return rawDate.trim();
   }
   try {
     const d = new Date(rawDate);
+    if (isNaN(d.getTime())) return String(rawDate).trim();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   } catch (e) {
-    return String(rawDate);
+    return String(rawDate).trim();
   }
 };
 

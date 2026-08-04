@@ -117,7 +117,11 @@ export default function AttendanceManagement() {
         const stId = String(st._id || st.id);
         const existing = records.find((r) => {
           const rStudentId = String(r.student?._id || r.student?.id || r.student);
-          return rStudentId === stId;
+          return (
+            rStudentId === stId ||
+            (r.rollNumber && st.rollNumber && r.rollNumber === st.rollNumber) ||
+            (r.student?.rollNumber && st.rollNumber && r.student.rollNumber === st.rollNumber)
+          );
         });
 
         if (existing) {
@@ -219,6 +223,7 @@ export default function AttendanceManagement() {
         const data = attendanceMap[stId] || { status: 'Present', remarks: '' };
         return {
           studentId: stId,
+          rollNumber: st.rollNumber,
           status: data.status,
           remarks: data.remarks,
         };

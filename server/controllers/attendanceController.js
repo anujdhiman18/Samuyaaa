@@ -19,10 +19,20 @@ export const getAttendance = async (req, res) => {
     }
 
     if (date) {
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
+      const dateParts = String(date).split('T')[0].split('-');
+      let start, end;
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        start = new Date(year, month, day, 0, 0, 0, 0);
+        end = new Date(year, month, day, 23, 59, 59, 999);
+      } else {
+        start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+      }
       query.date = { $gte: start, $lte: end };
     }
 
@@ -66,11 +76,22 @@ export const saveBatchAttendance = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Date and records are required' });
     }
 
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const dateParts = String(date).split('T')[0].split('-');
+    let startOfDay, endOfDay, targetDate;
+    if (dateParts.length === 3) {
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const day = parseInt(dateParts[2], 10);
+      targetDate = new Date(year, month, day, 12, 0, 0, 0);
+      startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+      endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+    } else {
+      targetDate = new Date(date);
+      startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999);
+    }
 
     const savedRecords = [];
 
