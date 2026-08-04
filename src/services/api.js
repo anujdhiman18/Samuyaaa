@@ -4028,9 +4028,47 @@ export const facultyPanelService = {
 
   getFacultyLeaves: async () => {
     const remote = await apiCall('/faculty-panel/leaves');
-    if (remote) return remote;
+    if (remote && remote.success && Array.isArray(remote.leaves)) {
+      setStoredLeaves(remote.leaves);
+      return remote;
+    }
 
-    return { success: true, leaves: getStoredLeaves() };
+    const fsLeaves = await syncFirestoreCollection('faculty_leaves', initialMockFacultyLeaves);
+    const list = fsLeaves || getStoredLeaves();
+    setStoredLeaves(list);
+    return { success: true, leaves: list };
+  },
+
+  getAllFacultyLeaves: async () => {
+    const remote = await apiCall('/admin/faculty-leaves');
+    if (remote && remote.success && Array.isArray(remote.leaves)) {
+      setStoredLeaves(remote.leaves);
+      return remote;
+    }
+
+    const fsLeaves = await syncFirestoreCollection('faculty_leaves', initialMockFacultyLeaves);
+    const list = fsLeaves || getStoredLeaves();
+    setStoredLeaves(list);
+    return { success: true, leaves: list };
+  },
+
+  updateFacultyLeaveStatus: async (leaveId, status, adminNote = '') => {
+    const remote = await apiCall(`/admin/faculty-leaves/${leaveId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, adminNote }),
+    });
+
+    const list = getStoredLeaves().map((l) =>
+      String(l._id || l.id) === String(leaveId) ? { ...l, status, adminNote, updatedAt: new Date().toISOString() } : l
+    );
+    setStoredLeaves(list);
+
+    try {
+      await setDoc(doc(db, 'faculty_leaves', String(leaveId)), { status, adminNote, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e) {}
+
+    if (remote && remote.success) return remote;
+    return { success: true, message: `Leave application ${status} successfully` };
   },
 
   applyFacultyLeave: async (data) => {
@@ -4038,18 +4076,32 @@ export const facultyPanelService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    if (remote) return remote;
 
+    const id = 'flv_' + Date.now();
     const newLeave = {
-      _id: 'flv_' + Date.now(),
-      facultyId: 'f_jitender',
-      facultyName: 'Prof. Jitender Sharma',
-      ...data,
+      _id: id,
+      id,
+      facultyId: data.facultyId || 'f_jitender',
+      facultyName: data.facultyName || 'Prof. Jitender Sharma',
+      facultyEmail: data.facultyEmail || 'jitender.sharma@saumyaa.edu.in',
+      branch: data.branch || 'Bagru',
+      leaveType: data.leaveType || 'Casual Leave',
+      startDate: data.startDate,
+      endDate: data.endDate,
+      reason: data.reason || 'Leave requested',
       status: 'Pending',
       createdAt: new Date().toISOString(),
     };
+
+    try {
+      await setDoc(doc(db, 'faculty_leaves', id), newLeave);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc leave error:', fsErr.message);
+    }
+
     const list = getStoredLeaves();
     setStoredLeaves([newLeave, ...list]);
+    if (remote && remote.success) return remote;
     return { success: true, leave: newLeave, message: 'Leave application submitted successfully!' };
   },
 };

@@ -77,12 +77,17 @@ export default function FacultyManagement() {
   const [selectedBulkSections, setSelectedBulkSections] = useState(['Section A']);
   const [assigningResp, setAssigningResp] = useState(false);
 
+  // Faculty Leaves State
+  const [leavesList, setLeavesList] = useState([]);
+  const [loadingLeaves, setLoadingLeaves] = useState(false);
+
   const { addToast } = useToast();
 
   useEffect(() => {
     fetchFaculty();
     fetchApplications();
     fetchRequests();
+    fetchLeaves();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -97,6 +102,30 @@ export default function FacultyManagement() {
       addToast(err.message || 'Failed to fetch faculty list', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaves = async () => {
+    setLoadingLeaves(true);
+    try {
+      const res = await facultyService.getAllFacultyLeaves();
+      if (res && res.leaves) {
+        setLeavesList(res.leaves);
+      }
+    } catch (err) {
+      console.warn('Error fetching faculty leaves:', err);
+    } finally {
+      setLoadingLeaves(false);
+    }
+  };
+
+  const handleUpdateLeaveStatus = async (leaveId, status) => {
+    try {
+      const res = await facultyService.updateFacultyLeaveStatus(leaveId, status);
+      addToast(res.message || `Leave application ${status} successfully`, 'success');
+      fetchLeaves();
+    } catch (err) {
+      addToast('Error updating leave status', 'error');
     }
   };
 
@@ -476,6 +505,23 @@ export default function FacultyManagement() {
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setActiveTab('leaves')}
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+            activeTab === 'leaves'
+              ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
+              : 'text-on-surface-variant hover:text-secondary'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">event_busy</span>
+          Faculty Leaves ({leavesList.filter((l) => l.status === 'Pending').length})
+          {leavesList.filter((l) => l.status === 'Pending').length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+              {leavesList.filter((l) => l.status === 'Pending').length} pending
+            </span>
+          )}
+        </button>
       </div>
 
       {/* TAB 1: ACTIVE FACULTY DIRECTORY */}
@@ -792,6 +838,123 @@ export default function FacultyManagement() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 4: FACULTY LEAVE APPLICATIONS & MESSAGES */}
+      {activeTab === 'leaves' && (
+        <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 p-6 space-y-4 font-body">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant/15 pb-4">
+            <div>
+              <h3 className="font-headings font-extrabold text-lg text-secondary flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">event_busy</span>
+                Faculty Leave Applications & Messages
+              </h3>
+              <p className="text-xs text-on-surface-variant">
+                Review, approve, or reject leave applications submitted by faculty members.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold">
+                {leavesList.filter((l) => l.status === 'Pending').length} Pending Requests
+              </span>
+            </div>
+          </div>
+
+          {loadingLeaves ? (
+            <div className="p-8 text-center text-xs animate-pulse text-on-surface-variant">
+              Loading faculty leave requests...
+            </div>
+          ) : leavesList.length === 0 ? (
+            <div className="p-12 text-center text-xs text-on-surface-variant space-y-2">
+              <span className="material-symbols-outlined text-4xl text-outline-variant">event_available</span>
+              <p className="font-headings font-bold">No leave applications found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
+                    <th className="py-3.5 px-4 whitespace-nowrap">Faculty Name</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Leave Type</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Duration (Dates)</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Reason / Message</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Branch</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/10">
+                  {leavesList.map((l) => {
+                    const lId = String(l._id || l.id);
+                    return (
+                      <tr key={lId} className="hover:bg-surface-container-lowest transition-colors">
+                        <td className="py-3 px-4 font-bold text-secondary whitespace-nowrap">
+                          <div>
+                            <span className="block">{l.facultyName || 'Faculty Member'}</span>
+                            <span className="text-[10px] font-mono text-on-surface-variant">{l.facultyEmail || ''}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-800 font-bold text-[11px] border border-purple-200">
+                            {l.leaveType || 'Casual Leave'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono whitespace-nowrap">
+                          {l.startDate} to {l.endDate}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/60 text-secondary font-medium text-xs max-w-xs md:max-w-md">
+                            💬 "{l.reason || l.message || 'No reason specified'}"
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                            (l.branch || 'Bagru') === 'Daroh'
+                              ? 'bg-teal-100 text-teal-800 border border-teal-200'
+                              : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                          }`}>
+                            🏢 {l.branch || 'Bagru'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {l.status === 'Approved' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Approved</span>
+                          ) : l.status === 'Rejected' ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">🔴 Rejected</span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">🟡 Pending Approval</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          {l.status === 'Pending' ? (
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleUpdateLeaveStatus(lId, 'Approved')}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleUpdateLeaveStatus(lId, 'Rejected')}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">cancel</span>
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-on-surface-variant font-bold italic">Decision Saved</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

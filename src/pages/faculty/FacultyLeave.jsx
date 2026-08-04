@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 
 export default function FacultyLeave() {
+  const { user } = useAuth();
   const { addToast } = useToast();
 
   const [leaves, setLeaves] = useState([]);
@@ -40,10 +42,15 @@ export default function FacultyLeave() {
     setSubmitting(true);
     try {
       const res = await facultyPanelService.applyFacultyLeave({
+        facultyId: user?._id || user?.id || 'f_jitender',
+        facultyName: user?.name || 'Prof. Jitender Sharma',
+        facultyEmail: user?.email || 'jitender.sharma@saumyaa.edu.in',
+        branch: user?.branch || 'Bagru',
         leaveType,
         startDate,
         endDate,
         reason,
+        status: 'Pending',
       });
 
       if (res && res.success) {
