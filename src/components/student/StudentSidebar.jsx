@@ -8,6 +8,7 @@ const studentNavItems = [
   { path: '/student/performance', label: 'Performance Report', icon: 'analytics' },
   { path: '/student/subjects', label: 'Enrolled Subjects', icon: 'menu_book' },
   { path: '/student/fees', label: 'Fee Status', icon: 'payments' },
+  { path: '/student/leave', label: 'Apply Leave', icon: 'event_busy' },
   { path: '/student/profile', label: 'Personal Information', icon: 'badge' },
   { path: '/student/announcements', label: 'Announcements', icon: 'campaign' },
   { path: '/student/notifications', label: 'Notifications', icon: 'notifications' },

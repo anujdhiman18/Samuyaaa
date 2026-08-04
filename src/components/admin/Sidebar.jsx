@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
+  { path: '/admin/students?tab=leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/attendance', label: 'Attendance Register', icon: 'fact_check' },
   { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
@@ -23,8 +24,12 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
       return location.pathname === '/admin';
     }
     if (itemPath.includes('?tab=')) {
+      const basePath = itemPath.split('?tab=')[0];
       const tabParam = itemPath.split('?tab=')[1];
-      return location.pathname.startsWith('/admin/faculty') && location.search.includes(`tab=${tabParam}`);
+      return location.pathname.startsWith(basePath) && location.search.includes(`tab=${tabParam}`);
+    }
+    if (itemPath === '/admin/students') {
+      return location.pathname === '/admin/students' && (!location.search || !location.search.includes('tab=leaves'));
     }
     if (itemPath === '/admin/faculty') {
       return location.pathname === '/admin/faculty' && (!location.search || !location.search.includes('tab=leaves'));
