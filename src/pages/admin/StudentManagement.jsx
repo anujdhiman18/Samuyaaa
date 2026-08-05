@@ -51,6 +51,15 @@ export default function StudentManagement() {
   const initialFeeFilter = searchParams.get('feeStatus') || 'All';
   const activeTab = searchParams.get('tab') || 'students';
 
+  const [students, setStudents] = useState(() => {
+    try {
+      return getStoredStudents() || initialMockStudents;
+    } catch (e) {
+      return initialMockStudents;
+    }
+  });
+  const [loading, setLoading] = useState(false);
+
   // Student Leaves Management State
   const [studentLeaves, setStudentLeaves] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(false);
