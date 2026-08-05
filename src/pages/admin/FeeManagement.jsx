@@ -294,9 +294,22 @@ export default function FeeManagement() {
                       ₹{(p.amountPaid || 0).toLocaleString()}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
-                        {p.paymentMode}
-                      </span>
+                      {p.paymentMode?.includes('Razorpay') ? (
+                        <div className="flex flex-col">
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px] border border-blue-200 inline-block w-max">
+                            ⚡ Razorpay Online
+                          </span>
+                          {p.transactionId && (
+                            <span className="text-[9px] font-mono text-on-surface-variant/70 mt-0.5">
+                              {p.transactionId}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full bg-surface-container font-bold text-[11px]">
+                          {p.paymentMode}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-on-surface-variant">
                       {new Date(p.paymentDate).toLocaleDateString()}
@@ -382,6 +395,7 @@ export default function FeeManagement() {
                 onChange={(e) => setPaymentMode(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               >
+                <option value="Razorpay (Online)">⚡ Razorpay Gateway (Test Mode)</option>
                 <option value="UPI">UPI / GPay / PhonePe</option>
                 <option value="Cash">Cash Deposit</option>
                 <option value="Net Banking">Net Banking</option>

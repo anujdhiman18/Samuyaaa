@@ -17,7 +17,7 @@ export const initialMockStudents = [
     phone: '9816001122',
     parentPhone: '8894190175',
     email: 'anuj1100.be24@chitkarauniversity.edu.in',
-    password: 'student123',
+    password: 'Student123',
     address: 'Chitkara University Campus / Himachal Pradesh',
     className: '12th (+2)',
     course: 'Computer Science',
@@ -550,8 +550,8 @@ export const authService = {
     );
 
     if (student) {
-      const assignedPass = student.password || 'student123';
-      if (password === assignedPass || password === 'student123' || password === 'student') {
+      const assignedPass = student.password || 'Student123';
+      if (password === assignedPass || password.toLowerCase() === (assignedPass || '').toLowerCase() || password === 'Student123' || password === 'student123' || password === 'student') {
         const studentUserObj = {
           id: student._id || student.id,
           name: student.fullName,
@@ -1555,8 +1555,11 @@ export const feeService = {
       paymentDate: new Date().toISOString().split('T')[0],
       monthYear: data.monthYear || 'July 2026',
       paymentMode: data.paymentMode || 'UPI',
+      transactionId: data.razorpay_payment_id || data.transactionId || `RZP_${Date.now()}`,
+      razorpayPaymentId: data.razorpay_payment_id || null,
+      razorpayOrderId: data.razorpay_order_id || null,
       receiptNumber: `REC-2026-000${count}`,
-      remarks: 'Tuition fee payment',
+      remarks: data.remarks || (data.paymentMode === 'Razorpay (Online)' ? 'Online tuition fee via Razorpay Test Mode' : 'Tuition fee payment'),
     };
 
     try {

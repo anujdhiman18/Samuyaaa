@@ -158,8 +158,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
-                setEmail('rahul.gupta@student.saumyaa.com');
-                setPassword('student123');
+                setEmail('anuj1100.be24@chitkarauniversity.edu.in');
+                setPassword('Student123');
                 addToast('Filled Student Demo Credentials!', 'info');
               }}
               className="py-1.5 px-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-center hover:bg-emerald-100 transition-colors cursor-pointer"
