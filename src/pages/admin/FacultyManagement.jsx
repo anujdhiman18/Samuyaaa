@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty } from '../../services/api';
+import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty, subscribeFirestoreCollection, initialMockFaculty } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -35,9 +35,9 @@ export default function FacultyManagement() {
   // Faculty Directory State
   const [facultyList, setFacultyList] = useState(() => {
     try {
-      return getStoredFaculty() || [];
+      return getStoredFaculty() || initialMockFaculty;
     } catch (e) {
-      return [];
+      return initialMockFaculty;
     }
   });
   const [loading, setLoading] = useState(false);
@@ -92,10 +92,24 @@ export default function FacultyManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
+    const unsubscribe = subscribeFirestoreCollection('faculty', initialMockFaculty, (list) => {
+      if (list && Array.isArray(list) && list.length > 0) {
+        setFacultyList(list);
+        setLoading(false);
+      }
+    });
+
+    window.addEventListener('saumyaa_data_updated', fetchFaculty);
+
     fetchFaculty();
     fetchApplications();
     fetchRequests();
     fetchLeaves(true);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('saumyaa_data_updated', fetchFaculty);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

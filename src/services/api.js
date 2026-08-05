@@ -2650,7 +2650,7 @@ export const feedbackService = {
   },
 };
 
-const initialMockFaculty = [
+export const initialMockFaculty = [
   {
     _id: 'fac_1',
     id: 'fac_1',
@@ -2753,9 +2753,10 @@ export const getStoredFaculty = () => {
   }
 };
 
-const setStoredFaculty = (list) => {
+const setStoredFaculty = (list, skipNotify = false) => {
   try {
     localStorage.setItem('saumyaa_faculty', JSON.stringify(list));
+    if (!skipNotify) notifyDataUpdate();
   } catch (e) {
     console.warn('LocalStorage faculty write error:', e);
   }
@@ -2766,17 +2767,17 @@ export const facultyService = {
     const query = activeOnly ? '?activeOnly=true' : '';
     const remote = await apiCall(`/faculty${query}`);
     if (remote && remote.success && Array.isArray(remote.faculty)) {
-      setStoredFaculty(remote.faculty);
+      setStoredFaculty(remote.faculty, true);
       return remote;
     }
 
-    let list = getStoredFaculty();
+    const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
+    let list = fsFaculty || getStoredFaculty();
+    if (fsFaculty && fsFaculty.length > 0) {
+      setStoredFaculty(list, true);
+    }
     if (!list || !Array.isArray(list) || list.length === 0) {
-      const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
-      list = fsFaculty || initialMockFaculty;
-      if (list && list.length > 0) {
-        setStoredFaculty(list);
-      }
+      list = initialMockFaculty;
     }
     if (activeOnly) {
       list = list.filter((f) => f.is_active !== false);
