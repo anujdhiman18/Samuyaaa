@@ -277,6 +277,17 @@ export default function StudentDetail() {
 
   return (
     <div className="space-y-6 font-body">
+      {/* Back Navigation */}
+      <div className="flex items-center justify-between">
+        <Link
+          to="/admin/students"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-secondary hover:text-primary font-headings font-bold text-xs shadow-sm border border-outline-variant/20 transition-all hover:-translate-x-1"
+        >
+          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          Back to Student Directory
+        </Link>
+      </div>
+
       {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-2xl shadow-lg border border-outline-variant/20 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 transition-all">
         {/* Left: Student Avatar & Info */}
