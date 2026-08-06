@@ -4,6 +4,9 @@ import Admin from './models/Admin.js';
 import Student from './models/Student.js';
 import Subject from './models/Subject.js';
 import FeePayment from './models/FeePayment.js';
+import Role from './models/Role.js';
+import Faculty from './models/Faculty.js';
+import { SYSTEM_DEFAULT_ROLES } from './controllers/rbacController.js';
 
 dotenv.config();
 
@@ -19,6 +22,12 @@ const seedData = async () => {
     await Student.deleteMany();
     await Subject.deleteMany();
     await FeePayment.deleteMany();
+    await Role.deleteMany();
+    await Faculty.deleteMany();
+
+    // Seed System Default Roles
+    const seededRoles = await Role.insertMany(SYSTEM_DEFAULT_ROLES);
+    console.log(`✓ Seeded ${seededRoles.length} System RBAC Roles into MongoDB`);
 
     // Create Admin
     const admin = await Admin.create({
@@ -29,6 +38,50 @@ const seedData = async () => {
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     });
     console.log(`✓ Default Admin Created: admin@saumyaa.com / admin123`);
+
+    // Seed Initial Faculty Members linked to database roles
+    const facultyMembers = await Faculty.insertMany([
+      {
+        name: 'Prof. Jitender Sharma',
+        designation: 'Senior Mathematics & Physics HOD',
+        subject: 'Mathematics Advanced',
+        qualification: 'M.Sc. Mathematics & Physics, B.Ed',
+        experience: '15+ Years Teaching Experience',
+        photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        email: 'jitender.sharma@saumyaa.edu.in',
+        password: 'faculty123',
+        phone: '9816099999',
+        department: 'Science & Mathematics',
+        assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
+        assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
+        role: 'HEAD_OF_DEPARTMENT',
+        roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+        branch: 'Bagru',
+        is_active: true,
+        display_order: 1,
+      },
+      {
+        name: 'Dr. Ramesh Verma',
+        designation: 'Senior Chemistry Faculty',
+        subject: 'Chemistry Foundation',
+        qualification: 'Ph.D. Chemistry',
+        experience: '12+ Years Experience',
+        photo_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
+        email: 'ramesh.verma@saumyaa.edu.in',
+        password: 'faculty123',
+        phone: '9816088888',
+        department: 'Science & Mathematics',
+        assignedClasses: ['9th', '10th'],
+        assignedSubjects: ['Chemistry Foundation', 'Integrated Science'],
+        role: 'SENIOR_FACULTY',
+        roles: ['SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+        branch: 'Bagru',
+        is_active: true,
+        display_order: 2,
+      },
+    ]);
+    console.log(`✓ Seeded ${facultyMembers.length} Faculty Profiles linked to RBAC Roles`);
+
 
     // Seed Subjects
     const subjects = await Subject.insertMany([

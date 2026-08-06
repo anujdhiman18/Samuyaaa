@@ -1,12 +1,131 @@
-const Role = require('../models/Role');
-const Permission = require('../models/Permission');
-const ActivityLog = require('../models/ActivityLog');
-const LoginHistory = require('../models/LoginHistory');
-const Faculty = require('../models/Faculty');
+import Role from '../models/Role.js';
+import Permission from '../models/Permission.js';
+import ActivityLog from '../models/ActivityLog.js';
+import LoginHistory from '../models/LoginHistory.js';
+import Faculty from '../models/Faculty.js';
+
+export const SYSTEM_DEFAULT_ROLES = [
+  {
+    code: 'SUBJECT_TEACHER',
+    name: 'Subject Teacher',
+    badge: '🎓 Subject Teacher',
+    color: 'purple',
+    description: 'Class teacher with assignment, quiz, internal marks, and student management capabilities.',
+    isSystem: true,
+    permissions: [
+      'canViewDashboard', 'canViewAssignedClasses', 'canMarkAttendance', 'canEditAttendance',
+      'canUploadGrades', 'canViewClassStudents', 'canTakeAttendance', 'canViewTimetable',
+      'canViewPersonalProfile', 'canApplyLeave', 'canViewLeaveStatus', 'canReceiveAnnouncements',
+      'canUploadStudyMaterial', 'canViewAcademicCalendar', 'canChangePassword',
+      'canViewOwnAttendanceHistory', 'canViewAssignedSubjects', 'canSendMessagesToAdmin',
+      'canManageStudents', 'canCreateAssignments', 'canCreateQuizzes', 'canEnterInternalMarks',
+      'canViewStudentAnalytics', 'canGenerateClassReports'
+    ],
+  },
+  {
+    code: 'SENIOR_FACULTY',
+    name: 'Senior Faculty',
+    badge: '⭐ Senior Faculty',
+    color: 'blue',
+    description: 'Senior teacher with lesson plan review, grade submission review, and faculty mentoring rights.',
+    isSystem: true,
+    permissions: [
+      'canViewDashboard', 'canViewAssignedClasses', 'canMarkAttendance', 'canEditAttendance',
+      'canUploadGrades', 'canViewClassStudents', 'canTakeAttendance', 'canViewTimetable',
+      'canViewPersonalProfile', 'canApplyLeave', 'canViewLeaveStatus', 'canReceiveAnnouncements',
+      'canUploadStudyMaterial', 'canViewAcademicCalendar', 'canChangePassword',
+      'canViewOwnAttendanceHistory', 'canViewAssignedSubjects', 'canSendMessagesToAdmin',
+      'canManageStudents', 'canCreateAssignments', 'canCreateQuizzes', 'canEnterInternalMarks',
+      'canViewStudentAnalytics', 'canGenerateClassReports', 'canApproveLessonPlans',
+      'canReviewGrades', 'canMentorJuniorFaculty', 'canViewDepartmentAnalytics', 'canConductFacultyMeetings'
+    ],
+  },
+  {
+    code: 'HEAD_OF_DEPARTMENT',
+    name: 'Head of Department (HOD)',
+    badge: '👑 HOD',
+    color: 'emerald',
+    description: 'Department head managing faculty workloads, teacher class allocations, and leave approvals.',
+    isSystem: true,
+    permissions: [
+      'canViewDashboard', 'canViewAssignedClasses', 'canMarkAttendance', 'canEditAttendance',
+      'canUploadGrades', 'canViewClassStudents', 'canTakeAttendance', 'canViewTimetable',
+      'canViewPersonalProfile', 'canApplyLeave', 'canViewLeaveStatus', 'canReceiveAnnouncements',
+      'canUploadStudyMaterial', 'canViewAcademicCalendar', 'canChangePassword',
+      'canViewOwnAttendanceHistory', 'canViewAssignedSubjects', 'canSendMessagesToAdmin',
+      'canManageStudents', 'canCreateAssignments', 'canCreateQuizzes', 'canEnterInternalMarks',
+      'canViewStudentAnalytics', 'canGenerateClassReports', 'canApproveLessonPlans',
+      'canReviewGrades', 'canMentorJuniorFaculty', 'canViewDepartmentAnalytics',
+      'canConductFacultyMeetings', 'canAssignTeachersToClasses', 'canApproveFacultyLeave',
+      'canViewAllDepartmentStudents', 'canEditFacultyWorkload', 'canApproveExamSchedules',
+      'canManageDepartmentNotices', 'canGenerateDepartmentReports'
+    ],
+  },
+  {
+    code: 'ACADEMIC_COORDINATOR',
+    name: 'Academic Coordinator',
+    badge: '⚡ Academic Coordinator',
+    color: 'amber',
+    description: 'Institute-wide coordinator managing academic calendar, timetables, exam schedules, and attendance.',
+    isSystem: true,
+    permissions: [
+      'canViewDashboard', 'canViewAssignedClasses', 'canMarkAttendance', 'canEditAttendance',
+      'canUploadGrades', 'canViewClassStudents', 'canTakeAttendance', 'canViewTimetable',
+      'canViewPersonalProfile', 'canApplyLeave', 'canViewLeaveStatus', 'canReceiveAnnouncements',
+      'canUploadStudyMaterial', 'canViewAcademicCalendar', 'canChangePassword',
+      'canViewOwnAttendanceHistory', 'canViewAssignedSubjects', 'canSendMessagesToAdmin',
+      'canManageAcademicCalendar', 'canManageTimetable', 'canAssignClassrooms',
+      'canCreateExamSchedules', 'canAllocateSubjects', 'canMonitorAttendanceAll',
+      'canGenerateInstituteReports', 'canCoordinateFacultySchedules'
+    ],
+  },
+  {
+    code: 'ADMIN',
+    name: 'Super Admin',
+    badge: '🛡️ Super Admin',
+    color: 'rose',
+    description: 'Full administrative access and governance over institute operations, RBAC roles, and users.',
+    isSystem: true,
+    permissions: [
+      'canViewDashboard', 'canViewAssignedClasses', 'canMarkAttendance', 'canEditAttendance',
+      'canUploadGrades', 'canViewClassStudents', 'canTakeAttendance', 'canViewTimetable',
+      'canViewPersonalProfile', 'canApplyLeave', 'canViewLeaveStatus', 'canReceiveAnnouncements',
+      'canUploadStudyMaterial', 'canViewAcademicCalendar', 'canChangePassword',
+      'canViewOwnAttendanceHistory', 'canViewAssignedSubjects', 'canSendMessagesToAdmin',
+      'canManageStudents', 'canCreateAssignments', 'canCreateQuizzes', 'canEnterInternalMarks',
+      'canViewStudentAnalytics', 'canGenerateClassReports', 'canApproveLessonPlans',
+      'canReviewGrades', 'canMentorJuniorFaculty', 'canViewDepartmentAnalytics',
+      'canConductFacultyMeetings', 'canAssignTeachersToClasses', 'canApproveFacultyLeave',
+      'canViewAllDepartmentStudents', 'canEditFacultyWorkload', 'canApproveExamSchedules',
+      'canManageDepartmentNotices', 'canGenerateDepartmentReports', 'canManageAcademicCalendar',
+      'canManageTimetable', 'canAssignClassrooms', 'canCreateExamSchedules', 'canAllocateSubjects',
+      'canMonitorAttendanceAll', 'canGenerateInstituteReports', 'canCoordinateFacultySchedules',
+      'canManageFaculty', 'canAssignRoles', 'canManageRoles', 'canManagePermissions',
+      'canSuspendFaculty', 'canResetPassword', 'canViewLoginHistory', 'canViewActivityLogs',
+      'canTransferFaculty', 'canBulkAssignPermissions', 'canViewAllAttendance', 'canViewAllGrades',
+      'canManageAnnouncements', 'canManageSessions'
+    ],
+  },
+];
+
+// Seed System Roles if missing
+async function ensureSystemRolesExist() {
+  try {
+    for (const sysRole of SYSTEM_DEFAULT_ROLES) {
+      const exists = await Role.findOne({ code: sysRole.code });
+      if (!exists) {
+        await Role.create(sysRole);
+      }
+    }
+  } catch (err) {
+    console.warn('System roles seeding warning:', err.message);
+  }
+}
 
 // GET all system & custom roles
-exports.getRoles = async (req, res) => {
+export const getRoles = async (req, res) => {
   try {
+    await ensureSystemRolesExist();
     const roles = await Role.find().sort({ isSystem: -1, createdAt: 1 });
     res.json({ success: true, roles });
   } catch (err) {
@@ -15,7 +134,7 @@ exports.getRoles = async (req, res) => {
 };
 
 // CREATE new custom role
-exports.createRole = async (req, res) => {
+export const createRole = async (req, res) => {
   try {
     const { name, code, badge, color, description, permissions } = req.body;
     if (!name || !code) {
@@ -45,7 +164,7 @@ exports.createRole = async (req, res) => {
       category: 'RBAC',
       details: `Created new custom role: ${name} (${code})`,
       status: 'SUCCESS',
-    });
+    }).catch(() => {});
 
     res.json({ success: true, role: newRole, message: 'Custom role created successfully!' });
   } catch (err) {
@@ -54,7 +173,7 @@ exports.createRole = async (req, res) => {
 };
 
 // UPDATE role permissions
-exports.updateRole = async (req, res) => {
+export const updateRole = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, badge, color, description, permissions } = req.body;
@@ -80,7 +199,7 @@ exports.updateRole = async (req, res) => {
       category: 'RBAC',
       details: `Updated role: ${role.name} (${role.permissions.length} permissions)`,
       status: 'SUCCESS',
-    });
+    }).catch(() => {});
 
     res.json({ success: true, role, message: 'Role updated successfully!' });
   } catch (err) {
@@ -89,7 +208,7 @@ exports.updateRole = async (req, res) => {
 };
 
 // DELETE custom role
-exports.deleteRole = async (req, res) => {
+export const deleteRole = async (req, res) => {
   try {
     const { id } = req.params;
     const role = await Role.findById(id);
@@ -111,7 +230,7 @@ exports.deleteRole = async (req, res) => {
       category: 'RBAC',
       details: `Deleted custom role: ${role.name}`,
       status: 'SUCCESS',
-    });
+    }).catch(() => {});
 
     res.json({ success: true, message: 'Role deleted successfully!' });
   } catch (err) {
@@ -120,7 +239,7 @@ exports.deleteRole = async (req, res) => {
 };
 
 // ASSIGN roles to faculty member
-exports.assignFacultyRoles = async (req, res) => {
+export const assignFacultyRoles = async (req, res) => {
   try {
     const { facultyId } = req.params;
     const { roles, permissionOverrides, status } = req.body;
@@ -131,7 +250,12 @@ exports.assignFacultyRoles = async (req, res) => {
     }
 
     if (faculty) {
-      if (Array.isArray(roles)) faculty.roles = roles;
+      if (Array.isArray(roles)) {
+        faculty.roles = roles;
+        if (roles.length > 0) {
+          faculty.role = roles[0];
+        }
+      }
       if (permissionOverrides) faculty.permissionOverrides = permissionOverrides;
       if (status) faculty.is_active = status === 'Active';
       await faculty.save();
@@ -147,14 +271,14 @@ exports.assignFacultyRoles = async (req, res) => {
       status: 'SUCCESS',
     }).catch(() => {});
 
-    res.json({ success: true, faculty, message: `Roles updated successfully!` });
+    res.json({ success: true, faculty, message: `Roles updated successfully in database!` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 // GET Activity Logs
-exports.getActivityLogs = async (req, res) => {
+export const getActivityLogs = async (req, res) => {
   try {
     const logs = await ActivityLog.find().sort({ createdAt: -1 }).limit(100);
     res.json({ success: true, logs });
@@ -164,7 +288,7 @@ exports.getActivityLogs = async (req, res) => {
 };
 
 // CREATE Activity Log entry
-exports.logActivity = async (req, res) => {
+export const logActivity = async (req, res) => {
   try {
     const { action, category, details, status } = req.body;
     const log = await ActivityLog.create({
@@ -184,7 +308,7 @@ exports.logActivity = async (req, res) => {
 };
 
 // GET Login History
-exports.getLoginHistory = async (req, res) => {
+export const getLoginHistory = async (req, res) => {
   try {
     const history = await LoginHistory.find().sort({ createdAt: -1 }).limit(100);
     res.json({ success: true, history });
@@ -192,3 +316,4 @@ exports.getLoginHistory = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+

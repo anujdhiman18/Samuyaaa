@@ -1,9 +1,9 @@
-const ActivityLog = require('../models/ActivityLog');
+import ActivityLog from '../models/ActivityLog.js';
 
 /**
  * Middleware to check if authenticated user has required permission(s)
  */
-const requirePermission = (...requiredPermissions) => {
+export const requirePermission = (...requiredPermissions) => {
   return async (req, res, next) => {
     try {
       const user = req.user;
@@ -53,7 +53,7 @@ const requirePermission = (...requiredPermissions) => {
 /**
  * Middleware to check if authenticated user has required role(s)
  */
-const requireRole = (...requiredRoles) => {
+export const requireRole = (...requiredRoles) => {
   return async (req, res, next) => {
     try {
       const user = req.user;
@@ -83,7 +83,3 @@ const requireRole = (...requiredRoles) => {
   };
 };
 
-module.exports = {
-  requirePermission,
-  requireRole,
-};

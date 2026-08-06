@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const loginHistorySchema = new mongoose.Schema(
   {
@@ -35,4 +35,6 @@ const loginHistorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('LoginHistory', loginHistorySchema);
+const LoginHistory = mongoose.models.LoginHistory || mongoose.model('LoginHistory', loginHistorySchema);
+export default LoginHistory;
+
