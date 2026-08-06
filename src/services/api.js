@@ -4675,11 +4675,21 @@ export const rbacService = {
   },
 
   assignFacultyRoles: async (facultyId, payload) => {
-    const remote = await apiCall(`/rbac/faculty-roles/${facultyId}`, { method: 'PUT', body: JSON.stringify(payload) });
-    if (remote && remote.faculty) return remote;
+    try {
+      const remote = await apiCall(`/rbac/faculty-roles/${facultyId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      if (remote && remote.faculty) {
+        // Continue to sync local storage and firestore as well
+      }
+    } catch (e) {
+      console.warn('Backend rbac apiCall failed, updating local & firestore:', e.message);
+    }
 
     const list = getStoredFaculty();
-    const idx = list.findIndex((f) => String(f._id || f.id) === String(facultyId));
+    const idx = list.findIndex(
+      (f) =>
+        String(f._id || f.id) === String(facultyId) ||
+        (f.email && payload.email && f.email.toLowerCase() === payload.email.toLowerCase())
+    );
     if (idx !== -1) {
       const updatedFac = {
         ...list[idx],

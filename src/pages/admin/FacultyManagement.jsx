@@ -95,9 +95,24 @@ export default function FacultyManagement() {
 
   const handleOpenRoleModal = (faculty) => {
     setRoleModalMember(faculty);
-    const existingRoles = Array.isArray(faculty.roles) && faculty.roles.length > 0
-      ? faculty.roles
-      : [faculty.role || 'SUBJECT_TEACHER'];
+    let existingRoles = [];
+    if (Array.isArray(faculty.roles) && faculty.roles.length > 0) {
+      existingRoles = faculty.roles;
+    } else if (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin') {
+      existingRoles = [faculty.role];
+    } else if (faculty.designation) {
+      if (faculty.designation.includes('HOD') || faculty.designation.includes('Head')) {
+        existingRoles = ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+      } else if (faculty.designation.includes('Senior')) {
+        existingRoles = ['SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+      } else if (faculty.designation.includes('Coordinator')) {
+        existingRoles = ['ACADEMIC_COORDINATOR'];
+      } else {
+        existingRoles = ['SUBJECT_TEACHER'];
+      }
+    } else {
+      existingRoles = ['SUBJECT_TEACHER'];
+    }
     setSelectedRoles(existingRoles);
   };
 

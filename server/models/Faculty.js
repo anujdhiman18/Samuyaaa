@@ -58,6 +58,14 @@ const facultySchema = new mongoose.Schema(
       type: String,
       default: 'Faculty',
     },
+    roles: {
+      type: [String],
+      default: ['SUBJECT_TEACHER'],
+    },
+    permissionOverrides: {
+      type: Object,
+      default: {},
+    },
     branch: {
       type: String,
       enum: ['Bagru', 'Daroh'],
