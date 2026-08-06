@@ -2670,7 +2670,8 @@ export const initialMockFaculty = [
     photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
     display_order: 1,
     is_active: true,
-    role: 'Faculty',
+    role: 'HEAD_OF_DEPARTMENT',
+    roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
   },
   {
     _id: 'fac_2',
@@ -2689,7 +2690,8 @@ export const initialMockFaculty = [
     photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
     display_order: 2,
     is_active: true,
-    role: 'Faculty',
+    role: 'HEAD_OF_DEPARTMENT',
+    roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
   },
   {
     _id: 'fac_3',
@@ -2708,7 +2710,8 @@ export const initialMockFaculty = [
     photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
     display_order: 3,
     is_active: true,
-    role: 'Faculty',
+    role: 'SENIOR_FACULTY',
+    roles: ['SENIOR_FACULTY', 'SUBJECT_TEACHER'],
   },
   {
     _id: 'fac_4',
@@ -2727,7 +2730,8 @@ export const initialMockFaculty = [
     photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',
     display_order: 4,
     is_active: true,
-    role: 'Faculty',
+    role: 'SUBJECT_TEACHER',
+    roles: ['SUBJECT_TEACHER'],
   },
 ];
 
@@ -2752,16 +2756,22 @@ export const getStoredFaculty = () => {
       }
     });
 
-    // Sanitize list to ensure email, password, and assignedClasses exist on all items
-    list = list.map((f, idx) => ({
-      ...f,
-      email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
-      password: f.password || 'faculty123',
-      role: 'Faculty',
-      assignedClasses: f.assignedClasses || [],
-      assignedSubjects: f.assignedSubjects || [],
-      responsibilities: f.responsibilities || [],
-    }));
+    // Sanitize list to preserve active assigned roles
+    list = list.map((f) => {
+      const derivedRoles = Array.isArray(f.roles) && f.roles.length > 0
+        ? f.roles
+        : (f.role && f.role !== 'Faculty' ? [f.role] : ['SUBJECT_TEACHER']);
+      return {
+        ...f,
+        email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
+        password: f.password || 'faculty123',
+        roles: derivedRoles,
+        role: derivedRoles[0] || 'SUBJECT_TEACHER',
+        assignedClasses: f.assignedClasses || [],
+        assignedSubjects: f.assignedSubjects || [],
+        responsibilities: f.responsibilities || [],
+      };
+    });
 
     localStorage.setItem('saumyaa_faculty', JSON.stringify(list));
     return list;
