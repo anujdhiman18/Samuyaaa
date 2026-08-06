@@ -84,7 +84,7 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
           </div>
 
           {/* Dynamic Navigation Links */}
-          <nav className="p-4 space-y-1 font-body overflow-y-auto max-h-[calc(100vh-140px)]">
+          <nav className="p-4 space-y-1 font-body overflow-y-auto max-h-[calc(100vh-130px)] sidebar-scroll">
             <div className="px-3 pb-2 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
               Role Authorized Tools ({visibleNavItems.length})
             </div>

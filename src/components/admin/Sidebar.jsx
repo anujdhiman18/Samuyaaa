@@ -78,7 +78,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1.5 font-body">
+          <nav className="p-4 space-y-1.5 font-body flex-1 overflow-y-auto max-h-[calc(100vh-130px)] sidebar-scroll">
             <div className="px-3 pb-2 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
               Control Center
             </div>
