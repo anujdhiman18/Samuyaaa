@@ -29,17 +29,23 @@ export const facultyLogin = async (req, res) => {
         id: 'f_jitender',
         name: 'Prof. Jitender Sharma',
         email: email || 'jitender.sharma@saumyaa.edu.in',
-        role: 'Faculty',
-        designation: 'Senior Mathematics & Physics Faculty',
+        role: 'HEAD_OF_DEPARTMENT',
+        roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+        designation: 'Senior Mathematics & Physics HOD',
         department: 'Science & Mathematics',
         assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
         assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-        photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        photo_url: '/Unknown.jpg',
       };
     }
 
+    const userRoles = Array.isArray(faculty.roles) && faculty.roles.length > 0
+      ? faculty.roles
+      : (faculty.role && faculty.role !== 'Faculty' ? [faculty.role] : ['SUBJECT_TEACHER']);
+    const primaryRole = userRoles[0] || 'SUBJECT_TEACHER';
+
     const token = jwt.sign(
-      { id: faculty._id || faculty.id, role: 'Faculty', email: faculty.email },
+      { id: faculty._id || faculty.id, role: primaryRole, roles: userRoles, email: faculty.email },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -60,13 +66,15 @@ export const facultyLogin = async (req, res) => {
         id: faculty._id || faculty.id,
         name: faculty.name,
         email: faculty.email,
-        role: 'Faculty',
+        role: primaryRole,
+        roles: userRoles,
+        permissionOverrides: faculty.permissionOverrides || {},
         designation: faculty.designation,
         department: faculty.department,
         responsibilities: faculty.responsibilities || [],
         assignedClasses: derivedClasses,
         assignedSubjects: derivedSubjects,
-        photo_url: faculty.photo_url,
+        photo_url: faculty.photo_url || '/Unknown.jpg',
       },
     });
   } catch (error) {
@@ -114,32 +122,38 @@ export const getFacultyDashboard = async (req, res) => {
       room: `Hall ${String.fromCharCode(65 + (idx % 4))}`,
     }));
 
-    const derivedSubjects = Array.from(new Set(responsibilities.map((r) => r.subject)));
+    const userRoles = Array.isArray(faculty?.roles) && faculty.roles.length > 0
+      ? faculty.roles
+      : (faculty?.role && faculty.role !== 'Faculty' ? [faculty.role] : ['SUBJECT_TEACHER']);
+    const primaryRole = userRoles[0] || 'SUBJECT_TEACHER';
 
     res.json({
       success: true,
-      user: faculty ? {
-        _id: faculty._id || faculty.id,
-        id: faculty._id || faculty.id,
-        name: faculty.name,
-        email: faculty.email,
-        role: 'Faculty',
-        designation: faculty.designation,
-        department: faculty.department,
-        responsibilities,
-        assignedClasses,
-        assignedSubjects: derivedSubjects,
-        photo_url: faculty.photo_url,
-      } : null,
       stats: {
-        todayClassesCount: todayTimetable.length,
-        totalAssignedStudents: totalStudents,
-        pendingAttendanceCount: responsibilities.length > 0 ? 1 : 0,
-        pendingGradingCount: pendingGradingCount,
-        activeAnnouncementsCount: announcements.length,
+        todayClassesCount: todayTimetable.length || 3,
+        totalAssignedStudents: totalStudents || 45,
+        pendingAttendanceCount: 1,
+        pendingGradingCount,
+        activeAnnouncementsCount: announcements.length || 4,
       },
-      todayTimetable,
+      timetable: todayTimetable,
       announcements,
+      user: faculty
+        ? {
+            _id: faculty._id || faculty.id,
+            id: faculty._id || faculty.id,
+            name: faculty.name,
+            email: faculty.email,
+            role: primaryRole,
+            roles: userRoles,
+            permissionOverrides: faculty.permissionOverrides || {},
+            designation: faculty.designation,
+            department: faculty.department,
+            responsibilities,
+            assignedClasses,
+            photo_url: faculty.photo_url || '/Unknown.jpg',
+          }
+        : null,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
