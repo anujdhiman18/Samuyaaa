@@ -596,6 +596,8 @@ export const authService = {
           name: facultyMember.name,
           email: facultyMember.email || cleanEmail,
           role: 'Faculty',
+          roles: facultyMember.roles && facultyMember.roles.length > 0 ? facultyMember.roles : [facultyMember.role || 'SUBJECT_TEACHER'],
+          permissionOverrides: facultyMember.permissionOverrides || {},
           designation: facultyMember.designation || 'Senior Faculty Member',
           department: facultyMember.department || 'Science & Mathematics',
           assignedClasses: facultyMember.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
@@ -4223,6 +4225,8 @@ export const facultyPanelService = {
           email: facultyMember.email || cleanEmail,
           password: assignedPass,
           role: 'Faculty',
+          roles: facultyMember.roles && facultyMember.roles.length > 0 ? facultyMember.roles : [facultyMember.role || 'SUBJECT_TEACHER'],
+          permissionOverrides: facultyMember.permissionOverrides || {},
           designation: facultyMember.designation || 'Senior Faculty Member',
           department: facultyMember.department || 'Science & Mathematics',
           responsibilities: resps,
@@ -4280,6 +4284,8 @@ export const facultyPanelService = {
           resps = found.responsibilities || [];
           activeUser = {
             ...u,
+            roles: Array.isArray(found.roles) && found.roles.length > 0 ? found.roles : [found.role || 'SUBJECT_TEACHER'],
+            permissionOverrides: found.permissionOverrides || {},
             responsibilities: resps,
             assignedClasses: Array.from(new Set(resps.map((r) => r.className))),
             assignedSubjects: Array.from(new Set(resps.map((r) => r.subject))),
@@ -4654,14 +4660,45 @@ export const rbacService = {
     const list = getStoredFaculty();
     const idx = list.findIndex((f) => String(f._id || f.id) === String(facultyId));
     if (idx !== -1) {
-      list[idx] = {
+      const updatedFac = {
         ...list[idx],
         roles: payload.roles || list[idx].roles,
         permissionOverrides: payload.permissionOverrides || list[idx].permissionOverrides,
         is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
       };
+      list[idx] = updatedFac;
       setStoredFaculty(list);
+
+      // Sync Firestore
+      try {
+        await setDoc(
+          doc(db, 'faculty', String(facultyId)),
+          { roles: updatedFac.roles, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
+          { merge: true }
+        );
+      } catch (e) {}
+
+      // Update active session user if matched
+      try {
+        const currentUserStr = localStorage.getItem('saumyaa_user');
+        if (currentUserStr) {
+          const curr = JSON.parse(currentUserStr);
+          if (
+            String(curr._id || curr.id) === String(facultyId) ||
+            (curr.email && updatedFac.email && curr.email.toLowerCase() === updatedFac.email.toLowerCase())
+          ) {
+            const updatedUser = {
+              ...curr,
+              roles: updatedFac.roles,
+              permissionOverrides: updatedFac.permissionOverrides,
+              is_active: updatedFac.is_active,
+            };
+            localStorage.setItem('saumyaa_user', JSON.stringify(updatedUser));
+          }
+        }
+      } catch (e) {}
     }
+    notifyDataUpdate();
     return { success: true, message: 'Faculty roles updated successfully!' };
   },
 

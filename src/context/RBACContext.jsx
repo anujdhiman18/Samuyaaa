@@ -9,7 +9,7 @@ export function RBACProvider({ children }) {
   const [customRoles, setCustomRoles] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
 
-  useEffect(() => {
+  const resolveUserRoles = () => {
     if (!user) {
       setUserRoles([]);
       return;
@@ -17,23 +17,41 @@ export function RBACProvider({ children }) {
 
     let roles = [];
 
-    // Extract assigned roles array or single role
-    if (Array.isArray(user.roles) && user.roles.length > 0) {
-      roles = user.roles;
-    } else if (user.role) {
-      roles = [user.role];
-    } else if (user.designation) {
-      if (user.designation.includes('HOD') || user.designation.includes('Head')) {
-        roles = ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'];
-      } else if (user.designation.includes('Senior')) {
-        roles = ['SENIOR_FACULTY', 'SUBJECT_TEACHER'];
-      } else if (user.designation.includes('Coordinator')) {
-        roles = ['ACADEMIC_COORDINATOR'];
+    // Try finding live assigned roles from stored faculty list first
+    try {
+      const storedRaw = localStorage.getItem('saumyaa_faculty');
+      if (storedRaw) {
+        const facultyList = JSON.parse(storedRaw);
+        const match = facultyList.find(
+          (f) =>
+            String(f._id || f.id) === String(user._id || user.id) ||
+            (f.email && user.email && f.email.toLowerCase() === user.email.toLowerCase())
+        );
+        if (match && Array.isArray(match.roles) && match.roles.length > 0) {
+          roles = match.roles;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback to user object roles if not found in list
+    if (roles.length === 0) {
+      if (Array.isArray(user.roles) && user.roles.length > 0) {
+        roles = user.roles;
+      } else if (user.role && user.role !== 'Faculty' && user.role !== 'Admin' && user.role !== 'SuperAdmin') {
+        roles = [user.role];
+      } else if (user.designation) {
+        if (user.designation.includes('HOD') || user.designation.includes('Head')) {
+          roles = ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+        } else if (user.designation.includes('Senior')) {
+          roles = ['SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+        } else if (user.designation.includes('Coordinator')) {
+          roles = ['ACADEMIC_COORDINATOR'];
+        } else {
+          roles = ['SUBJECT_TEACHER'];
+        }
       } else {
         roles = ['SUBJECT_TEACHER'];
       }
-    } else {
-      roles = ['SUBJECT_TEACHER'];
     }
 
     if (user.role === 'SuperAdmin' || user.role === 'Admin') {
@@ -41,6 +59,14 @@ export function RBACProvider({ children }) {
     }
 
     setUserRoles(roles);
+  };
+
+  useEffect(() => {
+    resolveUserRoles();
+
+    window.addEventListener('saumyaa_data_updated', resolveUserRoles);
+    return () => window.removeEventListener('saumyaa_data_updated', resolveUserRoles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Compiled unique permission list for current active user
