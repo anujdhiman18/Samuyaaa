@@ -1,22 +1,32 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useRBAC } from '../../context/RBACContext';
+import { PERMISSIONS } from '../../config/rbacConfig';
 
-const navItems = [
-  { path: '/faculty', label: 'Dashboard', icon: 'dashboard' },
-  { path: '/faculty/students', label: 'My Students', icon: 'groups' },
-  { path: '/faculty/attendance', label: 'Mark Attendance', icon: 'fact_check' },
-  { path: '/faculty/marks', label: 'Marks & Grades', icon: 'edit_note' },
-  { path: '/faculty/assignments', label: 'Assignments', icon: 'assignment' },
-  { path: '/faculty/materials', label: 'Study Materials', icon: 'folder_open' },
-  { path: '/faculty/timetable', label: 'My Timetable', icon: 'calendar_month' },
-  { path: '/faculty/announcements', label: 'Class Notices', icon: 'campaign' },
-  { path: '/faculty/leave', label: 'Leave Requests', icon: 'event_busy' },
-  { path: '/faculty/reports', label: 'Academic Reports', icon: 'summarize' },
-  { path: '/faculty/profile', label: 'My Profile', icon: 'account_circle' },
+const allNavItems = [
+  { path: '/faculty', label: 'Dashboard', icon: 'dashboard', perm: PERMISSIONS.VIEW_DASHBOARD },
+  { path: '/faculty/students', label: 'My Students', icon: 'groups', perm: PERMISSIONS.VIEW_CLASS_STUDENTS },
+  { path: '/faculty/attendance', label: 'Mark Attendance', icon: 'fact_check', perm: PERMISSIONS.MARK_ATTENDANCE },
+  { path: '/faculty/marks', label: 'Marks & Grades', icon: 'edit_note', perm: PERMISSIONS.UPLOAD_GRADES },
+  { path: '/faculty/assignments', label: 'Assignments & Quizzes', icon: 'assignment', perm: PERMISSIONS.CREATE_ASSIGNMENTS },
+  
+  // Role-Specific Specialized Pages
+  { path: '/faculty/lesson-plans', label: 'Lesson Plan Approvals', icon: 'approval', perm: PERMISSIONS.APPROVE_LESSON_PLANS },
+  { path: '/faculty/department-analytics', label: 'Dept Analytics', icon: 'analytics', perm: PERMISSIONS.VIEW_DEPARTMENT_ANALYTICS },
+  { path: '/faculty/leave-approvals', label: 'HOD Leave Approvals', icon: 'event_available', perm: PERMISSIONS.APPROVE_FACULTY_LEAVE },
+  { path: '/faculty/academic-calendar', label: 'Academic Calendar', icon: 'calendar_month', perm: PERMISSIONS.MANAGE_ACADEMIC_CALENDAR },
+
+  // Common Resources
+  { path: '/faculty/materials', label: 'Study Materials', icon: 'folder_open', perm: PERMISSIONS.UPLOAD_STUDY_MATERIAL },
+  { path: '/faculty/timetable', label: 'My Timetable', icon: 'calendar_today', perm: PERMISSIONS.VIEW_TIMETABLE },
+  { path: '/faculty/announcements', label: 'Class Notices', icon: 'campaign', perm: PERMISSIONS.RECEIVE_ANNOUNCEMENTS },
+  { path: '/faculty/leave', label: 'Apply Leave', icon: 'event_busy', perm: PERMISSIONS.APPLY_LEAVE },
+  { path: '/faculty/profile', label: 'My Profile', icon: 'account_circle', perm: PERMISSIONS.VIEW_PERSONAL_PROFILE },
 ];
 
 export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
   const location = useLocation();
+  const { hasPermission } = useRBAC();
 
   const isLinkActive = (path) => {
     if (path === '/faculty') {
@@ -24,6 +34,12 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
     }
     return location.pathname.startsWith(path);
   };
+
+  // Automatically filter sidebar items based on user's active RBAC permissions
+  const visibleNavItems = allNavItems.filter((item) => {
+    if (!item.perm) return true;
+    return hasPermission(item.perm);
+  });
 
   return (
     <>
@@ -67,12 +83,12 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
             </button>
           </div>
 
-          {/* Navigation Links */}
+          {/* Dynamic Navigation Links */}
           <nav className="p-4 space-y-1 font-body overflow-y-auto max-h-[calc(100vh-140px)]">
             <div className="px-3 pb-2 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
-              Faculty Resources
+              Role Authorized Tools ({visibleNavItems.length})
             </div>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = isLinkActive(item.path);
               return (
                 <Link
@@ -97,17 +113,6 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
               );
             })}
           </nav>
-        </div>
-
-        {/* Footer Shortcut */}
-        <div className="p-4 border-t border-outline-variant/15">
-          <div className="p-3 rounded-2xl bg-surface-container-low border border-outline-variant/15 flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-primary text-xl">verified_user</span>
-            <div>
-              <span className="text-[11px] font-bold text-secondary block leading-tight">Faculty Access Active</span>
-              <span className="text-[10px] text-on-surface-variant">Role-based scope enforced</span>
-            </div>
-          </div>
         </div>
       </aside>
     </>

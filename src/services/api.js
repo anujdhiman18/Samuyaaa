@@ -4574,3 +4574,139 @@ export const facultyPanelService = {
     return { success: true, leave: newLeave, message: 'Leave application submitted successfully!' };
   },
 };
+
+export const rbacService = {
+  getRoles: async () => {
+    const remote = await apiCall('/rbac/roles');
+    if (remote && remote.roles) return remote;
+
+    try {
+      const raw = localStorage.getItem('saumyaa_rbac_roles');
+      if (raw) return { success: true, roles: JSON.parse(raw) };
+    } catch (e) {}
+
+    return { success: true, roles: [] };
+  },
+
+  createRole: async (data) => {
+    const remote = await apiCall('/rbac/roles', { method: 'POST', body: JSON.stringify(data) });
+    if (remote && remote.role) return remote;
+
+    const newRole = {
+      _id: 'role_' + Date.now(),
+      id: 'role_' + Date.now(),
+      code: data.code.toUpperCase(),
+      name: data.name,
+      badge: data.badge || `🎓 ${data.name}`,
+      color: data.color || 'purple',
+      description: data.description || '',
+      isSystem: false,
+      permissions: data.permissions || [],
+      createdAt: new Date().toISOString(),
+    };
+
+    let roles = [];
+    try {
+      roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
+    } catch (e) {}
+
+    roles.push(newRole);
+    localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
+    notifyDataUpdate();
+    return { success: true, role: newRole, message: 'Custom role created successfully!' };
+  },
+
+  updateRole: async (id, data) => {
+    const remote = await apiCall(`/rbac/roles/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    if (remote && remote.role) return remote;
+
+    let roles = [];
+    try {
+      roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
+    } catch (e) {}
+
+    const idx = roles.findIndex((r) => String(r._id || r.id) === String(id));
+    if (idx !== -1) {
+      roles[idx] = { ...roles[idx], ...data };
+      localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
+      notifyDataUpdate();
+    }
+    return { success: true, message: 'Role permissions updated successfully!' };
+  },
+
+  deleteRole: async (id) => {
+    await apiCall(`/rbac/roles/${id}`, { method: 'DELETE' }).catch(() => {});
+    let roles = [];
+    try {
+      roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
+    } catch (e) {}
+
+    roles = roles.filter((r) => String(r._id || r.id) !== String(id));
+    localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
+    notifyDataUpdate();
+    return { success: true, message: 'Role deleted successfully!' };
+  },
+
+  assignFacultyRoles: async (facultyId, payload) => {
+    const remote = await apiCall(`/rbac/faculty-roles/${facultyId}`, { method: 'PUT', body: JSON.stringify(payload) });
+    if (remote && remote.faculty) return remote;
+
+    const list = getStoredFaculty();
+    const idx = list.findIndex((f) => String(f._id || f.id) === String(facultyId));
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        roles: payload.roles || list[idx].roles,
+        permissionOverrides: payload.permissionOverrides || list[idx].permissionOverrides,
+        is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
+      };
+      setStoredFaculty(list);
+    }
+    return { success: true, message: 'Faculty roles updated successfully!' };
+  },
+
+  getActivityLogs: async () => {
+    const remote = await apiCall('/rbac/activity-logs');
+    if (remote && remote.logs) return remote;
+
+    try {
+      const logs = JSON.parse(localStorage.getItem('saumyaa_activity_logs') || '[]');
+      return { success: true, logs };
+    } catch (e) {
+      return { success: true, logs: [] };
+    }
+  },
+
+  logActivity: async (action, category, details, status = 'SUCCESS') => {
+    const logItem = {
+      _id: 'log_' + Date.now(),
+      action,
+      category,
+      details,
+      status,
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await apiCall('/rbac/activity-logs', { method: 'POST', body: JSON.stringify(logItem) }).catch(() => {});
+      let logs = JSON.parse(localStorage.getItem('saumyaa_activity_logs') || '[]');
+      logs.unshift(logItem);
+      localStorage.setItem('saumyaa_activity_logs', JSON.stringify(logs.slice(0, 150)));
+      notifyDataUpdate();
+    } catch (e) {}
+  },
+
+  getLoginHistory: async () => {
+    const remote = await apiCall('/rbac/login-history');
+    if (remote && remote.history) return remote;
+
+    try {
+      const history = JSON.parse(localStorage.getItem('saumyaa_login_history') || '[]');
+      return { success: true, history };
+    } catch (e) {
+      return { success: true, history: [] };
+    }
+  },
+};
+

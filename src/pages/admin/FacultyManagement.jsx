@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty, subscribeFirestoreCollection, initialMockFaculty } from '../../services/api';
+import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty, subscribeFirestoreCollection, initialMockFaculty, rbacService } from '../../services/api';
+import { SYSTEM_ROLES } from '../../config/rbacConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -87,7 +88,44 @@ export default function FacultyManagement() {
   const [leaveStatusFilter, setLeaveStatusFilter] = useState('All');
   const [leaveTypeFilter, setLeaveTypeFilter] = useState('All');
   const [selectedLeaveApp, setSelectedLeaveApp] = useState(null);
-  const [adminRemarksInput, setAdminRemarksInput] = useState('');
+  // RBAC Multi-Role Assignment Modal State
+  const [roleModalMember, setRoleModalMember] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [savingUserRoles, setSavingUserRoles] = useState(false);
+
+  const handleOpenRoleModal = (faculty) => {
+    setRoleModalMember(faculty);
+    const existingRoles = Array.isArray(faculty.roles) && faculty.roles.length > 0
+      ? faculty.roles
+      : [faculty.role || 'SUBJECT_TEACHER'];
+    setSelectedRoles(existingRoles);
+  };
+
+  const handleToggleRoleSelection = (roleCode) => {
+    setSelectedRoles((prev) =>
+      prev.includes(roleCode) ? prev.filter((r) => r !== roleCode) : [...prev, roleCode]
+    );
+  };
+
+  const handleSaveUserRoles = async (e) => {
+    e.preventDefault();
+    if (!roleModalMember) return;
+    setSavingUserRoles(true);
+    try {
+      const id = roleModalMember._id || roleModalMember.id;
+      await rbacService.assignFacultyRoles(id, {
+        roles: selectedRoles,
+        status: roleModalMember.is_active ? 'Active' : 'Inactive',
+      });
+      addToast(`Updated assigned roles for ${roleModalMember.name}`, 'success');
+      setRoleModalMember(null);
+      fetchFaculty();
+    } catch (err) {
+      addToast(err.message || 'Error updating faculty roles', 'error');
+    } finally {
+      setSavingUserRoles(false);
+    }
+  };
 
   const { addToast } = useToast();
 
@@ -644,9 +682,19 @@ export default function FacultyManagement() {
                           />
                           <div>
                             <p className="font-headings font-bold text-secondary text-sm">{member.name}</p>
-                            <span className="text-[11px] text-on-surface-variant font-medium">
+                            <span className="text-[11px] text-on-surface-variant font-medium block">
                               {member.designation}
                             </span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(Array.isArray(member.roles) && member.roles.length > 0
+                                ? member.roles
+                                : [member.role || 'SUBJECT_TEACHER']
+                              ).map((rCode) => (
+                                <span key={rCode} className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                  {rCode.replace(/_/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -674,6 +722,14 @@ export default function FacultyManagement() {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenRoleModal(member)}
+                            className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                            title="Assign RBAC Roles & Permissions"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+                            Assign Roles
+                          </button>
                           <button
                             onClick={() => handleOpenResponsibilities(member)}
                             className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
@@ -2016,6 +2072,83 @@ export default function FacultyManagement() {
               </div>
             )}
           </div>
+        </Modal>
+      )}
+
+      {/* RBAC Multi-Role Assignment Modal */}
+      {roleModalMember && (
+        <Modal
+          isOpen={Boolean(roleModalMember)}
+          onClose={() => setRoleModalMember(null)}
+          title={`Assign Roles & Scope: ${roleModalMember.name}`}
+          maxWidth="max-w-2xl"
+        >
+          <form onSubmit={handleSaveUserRoles} className="space-y-5 text-xs font-body">
+            <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/15 flex items-center justify-between">
+              <div>
+                <h4 className="font-headings font-bold text-sm text-secondary">{roleModalMember.name}</h4>
+                <span className="font-mono text-xs text-primary">{roleModalMember.email}</span>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">{roleModalMember.designation} &bull; {roleModalMember.department}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full font-bold text-xs ${roleModalMember.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                {roleModalMember.is_active ? 'Active Account' : 'Suspended'}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-headings font-bold text-xs text-secondary uppercase tracking-wider">
+                Select Roles to Assign (Inherits All System Permissions):
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {SYSTEM_ROLES.map((role) => {
+                  const isChecked = selectedRoles.includes(role.code);
+                  return (
+                    <div
+                      key={role.code}
+                      onClick={() => handleToggleRoleSelection(role.code)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                        isChecked
+                          ? 'bg-purple-50/70 border-purple-300 ring-2 ring-purple-500/20'
+                          : 'bg-white border-outline-variant/20 hover:bg-surface-container-low'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${role.color === 'rose' ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-purple-100 text-purple-800 border-purple-200'}`}>
+                          {role.badge || role.name}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                        />
+                      </div>
+                      <h5 className="font-headings font-bold text-xs text-secondary">{role.name}</h5>
+                      <p className="text-[10px] text-on-surface-variant line-clamp-2">{role.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-outline-variant/15 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRoleModalMember(null)}
+                className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold hover:bg-surface-container-low"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingUserRoles}
+                className="px-6 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-white text-xs font-headings font-bold shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {savingUserRoles ? 'Saving Roles...' : 'Save Assigned Roles'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

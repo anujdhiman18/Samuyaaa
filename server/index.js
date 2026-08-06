@@ -19,6 +19,7 @@ import facultyRoutes from './routes/facultyRoutes.js';
 import alumniRoutes from './routes/alumniRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import facultyPanelRoutes from './routes/facultyPanelRoutes.js';
+import rbacRoutes from './routes/admin/rbacRoutes.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
@@ -56,6 +57,7 @@ app.use('/api/auth', authRoutes);
 // Admin & Faculty Portal API Namespaces
 app.use('/api/admin', adminRoutes);
 app.use('/api/faculty-panel', facultyPanelRoutes);
+app.use('/api/rbac', rbacRoutes);
 app.post('/api/student-panel/leaves', applyStudentLeave);
 app.get('/api/student-panel/leaves', getStudentLeaves);
 
