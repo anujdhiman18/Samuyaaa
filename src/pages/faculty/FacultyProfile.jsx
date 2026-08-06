@@ -12,7 +12,7 @@ export default function FacultyProfile() {
   const [phone, setPhone] = useState(user?.phone || '9816099999');
   const [designation, setDesignation] = useState(user?.designation || 'Senior Mathematics & Physics Faculty');
   const [department, setDepartment] = useState(user?.department || 'Science & Mathematics');
-  const [photoUrl, setPhotoUrl] = useState(user?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150');
+  const [photoUrl, setPhotoUrl] = useState(user?.photo_url || '/Unknown.jpg');
   const [saving, setSaving] = useState(false);
 
   // Credential Request State

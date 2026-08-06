@@ -11,7 +11,7 @@ export default function About({ onOpenBooking }) {
 
           <div className="relative rounded-2xl overflow-hidden shadow-premium aspect-[4/5] bg-surface-container-high border border-outline-variant/10">
             <img
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
               alt="Portrait of Jitender Sharma, founder of Saumyaa Studies"
               src={founderImg}
             />

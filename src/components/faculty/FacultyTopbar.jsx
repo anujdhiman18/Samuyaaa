@@ -47,7 +47,7 @@ export default function FacultyTopbar({ onToggleMobile }) {
             className="flex items-center gap-2.5 p-1.5 pl-3 rounded-full hover:bg-surface-container-low border border-outline-variant/20 transition-all cursor-pointer"
           >
             <img
-              src={user?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              src={user?.photo_url || '/Unknown.jpg'}
               alt={user?.name || 'Faculty Member'}
               className="w-7 h-7 rounded-full object-cover border border-outline-variant/30"
             />

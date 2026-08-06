@@ -527,7 +527,7 @@ export const authService = {
           phone: savedAdmin?.phone || '+91 9816543210',
           role: savedAdmin?.role || 'SuperAdmin',
           department: savedAdmin?.department || 'Academic Operations',
-          avatar: savedAdmin?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          avatar: savedAdmin?.avatar || '/Unknown.jpg',
           bio: savedAdmin?.bio || '',
         };
 
@@ -584,7 +584,7 @@ export const authService = {
       department: 'Science & Mathematics',
       assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
       assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      photo_url: '/Unknown.jpg',
     }) : null);
 
     if (facultyMember) {
@@ -602,8 +602,8 @@ export const authService = {
           department: facultyMember.department || 'Science & Mathematics',
           assignedClasses: facultyMember.assignedClasses || ['10th', '11th (+1)', '12th (+2)'],
           assignedSubjects: facultyMember.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-          photo_url: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          avatar: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          photo_url: facultyMember.photo_url || '/Unknown.jpg',
+          avatar: facultyMember.photo_url || '/Unknown.jpg',
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
         return { success: true, user: facultyUserObj, token: 'mock_jwt_token_faculty_2026' };
@@ -2667,7 +2667,7 @@ export const initialMockFaculty = [
     experience: '15+ Years Teaching & Leadership',
     assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
     assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    photo_url: '/Unknown.jpg',
     display_order: 1,
     is_active: true,
     role: 'HEAD_OF_DEPARTMENT',
@@ -4234,7 +4234,7 @@ export const facultyPanelService = {
       department: 'Science & Mathematics',
       assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
       assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      photo_url: '/Unknown.jpg',
     }) : null);
 
     if (facultyMember) {
@@ -4263,8 +4263,8 @@ export const facultyPanelService = {
           responsibilities: resps,
           assignedClasses: derivedClasses,
           assignedSubjects: derivedSubjects,
-          photo_url: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          avatar: facultyMember.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          photo_url: facultyMember.photo_url || '/Unknown.jpg',
+          avatar: facultyMember.photo_url || '/Unknown.jpg',
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
         return { success: true, token: 'mock_faculty_jwt_token_2026', user: facultyUserObj };

@@ -71,7 +71,7 @@ export default function Topbar({ onToggleMobile }) {
             className="flex items-center gap-2.5 p-1 rounded-full hover:bg-surface-container-low transition-colors"
           >
             <img
-              src={admin?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              src={admin?.avatar || '/Unknown.jpg'}
               alt={admin?.name || 'Admin'}
               className="w-9 h-9 rounded-full object-cover border-2 border-primary"
             />
