@@ -2739,6 +2739,19 @@ export const getStoredFaculty = () => {
       localStorage.setItem('saumyaa_faculty', JSON.stringify(initialMockFaculty));
       return initialMockFaculty;
     }
+
+    // Ensure default initial faculty members are restored if missing
+    initialMockFaculty.forEach((defaultFac) => {
+      const exists = list.some(
+        (f) =>
+          String(f._id || f.id) === String(defaultFac._id || defaultFac.id) ||
+          (f.email && defaultFac.email && f.email.toLowerCase() === defaultFac.email.toLowerCase())
+      );
+      if (!exists) {
+        list.push(defaultFac);
+      }
+    });
+
     // Sanitize list to ensure email, password, and assignedClasses exist on all items
     list = list.map((f, idx) => ({
       ...f,
@@ -2749,6 +2762,8 @@ export const getStoredFaculty = () => {
       assignedSubjects: f.assignedSubjects || [],
       responsibilities: f.responsibilities || [],
     }));
+
+    localStorage.setItem('saumyaa_faculty', JSON.stringify(list));
     return list;
   } catch (e) {
     return initialMockFaculty;
@@ -3088,6 +3103,12 @@ export const facultyService = {
     const list = getStoredFaculty().filter((f) => String(f._id) !== String(id) && String(f.id) !== String(id));
     setStoredFaculty(list);
     return { success: true, message: 'Faculty member deleted successfully' };
+  },
+
+  restoreDefaultFaculty: async () => {
+    localStorage.setItem('saumyaa_faculty', JSON.stringify(initialMockFaculty));
+    notifyDataUpdate();
+    return { success: true, faculty: initialMockFaculty, message: 'All default faculty cards restored successfully!' };
   },
 
   uploadFacultyPhoto: async (file, onProgress) => {
