@@ -303,7 +303,7 @@ export const SYSTEM_ROLES = [
 /**
  * Compute merged unique permissions array for a user based on their roles and custom overrides
  */
-export const computePermissionsForUser = (userRoleCodes = [], customPermissionOverrides = {}, userRoleName = '') => {
+export const computePermissionsForUser = (userRoleCodes = [], customPermissionOverrides = {}, userRoleName = '', customRoles = []) => {
   // If SuperAdmin or Admin role code
   if (userRoleCodes.includes('ADMIN') || userRoleCodes.includes('SuperAdmin') || userRoleName === 'SuperAdmin') {
     return Object.values(PERMISSIONS);
@@ -311,9 +311,11 @@ export const computePermissionsForUser = (userRoleCodes = [], customPermissionOv
 
   const permissionsSet = new Set(COMMON_FACULTY_PERMISSIONS);
 
+  const allAvailableRoles = [...SYSTEM_ROLES, ...customRoles];
+
   // Merge permissions from all assigned roles
   userRoleCodes.forEach((code) => {
-    const roleObj = SYSTEM_ROLES.find((r) => r.code === code || r.id === code || r.name === code);
+    const roleObj = allAvailableRoles.find((r) => r.code === code || r.id === code || r.name === code);
     if (roleObj && Array.isArray(roleObj.permissions)) {
       roleObj.permissions.forEach((p) => permissionsSet.add(p));
     }

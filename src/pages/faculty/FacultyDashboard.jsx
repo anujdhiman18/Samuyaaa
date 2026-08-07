@@ -7,7 +7,8 @@ import { Link } from 'react-router-dom';
 
 export default function FacultyDashboard() {
   const { user, updateUser } = useAuth();
-  const { userRoles, SYSTEM_ROLES, hasPermission } = useRBAC();
+  const { userRoles, allRoles, SYSTEM_ROLES, hasPermission } = useRBAC();
+  const availableRoles = allRoles || SYSTEM_ROLES;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,13 +74,13 @@ export default function FacultyDashboard() {
 
             {/* Role Badges */}
             {userRoles.map((rCode) => {
-              const matchedRole = SYSTEM_ROLES.find((r) => r.code === rCode);
+              const matchedRole = availableRoles.find((r) => r.code === rCode || r.id === rCode);
               return (
                 <span
                   key={rCode}
                   className="px-3 py-0.5 rounded-full bg-white text-secondary text-[11px] font-headings font-bold shadow-sm"
                 >
-                  {matchedRole?.badge || rCode.replace(/_/g, ' ')}
+                  {matchedRole?.badge || matchedRole?.name || rCode.replace(/_/g, ' ')}
                 </span>
               );
             })}

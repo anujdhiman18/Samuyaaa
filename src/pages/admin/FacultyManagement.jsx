@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty, subscribeFirestoreCollection, initialMockFaculty, rbacService } from '../../services/api';
 import { SYSTEM_ROLES } from '../../config/rbacConfig';
@@ -41,6 +41,7 @@ export default function FacultyManagement() {
       return initialMockFaculty;
     }
   });
+  const [customRoles, setCustomRoles] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Applications State
@@ -144,6 +145,19 @@ export default function FacultyManagement() {
 
   const { addToast } = useToast();
 
+  const fetchCustomRoles = async () => {
+    try {
+      const res = await rbacService.getRoles();
+      if (res && res.roles) {
+        setCustomRoles(res.roles.filter((r) => !r.isSystem));
+      }
+    } catch (e) {}
+  };
+
+  const allRoles = useMemo(() => {
+    return [...SYSTEM_ROLES, ...customRoles];
+  }, [customRoles]);
+
   useEffect(() => {
     const unsubscribe = subscribeFirestoreCollection('faculty', initialMockFaculty, (list) => {
       if (list && Array.isArray(list) && list.length > 0) {
@@ -152,16 +166,22 @@ export default function FacultyManagement() {
       }
     });
 
-    window.addEventListener('saumyaa_data_updated', fetchFaculty);
+    const handleUpdate = () => {
+      fetchFaculty();
+      fetchCustomRoles();
+    };
+
+    window.addEventListener('saumyaa_data_updated', handleUpdate);
 
     fetchFaculty();
+    fetchCustomRoles();
     fetchApplications();
     fetchRequests();
     fetchLeaves(true);
 
     return () => {
       unsubscribe();
-      window.removeEventListener('saumyaa_data_updated', fetchFaculty);
+      window.removeEventListener('saumyaa_data_updated', handleUpdate);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -712,15 +732,18 @@ export default function FacultyManagement() {
                             <span className="text-[11px] text-on-surface-variant font-medium block">
                               {member.designation}
                             </span>
-                            <div className="flex flex-wrap gap-1 mt-1">
+                             <div className="flex flex-wrap gap-1 mt-1">
                               {(Array.isArray(member.roles) && member.roles.length > 0
                                 ? member.roles
                                 : [member.role || 'SUBJECT_TEACHER']
-                              ).map((rCode) => (
-                                <span key={rCode} className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                                  {rCode.replace(/_/g, ' ')}
-                                </span>
-                              ))}
+                              ).map((rCode) => {
+                                const matched = allRoles.find((r) => r.code === rCode || r.id === rCode);
+                                return (
+                                  <span key={rCode} className={`px-2 py-0.5 rounded text-[9px] font-bold border ${matched?.color === 'rose' ? 'bg-rose-100 text-rose-800 border-rose-200' : matched?.color === 'emerald' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : matched?.color === 'amber' ? 'bg-amber-100 text-amber-800 border-amber-200' : matched?.color === 'blue' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-purple-100 text-purple-800 border-purple-200'}`}>
+                                    {matched?.badge || matched?.name || rCode.replace(/_/g, ' ')}
+                                  </span>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
@@ -2128,7 +2151,7 @@ export default function FacultyManagement() {
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {SYSTEM_ROLES.map((role) => {
+                {allRoles.map((role) => {
                   const isChecked = selectedRoles.includes(role.code);
                   return (
                     <div

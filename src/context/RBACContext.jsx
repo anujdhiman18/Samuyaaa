@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { PERMISSIONS, SYSTEM_ROLES, computePermissionsForUser } from '../config/rbacConfig';
+import { rbacService } from '../services/api';
 
 const RBACContext = createContext();
 
@@ -8,6 +9,17 @@ export function RBACProvider({ children }) {
   const { user } = useAuth();
   const [customRoles, setCustomRoles] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
+
+  const loadCustomRoles = async () => {
+    try {
+      const res = await rbacService.getRoles();
+      if (res && res.roles) {
+        setCustomRoles(res.roles.filter((r) => !r.isSystem));
+      }
+    } catch (e) {
+      console.warn('Error loading custom roles in RBACContext:', e);
+    }
+  };
 
   const resolveUserRoles = () => {
     if (!user) {
@@ -63,11 +75,21 @@ export function RBACProvider({ children }) {
 
   useEffect(() => {
     resolveUserRoles();
+    loadCustomRoles();
 
-    window.addEventListener('saumyaa_data_updated', resolveUserRoles);
-    return () => window.removeEventListener('saumyaa_data_updated', resolveUserRoles);
+    const handleUpdate = () => {
+      resolveUserRoles();
+      loadCustomRoles();
+    };
+
+    window.addEventListener('saumyaa_data_updated', handleUpdate);
+    return () => window.removeEventListener('saumyaa_data_updated', handleUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const allRoles = useMemo(() => {
+    return [...SYSTEM_ROLES, ...customRoles];
+  }, [customRoles]);
 
   // Compiled unique permission list for current active user
   const activePermissions = useMemo(() => {
@@ -85,8 +107,8 @@ export function RBACProvider({ children }) {
     }
 
     const customOverrides = user.permissionOverrides || {};
-    return computePermissionsForUser(userRoles, customOverrides, user.role);
-  }, [user, userRoles]);
+    return computePermissionsForUser(userRoles, customOverrides, user.role, customRoles);
+  }, [user, userRoles, customRoles]);
 
   /**
    * Check if active user has a specific permission code
@@ -132,6 +154,7 @@ export function RBACProvider({ children }) {
     hasRole,
     customRoles,
     setCustomRoles,
+    allRoles,
     SYSTEM_ROLES,
     PERMISSIONS,
   };
