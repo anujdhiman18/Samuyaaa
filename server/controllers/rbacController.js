@@ -242,19 +242,27 @@ export const deleteRole = async (req, res) => {
 export const assignFacultyRoles = async (req, res) => {
   try {
     const { facultyId } = req.params;
-    const { roles, permissionOverrides, status } = req.body;
+    const { roles, permissionOverrides, status, email } = req.body;
 
-    let faculty = await Faculty.findById(facultyId);
+    let faculty = null;
+    try {
+      faculty = await Faculty.findById(facultyId);
+    } catch (e) {}
+
     if (!faculty) {
-      faculty = await Faculty.findOne({ $or: [{ id: facultyId }, { email: req.body.email }] });
+      faculty = await Faculty.findOne({
+        $or: [
+          { id: facultyId },
+          { _id: facultyId },
+          ...(email ? [{ email: email.toLowerCase() }] : []),
+        ],
+      });
     }
 
     if (faculty) {
       if (Array.isArray(roles)) {
         faculty.roles = roles;
-        if (roles.length > 0) {
-          faculty.role = roles[0];
-        }
+        faculty.role = roles[0] || 'SUBJECT_TEACHER';
       }
       if (permissionOverrides) faculty.permissionOverrides = permissionOverrides;
       if (status) faculty.is_active = status === 'Active';

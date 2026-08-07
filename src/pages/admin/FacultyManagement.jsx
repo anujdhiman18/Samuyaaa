@@ -132,6 +132,7 @@ export default function FacultyManagement() {
       await rbacService.assignFacultyRoles(id, {
         roles: selectedRoles,
         status: roleModalMember.is_active ? 'Active' : 'Inactive',
+        email: roleModalMember.email,
       });
       addToast(`Updated assigned roles for ${roleModalMember.name}`, 'success');
       setRoleModalMember(null);
@@ -2170,8 +2171,11 @@ export default function FacultyManagement() {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleToggleRoleSelection(role.code);
+                          }}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
                         />
                       </div>
                       <h5 className="font-headings font-bold text-xs text-secondary">{role.name}</h5>

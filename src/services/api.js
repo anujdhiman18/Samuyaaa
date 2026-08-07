@@ -4713,7 +4713,7 @@ export const rbacService = {
     try {
       const remote = await apiCall(`/rbac/faculty-roles/${facultyId}`, { method: 'PUT', body: JSON.stringify(payload) });
       if (remote && remote.faculty) {
-        // Continue to sync local storage and firestore as well
+        // Remote update succeeded
       }
     } catch (e) {
       console.warn('Backend rbac apiCall failed, updating local & firestore:', e.message);
@@ -4726,10 +4726,12 @@ export const rbacService = {
         (f.email && payload.email && f.email.toLowerCase() === payload.email.toLowerCase())
     );
     if (idx !== -1) {
+      const newRoles = Array.isArray(payload.roles) ? payload.roles : list[idx].roles;
       const updatedFac = {
         ...list[idx],
-        roles: payload.roles || list[idx].roles,
-        permissionOverrides: payload.permissionOverrides || list[idx].permissionOverrides,
+        roles: newRoles,
+        role: newRoles[0] || 'SUBJECT_TEACHER',
+        permissionOverrides: payload.permissionOverrides !== undefined ? payload.permissionOverrides : list[idx].permissionOverrides,
         is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
       };
       list[idx] = updatedFac;
@@ -4739,7 +4741,7 @@ export const rbacService = {
       try {
         await setDoc(
           doc(db, 'faculty', String(facultyId)),
-          { roles: updatedFac.roles, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
+          { roles: updatedFac.roles, role: updatedFac.role, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
           { merge: true }
         );
       } catch (e) {}
@@ -4756,6 +4758,7 @@ export const rbacService = {
             const updatedUser = {
               ...curr,
               roles: updatedFac.roles,
+              role: updatedFac.role,
               permissionOverrides: updatedFac.permissionOverrides,
               is_active: updatedFac.is_active,
             };
