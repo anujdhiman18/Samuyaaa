@@ -18,15 +18,15 @@ export default function FacultyLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex font-body">
+    <div className="min-h-screen bg-surface text-on-surface flex font-body max-w-full overflow-x-hidden">
       {/* Faculty Sidebar Navigation */}
       <FacultySidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
       {/* Main Faculty Shell */}
-      <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
+      <div className="flex-1 flex flex-col lg:pl-64 min-w-0 max-w-full overflow-x-hidden">
         <FacultyTopbar onToggleMobile={() => setMobileOpen((prev) => !prev)} />
 
-        <main className="p-4 md:p-8 flex-grow bg-surface">
+        <main className="p-4 md:p-8 flex-grow bg-surface w-full max-w-full overflow-x-hidden">
           <Breadcrumbs />
           <Outlet />
         </main>

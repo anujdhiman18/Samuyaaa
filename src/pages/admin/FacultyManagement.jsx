@@ -605,10 +605,10 @@ export default function FacultyManagement() {
       </div>
 
       {/* Tab Selector */}
-      <div className="flex border-b border-outline-variant/20 gap-4">
+      <div className="flex border-b border-outline-variant/20 gap-4 overflow-x-auto whitespace-nowrap no-scrollbar pb-1 max-w-full">
         <button
           onClick={() => setActiveTab('directory')}
-          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'directory'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
               : 'text-on-surface-variant hover:text-secondary'
@@ -620,7 +620,7 @@ export default function FacultyManagement() {
 
         <button
           onClick={() => setActiveTab('applications')}
-          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'applications'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
               : 'text-on-surface-variant hover:text-secondary'
@@ -637,7 +637,7 @@ export default function FacultyManagement() {
 
         <button
           onClick={() => setActiveTab('requests')}
-          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'requests'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
               : 'text-on-surface-variant hover:text-secondary'
@@ -654,7 +654,7 @@ export default function FacultyManagement() {
 
         <button
           onClick={() => setActiveTab('leaves')}
-          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors ${
+          className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'leaves'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
               : 'text-on-surface-variant hover:text-secondary'
@@ -827,13 +827,13 @@ export default function FacultyManagement() {
       {activeTab === 'applications' && (
         <div className="space-y-4">
           {/* Applications Status Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-outline-variant/15 shadow-sm">
-            <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-outline-variant/15 shadow-sm max-w-full">
+            <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar pb-1 max-w-full">
               {['All', 'Pending', 'Under Review', 'Shortlisted', 'Approved', 'Rejected'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setAppFilterStatus(st)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-headings font-bold transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-headings font-bold transition-all cursor-pointer shrink-0 ${
                     appFilterStatus === st
                       ? 'bg-secondary text-white shadow-sm'
                       : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'

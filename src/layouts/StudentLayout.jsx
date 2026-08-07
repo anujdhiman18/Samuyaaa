@@ -20,13 +20,13 @@ export default function StudentLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex font-body">
+    <div className="min-h-screen bg-surface text-on-surface flex font-body max-w-full overflow-x-hidden">
       <StudentSidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:pl-64 min-w-0">
+      <div className="flex-1 flex flex-col lg:pl-64 min-w-0 max-w-full overflow-x-hidden">
         <StudentTopbar onToggleMobile={() => setMobileOpen((prev) => !prev)} />
 
-        <main className="p-4 md:p-8 flex-grow bg-surface">
+        <main className="p-4 md:p-8 flex-grow bg-surface w-full max-w-full overflow-x-hidden">
           <Breadcrumbs />
           <Outlet />
         </main>
