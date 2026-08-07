@@ -127,10 +127,7 @@ export default function LoginPage() {
 
 
 
-        <div className="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between text-xs">
-          <Link to="/faculty/login" className="text-primary font-headings font-bold hover:underline">
-            Faculty Dedicated Portal
-          </Link>
+        <div className="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-center text-xs">
           <Link to="/" className="text-secondary font-headings font-bold hover:underline">
             Back to Website
           </Link>
