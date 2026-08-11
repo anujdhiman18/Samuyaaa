@@ -7,6 +7,8 @@ const RBACContext = createContext();
 
 export function RBACProvider({ children }) {
   const { user } = useAuth();
+  const [customRoles, setCustomRoles] = useState([]);
+  const [userRoles, setUserRoles] = useState([]);
   const [systemRoleOverrides, setSystemRoleOverrides] = useState({});
 
   const loadCustomRoles = async () => {
