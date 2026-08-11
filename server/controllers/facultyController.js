@@ -69,7 +69,14 @@ export const updateFaculty = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Faculty member not found' });
     }
 
-    const updated = await Faculty.findByIdAndUpdate(faculty._id, req.body, { new: true, runValidators: true });
+    const updateData = { ...req.body };
+    if (Array.isArray(updateData.roles) && updateData.roles.length > 0) {
+      updateData.role = updateData.roles[0];
+    } else if (updateData.role && updateData.role !== 'Faculty') {
+      updateData.roles = [updateData.role];
+    }
+
+    const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });
     res.json({ success: true, faculty: updated, message: 'Faculty updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

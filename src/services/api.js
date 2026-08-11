@@ -2801,11 +2801,22 @@ export const facultyService = {
             String(s._id || s.id) === String(remoteFac._id || remoteFac.id) ||
             (s.email && remoteFac.email && s.email.toLowerCase() === remoteFac.email.toLowerCase())
         );
-        const rolesToUse = Array.isArray(remoteFac.roles) && remoteFac.roles.length > 0
-          ? remoteFac.roles
-          : (Array.isArray(localFac?.roles) && localFac.roles.length > 0
-            ? localFac.roles
-            : (remoteFac.role && remoteFac.role !== 'Faculty' ? [remoteFac.role] : ['SUBJECT_TEACHER']));
+        const localRoles = Array.isArray(localFac?.roles) ? localFac.roles : [];
+        const remoteRoles = Array.isArray(remoteFac?.roles) ? remoteFac.roles : [];
+
+        let rolesToUse = [];
+        if (remoteRoles.length > 0 && !remoteRoles.every((r) => r === 'Faculty' || r === 'SUBJECT_TEACHER')) {
+          rolesToUse = remoteRoles;
+        } else if (localRoles.length > 0) {
+          rolesToUse = localRoles;
+        } else if (remoteRoles.length > 0) {
+          rolesToUse = remoteRoles;
+        } else if (remoteFac.role && remoteFac.role !== 'Faculty') {
+          rolesToUse = [remoteFac.role];
+        } else {
+          rolesToUse = ['SUBJECT_TEACHER'];
+        }
+
         return {
           ...remoteFac,
           roles: rolesToUse,
@@ -4753,8 +4764,16 @@ export const rbacService = {
         remoteFaculty = remote.faculty;
       }
     } catch (e) {
-      console.warn('Backend rbac apiCall failed, updating local & firestore:', e.message);
+      console.warn('Backend rbac apiCall failed:', e.message);
     }
+
+    try {
+      const newRoles = Array.isArray(payload.roles) ? payload.roles : ['SUBJECT_TEACHER'];
+      await apiCall(`/faculty/${facultyId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ roles: newRoles, role: newRoles[0] || 'SUBJECT_TEACHER', email: payload.email }),
+      }).catch(() => {});
+    } catch (e) {}
 
     const list = getStoredFaculty();
     const idx = list.findIndex(
