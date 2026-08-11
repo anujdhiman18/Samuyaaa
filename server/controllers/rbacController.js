@@ -253,12 +253,14 @@ export const assignFacultyRoles = async (req, res) => {
     }
 
     if (!faculty) {
-      const conditions = [];
-      if (isValidId) conditions.push({ _id: facultyId });
-      if (email) conditions.push({ email: email.toLowerCase() });
-
-      if (conditions.length > 0) {
-        faculty = await Faculty.findOne({ $or: conditions });
+      if (isValidId) {
+        faculty = await Faculty.findById(facultyId);
+      }
+      if (!faculty && email) {
+        faculty = await Faculty.findOne({ email: new RegExp(`^${email.trim()}$`, 'i') });
+      }
+      if (!faculty && name) {
+        faculty = await Faculty.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
       }
     }
 

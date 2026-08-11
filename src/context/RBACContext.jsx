@@ -136,13 +136,23 @@ export function RBACProvider({ children }) {
       userRoles.includes('SuperAdmin')
     );
 
+    const academicCodes = [
+      'MARK_ATTENDANCE',
+      'UPLOAD_GRADES',
+      'VIEW_STUDENT_ACADEMICS',
+      'MANAGE_CLASSES',
+      'canMarkAttendance',
+      'canUploadGrades',
+      'canViewStudentAnalytics',
+      'canManageClasses',
+    ];
+
     if (isAdmin) {
-      // If admin user has additionalPermissions specified, check if permission is present
-      if (Array.isArray(user.additionalPermissions) && user.additionalPermissions.length > 0) {
+      // If checking an optional academic responsibility, check additionalPermissions if defined
+      if (permissionCode && academicCodes.includes(permissionCode) && Array.isArray(user.additionalPermissions) && user.additionalPermissions.length > 0) {
         return (
           user.additionalPermissions.includes(permissionCode) ||
-          user.additionalPermissions.includes(permissionCode.toUpperCase()) ||
-          activePermissions.includes(permissionCode)
+          user.additionalPermissions.includes(permissionCode.toUpperCase())
         );
       }
       return true;

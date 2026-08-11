@@ -71,7 +71,9 @@ export const updateFaculty = async (req, res) => {
 
     const updateData = { ...req.body };
     if (Array.isArray(updateData.roles) && updateData.roles.length > 0) {
-      updateData.role = updateData.roles[0];
+      if (!updateData.role) {
+        updateData.role = updateData.roles[0];
+      }
     } else if (updateData.role && updateData.role !== 'Faculty') {
       updateData.roles = [updateData.role];
     }

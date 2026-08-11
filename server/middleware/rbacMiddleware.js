@@ -1,3 +1,14 @@
+const ACADEMIC_PERMISSION_CODES = [
+  'MARK_ATTENDANCE',
+  'UPLOAD_GRADES',
+  'VIEW_STUDENT_ACADEMICS',
+  'MANAGE_CLASSES',
+  'canMarkAttendance',
+  'canUploadGrades',
+  'canViewStudentAnalytics',
+  'canManageClasses',
+];
+
 /**
  * Helper function to check if a user object has a specific permission code.
  * Supports Admin users with additional permissions, Faculty users, and full Admins.
@@ -23,10 +34,11 @@ export const hasPermission = (user, permissionCode) => {
     : [];
 
   if (isAdmin) {
-    // Admin has full access or matching additional permissions
-    if (userPerms && userPerms.length > 0) {
+    // If checking an optional academic responsibility, check additionalPermissions if defined
+    if (permissionCode && ACADEMIC_PERMISSION_CODES.includes(permissionCode) && userPerms.length > 0) {
       return userPerms.includes(permissionCode) || userPerms.includes(permissionCode.toUpperCase());
     }
+    // Full access to all standard Admin features
     return true;
   }
 

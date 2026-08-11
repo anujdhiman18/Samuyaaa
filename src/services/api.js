@@ -4796,8 +4796,9 @@ export const rbacService = {
 
       // Sync Firestore
       try {
+        const firestoreDocId = String(list[idx].id || list[idx]._id || facultyId);
         await setDoc(
-          doc(db, 'faculty', String(facultyId)),
+          doc(db, 'faculty', firestoreDocId),
           { roles: updatedFac.roles, role: updatedFac.role, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
           { merge: true }
         );
