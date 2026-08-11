@@ -40,9 +40,16 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const login = (userData, authToken) => {
+    const isFacultyUser = Boolean(
+      userData?.isFaculty ||
+        userData?.role === 'Faculty' ||
+        ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR'].includes(userData?.role) ||
+        (Array.isArray(userData?.roles) && userData.roles.some((r) => ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR', 'FACULTY'].includes(r)))
+    );
+
     const normalizedUser = {
       ...userData,
-      role: userData?.role || 'Admin',
+      isFaculty: isFacultyUser,
     };
     setUser(normalizedUser);
     setToken(authToken);
@@ -60,8 +67,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('saumyaa_admin');
   };
 
-  const isFaculty = Boolean(user && user.role === 'Faculty');
-  const isAdmin = Boolean(user && (user.role === 'Admin' || user.role === 'SuperAdmin'));
+  const isFaculty = Boolean(
+    user &&
+      !user.isStudent &&
+      (user.isFaculty ||
+        user.role === 'Faculty' ||
+        ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR'].includes(user.role) ||
+        (Array.isArray(user.roles) && user.roles.some((r) => ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR', 'FACULTY'].includes(r))))
+  );
+  const isAdmin = Boolean(user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN'))));
 
   return (
     <AuthContext.Provider

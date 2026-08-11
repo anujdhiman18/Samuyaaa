@@ -6,15 +6,22 @@ import FacultyTopbar from '../components/faculty/FacultyTopbar';
 import Breadcrumbs from '../components/admin/Breadcrumbs';
 
 export default function FacultyLayout() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isFaculty: isFacultyContext } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isFaculty = Boolean(user && user.role === 'Faculty');
+  const isFaculty = Boolean(
+    isFacultyContext ||
+      (user &&
+        !user.isStudent &&
+        (user.isFaculty ||
+          user.role === 'Faculty' ||
+          ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR'].includes(user.role) ||
+          (Array.isArray(user.roles) && user.roles.some((r) => ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER', 'ACADEMIC_COORDINATOR', 'FACULTY'].includes(r)))))
+  );
 
   // STRICT ROLE-BASED ACCESS CONTROL (RBAC)
-  // If not logged in or role is not Faculty, block access & redirect to faculty login!
   if (!isAuthenticated || !isFaculty) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/faculty/login" replace />;
   }
 
   return (
