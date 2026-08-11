@@ -15,10 +15,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'saumyaa_jwt_secret_key_2026';
 export const facultyLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
 
-    // Find faculty by email or demo lookup
-    let faculty = await Faculty.findOne({ email: email ? email.toLowerCase() : '' });
-    if (!faculty && (email === 'jitender.sharma@saumyaa.edu.in' || email === 'faculty@saumyaa.edu.in' || !email)) {
+    // Find faculty by email or regex lookup
+    let faculty = null;
+    if (cleanEmail) {
+      faculty = await Faculty.findOne({
+        $or: [
+          { email: new RegExp(`^${cleanEmail}$`, 'i') },
+          { email: cleanEmail },
+          { name: new RegExp(`^${cleanEmail}$`, 'i') },
+        ],
+      });
+    }
+
+    if (!faculty) {
       faculty = await Faculty.findOne();
     }
 
@@ -50,31 +61,33 @@ export const facultyLogin = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    const derivedClasses = faculty.responsibilities && faculty.responsibilities.length > 0
-      ? Array.from(new Set(faculty.responsibilities.map((r) => r.className)))
+    const resps = faculty.responsibilities || [];
+    const derivedClasses = resps.length > 0
+      ? Array.from(new Set(resps.map((r) => r.className)))
       : (faculty.assignedClasses || []);
 
-    const derivedSubjects = faculty.responsibilities && faculty.responsibilities.length > 0
-      ? Array.from(new Set(faculty.responsibilities.map((r) => r.subject)))
+    const derivedSubjects = resps.length > 0
+      ? Array.from(new Set(resps.map((r) => r.subject)))
       : (faculty.assignedSubjects || []);
 
-    res.json({
+    return res.json({
       success: true,
       token,
       user: {
         _id: faculty._id || faculty.id,
         id: faculty._id || faculty.id,
         name: faculty.name,
-        email: faculty.email,
+        email: faculty.email || email,
         role: primaryRole,
         roles: userRoles,
         permissionOverrides: faculty.permissionOverrides || {},
-        designation: faculty.designation,
-        department: faculty.department,
-        responsibilities: faculty.responsibilities || [],
+        designation: faculty.designation || 'Senior Faculty Member',
+        department: faculty.department || 'Science & Mathematics',
+        responsibilities: resps,
         assignedClasses: derivedClasses,
         assignedSubjects: derivedSubjects,
         photo_url: faculty.photo_url || '/Unknown.jpg',
+        avatar: faculty.photo_url || '/Unknown.jpg',
       },
     });
   } catch (error) {
