@@ -103,27 +103,27 @@ export default function FacultyManagement() {
         (s.email && faculty.email && s.email.toLowerCase() === faculty.email.toLowerCase())
     );
 
-    let existingRoles = [];
+    let primaryRole = 'SUBJECT_TEACHER';
     if (Array.isArray(storedFac?.roles) && storedFac.roles.length > 0) {
-      existingRoles = storedFac.roles;
+      primaryRole = storedFac.roles[0];
     } else if (Array.isArray(faculty.roles) && faculty.roles.length > 0) {
-      existingRoles = faculty.roles;
+      primaryRole = faculty.roles[0];
     } else if (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin') {
-      existingRoles = [faculty.role];
+      primaryRole = faculty.role;
     } else if (faculty.designation) {
       if (faculty.designation.includes('HOD') || faculty.designation.includes('Head')) {
-        existingRoles = ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+        primaryRole = 'HEAD_OF_DEPARTMENT';
       } else if (faculty.designation.includes('Senior')) {
-        existingRoles = ['SENIOR_FACULTY', 'SUBJECT_TEACHER'];
+        primaryRole = 'SENIOR_FACULTY';
       } else if (faculty.designation.includes('Coordinator')) {
-        existingRoles = ['ACADEMIC_COORDINATOR'];
+        primaryRole = 'ACADEMIC_COORDINATOR';
       } else {
-        existingRoles = ['SUBJECT_TEACHER'];
+        primaryRole = 'SUBJECT_TEACHER';
       }
     } else {
-      existingRoles = ['SUBJECT_TEACHER'];
+      primaryRole = 'SUBJECT_TEACHER';
     }
-    setSelectedRoles(existingRoles);
+    setSelectedRoles([primaryRole]);
   };
 
   const handleToggleRoleSelection = (roleCode) => {

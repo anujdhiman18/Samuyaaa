@@ -2805,10 +2805,10 @@ export const facultyService = {
         const remoteRoles = Array.isArray(remoteFac?.roles) ? remoteFac.roles : [];
 
         let rolesToUse = [];
-        if (localRoles.length > 0) {
-          rolesToUse = localRoles;
-        } else if (remoteRoles.length > 0) {
+        if (remoteRoles.length > 0) {
           rolesToUse = remoteRoles;
+        } else if (localRoles.length > 0) {
+          rolesToUse = localRoles;
         } else if (remoteFac.role && remoteFac.role !== 'Faculty') {
           rolesToUse = [remoteFac.role];
         } else {
@@ -2818,7 +2818,7 @@ export const facultyService = {
         return {
           ...remoteFac,
           roles: rolesToUse,
-          role: rolesToUse[0] || 'SUBJECT_TEACHER',
+          role: remoteFac.role || rolesToUse[0] || 'SUBJECT_TEACHER',
         };
       });
       setStoredFaculty(merged, true);
@@ -4787,7 +4787,7 @@ export const rbacService = {
         ...list[idx],
         ...(remoteFaculty || {}),
         roles: newRoles,
-        role: newRoles[0] || 'SUBJECT_TEACHER',
+        role: payload.role || newRoles[0] || 'SUBJECT_TEACHER',
         permissionOverrides: payload.permissionOverrides !== undefined ? payload.permissionOverrides : list[idx].permissionOverrides,
         is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
       };

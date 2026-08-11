@@ -263,7 +263,7 @@ export const assignFacultyRoles = async (req, res) => {
     }
 
     const newRoles = Array.isArray(roles) ? roles : ['SUBJECT_TEACHER'];
-    const primaryRole = newRoles[0] || 'SUBJECT_TEACHER';
+    const primaryRole = req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
     const isActiveBool = status !== undefined ? status === 'Active' : true;
 
     if (faculty) {
