@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Faculty from '../models/Faculty.js';
 import { getTransporter, EMAIL_TARGET } from '../config/nodemailer.js';
 
@@ -20,14 +21,17 @@ export const getFaculty = async (req, res) => {
 // @route   POST /api/faculty
 export const createFaculty = async (req, res) => {
   try {
-    const { name, designation, subject, qualification, experience, photo_url, display_order, is_active } = req.body;
+    const { name, designation, subject, qualification, experience, photo_url, display_order, is_active, email, roles, role } = req.body;
 
     if (!name || !photo_url) {
       return res.status(400).json({ success: false, message: 'Name and photo URL are required' });
     }
 
+    const assignedRoles = Array.isArray(roles) && roles.length > 0 ? roles : [role || 'SUBJECT_TEACHER'];
+
     const newFaculty = await Faculty.create({
       name,
+      email: email ? email.toLowerCase() : undefined,
       designation: designation || 'Senior Faculty Member',
       subject: subject || 'General Academics',
       qualification: qualification || 'Master’s Degree',
@@ -35,6 +39,8 @@ export const createFaculty = async (req, res) => {
       photo_url,
       display_order: Number(display_order) || 1,
       is_active: is_active !== undefined ? Boolean(is_active) : true,
+      roles: assignedRoles,
+      role: assignedRoles[0] || 'SUBJECT_TEACHER',
     });
 
     res.status(201).json({ success: true, faculty: newFaculty, message: 'Faculty member added successfully' });
@@ -47,12 +53,23 @@ export const createFaculty = async (req, res) => {
 // @route   PUT /api/faculty/:id
 export const updateFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.findById(req.params.id);
+    const { id } = req.params;
+    const isValidId = mongoose.Types.ObjectId.isValid(id);
+    let faculty = null;
+
+    if (isValidId) {
+      faculty = await Faculty.findById(id);
+    }
+
+    if (!faculty && req.body.email) {
+      faculty = await Faculty.findOne({ email: req.body.email.toLowerCase() });
+    }
+
     if (!faculty) {
       return res.status(404).json({ success: false, message: 'Faculty member not found' });
     }
 
-    const updated = await Faculty.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updated = await Faculty.findByIdAndUpdate(faculty._id, req.body, { new: true, runValidators: true });
     res.json({ success: true, faculty: updated, message: 'Faculty updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

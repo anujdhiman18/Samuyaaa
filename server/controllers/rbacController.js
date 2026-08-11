@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Role from '../models/Role.js';
 import Permission from '../models/Permission.js';
 import ActivityLog from '../models/ActivityLog.js';
@@ -242,31 +243,47 @@ export const deleteRole = async (req, res) => {
 export const assignFacultyRoles = async (req, res) => {
   try {
     const { facultyId } = req.params;
-    const { roles, permissionOverrides, status, email } = req.body;
+    const { roles, permissionOverrides, status, email, name, designation, department } = req.body;
 
+    const isValidId = mongoose.Types.ObjectId.isValid(facultyId);
     let faculty = null;
-    try {
-      faculty = await Faculty.findById(facultyId);
-    } catch (e) {}
 
-    if (!faculty) {
-      faculty = await Faculty.findOne({
-        $or: [
-          { id: facultyId },
-          { _id: facultyId },
-          ...(email ? [{ email: email.toLowerCase() }] : []),
-        ],
-      });
+    if (isValidId) {
+      faculty = await Faculty.findById(facultyId);
     }
 
-    if (faculty) {
-      if (Array.isArray(roles)) {
-        faculty.roles = roles;
-        faculty.role = roles[0] || 'SUBJECT_TEACHER';
+    if (!faculty) {
+      const conditions = [];
+      if (isValidId) conditions.push({ _id: facultyId });
+      if (email) conditions.push({ email: email.toLowerCase() });
+
+      if (conditions.length > 0) {
+        faculty = await Faculty.findOne({ $or: conditions });
       }
-      if (permissionOverrides) faculty.permissionOverrides = permissionOverrides;
-      if (status) faculty.is_active = status === 'Active';
+    }
+
+    const newRoles = Array.isArray(roles) ? roles : ['SUBJECT_TEACHER'];
+    const primaryRole = newRoles[0] || 'SUBJECT_TEACHER';
+    const isActiveBool = status !== undefined ? status === 'Active' : true;
+
+    if (faculty) {
+      faculty.roles = newRoles;
+      faculty.role = primaryRole;
+      if (permissionOverrides !== undefined) faculty.permissionOverrides = permissionOverrides;
+      faculty.is_active = isActiveBool;
       await faculty.save();
+    } else {
+      // Create new Faculty document in DB if it was previously client-only/mock
+      faculty = await Faculty.create({
+        name: name || 'Faculty Member',
+        email: email ? email.toLowerCase() : `faculty_${Date.now()}@saumyaa.edu.in`,
+        designation: designation || 'Senior Faculty Member',
+        department: department || 'Science & Mathematics',
+        roles: newRoles,
+        role: primaryRole,
+        permissionOverrides: permissionOverrides || {},
+        is_active: isActiveBool,
+      });
     }
 
     await ActivityLog.create({
@@ -275,7 +292,7 @@ export const assignFacultyRoles = async (req, res) => {
       userRole: 'SuperAdmin',
       action: 'FACULTY_ROLES_ASSIGNED',
       category: 'RBAC',
-      details: `Assigned roles [${Array.isArray(roles) ? roles.join(', ') : ''}] to ${faculty?.name || facultyId}`,
+      details: `Assigned roles [${newRoles.join(', ')}] to ${faculty?.name || facultyId}`,
       status: 'SUCCESS',
     }).catch(() => {});
 

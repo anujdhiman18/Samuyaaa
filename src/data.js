@@ -86,7 +86,7 @@ export const testimonials = [
   {
     id: 3,
     quote:
-      'The class size is limited to 12. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
+      'The class size is limited to 15. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
     initials: 'SR',
     initialsBg: 'bg-tertiary-fixed',
     initialsColor: 'text-on-tertiary-fixed',
@@ -111,7 +111,7 @@ export const faqs = [
   {
     question: 'What is the batch size at Saumyaa Studies?',
     answer:
-      "We maintain a strict limit of 12 students per batch. This allows Jitender sir and our faculty to provide individualized attention, review students' answers personally, and monitor cognitive progress.",
+      "We maintain a strict limit of 15 students max per batch. This allows Jitender sir and our faculty to provide individualized attention, review students' answers personally, and monitor cognitive progress.",
   },
   {
     question: 'Do you offer individual coaching or only group batches?',

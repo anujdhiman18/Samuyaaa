@@ -97,7 +97,7 @@ export default function FacultyManagement() {
   const handleOpenRoleModal = (faculty) => {
     setRoleModalMember(faculty);
     let existingRoles = [];
-    if (Array.isArray(faculty.roles) && faculty.roles.length > 0) {
+    if (Array.isArray(faculty.roles)) {
       existingRoles = faculty.roles;
     } else if (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin') {
       existingRoles = [faculty.role];
@@ -129,14 +129,35 @@ export default function FacultyManagement() {
     setSavingUserRoles(true);
     try {
       const id = roleModalMember._id || roleModalMember.id;
-      await rbacService.assignFacultyRoles(id, {
+      const payload = {
         roles: selectedRoles,
         status: roleModalMember.is_active ? 'Active' : 'Inactive',
         email: roleModalMember.email,
-      });
+        name: roleModalMember.name,
+        designation: roleModalMember.designation,
+        department: roleModalMember.department,
+      };
+      await rbacService.assignFacultyRoles(id, payload);
+
+      setFacultyList((prevList) =>
+        prevList.map((f) => {
+          if (
+            String(f._id || f.id) === String(id) ||
+            (f.email && roleModalMember.email && f.email.toLowerCase() === roleModalMember.email.toLowerCase())
+          ) {
+            return {
+              ...f,
+              roles: selectedRoles,
+              role: selectedRoles[0] || 'SUBJECT_TEACHER',
+            };
+          }
+          return f;
+        })
+      );
+
       addToast(`Updated assigned roles for ${roleModalMember.name}`, 'success');
       setRoleModalMember(null);
-      fetchFaculty();
+      await fetchFaculty();
     } catch (err) {
       addToast(err.message || 'Error updating faculty roles', 'error');
     } finally {

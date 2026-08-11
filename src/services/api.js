@@ -2573,7 +2573,7 @@ const initialMockFeedbacks = [
     id: 'fb3',
     name: 'Sneha Reddy',
     role: 'JEE Foundation Student',
-    quote: 'The class size is limited to 12. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
+    quote: 'The class size is limited to 15. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
     initials: 'SR',
     initialsBg: 'bg-tertiary/15',
     initialsColor: 'text-tertiary',
@@ -2794,8 +2794,26 @@ export const facultyService = {
     const query = activeOnly ? '?activeOnly=true' : '';
     const remote = await apiCall(`/faculty${query}`);
     if (remote && remote.success && Array.isArray(remote.faculty)) {
-      setStoredFaculty(remote.faculty, true);
-      return remote;
+      const stored = getStoredFaculty();
+      const merged = remote.faculty.map((remoteFac) => {
+        const localFac = stored.find(
+          (s) =>
+            String(s._id || s.id) === String(remoteFac._id || remoteFac.id) ||
+            (s.email && remoteFac.email && s.email.toLowerCase() === remoteFac.email.toLowerCase())
+        );
+        const rolesToUse = Array.isArray(remoteFac.roles) && remoteFac.roles.length > 0
+          ? remoteFac.roles
+          : (Array.isArray(localFac?.roles) && localFac.roles.length > 0
+            ? localFac.roles
+            : (remoteFac.role && remoteFac.role !== 'Faculty' ? [remoteFac.role] : ['SUBJECT_TEACHER']));
+        return {
+          ...remoteFac,
+          roles: rolesToUse,
+          role: rolesToUse[0] || 'SUBJECT_TEACHER',
+        };
+      });
+      setStoredFaculty(merged, true);
+      return { ...remote, faculty: merged };
     }
 
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
@@ -4710,10 +4728,11 @@ export const rbacService = {
   },
 
   assignFacultyRoles: async (facultyId, payload) => {
+    let remoteFaculty = null;
     try {
       const remote = await apiCall(`/rbac/faculty-roles/${facultyId}`, { method: 'PUT', body: JSON.stringify(payload) });
       if (remote && remote.faculty) {
-        // Remote update succeeded
+        remoteFaculty = remote.faculty;
       }
     } catch (e) {
       console.warn('Backend rbac apiCall failed, updating local & firestore:', e.message);
@@ -4725,10 +4744,13 @@ export const rbacService = {
         String(f._id || f.id) === String(facultyId) ||
         (f.email && payload.email && f.email.toLowerCase() === payload.email.toLowerCase())
     );
+
+    const newRoles = Array.isArray(payload.roles) ? payload.roles : ['SUBJECT_TEACHER'];
+
     if (idx !== -1) {
-      const newRoles = Array.isArray(payload.roles) ? payload.roles : list[idx].roles;
       const updatedFac = {
         ...list[idx],
+        ...(remoteFaculty || {}),
         roles: newRoles,
         role: newRoles[0] || 'SUBJECT_TEACHER',
         permissionOverrides: payload.permissionOverrides !== undefined ? payload.permissionOverrides : list[idx].permissionOverrides,
@@ -4766,9 +4788,12 @@ export const rbacService = {
           }
         }
       } catch (e) {}
+    } else if (remoteFaculty) {
+      list.push(remoteFaculty);
+      setStoredFaculty(list);
     }
     notifyDataUpdate();
-    return { success: true, message: 'Faculty roles updated successfully!' };
+    return { success: true, faculty: remoteFaculty, message: 'Faculty roles updated successfully!' };
   },
 
   getActivityLogs: async () => {
