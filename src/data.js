@@ -161,7 +161,7 @@ export const branches = [
     id: 'daroh',
     name: 'Daroh (Branch 2)',
     shortName: 'Daroh Branch',
-    address: 'Daroh, Himachal Pradesh 176092',
+    address: 'Daroh, PTC Road, Himachal Pradesh 176092',
     coordinates: 'Daroh, HP',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=31.997361,76.478083',
     phone: '+91 98164 77341',
