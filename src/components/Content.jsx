@@ -117,52 +117,67 @@ export default function Contact() {
                   </div>
                 </a>
 
-                <div className="flex items-center gap-4 p-3 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all group">
-                  <span className="w-10 h-10 rounded-lg bg-secondary/5 text-secondary flex items-center justify-center transition-colors">
-                    <span className="material-symbols-outlined text-[20px]">location_on</span>
-                  </span>
-                  <div>
-                    <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Location</p>
-                    <p className="text-sm font-bold text-on-surface">
-                      Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
-                    </p>
+                <div className="pt-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-primary">domain</span>
+                    Our Academic Centers
+                  </p>
+
+                  <div className="space-y-3">
+                    {/* Main Branch - Bagru */}
+                    <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                          Bagru (Main Branch)
+                        </span>
+                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                          Main Center
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
+                        Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
+                      </p>
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Bagru on Google Maps
+                      </a>
+                    </div>
+
+                    {/* Second Branch - Daroh */}
+                    <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                          Daroh (Branch 2)
+                        </span>
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                          Branch 2
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant leading-relaxed mb-1">
+                        Daroh, Himachal Pradesh
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant/80 font-mono mb-2">
+                        📍 GPS: 31°59'50.5"N 76°28'41.1"E
+                      </p>
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Daroh on Google Maps
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 rounded-2xl bg-white border border-surface-container-high p-4 shadow-sm relative overflow-hidden h-48 flex items-center justify-center"
-            >
-              <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#186777_1px,transparent_1px)] [background-size:16px_16px]" />
-
-              <svg
-                className="w-full h-full text-secondary/10"
-                viewBox="0 0 400 150"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M20 130 C 100 130, 150 20, 250 20 C 320 20, 350 90, 380 90" strokeDasharray="4 4" />
-                <path d="M50 10 L 50 140" />
-                <path d="M150 10 L 150 140" />
-                <path d="M250 10 L 250 140" />
-                <path d="M350 10 L 350 140" />
-                <path d="M10 50 L 390 50" />
-                <path d="M10 110 L 390 110" />
-                <circle cx="250" cy="20" r="15" fill="#a83809" fillOpacity="0.1" stroke="#a83809" strokeWidth="1.5" />
-                <circle cx="250" cy="20" r="4" fill="#a83809" />
-                <path d="M250 20 L 250 35" stroke="#a83809" strokeWidth="2" />
-              </svg>
-
-              <div className="absolute bottom-4 left-4 right-4 bg-secondary text-white py-2 px-3 rounded-lg text-center font-headings font-bold text-xs flex items-center justify-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">map</span> Open in Google Maps
-              </div>
-            </a>
           </div>
 
           {/* Right: Contact form */}

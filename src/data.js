@@ -145,3 +145,27 @@ export const timeSlots = [
   '7:00 PM - 8:00 PM',
   '10:30 AM - 11:30 AM',
 ];
+
+export const branches = [
+  {
+    id: 'bagru',
+    name: 'Bagru (Main Branch)',
+    shortName: 'Bagru Main',
+    address: 'Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093',
+    coordinates: 'Jamula, Palaid',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093',
+    phone: '+91 98164 77341',
+    isMain: true,
+  },
+  {
+    id: 'daroh',
+    name: 'Daroh (Branch 2)',
+    shortName: 'Daroh Branch',
+    address: 'Daroh, Himachal Pradesh (GPS: 31°59\'50.5"N 76°28\'41.1"E)',
+    coordinates: '31°59\'50.5"N 76°28\'41.1"E',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=31.997361,76.478083',
+    phone: '+91 98164 77341',
+    isMain: false,
+  },
+];
+

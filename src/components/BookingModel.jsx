@@ -201,7 +201,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
                 >
                   <option value="Bagru">Bagru (Main Branch)</option>
-                  <option value="Daroh">Daroh (Child Branch)</option>
+                  <option value="Daroh">Daroh (Branch 2)</option>
                 </select>
               </div>
             </div>

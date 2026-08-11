@@ -86,19 +86,29 @@ export default function Footer() {
 
         <div>
           <h4 className="font-headings font-bold text-xs text-secondary uppercase tracking-wider mb-4">
-            Academic Center
+            Academic Centers
           </h4>
           <div className="space-y-3 text-xs text-on-surface-variant font-medium">
-            <p className="flex items-start gap-2.5 leading-relaxed">
-              <span className="material-symbols-outlined text-[16px] text-primary mt-0.5">location_on</span>
-              <span>Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093</span>
-            </p>
-            <p className="flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-[16px] text-primary">call</span>
+            <div>
+              <p className="font-bold text-secondary text-[11px] mb-0.5">Bagru (Main Branch)</p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="material-symbols-outlined text-[14px] text-primary mt-0.5 shrink-0">location_on</span>
+                <span>Bagru Garh, Jamula, Palaid, HP 176093</span>
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-secondary text-[11px] mb-0.5">Daroh (Branch 2)</p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="material-symbols-outlined text-[14px] text-emerald-600 mt-0.5 shrink-0">location_on</span>
+                <span>Daroh, HP <span className="font-mono text-[10px] opacity-80">(31°59'50.5"N 76°28'41.1"E)</span></span>
+              </p>
+            </div>
+            <p className="flex items-center gap-2 pt-1 border-t border-surface-container-high/60">
+              <span className="material-symbols-outlined text-[14px] text-primary">call</span>
               <span>+91 98164 77341</span>
             </p>
-            <p className="flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-[16px] text-primary">mail</span>
+            <p className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px] text-primary">mail</span>
               <span>Jitender0585@gmail.com</span>
             </p>
           </div>
