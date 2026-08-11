@@ -127,9 +127,7 @@ export default function FacultyManagement() {
   };
 
   const handleToggleRoleSelection = (roleCode) => {
-    setSelectedRoles((prev) =>
-      prev.includes(roleCode) ? prev.filter((r) => r !== roleCode) : [...prev, roleCode]
-    );
+    setSelectedRoles([roleCode]);
   };
 
   const handleSaveUserRoles = async (e) => {
@@ -2234,7 +2232,7 @@ export default function FacultyManagement() {
 
             <div className="space-y-3">
               <h4 className="font-headings font-bold text-xs text-secondary uppercase tracking-wider">
-                Select Roles to Assign (Inherits All System Permissions):
+                Select Role to Assign (Inherits All System Permissions):
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2255,13 +2253,14 @@ export default function FacultyManagement() {
                           {role.badge || role.name}
                         </span>
                         <input
-                          type="checkbox"
+                          type="radio"
+                          name="assignedRoleRadio"
                           checked={isChecked}
                           onChange={(e) => {
                             e.stopPropagation();
                             handleToggleRoleSelection(role.code);
                           }}
-                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          className="w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer"
                         />
                       </div>
                       <h5 className="font-headings font-bold text-xs text-secondary">{role.name}</h5>
