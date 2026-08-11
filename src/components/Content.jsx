@@ -159,11 +159,8 @@ export default function Contact() {
                           Branch 2
                         </span>
                       </div>
-                      <p className="text-xs text-on-surface-variant leading-relaxed mb-1">
-                        Daroh, Himachal Pradesh
-                      </p>
-                      <p className="text-[11px] text-on-surface-variant/80 font-mono mb-2">
-                        📍 GPS: 31°59'50.5"N 76°28'41.1"E
+                      <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
+                        Daroh, Himachal Pradesh 176092
                       </p>
                       <a
                         href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
