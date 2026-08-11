@@ -304,18 +304,43 @@ export const SYSTEM_ROLES = [
  * Compute merged unique permissions array for a user based on their roles and custom overrides
  */
 export const computePermissionsForUser = (userRoleCodes = [], customPermissionOverrides = {}, userRoleName = '', customRoles = []) => {
-  // If SuperAdmin or Admin role code
-  if (userRoleCodes.includes('ADMIN') || userRoleCodes.includes('SuperAdmin') || userRoleName === 'SuperAdmin') {
+  // Normalize input role codes & names
+  const rawCodes = Array.isArray(userRoleCodes) ? userRoleCodes : [userRoleCodes].filter(Boolean);
+
+  const isAdmin = Boolean(
+    rawCodes.includes('ADMIN') ||
+    rawCodes.includes('SuperAdmin') ||
+    rawCodes.includes('Admin') ||
+    userRoleName === 'SuperAdmin' ||
+    userRoleName === 'Admin'
+  );
+
+  if (isAdmin) {
     return Object.values(PERMISSIONS);
   }
 
-  const permissionsSet = new Set(COMMON_FACULTY_PERMISSIONS);
+  // Normalize role strings (e.g. 'Faculty' -> 'SUBJECT_TEACHER')
+  const normalizedCodes = rawCodes.map((code) => {
+    if (code === 'Faculty') return 'SUBJECT_TEACHER';
+    if (code === 'Admin' || code === 'SuperAdmin') return 'ADMIN';
+    return code;
+  });
 
+  if (normalizedCodes.length === 0 && (userRoleName === 'Faculty' || !userRoleName)) {
+    normalizedCodes.push('SUBJECT_TEACHER');
+  }
+
+  const permissionsSet = new Set(COMMON_FACULTY_PERMISSIONS);
   const allAvailableRoles = [...SYSTEM_ROLES, ...customRoles];
 
   // Merge permissions from all assigned roles
-  userRoleCodes.forEach((code) => {
-    const roleObj = allAvailableRoles.find((r) => r.code === code || r.id === code || r.name === code);
+  normalizedCodes.forEach((code) => {
+    const roleObj = allAvailableRoles.find(
+      (r) =>
+        String(r.code).toUpperCase() === String(code).toUpperCase() ||
+        String(r.id) === String(code) ||
+        String(r.name).toUpperCase() === String(code).toUpperCase()
+    );
     if (roleObj && Array.isArray(roleObj.permissions)) {
       roleObj.permissions.forEach((p) => permissionsSet.add(p));
     }

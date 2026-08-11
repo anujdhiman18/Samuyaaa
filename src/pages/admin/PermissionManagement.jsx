@@ -18,6 +18,8 @@ export default function PermissionManagement() {
     fetchData();
   }, []);
 
+  const [systemRoleOverrides, setSystemRoleOverrides] = useState({});
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -28,6 +30,12 @@ export default function PermissionManagement() {
       const roleRes = await rbacService.getRoles();
       if (roleRes && roleRes.roles) {
         setCustomRoles(roleRes.roles.filter((r) => !r.isSystem));
+
+        const overrides = {};
+        roleRes.roles.filter((r) => r.isSystem).forEach((sys) => {
+          overrides[sys.code] = sys.permissions;
+        });
+        setSystemRoleOverrides(overrides);
       }
     } catch (err) {
       console.error('Error fetching permission matrix data:', err);
@@ -37,8 +45,14 @@ export default function PermissionManagement() {
   };
 
   const allRoles = useMemo(() => {
-    return [...SYSTEM_ROLES, ...customRoles];
-  }, [customRoles]);
+    const sysMerged = SYSTEM_ROLES.map((sys) => {
+      if (systemRoleOverrides[sys.code]) {
+        return { ...sys, permissions: systemRoleOverrides[sys.code] };
+      }
+      return sys;
+    });
+    return [...sysMerged, ...customRoles];
+  }, [customRoles, systemRoleOverrides]);
 
   const filteredCategories = useMemo(() => {
     return PERMISSION_CATEGORIES.filter((cat) => {

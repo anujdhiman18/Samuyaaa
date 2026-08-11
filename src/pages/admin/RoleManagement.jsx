@@ -37,12 +37,20 @@ export default function RoleManagement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [systemRoleOverrides, setSystemRoleOverrides] = useState({});
+
   const fetchRoles = async () => {
     setLoading(true);
     try {
       const res = await rbacService.getRoles();
       if (res && res.roles) {
         setCustomRoles(res.roles.filter((r) => !r.isSystem));
+
+        const overrides = {};
+        res.roles.filter((r) => r.isSystem).forEach((sys) => {
+          overrides[sys.code] = sys.permissions;
+        });
+        setSystemRoleOverrides(overrides);
       }
     } catch (err) {
       console.error('Error fetching custom roles:', err);
@@ -51,10 +59,16 @@ export default function RoleManagement() {
     }
   };
 
-  // Combine System Roles + Custom Roles
+  // Combine System Roles + Custom Roles with overrides
   const allRoles = useMemo(() => {
-    return [...SYSTEM_ROLES, ...customRoles];
-  }, [customRoles]);
+    const sysMerged = SYSTEM_ROLES.map((sys) => {
+      if (systemRoleOverrides[sys.code]) {
+        return { ...sys, permissions: systemRoleOverrides[sys.code] };
+      }
+      return sys;
+    });
+    return [...sysMerged, ...customRoles];
+  }, [customRoles, systemRoleOverrides]);
 
   const handleOpenAddRole = () => {
     setEditingRole(null);
@@ -233,26 +247,23 @@ export default function RoleManagement() {
                     onClick={() => setSelectedRole(role)}
                     className="px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-headings font-bold transition-colors cursor-pointer"
                   >
-                    View Permissions
+                    View
                   </button>
-
+                  <button
+                    onClick={() => handleOpenEditRole(role)}
+                    className="p-1.5 rounded-xl text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                    title="Edit Role Permissions"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
                   {!role.isSystem && (
-                    <>
-                      <button
-                        onClick={() => handleOpenEditRole(role)}
-                        className="p-1.5 rounded-xl text-primary hover:bg-primary/10 transition-colors"
-                        title="Edit Permissions"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
-                      </button>
-                      <button
-                        onClick={() => setDeleteRoleTarget(role)}
-                        className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
-                        title="Delete Role"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                    </>
+                    <button
+                      onClick={() => setDeleteRoleTarget(role)}
+                      className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Delete Custom Role"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
                   )}
                 </div>
               </div>

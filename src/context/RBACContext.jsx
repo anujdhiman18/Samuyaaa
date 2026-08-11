@@ -7,14 +7,19 @@ const RBACContext = createContext();
 
 export function RBACProvider({ children }) {
   const { user } = useAuth();
-  const [customRoles, setCustomRoles] = useState([]);
-  const [userRoles, setUserRoles] = useState([]);
+  const [systemRoleOverrides, setSystemRoleOverrides] = useState({});
 
   const loadCustomRoles = async () => {
     try {
       const res = await rbacService.getRoles();
       if (res && res.roles) {
         setCustomRoles(res.roles.filter((r) => !r.isSystem));
+
+        const overrides = {};
+        res.roles.filter((r) => r.isSystem).forEach((sys) => {
+          overrides[sys.code] = sys.permissions;
+        });
+        setSystemRoleOverrides(overrides);
       }
     } catch (e) {
       console.warn('Error loading custom roles in RBACContext:', e);
@@ -88,8 +93,14 @@ export function RBACProvider({ children }) {
   }, [user]);
 
   const allRoles = useMemo(() => {
-    return [...SYSTEM_ROLES, ...customRoles];
-  }, [customRoles]);
+    const sysMerged = SYSTEM_ROLES.map((sys) => {
+      if (systemRoleOverrides[sys.code]) {
+        return { ...sys, permissions: systemRoleOverrides[sys.code] };
+      }
+      return sys;
+    });
+    return [...sysMerged, ...customRoles];
+  }, [customRoles, systemRoleOverrides]);
 
   // Compiled unique permission list for current active user
   const activePermissions = useMemo(() => {
@@ -108,7 +119,7 @@ export function RBACProvider({ children }) {
 
     const customOverrides = user.permissionOverrides || {};
     return computePermissionsForUser(userRoles, customOverrides, user.role, customRoles);
-  }, [user, userRoles, customRoles]);
+  }, [user, userRoles, customRoles, systemRoleOverrides]);
 
   /**
    * Check if active user has a specific permission code

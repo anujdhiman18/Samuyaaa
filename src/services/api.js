@@ -4635,8 +4635,7 @@ export const rbacService = {
     try {
       const remote = await apiCall('/rbac/roles');
       if (remote && remote.roles) {
-        const customOnly = remote.roles.filter((r) => !r.isSystem);
-        localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(customOnly));
+        localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(remote.roles));
         return remote;
       }
     } catch (e) {}
@@ -4659,9 +4658,10 @@ export const rbacService = {
     } catch (e) {}
 
     if (!createdRole) {
+      const newId = 'role_' + Date.now();
       createdRole = {
-        _id: 'role_' + Date.now(),
-        id: 'role_' + Date.now(),
+        _id: newId,
+        id: newId,
         code: data.code.toUpperCase(),
         name: data.name,
         badge: data.badge || `🎓 ${data.name}`,
@@ -4678,7 +4678,9 @@ export const rbacService = {
       roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
     } catch (e) {}
 
-    const existsIdx = roles.findIndex((r) => String(r.code) === String(createdRole.code));
+    const existsIdx = roles.findIndex(
+      (r) => String(r.code).toUpperCase() === String(createdRole.code).toUpperCase()
+    );
     if (existsIdx !== -1) {
       roles[existsIdx] = createdRole;
     } else {
@@ -4704,14 +4706,30 @@ export const rbacService = {
       roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
     } catch (e) {}
 
-    const idx = roles.findIndex((r) => String(r._id || r.id) === String(id));
+    const targetId = String(id || '');
+    const targetCode = String(data.code || '').toUpperCase();
+
+    const idx = roles.findIndex(
+      (r) =>
+        String(r._id || r.id) === targetId ||
+        String(r.code || '').toUpperCase() === targetCode
+    );
+
+    const roleObj = updatedRemote
+      ? updatedRemote
+      : idx !== -1
+      ? { ...roles[idx], ...data }
+      : { _id: id, id: id, ...data };
+
     if (idx !== -1) {
-      roles[idx] = updatedRemote ? updatedRemote : { ...roles[idx], ...data };
-      localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
+      roles[idx] = roleObj;
+    } else {
+      roles.push(roleObj);
     }
 
+    localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
     notifyDataUpdate();
-    return { success: true, role: updatedRemote, message: 'Role permissions updated successfully!' };
+    return { success: true, role: roleObj, message: 'Role permissions updated successfully!' };
   },
 
   deleteRole: async (id) => {
@@ -4721,7 +4739,7 @@ export const rbacService = {
       roles = JSON.parse(localStorage.getItem('saumyaa_rbac_roles') || '[]');
     } catch (e) {}
 
-    roles = roles.filter((r) => String(r._id || r.id) !== String(id));
+    roles = roles.filter((r) => String(r._id || r.id) !== String(id) && String(r.code) !== String(id));
     localStorage.setItem('saumyaa_rbac_roles', JSON.stringify(roles));
     notifyDataUpdate();
     return { success: true, message: 'Role deleted successfully!' };
