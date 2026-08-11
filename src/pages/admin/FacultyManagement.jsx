@@ -96,8 +96,17 @@ export default function FacultyManagement() {
 
   const handleOpenRoleModal = (faculty) => {
     setRoleModalMember(faculty);
+    const stored = getStoredFaculty();
+    const storedFac = stored.find(
+      (s) =>
+        String(s._id || s.id) === String(faculty._id || faculty.id) ||
+        (s.email && faculty.email && s.email.toLowerCase() === faculty.email.toLowerCase())
+    );
+
     let existingRoles = [];
-    if (Array.isArray(faculty.roles)) {
+    if (Array.isArray(storedFac?.roles) && storedFac.roles.length > 0) {
+      existingRoles = storedFac.roles;
+    } else if (Array.isArray(faculty.roles) && faculty.roles.length > 0) {
       existingRoles = faculty.roles;
     } else if (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin') {
       existingRoles = [faculty.role];
@@ -183,7 +192,23 @@ export default function FacultyManagement() {
   useEffect(() => {
     const unsubscribe = subscribeFirestoreCollection('faculty', initialMockFaculty, (list) => {
       if (list && Array.isArray(list) && list.length > 0) {
-        setFacultyList(list);
+        const stored = getStoredFaculty();
+        const merged = list.map((item) => {
+          const match = stored.find(
+            (s) =>
+              String(s._id || s.id) === String(item._id || item.id) ||
+              (s.email && item.email && s.email.toLowerCase() === item.email.toLowerCase())
+          );
+          const rolesToUse = Array.isArray(match?.roles) && match.roles.length > 0
+            ? match.roles
+            : (Array.isArray(item.roles) && item.roles.length > 0 ? item.roles : null);
+          return {
+            ...item,
+            roles: rolesToUse || item.roles,
+            role: (rolesToUse && rolesToUse[0]) || item.role,
+          };
+        });
+        setFacultyList(merged);
         setLoading(false);
       }
     });

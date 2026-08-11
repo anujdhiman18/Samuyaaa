@@ -2805,9 +2805,7 @@ export const facultyService = {
         const remoteRoles = Array.isArray(remoteFac?.roles) ? remoteFac.roles : [];
 
         let rolesToUse = [];
-        if (remoteRoles.length > 0 && !remoteRoles.every((r) => r === 'Faculty' || r === 'SUBJECT_TEACHER')) {
-          rolesToUse = remoteRoles;
-        } else if (localRoles.length > 0) {
+        if (localRoles.length > 0) {
           rolesToUse = localRoles;
         } else if (remoteRoles.length > 0) {
           rolesToUse = remoteRoles;

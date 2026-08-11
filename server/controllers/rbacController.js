@@ -271,6 +271,8 @@ export const assignFacultyRoles = async (req, res) => {
       faculty.role = primaryRole;
       if (permissionOverrides !== undefined) faculty.permissionOverrides = permissionOverrides;
       faculty.is_active = isActiveBool;
+      faculty.markModified('roles');
+      faculty.markModified('permissionOverrides');
       await faculty.save();
     } else {
       // Create new Faculty document in DB if it was previously client-only/mock
