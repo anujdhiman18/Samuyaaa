@@ -138,8 +138,20 @@ export default function FacultyManagement() {
     setSavingUserRoles(true);
     try {
       const id = roleModalMember._id || roleModalMember.id;
+
+      // Prevent mutating Admin role to Faculty
+      const isTargetAdmin = Boolean(
+        roleModalMember.role === 'SuperAdmin' ||
+        roleModalMember.role === 'Admin' ||
+        (Array.isArray(roleModalMember.roles) && roleModalMember.roles.includes('ADMIN'))
+      );
+
+      const targetRole = isTargetAdmin ? (roleModalMember.role || 'SuperAdmin') : (selectedRoles[0] || 'SUBJECT_TEACHER');
+
       const payload = {
         roles: selectedRoles,
+        role: targetRole,
+        additionalPermissions: isTargetAdmin ? selectedRoles : undefined,
         status: roleModalMember.is_active ? 'Active' : 'Inactive',
         email: roleModalMember.email,
         name: roleModalMember.name,
@@ -157,7 +169,8 @@ export default function FacultyManagement() {
             return {
               ...f,
               roles: selectedRoles,
-              role: selectedRoles[0] || 'SUBJECT_TEACHER',
+              role: targetRole,
+              additionalPermissions: isTargetAdmin ? selectedRoles : f.additionalPermissions,
             };
           }
           return f;

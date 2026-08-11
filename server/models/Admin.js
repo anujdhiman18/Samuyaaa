@@ -40,6 +40,14 @@ const adminSchema = new mongoose.Schema(
       type: String,
       default: 'Director & Senior Administrator overseeing Saumyaa Studies academic excellence, faculty management, and student affairs.',
     },
+    permissions: {
+      type: [String],
+      default: ['MARK_ATTENDANCE', 'UPLOAD_GRADES', 'VIEW_STUDENT_ACADEMICS', 'MANAGE_CLASSES'],
+    },
+    additionalPermissions: {
+      type: [String],
+      default: ['MARK_ATTENDANCE', 'UPLOAD_GRADES', 'VIEW_STUDENT_ACADEMICS', 'MANAGE_CLASSES'],
+    },
   },
   { timestamps: true }
 );

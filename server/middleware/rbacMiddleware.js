@@ -1,4 +1,37 @@
-import ActivityLog from '../models/ActivityLog.js';
+/**
+ * Helper function to check if a user object has a specific permission code.
+ * Supports Admin users with additional permissions, Faculty users, and full Admins.
+ */
+export const hasPermission = (user, permissionCode) => {
+  if (!user) return false;
+
+  // Students cannot access Admin/Faculty permissions
+  if (user.role === 'Student' || user.isStudent) {
+    return false;
+  }
+
+  const isAdmin = Boolean(
+    user.role === 'SuperAdmin' ||
+    user.role === 'Admin' ||
+    (Array.isArray(user.roles) && (user.roles.includes('ADMIN') || user.roles.includes('SuperAdmin')))
+  );
+
+  const userPerms = Array.isArray(user.additionalPermissions) && user.additionalPermissions.length > 0
+    ? user.additionalPermissions
+    : Array.isArray(user.permissions)
+    ? user.permissions
+    : [];
+
+  if (isAdmin) {
+    // Admin has full access or matching additional permissions
+    if (userPerms && userPerms.length > 0) {
+      return userPerms.includes(permissionCode) || userPerms.includes(permissionCode.toUpperCase());
+    }
+    return true;
+  }
+
+  return userPerms.includes(permissionCode);
+};
 
 /**
  * Middleware to check if authenticated user has required permission(s)
@@ -6,20 +39,32 @@ import ActivityLog from '../models/ActivityLog.js';
 export const requirePermission = (...requiredPermissions) => {
   return async (req, res, next) => {
     try {
-      const user = req.user;
+      const user = req.user || req.admin;
       if (!user) {
         return res.status(401).json({ success: false, message: 'Authentication required' });
       }
 
-      // Admins bypass all permission checks
-      if (user.role === 'SuperAdmin' || user.role === 'Admin' || (user.roles && user.roles.includes('ADMIN'))) {
-        return next();
+      // Explicitly block student access to admin/faculty academic endpoints
+      if (user.role === 'Student' || user.isStudent) {
+        return res.status(403).json({ success: false, message: 'Access Denied: Students are not permitted.' });
       }
 
-      const userPermissions = user.permissions || [];
-      const hasPermission = requiredPermissions.some((perm) => userPermissions.includes(perm));
+      // Admins and users with matching permissions proceed
+      const userPermissions = Array.isArray(user.additionalPermissions) && user.additionalPermissions.length > 0
+        ? user.additionalPermissions
+        : Array.isArray(user.permissions)
+        ? user.permissions
+        : [];
 
-      if (!hasPermission) {
+      const isAdmin = Boolean(
+        user.role === 'SuperAdmin' ||
+        user.role === 'Admin' ||
+        (Array.isArray(user.roles) && (user.roles.includes('ADMIN') || user.roles.includes('SuperAdmin')))
+      );
+
+      const isPermitted = isAdmin || requiredPermissions.some((perm) => userPermissions.includes(perm));
+
+      if (!isPermitted) {
         // Log unauthorized access attempt
         try {
           await ActivityLog.create({

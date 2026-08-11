@@ -27,6 +27,13 @@ export default function AdminProfile() {
     avatar: currentAdmin?.avatar || DEFAULT_AVATARS[0],
   });
 
+  const [additionalPermissions, setAdditionalPermissions] = useState(() => {
+    if (Array.isArray(currentAdmin?.additionalPermissions) && currentAdmin.additionalPermissions.length > 0) {
+      return currentAdmin.additionalPermissions;
+    }
+    return ['MARK_ATTENDANCE', 'UPLOAD_GRADES', 'VIEW_STUDENT_ACADEMICS', 'MANAGE_CLASSES'];
+  });
+
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -123,6 +130,8 @@ export default function AdminProfile() {
 
     const updatedData = {
       ...profileForm,
+      additionalPermissions,
+      role: currentAdmin?.role || 'SuperAdmin', // Role strictly remains ADMIN
       email: profileForm.email.trim().toLowerCase(),
       username: profileForm.email.trim().toLowerCase(),
     };
@@ -350,6 +359,58 @@ export default function AdminProfile() {
                   placeholder="e.g. Academic Operations & Administration"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
                 />
+              </div>
+
+              {/* Additional Responsibilities Section */}
+              <div className="space-y-2 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20">
+                <div className="flex items-center justify-between">
+                  <label className="font-headings font-extrabold text-xs text-secondary flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+                    Additional Academic Responsibilities
+                  </label>
+                  <span className="text-[10px] text-on-surface-variant">Role strictly remains <strong>ADMIN</strong></span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant/80">
+                  Assign optional academic tasks to this Admin account. Enabled features automatically appear under Academic Operations in the sidebar.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {[
+                    { code: 'MARK_ATTENDANCE', label: 'Mark Attendance', desc: 'Access Attendance Register & daily student logs' },
+                    { code: 'UPLOAD_GRADES', label: 'Upload Grades', desc: 'Manage exam scores & publish official gradebook' },
+                    { code: 'VIEW_STUDENT_ACADEMICS', label: 'View Student Academics', desc: 'Access student academic records & analytics' },
+                    { code: 'MANAGE_CLASSES', label: 'Manage Classes', desc: 'Manage classes, subjects, & batch allocations' },
+                  ].map((perm) => {
+                    const isChecked = additionalPermissions.includes(perm.code);
+                    return (
+                      <label
+                        key={perm.code}
+                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                          isChecked
+                            ? 'bg-white border-primary/40 ring-1 ring-primary/20 shadow-sm'
+                            : 'bg-white/60 border-outline-variant/20 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            setAdditionalPermissions((prev) =>
+                              prev.includes(perm.code)
+                                ? prev.filter((p) => p !== perm.code)
+                                : [...prev, perm.code]
+                            );
+                          }}
+                          className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer mt-0.5"
+                        />
+                        <div>
+                          <span className="font-headings font-bold text-xs text-secondary block">{perm.label}</span>
+                          <span className="text-[10px] text-on-surface-variant leading-tight block">{perm.desc}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Bio */}

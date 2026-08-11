@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useRBAC } from '../../context/RBACContext';
+import { useAuth } from '../../context/AuthContext';
 
-const navItems = [
+const mainNavItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
   { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
-  { path: '/admin/attendance', label: 'Attendance Register', icon: 'fact_check' },
-  { path: '/admin/subjects', label: 'Subjects & Batches', icon: 'menu_book' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/faculty?tab=leaves', label: 'Faculty Leaves', icon: 'event_busy' },
   { path: '/admin/roles', label: 'Role Management (RBAC)', icon: 'admin_panel_settings' },
@@ -21,6 +21,18 @@ const navItems = [
 
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const location = useLocation();
+  const { hasPermission } = useRBAC();
+  const { user } = useAuth();
+
+  const canMarkAttendance = hasPermission('MARK_ATTENDANCE') || hasPermission('canMarkAttendance');
+  const canUploadGrades = hasPermission('UPLOAD_GRADES') || hasPermission('canUploadGrades');
+  const canManageClasses = hasPermission('MANAGE_CLASSES') || hasPermission('canManageClasses');
+
+  const academicItems = [
+    canMarkAttendance && { path: '/admin/attendance', label: 'Attendance', icon: 'fact_check' },
+    canUploadGrades && { path: '/admin/marks', label: 'Grades', icon: 'edit_note' },
+    canManageClasses && { path: '/admin/subjects', label: 'Classes & Subjects', icon: 'menu_book' },
+  ].filter(Boolean);
 
   const isLinkActive = (itemPath) => {
     if (itemPath === '/admin') {
@@ -78,34 +90,71 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1.5 font-body flex-1 overflow-y-auto max-h-[calc(100vh-130px)] sidebar-scroll">
-            <div className="px-3 pb-2 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
-              Control Center
-            </div>
-            {navItems.map((item) => {
-              const active = isLinkActive(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={onCloseMobile}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-headings text-xs font-bold transition-all duration-200 ${
-                    active
-                      ? 'bg-primary text-white shadow-premium shadow-tactile-btn'
-                      : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined text-[20px] ${
-                      active ? 'text-white' : 'text-primary'
+          <nav className="p-4 space-y-3 font-body flex-1 overflow-y-auto max-h-[calc(100vh-130px)] sidebar-scroll">
+            {/* Academic Operations Section */}
+            {academicItems.length > 0 && (
+              <div className="space-y-1">
+                <div className="px-3 pb-1 text-[10px] font-headings font-bold uppercase tracking-widest text-primary flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">school</span>
+                  Academic Operations
+                </div>
+                {academicItems.map((item) => {
+                  const active = isLinkActive(item.path);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={onCloseMobile}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-full font-headings text-xs font-bold transition-all duration-200 ${
+                        active
+                          ? 'bg-primary text-white shadow-premium shadow-tactile-btn'
+                          : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
+                      }`}
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[18px] ${
+                          active ? 'text-white' : 'text-primary'
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Core Admin Control Center */}
+            <div className="space-y-1">
+              <div className="px-3 pb-1 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
+                Control Center
+              </div>
+              {mainNavItems.map((item) => {
+                const active = isLinkActive(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={onCloseMobile}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-full font-headings text-xs font-bold transition-all duration-200 ${
+                      active
+                        ? 'bg-primary text-white shadow-premium shadow-tactile-btn'
+                        : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
                     }`}
                   >
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+                    <span
+                      className={`material-symbols-outlined text-[18px] ${
+                        active ? 'text-white' : 'text-primary'
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
         </div>
 

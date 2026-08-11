@@ -136,7 +136,17 @@ export function RBACProvider({ children }) {
       userRoles.includes('SuperAdmin')
     );
 
-    if (isAdmin) return true;
+    if (isAdmin) {
+      // If admin user has additionalPermissions specified, check if permission is present
+      if (Array.isArray(user.additionalPermissions) && user.additionalPermissions.length > 0) {
+        return (
+          user.additionalPermissions.includes(permissionCode) ||
+          user.additionalPermissions.includes(permissionCode.toUpperCase()) ||
+          activePermissions.includes(permissionCode)
+        );
+      }
+      return true;
+    }
 
     return activePermissions.includes(permissionCode);
   };

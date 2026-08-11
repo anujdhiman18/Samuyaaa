@@ -206,6 +206,7 @@ export default function App() {
                   <Route path="faculty/leaves" element={<Navigate to="/admin/faculty?tab=leaves" replace />} />
                   <Route path="students/:id" element={<StudentDetail />} />
                   <Route path="attendance" element={<AttendanceManagement />} />
+                  <Route path="marks" element={<FacultyMarks />} />
                   <Route path="subjects" element={<SubjectManagement />} />
                   <Route path="faculty" element={<FacultyManagement />} />
                   <Route path="roles" element={<RoleManagement />} />
