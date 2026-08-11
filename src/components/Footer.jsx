@@ -93,7 +93,7 @@ export default function Footer() {
               <p className="font-bold text-secondary text-[11px] mb-0.5">Bagru (Main Branch)</p>
               <p className="flex items-start gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-[14px] text-primary mt-0.5 shrink-0">location_on</span>
-                <span>Bagru Garh, Jamula, Palaid, HP 176093</span>
+                <span>Saumyaa Studies, Bagru Garh, Jamula, Palaid, HP 176093</span>
               </p>
             </div>
             <div>

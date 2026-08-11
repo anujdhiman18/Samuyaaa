@@ -151,7 +151,7 @@ export const branches = [
     id: 'bagru',
     name: 'Bagru (Main Branch)',
     shortName: 'Bagru Main',
-    address: 'Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093',
+    address: 'Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093',
     coordinates: 'Jamula, Palaid',
     mapUrl: 'https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093',
     phone: '+91 98164 77341',

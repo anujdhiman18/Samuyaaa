@@ -136,7 +136,7 @@ export default function Contact() {
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
+                        Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
                       </p>
                       <a
                         href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
