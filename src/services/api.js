@@ -4340,13 +4340,19 @@ export const facultyPanelService = {
 
         if (found) {
           resps = found.responsibilities || [];
+          const activeRoleCandidate = (found.role && found.role !== 'Faculty') ? found.role : (found.position && found.position !== 'Faculty') ? found.position : (found.roles && found.roles[0] && found.roles[0] !== 'Faculty') ? found.roles[0] : 'SUBJECT_TEACHER';
+          const activeRolesCandidate = (Array.isArray(found.roles) && found.roles.length > 0 && found.roles[0] !== 'Faculty') ? found.roles : [activeRoleCandidate];
+
           activeUser = {
             ...u,
-            roles: Array.isArray(found.roles) && found.roles.length > 0 ? found.roles : [found.role || 'SUBJECT_TEACHER'],
+            ...found,
+            roles: activeRolesCandidate,
+            role: activeRoleCandidate,
+            position: activeRoleCandidate,
             permissionOverrides: found.permissionOverrides || {},
             responsibilities: resps,
-            assignedClasses: Array.from(new Set(resps.map((r) => r.className))),
-            assignedSubjects: Array.from(new Set(resps.map((r) => r.subject))),
+            assignedClasses: resps.length > 0 ? Array.from(new Set(resps.map((r) => r.className))) : (found.assignedClasses || u.assignedClasses || []),
+            assignedSubjects: resps.length > 0 ? Array.from(new Set(resps.map((r) => r.subject))) : (found.assignedSubjects || u.assignedSubjects || []),
           };
           localStorage.setItem('saumyaa_user', JSON.stringify(activeUser));
         } else {

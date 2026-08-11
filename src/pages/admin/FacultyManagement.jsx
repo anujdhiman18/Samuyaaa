@@ -104,25 +104,31 @@ export default function FacultyManagement() {
     );
 
     let primaryRole = 'SUBJECT_TEACHER';
-    if (Array.isArray(storedFac?.roles) && storedFac.roles.length > 0) {
-      primaryRole = storedFac.roles[0];
-    } else if (Array.isArray(faculty.roles) && faculty.roles.length > 0) {
-      primaryRole = faculty.roles[0];
-    } else if (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin') {
-      primaryRole = faculty.role;
-    } else if (faculty.designation) {
-      if (faculty.designation.includes('HOD') || faculty.designation.includes('Head')) {
+    const roleCandidate =
+      (Array.isArray(faculty.roles) && faculty.roles[0] && faculty.roles[0] !== 'Faculty' ? faculty.roles[0] : null) ||
+      (faculty.position && faculty.position !== 'Faculty' ? faculty.position : null) ||
+      (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin' ? faculty.role : null) ||
+      (Array.isArray(storedFac?.roles) && storedFac.roles[0] && storedFac.roles[0] !== 'Faculty' ? storedFac.roles[0] : null) ||
+      (storedFac?.position && storedFac.position !== 'Faculty' ? storedFac.position : null) ||
+      (storedFac?.role && storedFac.role !== 'Faculty' && storedFac.role !== 'Admin' ? storedFac.role : null) ||
+      faculty.designation ||
+      storedFac?.designation;
+
+    if (roleCandidate) {
+      const s = String(roleCandidate).toUpperCase().trim();
+      if (s.includes('HOD') || s.includes('HEAD OF DEPARTMENT') || s === 'HEAD_OF_DEPARTMENT') {
         primaryRole = 'HEAD_OF_DEPARTMENT';
-      } else if (faculty.designation.includes('Senior')) {
+      } else if (s.includes('SENIOR') || s === 'SENIOR_FACULTY') {
         primaryRole = 'SENIOR_FACULTY';
-      } else if (faculty.designation.includes('Coordinator')) {
+      } else if (s.includes('COORDINATOR') || s === 'ACADEMIC_COORDINATOR') {
         primaryRole = 'ACADEMIC_COORDINATOR';
+      } else if (s.includes('SUPER') || s.includes('ADMIN') || s === 'SUPER_ADMIN') {
+        primaryRole = 'ADMIN';
       } else {
         primaryRole = 'SUBJECT_TEACHER';
       }
-    } else {
-      primaryRole = 'SUBJECT_TEACHER';
     }
+
     setSelectedRoles([primaryRole]);
   };
 
@@ -136,6 +142,7 @@ export default function FacultyManagement() {
     setSavingUserRoles(true);
     try {
       const id = roleModalMember._id || roleModalMember.id;
+      const selectedRoleCode = selectedRoles[0] || 'SUBJECT_TEACHER';
 
       // Prevent mutating Admin role to Faculty
       const isTargetAdmin = Boolean(
@@ -144,19 +151,40 @@ export default function FacultyManagement() {
         (Array.isArray(roleModalMember.roles) && roleModalMember.roles.includes('ADMIN'))
       );
 
-      const targetRole = isTargetAdmin ? (roleModalMember.role || 'SuperAdmin') : (selectedRoles[0] || 'SUBJECT_TEACHER');
+      const targetRole = isTargetAdmin ? (roleModalMember.role || 'SuperAdmin') : selectedRoleCode;
+
+      let newDesignation = roleModalMember.designation;
+      if (!isTargetAdmin) {
+        if (selectedRoleCode === 'HEAD_OF_DEPARTMENT') newDesignation = 'Head of Department (HOD)';
+        else if (selectedRoleCode === 'SENIOR_FACULTY') newDesignation = 'Senior Faculty Member';
+        else if (selectedRoleCode === 'ACADEMIC_COORDINATOR') newDesignation = 'Academic Coordinator';
+        else if (selectedRoleCode === 'SUBJECT_TEACHER') newDesignation = 'Subject Teacher';
+      }
 
       const payload = {
-        roles: selectedRoles,
+        roles: isTargetAdmin ? (roleModalMember.roles || ['ADMIN']) : [selectedRoleCode],
         role: targetRole,
+        position: targetRole,
+        designation: newDesignation,
         additionalPermissions: isTargetAdmin ? selectedRoles : undefined,
         status: roleModalMember.is_active ? 'Active' : 'Inactive',
         email: roleModalMember.email,
         name: roleModalMember.name,
-        designation: roleModalMember.designation,
         department: roleModalMember.department,
       };
-      await rbacService.assignFacultyRoles(id, payload);
+
+      const response = await rbacService.assignFacultyRoles(id, payload);
+      if (response && response.success === false) {
+        throw new Error(response.message || 'Failed to update faculty role');
+      }
+
+      const updatedFacultyObj = response.faculty || {
+        ...roleModalMember,
+        roles: payload.roles,
+        role: targetRole,
+        position: targetRole,
+        designation: newDesignation,
+      };
 
       setFacultyList((prevList) =>
         prevList.map((f) => {
@@ -166,8 +194,11 @@ export default function FacultyManagement() {
           ) {
             return {
               ...f,
-              roles: selectedRoles,
+              ...updatedFacultyObj,
+              roles: payload.roles,
               role: targetRole,
+              position: targetRole,
+              designation: newDesignation,
               additionalPermissions: isTargetAdmin ? selectedRoles : f.additionalPermissions,
             };
           }
@@ -175,11 +206,11 @@ export default function FacultyManagement() {
         })
       );
 
-      addToast(`Updated assigned roles for ${roleModalMember.name}`, 'success');
+      addToast(`Updated assigned role to ${targetRole} for ${roleModalMember.name}`, 'success');
       setRoleModalMember(null);
       await fetchFaculty();
     } catch (err) {
-      addToast(err.message || 'Error updating faculty roles', 'error');
+      addToast(err.message || 'Error updating faculty roles in database', 'error');
     } finally {
       setSavingUserRoles(false);
     }

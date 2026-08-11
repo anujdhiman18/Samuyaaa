@@ -264,13 +264,15 @@ export const assignFacultyRoles = async (req, res) => {
       }
     }
 
-    const newRoles = Array.isArray(roles) ? roles : ['SUBJECT_TEACHER'];
-    const primaryRole = req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
+    const newRoles = Array.isArray(roles) ? roles : [req.body.position || req.body.role || 'SUBJECT_TEACHER'];
+    const primaryRole = req.body.position || req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
+    const primaryPosition = req.body.position || primaryRole;
     const isActiveBool = status !== undefined ? status === 'Active' : true;
 
     if (faculty) {
       faculty.roles = newRoles;
       faculty.role = primaryRole;
+      if (designation) faculty.designation = designation;
       if (permissionOverrides !== undefined) faculty.permissionOverrides = permissionOverrides;
       faculty.is_active = isActiveBool;
       faculty.markModified('roles');
@@ -296,9 +298,15 @@ export const assignFacultyRoles = async (req, res) => {
       userRole: 'SuperAdmin',
       action: 'FACULTY_ROLES_ASSIGNED',
       category: 'RBAC',
-      details: `Assigned roles [${newRoles.join(', ')}] to ${faculty?.name || facultyId}`,
+      details: `Assigned role ${primaryRole} to ${faculty?.name || facultyId}`,
       status: 'SUCCESS',
     }).catch(() => {});
+
+    return res.json({
+      success: true,
+      faculty,
+      message: `Assigned role ${primaryRole} to faculty successfully!`,
+    });
 
     res.json({ success: true, faculty, message: `Roles updated successfully in database!` });
   } catch (err) {
