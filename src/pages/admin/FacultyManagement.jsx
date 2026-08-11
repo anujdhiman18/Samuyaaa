@@ -439,7 +439,12 @@ export default function FacultyManagement() {
 
   const handleOpenAdd = () => {
     setEditingMember(null);
-    setForm({ ...initialForm, display_order: facultyList.length + 1 });
+    setForm({
+      ...initialForm,
+      assignedClasses: Array.isArray(initialForm.assignedClasses) ? initialForm.assignedClasses.join(', ') : (initialForm.assignedClasses || ''),
+      assignedSubjects: Array.isArray(initialForm.assignedSubjects) ? initialForm.assignedSubjects.join(', ') : (initialForm.assignedSubjects || ''),
+      display_order: facultyList.length + 1,
+    });
     setPreviewUrl('');
     setUploadProgress(0);
     setIsModalOpen(true);
@@ -447,6 +452,13 @@ export default function FacultyManagement() {
 
   const handleOpenEdit = (member) => {
     setEditingMember(member);
+    const classesStr = Array.isArray(member.assignedClasses)
+      ? member.assignedClasses.join(', ')
+      : (member.assignedClasses || '');
+    const subjectsStr = Array.isArray(member.assignedSubjects)
+      ? member.assignedSubjects.join(', ')
+      : (member.assignedSubjects || member.subject || '');
+
     setForm({
       name: member.name || '',
       email: member.email || '',
@@ -457,8 +469,9 @@ export default function FacultyManagement() {
       subject: member.subject || 'Mathematics Advanced',
       qualification: member.qualification || 'Master’s Degree',
       experience: member.experience || '5+ Years',
-      assignedClasses: member.assignedClasses || ['10th', '11th (+1)'],
-      assignedSubjects: member.assignedSubjects || [member.subject || 'Mathematics Advanced'],
+      branch: member.branch || 'Bagru',
+      assignedClasses: classesStr,
+      assignedSubjects: subjectsStr,
       photo_url: member.photo_url || '',
       display_order: member.display_order !== undefined ? member.display_order : 1,
       is_active: member.is_active !== undefined ? Boolean(member.is_active) : true,
@@ -518,13 +531,27 @@ export default function FacultyManagement() {
 
     setSaving(true);
 
+    const parsedClasses = typeof form.assignedClasses === 'string'
+      ? form.assignedClasses.split(',').map((s) => s.trim()).filter(Boolean)
+      : (Array.isArray(form.assignedClasses) ? form.assignedClasses : []);
+
+    const parsedSubjects = typeof form.assignedSubjects === 'string'
+      ? form.assignedSubjects.split(',').map((s) => s.trim()).filter(Boolean)
+      : (Array.isArray(form.assignedSubjects) ? form.assignedSubjects : []);
+
+    const payload = {
+      ...form,
+      assignedClasses: parsedClasses,
+      assignedSubjects: parsedSubjects,
+    };
+
     try {
       if (editingMember) {
         const id = editingMember.id || editingMember._id;
-        await facultyService.updateFaculty(id, form);
+        await facultyService.updateFaculty(id, payload);
         addToast('Faculty Updated successfully!', 'success');
       } else {
-        await facultyService.createFaculty(form);
+        await facultyService.createFaculty(payload);
         addToast('Faculty Added successfully!', 'success');
       }
       setIsModalOpen(false);
@@ -1686,10 +1713,10 @@ export default function FacultyManagement() {
                 <label className="font-bold text-secondary block mb-1">Assigned Classes (Comma Separated)</label>
                 <input
                   type="text"
-                  value={Array.isArray(form.assignedClasses) ? form.assignedClasses.join(', ') : form.assignedClasses}
-                  onChange={(e) => setForm({ ...form, assignedClasses: e.target.value.split(',').map((s) => s.trim()) })}
+                  value={typeof form.assignedClasses === 'string' ? form.assignedClasses : (Array.isArray(form.assignedClasses) ? form.assignedClasses.join(', ') : '')}
+                  onChange={(e) => setForm({ ...form, assignedClasses: e.target.value })}
                   placeholder="10th, 11th (+1), 12th (+2)"
-                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary bg-white font-medium"
                 />
               </div>
             </div>
