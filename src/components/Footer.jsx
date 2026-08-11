@@ -100,7 +100,7 @@ export default function Footer() {
               <p className="font-bold text-secondary text-[11px] mb-0.5">Daroh (Branch 2)</p>
               <p className="flex items-start gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-[14px] text-emerald-600 mt-0.5 shrink-0">location_on</span>
-                <span>Daroh, PTC Road, Himachal Pradesh 176092</span>
+                <span>Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092</span>
               </p>
             </div>
             <p className="flex items-center gap-2 pt-1 border-t border-surface-container-high/60">

@@ -160,7 +160,7 @@ export default function Contact() {
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Daroh, PTC Road, Himachal Pradesh 176092
+                        Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092
                       </p>
                       <a
                         href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
