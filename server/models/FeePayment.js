@@ -9,7 +9,11 @@ const feePaymentSchema = new mongoose.Schema(
     },
     studentName: String,
     rollNumber: String,
-    className: String,
+    className: {
+      type: String,
+      enum: ['S1', 'S2', 'S3', 'S4'],
+      default: 'S2',
+    },
     amountPaid: {
       type: Number,
       required: [true, 'Amount paid is required'],

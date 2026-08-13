@@ -19,6 +19,7 @@ const announcementSchema = new mongoose.Schema(
     },
     targetClass: {
       type: String,
+      enum: ['S1', 'S2', 'S3', 'S4', 'All'],
       default: 'All',
     },
     authorName: {

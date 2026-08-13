@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { subjectService, getStoredSubjects } from '../../services/api';
-import { useToast } from '../../context/ToastContext';
-import Modal from '../../components/admin/Modal';
-import ConfirmModal from '../../components/admin/ConfirmModal';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 const initialSubjectForm = {
   name: '',
-  className: '10th',
+  className: 'S2',
   description: '',
   teacherName: 'Jitender Sharma',
   batchTime: '5:00 PM - 6:30 PM',
@@ -141,7 +137,7 @@ export default function SubjectManagement() {
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary font-bold text-xs">
-                    Class {sub.className}
+                    {formatClassLabel(sub.className)}
                   </span>
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
                     {sub.totalEnrolled || 15} Students
@@ -219,9 +215,9 @@ export default function SubjectManagement() {
                 onChange={(e) => setForm({ ...form, className: e.target.value })}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               >
-                {['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'Olympiad'].map((c) => (
-                  <option key={c} value={c}>
-                    Class {c}
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
                   </option>
                 ))}
               </select>

@@ -6,6 +6,7 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
+import { normalizeClassCode, formatClassLabel, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
 
 export const initialMockStudents = [
   {
@@ -47,11 +48,11 @@ export const initialMockStudents = [
     parentPhone: '8894190175',
     email: 'rahul.g@gmail.com',
     address: 'House #42, Main Market, Jamula, Palampur',
-    className: '10th',
+    className: 'S2',
     course: 'Science',
     batch: '2025-2026',
-    semester: '10th Standard',
-    rollNumber: 'SAU-10-001',
+    semester: 'S2 (6th - 10th)',
+    rollNumber: 'SAU-02-001',
     subjects: ['Mathematics Advanced', 'Integrated Science'],
     dateOfAdmission: '2025-04-10',
     monthlyFee: 2500,
@@ -75,67 +76,59 @@ export const initialMockStudents = [
     parentPhone: '8894190175',
     email: 'damini.s@gmail.com',
     address: 'Bagru Garh, Palaid, HP 176093',
-    className: '10th',
+    className: 'S2',
     course: 'Science',
     batch: '2025-2026',
-    semester: '10th Standard',
-    rollNumber: 'SAU-10-002',
+    semester: 'S2 (6th - 10th)',
+    rollNumber: 'SAU-02-002',
     subjects: ['Mathematics Advanced'],
     dateOfAdmission: '2025-03-15',
     monthlyFee: 2000,
     monthlyDueDay: 5,
     status: 'Active',
-    attendancePercentage: 92,
+    attendancePercentage: 94,
     paidTillMonth: 'July 2026',
     feesPaid: true,
-    dob: '2009-11-20',
-    bloodGroup: 'O+',
+    dob: '2010-01-20',
+    bloodGroup: 'A+',
     emergencyContact: '8894190175',
     photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
   },
   {
     _id: 's3',
     fullName: 'Aryan Mehta',
-    admissionNumber: 'ADM-2024-045',
+    admissionNumber: 'ADM-2025-005',
     fatherName: 'Vikas Mehta',
     motherName: 'Priya Mehta',
     phone: '9816112233',
     parentPhone: '8894190175',
     email: 'aryan.m@gmail.com',
     address: 'Ward No 4, Civil Lines, HP',
-    className: '11th',
-    course: 'Commerce',
+    className: 'S3',
+    course: 'Non-Medical (PCM)',
     batch: '2024-2026',
-    semester: 'Semester 2',
-    rollNumber: 'SAU-11-003',
+    semester: 'S3 (10th - 12th)',
+    rollNumber: 'SAU-03-003',
     subjects: ['Physics IIT-JEE Prep', 'Chemistry Foundation'],
     dateOfAdmission: '2025-05-01',
     monthlyFee: 3000,
     monthlyDueDay: 5,
-    status: 'Suspended',
-    attendancePercentage: 64,
+    status: 'Active',
+    attendancePercentage: 78,
     paidTillMonth: 'June 2026',
     feesPaid: false,
-    dob: '2008-05-10',
-    bloodGroup: 'A+',
+    dob: '2008-11-05',
+    bloodGroup: 'O+',
     emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   },
   {
     _id: 's4',
-    fullName: 'Aditya Sharma',
-    admissionNumber: 'ADM-2023-012',
-    fatherName: 'Ramesh Sharma',
-    motherName: 'Geeta Sharma',
+    fullName: 'Sneha Reddy',
+    fatherName: 'K. V. Reddy',
+    motherName: 'Sujatha Reddy',
     phone: '9816223344',
     parentPhone: '8894190175',
-    email: 'aditya.s@gmail.com',
-    address: 'Palaid Road, Palampur, HP',
-    className: '12th (+2)',
-    course: 'Arts',
-    batch: '2023-2025',
-    semester: 'Alumni Batch',
-    rollNumber: 'SAU-10-004',
     subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
     dateOfAdmission: '2025-06-01',
     monthlyFee: 2500,
@@ -405,10 +398,12 @@ export const getStoredStudents = () => {
     const raw = localStorage.getItem('mock_students');
     const list = raw ? JSON.parse(raw) : initialMockStudents;
     const deleted = getDeletedIds('students');
-    return list.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)));
+    return list.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)))
+      .map((s) => ({ ...s, className: normalizeClassCode(s.className) }));
   } catch (e) {
     const deleted = getDeletedIds('students');
-    return initialMockStudents.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)));
+    return initialMockStudents.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)))
+      .map((s) => ({ ...s, className: normalizeClassCode(s.className) }));
   }
 };
 
@@ -417,7 +412,10 @@ export const setStoredStudents = (s, skipNotify = false) => {
   if (!skipNotify) notifyDataUpdate();
 };
 
-export const getStoredSubjects = () => JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
+export const getStoredSubjects = () => {
+  const list = JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
+  return list.map((sub) => ({ ...sub, className: normalizeClassCode(sub.className) }));
+};
 export const setStoredSubjects = (s, skipNotify = false) => {
   localStorage.setItem('mock_subjects', JSON.stringify(s));
   if (!skipNotify) notifyDataUpdate();
@@ -3472,13 +3470,10 @@ export const initialMockStudentApplications = [
 export const getStoredStudentApplications = () => {
   try {
     const data = localStorage.getItem('saumyaa_student_applications');
-    if (!data) {
-      localStorage.setItem('saumyaa_student_applications', JSON.stringify(initialMockStudentApplications));
-      return initialMockStudentApplications;
-    }
-    return JSON.parse(data);
+    const list = data ? JSON.parse(data) : initialMockStudentApplications;
+    return list.map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
   } catch (e) {
-    return initialMockStudentApplications;
+    return initialMockStudentApplications.map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
   }
 };
 

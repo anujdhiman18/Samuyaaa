@@ -1,24 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-
-const CLASSES = ['9th', '10th', '11th (+1)', '12th (+2)', 'Target Batch (Repeater/Entrance)'];
-const SUBJECT_OPTIONS = [
-  'Mathematics',
-  'Physics',
-  'Chemistry',
-  'Biology / Life Sciences',
-  'English & Communication',
-  'Computer Science / Coding',
-  'Social Studies & General Awareness',
-];
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 const initialFormData = {
   fullName: '',
   email: '',
   contactNumber: '',
   dob: '',
-  targetClass: '10th',
+  targetClass: 'S2',
   subjects: ['Mathematics', 'Physics'],
   previousSchool: '',
   parentName: '',
@@ -160,7 +150,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           </div>
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Applying For:</span>
-            <span className="font-bold text-secondary">{submittedApp.targetClass}</span>
+            <span className="font-bold text-secondary">{formatClassLabel(submittedApp.targetClass)}</span>
           </div>
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Parent/Guardian:</span>
@@ -364,9 +354,9 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
                 onChange={(e) => setFormData({ ...formData, targetClass: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-2xl border border-outline-variant/30 text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               >
-                {CLASSES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
                   </option>
                 ))}
               </select>

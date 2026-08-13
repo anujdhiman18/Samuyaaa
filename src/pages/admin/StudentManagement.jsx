@@ -11,8 +11,9 @@ import {
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
-const CLASSES = ['All', '9th', '10th', '11th (+1)', '12th (+2)'];
+const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 const BRANCHES = ['All', 'Bagru', 'Daroh'];
 
 const initialStudentForm = {
@@ -25,7 +26,7 @@ const initialStudentForm = {
   email: '',
   password: 'Student123',
   address: '',
-  className: '10th',
+  className: 'S2',
   subjects: ['Mathematics Advanced'],
   batch: '2024-2026',
   branch: 'Bagru',
@@ -376,10 +377,10 @@ export default function StudentManagement() {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-secondary focus:outline-none"
               >
-                <option value="All">All Classes</option>
-                {CLASSES.filter((c) => c !== 'All').map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                <option value="All">All Categories</option>
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -464,7 +465,7 @@ export default function StudentManagement() {
                         {student.rollNumber || student.admissionNumber || 'ID Pending'}
                       </p>
                       <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-                        {student.className} &bull; {student.branch || 'Bagru'}
+                        {formatClassLabel(student.className)} &bull; {student.branch || 'Bagru'}
                       </span>
                     </div>
                   </div>
@@ -509,7 +510,7 @@ export default function StudentManagement() {
                           <span className="font-bold text-secondary">{s.fullName}</span>
                         </td>
                         <td className="p-4 font-mono text-primary font-bold">{s.rollNumber || s.admissionNumber}</td>
-                        <td className="p-4">{s.className}</td>
+                        <td className="p-4">{formatClassLabel(s.className)}</td>
                         <td className="p-4">{s.branch || 'Bagru'}</td>
                         <td className="p-4 text-on-surface-variant">{s.fatherName || s.motherName || 'N/A'}</td>
                         <td className="p-4 text-right">
@@ -605,7 +606,7 @@ export default function StudentManagement() {
                           <span className="font-bold text-secondary block">{app.fullName}</span>
                           <span className="text-[11px] text-on-surface-variant">{app.email}</span>
                         </td>
-                        <td className="p-4 font-bold text-secondary">{app.targetClass}</td>
+                        <td className="p-4 font-bold text-secondary">{formatClassLabel(app.targetClass)}</td>
                         <td className="p-4">
                           <span className="block font-bold text-secondary">{app.parentName}</span>
                           <span className="text-[11px] text-on-surface-variant font-mono">{app.parentContact}</span>
@@ -682,9 +683,9 @@ export default function StudentManagement() {
                   onChange={(e) => setForm({ ...form, className: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary font-bold"
                 >
-                  {CLASSES.filter((c) => c !== 'All').map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {CLASS_CATEGORIES.map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.label}
                     </option>
                   ))}
                 </select>
@@ -801,7 +802,7 @@ export default function StudentManagement() {
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-outline-variant/15">
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Class Applying For:</span>
-                  <span className="font-bold text-secondary">{selectedApp.targetClass}</span>
+                  <span className="font-bold text-secondary">{formatClassLabel(selectedApp.targetClass)}</span>
                 </div>
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Previous School:</span>

@@ -5,19 +5,20 @@ import { SYSTEM_ROLES } from '../../config/rbacConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
-const initialForm = {
+const initialFacultyForm = {
   name: '',
   email: '',
-  password: 'faculty123',
-  phone: '9816099999',
-  designation: 'Senior Faculty Member',
+  password: '',
+  phone: '',
+  designation: 'Senior Faculty',
   department: 'Science & Mathematics',
   subject: 'Mathematics Advanced',
   qualification: 'Master’s Degree',
   experience: '5+ Years',
   branch: 'Bagru',
-  assignedClasses: ['10th', '11th (+1)'],
+  assignedClasses: ['S2', 'S3'],
   assignedSubjects: ['Mathematics Advanced'],
   photo_url: '',
   display_order: 1,
@@ -72,13 +73,13 @@ export default function FacultyManagement() {
   const [respTab, setRespTab] = useState('assigned'); // 'assigned' | 'add' | 'audit'
   const [course, setCourse] = useState('Science (PCM)');
   const [batch, setBatch] = useState('Batch A (Morning)');
-  const [className, setClassName] = useState('10th');
+  const [className, setClassName] = useState('S2');
   const [semester, setSemester] = useState('Term 1');
   const [section, setSection] = useState('Section A');
   const [subject, setSubject] = useState('Mathematics Advanced');
   const [academicSession, setAcademicSession] = useState('2026-2027');
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [selectedBulkClasses, setSelectedBulkClasses] = useState(['10th', '11th (+1)']);
+  const [selectedBulkClasses, setSelectedBulkClasses] = useState(['S2', 'S3']);
   const [selectedBulkSections, setSelectedBulkSections] = useState(['Section A']);
   const [assigningResp, setAssigningResp] = useState(false);
 
@@ -2074,18 +2075,18 @@ export default function FacultyManagement() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <span className="font-bold text-secondary text-[11px] block mb-1">Classes:</span>
-                        {['9th', '10th', '11th (+1)', '12th (+2)'].map((c) => (
-                          <label key={c} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                        {CLASS_CATEGORIES.map((cat) => (
+                          <label key={cat.code} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
                             <input
                               type="checkbox"
-                              checked={selectedBulkClasses.includes(c)}
+                              checked={selectedBulkClasses.includes(cat.code)}
                               onChange={(e) => {
-                                if (e.target.checked) setSelectedBulkClasses([...selectedBulkClasses, c]);
-                                else setSelectedBulkClasses(selectedBulkClasses.filter((x) => x !== c));
+                                if (e.target.checked) setSelectedBulkClasses([...selectedBulkClasses, cat.code]);
+                                else setSelectedBulkClasses(selectedBulkClasses.filter((x) => x !== cat.code));
                               }}
                               className="rounded text-primary focus:ring-primary"
                             />
-                            <span>Class {c}</span>
+                            <span>{cat.label}</span>
                           </label>
                         ))}
                       </div>
@@ -2118,10 +2119,11 @@ export default function FacultyManagement() {
                         onChange={(e) => setClassName(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
                       >
-                        <option value="9th">Class 9th</option>
-                        <option value="10th">Class 10th</option>
-                        <option value="11th (+1)">Class 11th (+1)</option>
-                        <option value="12th (+2)">Class 12th (+2)</option>
+                        {CLASS_CATEGORIES.map((cat) => (
+                          <option key={cat.code} value={cat.code}>
+                            {cat.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 

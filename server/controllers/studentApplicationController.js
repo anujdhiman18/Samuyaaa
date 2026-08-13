@@ -1,4 +1,5 @@
 import StudentApplication from '../models/StudentApplication.js';
+import { normalizeClassCode } from '../config/classConfig.js';
 
 // @desc    Submit a new Student Application
 // @route   POST /api/student-applications
@@ -10,13 +11,15 @@ export const submitStudentApplication = async (req, res) => {
       email,
       contactNumber,
       dob,
-      targetClass,
+      targetClass: rawClass,
       subjects,
       previousSchool,
       parentName,
       parentContact,
       message,
     } = req.body;
+
+    const targetClass = normalizeClassCode(rawClass);
 
     if (!fullName || !email || !contactNumber || !targetClass || !parentName || !parentContact) {
       return res.status(400).json({

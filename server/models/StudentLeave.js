@@ -20,7 +20,8 @@ const studentLeaveSchema = new mongoose.Schema(
     },
     className: {
       type: String,
-      default: '10th',
+      enum: ['S1', 'S2', 'S3', 'S4'],
+      default: 'S2',
     },
     section: {
       type: String,

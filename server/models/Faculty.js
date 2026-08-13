@@ -47,8 +47,8 @@ const facultySchema = new mongoose.Schema(
       default: 'Science & Mathematics',
     },
     assignedClasses: {
-      type: [String],
-      default: [],
+      type: [{ type: String, enum: ['S1', 'S2', 'S3', 'S4'] }],
+      default: ['S2', 'S3'],
     },
     assignedSubjects: {
       type: [String],
@@ -76,7 +76,7 @@ const facultySchema = new mongoose.Schema(
         id: String,
         course: { type: String, default: 'Science (PCM)' },
         batch: { type: String, default: 'Batch A (Morning)' },
-        className: { type: String, default: '10th' },
+        className: { type: String, enum: ['S1', 'S2', 'S3', 'S4'], default: 'S2' },
         semester: { type: String, default: 'Term 1' },
         section: { type: String, default: 'Section A' },
         subject: { type: String, default: 'Mathematics Advanced' },

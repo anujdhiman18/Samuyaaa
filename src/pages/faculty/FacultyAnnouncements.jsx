@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { announcementService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 export default function FacultyAnnouncements() {
   const { addToast } = useToast();
@@ -13,7 +14,7 @@ export default function FacultyAnnouncements() {
   const [modalOpen, setModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [targetClass, setTargetClass] = useState('10th');
+  const [targetClass, setTargetClass] = useState('S2');
   const [category, setCategory] = useState('Academic');
   const [submitting, setSubmitting] = useState(false);
 
@@ -106,7 +107,7 @@ export default function FacultyAnnouncements() {
                     {anc.category || 'Academic'}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-secondary font-bold text-[10px]">
-                    Target: {anc.targetClass}
+                    Target: {formatClassLabel(anc.targetClass)}
                   </span>
                 </div>
                 <span className="text-[11px] text-on-surface-variant font-mono">
@@ -159,10 +160,12 @@ export default function FacultyAnnouncements() {
                 onChange={(e) => setTargetClass(e.target.value)}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                <option value="10th">Class 10th</option>
-                <option value="11th (+1)">Class 11th (+1)</option>
-                <option value="12th (+2)">Class 12th (+2)</option>
-                <option value="All">All Assigned Classes</option>
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
+                  </option>
+                ))}
+                <option value="All">All Assigned Categories</option>
               </select>
             </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { studentApplicationService } from '../../services/api';
+import { formatClassLabel } from '../../config/classConfig';
 
 export default function StudentCandidateStatusTracker() {
   const [query, setQuery] = useState('');
@@ -133,7 +134,7 @@ export default function StudentCandidateStatusTracker() {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Applying For Class:</span>
-                <span className="font-bold text-secondary">{resultApp.targetClass}</span>
+                <span className="font-bold text-secondary">{formatClassLabel(resultApp.targetClass)}</span>
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Applied Date:</span>

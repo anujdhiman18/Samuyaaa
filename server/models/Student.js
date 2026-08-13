@@ -40,7 +40,8 @@ const studentSchema = new mongoose.Schema(
     className: {
       type: String,
       required: [true, 'Class is required'],
-      enum: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', '11th (+1)', '12th (+2)', 'Olympiad'],
+      enum: ['S1', 'S2', 'S3', 'S4'],
+      default: 'S2',
     },
     rollNumber: {
       type: String,

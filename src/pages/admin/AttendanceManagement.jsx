@@ -2,16 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { studentService, attendanceService, subjectService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
-const CLASSES = [
-  'All',
-  '9th',
-  '10th',
-  '11th (+1)',
-  '12th (+2)',
-  '6th',
-  '7th',
-  '8th',
-];
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+
+const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 
 const DEFAULT_SUBJECTS = [
   'Mathematics',
@@ -429,9 +422,10 @@ export default function AttendanceManagement() {
               onChange={(e) => setSelectedClass(e.target.value)}
               className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:ring-2 focus:ring-primary/20 outline-none"
             >
-              {CLASSES.map((cls) => (
-                <option key={cls} value={cls}>
-                  {cls === 'All' ? 'All Classes' : `Class ${cls}`}
+              <option value="All">All Categories</option>
+              {CLASS_CATEGORIES.map((cat) => (
+                <option key={cat.code} value={cat.code}>
+                  {cat.label}
                 </option>
               ))}
             </select>

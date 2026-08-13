@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { studentService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 export default function StudentLeaveManagement() {
   const [studentLeaves, setStudentLeaves] = useState([]);
@@ -191,11 +192,12 @@ export default function StudentLeaveManagement() {
                 onChange={(e) => setLeaveClassFilter(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none cursor-pointer"
               >
-                <option value="All">All Classes</option>
-                <option value="9th">Class 9th</option>
-                <option value="10th">Class 10th</option>
-                <option value="11th (+1)">Class 11th (+1)</option>
-                <option value="12th (+2)">Class 12th (+2)</option>
+                <option value="All">All Categories</option>
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -248,7 +250,7 @@ export default function StudentLeaveManagement() {
                       <div className="font-mono text-[11px] text-primary">{l.admissionNo || 'N/A'}</div>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="font-bold text-secondary block">Class {l.className || '10th'}</span>
+                      <span className="font-bold text-secondary block">{formatClassLabel(l.className)}</span>
                       <span className="text-[11px] font-semibold text-on-surface-variant">🏢 {l.branch || 'Bagru'}</span>
                     </td>
                     <td className="py-3 px-4 font-bold text-purple-800 whitespace-nowrap">{l.leaveType || 'Sick Leave'}</td>
@@ -321,7 +323,7 @@ export default function StudentLeaveManagement() {
               </div>
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Class &amp; Location</span>
-                <span className="font-bold text-secondary">Class {selectedLeaveApp.className || '10th'}</span>
+                <span className="font-bold text-secondary">{formatClassLabel(selectedLeaveApp.className)}</span>
                 <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
               </div>
             </div>

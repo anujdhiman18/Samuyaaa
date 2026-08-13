@@ -5,19 +5,21 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
-const SUBJECTS = [
+const COURSES = [
+  'Science (PCM)',
+  'Science (PCB)',
+  'Foundation',
   'Mathematics Advanced',
   'Physics IIT-JEE Prep',
-  'Organic & Physical Chemistry',
-  'Biology NEET Prep',
-  'Computer Science',
+  'Chemistry Foundation',
   'Integrated Science',
   'English Literature',
   'Accountancy & Business',
 ];
 const BATCHES = ['2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
-const CLASSES = ['9th', '10th', '11th (+1)', '12th (+2)'];
+const CLASSES = CLASS_CATEGORIES.map((c) => c.code);
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -312,7 +314,7 @@ export default function StudentDetail() {
               <span>&bull;</span>
               <span>Roll: <strong className="text-secondary">{student.rollNumber}</strong></span>
               <span>&bull;</span>
-              <span>Class: <strong className="text-secondary">Class {student.className || '10th'}</strong></span>
+              <span>Class: <strong className="text-secondary">{formatClassLabel(student.className)}</strong></span>
               <span>&bull;</span>
               <span>Batch: <strong className="text-secondary">{student.batch || '2024-2026'}</strong></span>
             </div>
@@ -418,7 +420,7 @@ export default function StudentDetail() {
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Class</span>
-              <span className="font-bold text-secondary">Class {student.className || '10th'}</span>
+              <span className="font-bold text-secondary">{formatClassLabel(student.className)}</span>
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Student Phone</span>
@@ -696,12 +698,14 @@ export default function StudentDetail() {
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Class</label>
               <select
-                value={editForm.className || '10th'}
-                onChange={(e) => setEditForm({ ...editForm, className: e.target.value, semester: e.target.value })}
+                value={editForm.className || 'S2'}
+                onChange={(e) => setEditForm({ ...editForm, className: e.target.value, semester: formatClassLabel(e.target.value) })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                {CLASSES.map((c) => (
-                  <option key={c} value={c}>Class {c}</option>
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
+                  </option>
                 ))}
               </select>
             </div>

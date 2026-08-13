@@ -107,8 +107,11 @@ mongoose
     startServer();
   });
 
+import { runClassCategoryMigration } from './migrateClassCategories.js';
+
 function startServer() {
   initSchedulers();
+  runClassCategoryMigration();
   const server = app.listen(PORT, () => {
     console.log(`🚀 Saumyaa Admin & Public Backend running on http://localhost:${PORT}`);
   });

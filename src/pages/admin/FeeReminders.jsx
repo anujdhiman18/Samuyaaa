@@ -48,7 +48,9 @@ class FeeRemindersErrorBoundary extends React.Component {
   }
 }
 
-const CLASSES = ['All', 'Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'];
+import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+
+const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 
 function normalizeStudent(student) {
   const totalFeeAmount = Number(student.totalFeeAmount || student.monthlyFee || 2500);
@@ -609,9 +611,10 @@ function FeeRemindersContent() {
               onChange={(e) => setSelectedClass(e.target.value)}
               className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              {CLASSES.map((c) => (
-                <option key={c} value={c}>
-                  {c === 'All' ? 'All Classes' : `Class ${c}`}
+              <option value="All">All Categories</option>
+              {CLASS_CATEGORIES.map((cat) => (
+                <option key={cat.code} value={cat.code}>
+                  {cat.label}
                 </option>
               ))}
             </select>
@@ -859,9 +862,9 @@ function FeeRemindersContent() {
                 onChange={(e) => setFormData({ ...formData, className: e.target.value })}
                 className="w-full p-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:outline-none focus:border-primary"
               >
-                {CLASSES.filter((c) => c !== 'All').map((c) => (
-                  <option key={c} value={c}>
-                    Class {c}
+                {CLASS_CATEGORIES.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
                   </option>
                 ))}
               </select>
