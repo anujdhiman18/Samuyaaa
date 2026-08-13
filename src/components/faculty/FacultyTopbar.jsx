@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function FacultyTopbar({ onToggleMobile }) {
   const { user, logout } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -29,17 +27,6 @@ export default function FacultyTopbar({ onToggleMobile }) {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full hover:bg-surface-container text-on-surface-variant transition-colors"
-          title="Toggle Dark / Light Theme"
-        >
-          <span className="material-symbols-outlined text-[20px]">
-            {isDarkMode ? 'light_mode' : 'dark_mode'}
-          </span>
-        </button>
-
         {/* User Profile Pill Dropdown */}
         <div className="relative">
           <button
