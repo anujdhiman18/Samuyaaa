@@ -11,6 +11,7 @@ import { PERMISSIONS } from './config/rbacConfig';
 // Public & Auth Pages
 import PublicWebsite from './components/PublicWebsite';
 import FacultyApplicationPage from './pages/FacultyApplicationPage';
+import StudentApplicationPage from './pages/StudentApplicationPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 
@@ -126,6 +127,10 @@ export default function App() {
 
                 {/* Faculty Online Job Application Form */}
                 <Route path="/faculty-application" element={<FacultyApplicationPage />} />
+
+                {/* Student Admissions Application Form */}
+                <Route path="/student-application" element={<StudentApplicationPage />} />
+                <Route path="/apply-student" element={<StudentApplicationPage />} />
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />

@@ -72,6 +72,15 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
         {/* Action Buttons Container */}
         <div className="hidden lg:flex items-center gap-2 shrink-0">
           <Link
+            to="/student-application"
+            className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white px-3 py-1.5 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            title="Student Online Admissions Application"
+          >
+            <span className="material-symbols-outlined text-[15px]">school</span>
+            <span>Apply as Student</span>
+          </Link>
+
+          <Link
             to="/apply"
             className="border border-outline-variant/50 hover:border-primary text-on-surface-variant hover:text-primary px-3 py-1.5 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1.5 bg-surface-container-lowest/80 shadow-2xs"
             title="Faculty Recruitment Application"
@@ -107,11 +116,11 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
         {/* Mobile / Tablet Quick Controls (< 1024px) */}
         <div className="lg:hidden flex items-center gap-2">
           <Link
-            to="/apply"
-            className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-1.5 rounded-full font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs"
+            to="/student-application"
+            className="bg-primary/10 text-primary border border-primary/20 px-2 py-1.5 rounded-full font-headings font-bold text-[10px] flex items-center gap-1 shadow-xs"
           >
-            <span className="material-symbols-outlined text-[15px]">work</span>
-            Join Faculty
+            <span className="material-symbols-outlined text-[14px]">school</span>
+            Apply
           </Link>
           <button
             onClick={onOpenMobileMenu}

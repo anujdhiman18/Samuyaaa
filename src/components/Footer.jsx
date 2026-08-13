@@ -76,6 +76,12 @@ export default function Footer() {
               </li>
             ))}
             <li>
+              <Link to="/student-application" className="text-primary font-bold hover:underline flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">school</span>
+                Student Admission Application
+              </Link>
+            </li>
+            <li>
               <Link to="/apply" className="text-primary font-bold hover:underline flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">work</span>
                 Careers / Faculty Application

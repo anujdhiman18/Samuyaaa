@@ -3423,6 +3423,181 @@ export const facultyApplicationService = {
   }
 };
 
+// ==========================================
+// STUDENT APPLICATIONS SERVICE & MOCK DATA
+// ==========================================
+export const initialMockStudentApplications = [
+  {
+    _id: 'app_stu_1',
+    id: 'app_stu_1',
+    applicationId: 'SAU-STU-2026-1001',
+    fullName: 'Aarav Sharma',
+    email: 'aarav.sharma@gmail.com',
+    contactNumber: '9816512345',
+    dob: '2010-05-14',
+    targetClass: '10th',
+    subjects: ['Mathematics', 'Science (PCM)'],
+    previousSchool: 'DAV Public School',
+    parentName: 'Sanjay Sharma',
+    parentContact: '9816598765',
+    message: 'Seeking admission for board exam preparation and advanced coaching.',
+    status: 'Pending',
+    appliedAt: '2026-08-01T10:30:00.000Z',
+    notes: 'Interested in morning batch at Bagru branch.',
+  },
+  {
+    _id: 'app_stu_2',
+    id: 'app_stu_2',
+    applicationId: 'SAU-STU-2026-1002',
+    fullName: 'Priya Verma',
+    email: 'priya.verma@gmail.com',
+    contactNumber: '9816488888',
+    dob: '2009-08-22',
+    targetClass: '11th (+1)',
+    subjects: ['Physics', 'Chemistry', 'Mathematics'],
+    previousSchool: 'St. Xavier Convent School',
+    parentName: 'Rajesh Verma',
+    parentContact: '9816477777',
+    message: 'Preparing for JEE entrance along with +1 CBSE curriculum.',
+    status: 'Approved',
+    appliedAt: '2026-07-25T14:15:00.000Z',
+    notes: 'Counselled and approved for +1 Medical/Non-Medical batch.',
+  }
+];
+
+export const getStoredStudentApplications = () => {
+  try {
+    const data = localStorage.getItem('saumyaa_student_applications');
+    if (!data) {
+      localStorage.setItem('saumyaa_student_applications', JSON.stringify(initialMockStudentApplications));
+      return initialMockStudentApplications;
+    }
+    return JSON.parse(data);
+  } catch (e) {
+    return initialMockStudentApplications;
+  }
+};
+
+export const setStoredStudentApplications = (list) => {
+  try {
+    localStorage.setItem('saumyaa_student_applications', JSON.stringify(list));
+  } catch (e) {
+    console.warn('LocalStorage student applications write error:', e);
+  }
+};
+
+export const studentApplicationService = {
+  getApplications: async () => {
+    const fsApps = await syncFirestoreCollection('student_applications', initialMockStudentApplications);
+    let list = fsApps || getStoredStudentApplications();
+    list.sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0));
+    return { success: true, applications: list };
+  },
+
+  submitApplication: async (formData) => {
+    const id = 'app_stu_' + Date.now();
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const applicationId = `SAU-STU-${new Date().getFullYear()}-${randomCode}`;
+
+    const newApp = {
+      _id: id,
+      id,
+      applicationId,
+      ...formData,
+      status: 'Pending',
+      appliedAt: new Date().toISOString(),
+      notes: '',
+    };
+
+    try {
+      await setDoc(doc(db, 'student_applications', id), newApp);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc student_application error:', fsErr.message);
+    }
+
+    const list = getStoredStudentApplications();
+    const updated = [newApp, ...list];
+    setStoredStudentApplications(updated);
+
+    try {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/student-applications` : '/api/student-applications';
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp),
+      });
+    } catch (apiErr) {
+      console.warn('Student application backend POST warning:', apiErr.message);
+    }
+
+    return {
+      success: true,
+      application: newApp,
+      applicationId,
+      message: 'Student Application submitted successfully!',
+    };
+  },
+
+  updateApplicationStatus: async (id, status, notes = '') => {
+    const list = getStoredStudentApplications();
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+
+    if (idx !== -1) {
+      list[idx].status = status;
+      if (notes !== undefined) list[idx].notes = notes;
+      list[idx].updatedAt = new Date().toISOString();
+
+      try {
+        await setDoc(doc(db, 'student_applications', String(id)), list[idx], { merge: true });
+      } catch (fsErr) {
+        console.warn('Firestore update student application status error:', fsErr.message);
+      }
+
+      setStoredStudentApplications([...list]);
+    }
+
+    return {
+      success: true,
+      message: `Student application status updated to ${status}`,
+    };
+  },
+
+  deleteApplication: async (id) => {
+    try {
+      await deleteDoc(doc(db, 'student_applications', String(id)));
+    } catch (fsErr) {
+      console.warn('Firestore delete student application error:', fsErr.message);
+    }
+
+    const list = getStoredStudentApplications().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
+    setStoredStudentApplications(list);
+    return { success: true, message: 'Student application deleted successfully' };
+  },
+
+  approveAndConvertToStudent: async (app) => {
+    const newStudentData = {
+      fullName: app.fullName,
+      email: app.email,
+      phone: app.contactNumber,
+      fatherName: app.parentName || 'Guardian',
+      motherName: '',
+      parentPhone: app.parentContact || app.contactNumber,
+      className: app.targetClass || '10th',
+      subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'General Academics'],
+      batch: '2026-2027',
+      branch: 'Bagru',
+      monthlyFee: 2500,
+      monthlyDueDay: 5,
+      status: 'Active',
+    };
+
+    const res = await studentService.createStudent(newStudentData);
+    await studentApplicationService.updateApplicationStatus(app._id || app.id, 'Approved', 'Approved & Enrolled to Student Directory');
+    return res;
+  }
+};
+
 // Credential Change Request Service (Username / Password Change Requests from Students to Admin)
 export const credentialRequestService = {
   getRequests: async () => {
@@ -3511,86 +3686,6 @@ export const credentialRequestService = {
     return { success: true, message: `Credential request ${normalizedAction.toLowerCase()} successfully.` };
   },
 };
-
-export const studentApplicationService = {
-  getApplications: async () => {
-    const fsApps = await syncFirestoreCollection('student_applications', []);
-    let list = fsApps || [];
-    try {
-      const stored = localStorage.getItem('saumyaa_student_applications');
-      if (stored) list = JSON.parse(stored);
-    } catch (e) {}
-
-    return { success: true, applications: list };
-  },
-
-  approveAndConvertToStudent: async (app) => {
-    try {
-      const appId = String(app._id || app.id);
-      const studentId = 's_' + Date.now();
-      const year = new Date().getFullYear();
-      const count = Math.floor(Math.random() * 800) + 100;
-      const rollNumber = `SAU-${app.className ? app.className.replace(/\D/g, '') || '10' : '10'}-${String(count).padStart(3, '0')}`;
-      const admissionNumber = `ADM-${year}-${String(count).padStart(3, '0')}`;
-
-      const newStudent = {
-        _id: studentId,
-        id: studentId,
-        fullName: app.fullName || app.studentName || 'New Student',
-        phone: app.phone || '9816099999',
-        parentPhone: app.parentPhone || app.phone || '9816099999',
-        email: app.email || `${studentId}@saumyaastudies.edu`,
-        password: app.password || 'student123',
-        className: app.className || '10th',
-        subject: app.subject || 'Mathematics Advanced',
-        subjects: [app.subject || 'Mathematics Advanced'],
-        batch: app.batch || '2024-2026',
-        branch: app.branch || 'Bagru',
-        rollNumber,
-        admissionNumber,
-        monthlyFee: 2500,
-        monthlyDueDay: 5,
-        attendancePercentage: 100,
-        status: 'Active',
-        photo: app.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-        createdAt: new Date().toISOString(),
-      };
-
-      // Atomic Transaction Step 1: Create active student
-      await studentService.createStudent(newStudent);
-
-      // Atomic Transaction Step 2: Update application status to Approved
-      let apps = [];
-      try {
-        const stored = localStorage.getItem('saumyaa_student_applications');
-        if (stored) apps = JSON.parse(stored);
-      } catch (e) {}
-
-      const idx = apps.findIndex((a) => String(a._id || a.id) === appId);
-      if (idx !== -1) {
-        apps[idx].status = 'Approved';
-        apps[idx].approvedAt = new Date().toISOString();
-        localStorage.setItem('saumyaa_student_applications', JSON.stringify(apps));
-      }
-
-      try {
-        await setDoc(doc(db, 'student_applications', appId), { status: 'Approved', approvedAt: new Date().toISOString() }, { merge: true });
-      } catch (e) {
-        console.warn('Firestore update student application error:', e);
-      }
-
-      return {
-        success: true,
-        student: newStudent,
-        message: `Student ${newStudent.fullName} approved and onboarded cleanly! Roll: ${rollNumber}`,
-      };
-    } catch (err) {
-      console.error('[Student Approval Transaction Error]:', err);
-      throw new Error(err.message || 'Failed to complete student approval transaction');
-    }
-  },
-};
-
 
 const initialMockAlumni = [
   {
