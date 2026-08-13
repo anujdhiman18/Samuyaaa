@@ -262,9 +262,12 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
               </label>
               <input
                 type="date"
-                value={formData.dob}
+                name="dob"
+                value={formData.dob || ''}
+                min="1995-01-01"
+                max={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-outline-variant/30 text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                className="w-full px-4 py-2.5 rounded-2xl border border-outline-variant/30 text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer"
               />
             </div>
 

@@ -695,9 +695,11 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
                 <input
                   type="date"
                   name="dob"
-                  value={formData.dob}
+                  value={formData.dob || ''}
+                  min="1960-01-01"
+                  max={new Date().toISOString().split('T')[0]}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-colors ${
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-colors cursor-pointer ${
                     errors.dob ? 'border-rose-500 bg-rose-50/20' : 'border-outline-variant/40 focus:border-primary'
                   }`}
                 />
