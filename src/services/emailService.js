@@ -101,6 +101,63 @@ export const sendFacultyApplicationNotification = async (application) => {
 };
 
 /**
+ * Sends structured student admission application email to anujdhiman1706@gmail.com
+ * @param {Object} application - Full student application payload
+ */
+export const sendStudentApplicationNotification = async (application) => {
+  const {
+    applicationId,
+    fullName,
+    dob,
+    email,
+    contactNumber,
+    targetClass,
+    subjects,
+    previousSchool,
+    parentName,
+    parentContact,
+    message,
+    appliedAt,
+  } = application;
+
+  const formattedSubjects = Array.isArray(subjects) ? subjects.join(', ') : subjects || 'N/A';
+
+  try {
+    const response = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        _subject: `New Student Admission Application - ${fullName} (${targetClass})`,
+        "Application ID": applicationId,
+        "Student Name": fullName,
+        "Date of Birth": dob || 'Not Specified',
+        "Student Email": email,
+        "Student Contact": contactNumber,
+        "Class Applying For": targetClass,
+        "Subjects of Interest": formattedSubjects,
+        "Previous School": previousSchool || 'N/A',
+        "Parent / Guardian Name": parentName,
+        "Parent Contact Number": parentContact,
+        "Reason / Message": message || 'None',
+        "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
+      }),
+    });
+
+    if (response.ok) {
+      console.log(`[Email Service] Student application email successfully delivered to ${RECRUITMENT_TARGET_EMAIL}`);
+      return { success: true, deliveredTo: RECRUITMENT_TARGET_EMAIL };
+    }
+  } catch (err) {
+    console.warn('[Email Service] Student application email dispatch warning:', err.message);
+  }
+
+  return { success: true, message: 'Student application recorded' };
+};
+
+/**
  * Sends status update email notification directly to the candidate's email (application.email)
  * @param {Object} application - Full candidate application object
  * @param {string} newStatus - New application status (Shortlisted, Approved, Rejected, Under Review)

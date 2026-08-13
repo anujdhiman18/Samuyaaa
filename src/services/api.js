@@ -5,7 +5,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
-import { sendFacultyApplicationNotification, sendCandidateStatusNotification } from './emailService';
+import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
 
 export const initialMockStudents = [
   {
@@ -946,6 +946,10 @@ export const getStoredCollectionFallback = (collectionName, defaultData = []) =>
         return getStoredAlumni();
       case 'feedbacks':
         return getStoredFeedbacks();
+      case 'student_applications':
+        return getStoredStudentApplications();
+      case 'faculty_applications':
+        return getStoredFacultyApplications();
       default:
         return defaultData;
     }
@@ -3531,11 +3535,25 @@ export const studentApplicationService = {
       console.warn('Student application backend POST warning:', apiErr.message);
     }
 
+    // Direct email notification dispatch to admin email (anujdhiman1706@gmail.com)
+    let emailSent = false;
+    try {
+      const emailRes = await sendStudentApplicationNotification(newApp);
+      if (emailRes && emailRes.success) {
+        emailSent = true;
+      }
+    } catch (emailErr) {
+      console.warn('Student application email dispatch warning:', emailErr.message);
+    }
+
     return {
       success: true,
       application: newApp,
       applicationId,
-      message: 'Student Application submitted successfully!',
+      emailSent,
+      message: emailSent
+        ? 'Student Application submitted successfully and emailed to anujdhiman1706@gmail.com!'
+        : 'Student Application submitted successfully!',
     };
   },
 
