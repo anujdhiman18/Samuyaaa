@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function ConfirmModal({ isOpen, open, onClose, onConfirm, title, message, confirmText = 'Delete', loading = false }) {
-  const showModal = Boolean(open || isOpen);
+  const showModal = open !== undefined || isOpen !== undefined ? Boolean(open || isOpen) : true;
   if (!showModal) return null;
 
   return (

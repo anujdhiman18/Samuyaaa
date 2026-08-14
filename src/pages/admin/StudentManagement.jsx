@@ -661,7 +661,7 @@ export default function StudentManagement() {
 
       {/* MODAL 1: Add New Student */}
       {isModalOpen && (
-        <Modal title="Add New Student to Directory" onClose={() => setIsModalOpen(false)}>
+        <Modal isOpen={isModalOpen} title="Add New Student to Directory" onClose={() => setIsModalOpen(false)}>
           <form onSubmit={handleSaveStudent} className="space-y-4 text-xs font-body">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -878,11 +878,12 @@ export default function StudentManagement() {
       {/* CONFIRM DELETE MODAL */}
       {deleteTargetApp && (
         <ConfirmModal
+          isOpen={Boolean(deleteTargetApp)}
           title="Delete Application"
           message={`Are you sure you want to delete the student application for "${deleteTargetApp.fullName}" (${deleteTargetApp.applicationId})? This action cannot be undone.`}
           confirmText={deletingApp ? 'Deleting...' : 'Delete Application'}
           onConfirm={handleDeleteApplication}
-          onCancel={() => setDeleteTargetApp(null)}
+          onClose={() => setDeleteTargetApp(null)}
         />
       )}
     </div>
