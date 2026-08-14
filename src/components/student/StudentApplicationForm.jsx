@@ -3,6 +3,16 @@ import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
+const SUBJECT_OPTIONS = [
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'Biology / Life Sciences',
+  'English & Communication',
+  'Computer Science / Coding',
+  'Social Studies & General Awareness',
+];
+
 const initialFormData = {
   fullName: '',
   email: '',
