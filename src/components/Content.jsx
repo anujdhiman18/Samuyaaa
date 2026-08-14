@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { CLASS_CATEGORIES, formatClassLabel } from '../config/classConfig';
 
 const initialForm = {
   name: '',
   phone: '',
   email: '',
+  targetClass: '',
   subject: '',
+  branch: 'Bagru',
   message: '',
 };
 
@@ -19,21 +22,16 @@ export default function Contact() {
   }
 
   function getMailtoUrl(data) {
-    const subjectStr = encodeURIComponent(`Inquiry from ${data.name}: ${data.subject}`);
+    const classLabel = data.targetClass ? formatClassLabel(data.targetClass) : 'N/A';
+    const subjectStr = encodeURIComponent(`Inquiry from ${data.name} (${classLabel}): ${data.subject}`);
     const bodyStr = encodeURIComponent(
-      `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
+      `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nClass/Grade: ${classLabel}\nPreferred Location: ${data.branch || 'Bagru'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
     );
     return `mailto:Jitender0585@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
   }
 
   function handleResetForm() {
-    setForm({
-      name: '',
-      phone: '',
-      email: '',
-      subject: '',
-      message: '',
-    });
+    setForm(initialForm);
     setSubmitting(false);
     setSubmitted(false);
   }
@@ -50,9 +48,14 @@ export default function Contact() {
       formData.append('name', queryData.name);
       formData.append('phone', queryData.phone);
       formData.append('email', queryData.email || 'Not Provided');
+      formData.append('class', queryData.targetClass ? formatClassLabel(queryData.targetClass) : 'Not Provided');
       formData.append('subject', queryData.subject || 'General Inquiry');
+      formData.append('location', queryData.branch || 'Bagru');
       formData.append('message', queryData.message);
-      formData.append('_subject', `New Inquiry from ${queryData.name}: ${queryData.subject}`);
+      formData.append(
+        '_subject',
+        `New Inquiry from ${queryData.name} (${queryData.targetClass ? formatClassLabel(queryData.targetClass) : 'General'}): ${queryData.subject}`
+      );
       formData.append('_captcha', 'false');
 
       fetch('https://formsubmit.co/ajax/f785f212ac6d3b7066a696d35d1be84f', {
@@ -213,7 +216,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="contact-email" className="font-body text-xs font-semibold text-on-surface-variant">
                     Email Address
@@ -227,6 +230,29 @@ export default function Contact() {
                     className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
                   />
                 </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="contact-class" className="font-body text-xs font-semibold text-on-surface-variant">
+                    Class / Grade *
+                  </label>
+                  <select
+                    id="contact-class"
+                    required
+                    value={form.targetClass}
+                    onChange={(e) => updateField('targetClass', e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
+                  >
+                    <option value="">-- Select Class / Grade --</option>
+                    {CLASS_CATEGORIES.map((cat) => (
+                      <option key={cat.code} value={cat.code}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="contact-subject" className="font-body text-xs font-semibold text-on-surface-variant">
                     Subject *
