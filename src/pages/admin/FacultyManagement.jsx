@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { facultyService, facultyApplicationService, credentialRequestService, getStoredFaculty, subscribeFirestoreCollection, initialMockFaculty, rbacService } from '../../services/api';
-import { SYSTEM_ROLES } from '../../config/rbacConfig';
+import { SYSTEM_ROLES, normalizeBranchId, getBranchCode, getBranchLabel } from '../../config/rbacConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -18,6 +18,7 @@ const initialFacultyForm = {
   qualification: 'Master’s Degree',
   experience: '5+ Years',
   branch: 'Bagru',
+  branchId: 'MAIN_BRANCH',
   assignedClasses: ['S2', 'S3'],
   assignedSubjects: ['Mathematics Advanced'],
   photo_url: '',
@@ -93,6 +94,7 @@ export default function FacultyManagement() {
   // RBAC Multi-Role Assignment Modal State
   const [roleModalMember, setRoleModalMember] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('MAIN_BRANCH');
   const [savingUserRoles, setSavingUserRoles] = useState(false);
 
   const handleOpenRoleModal = (faculty) => {
@@ -113,6 +115,9 @@ export default function FacultyManagement() {
 
     const primaryRole = activeRoles[0] || 'SUBJECT_TEACHER';
     setSelectedRoles([primaryRole]);
+
+    const activeBId = normalizeBranchId(faculty.branchId || faculty.branch || storedFac?.branchId || storedFac?.branch);
+    setSelectedBranchId(activeBId);
   };
 
   const handleToggleRoleSelection = (roleCode) => {
@@ -144,11 +149,14 @@ export default function FacultyManagement() {
         else if (selectedRoleCode === 'SUBJECT_TEACHER') newDesignation = 'Subject Teacher';
       }
 
+      const newBranchCode = getBranchCode(selectedBranchId);
       const payload = {
         roles: isTargetAdmin ? (roleModalMember.roles || ['ADMIN']) : [selectedRoleCode],
         role: targetRole,
         position: targetRole,
         designation: newDesignation,
+        branchId: selectedBranchId,
+        branch: newBranchCode,
         additionalPermissions: isTargetAdmin ? selectedRoles : undefined,
         status: roleModalMember.is_active ? 'Active' : 'Inactive',
         email: roleModalMember.email,
@@ -831,6 +839,9 @@ export default function FacultyManagement() {
                                   </span>
                                 );
                               })}
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${normalizeBranchId(member.branchId || member.branch) === 'CHILD_BRANCH' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
+                                🏢 {getBranchLabel(member.branchId || member.branch)}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -2271,6 +2282,60 @@ export default function FacultyManagement() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Branch Assignment Scope Selector */}
+            <div className="space-y-3 pt-3 border-t border-outline-variant/15">
+              <h4 className="font-headings font-bold text-xs text-secondary uppercase tracking-wider">
+                Assigned Branch Access Scope:
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div
+                  onClick={() => setSelectedBranchId('MAIN_BRANCH')}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer select-none space-y-1 ${
+                    selectedBranchId === 'MAIN_BRANCH'
+                      ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-500/20'
+                      : 'bg-white border-outline-variant/20 hover:bg-surface-container-low'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                      🏢 Main Branch (Bagru)
+                    </span>
+                    <input
+                      type="radio"
+                      name="branchScopeRadio"
+                      checked={selectedBranchId === 'MAIN_BRANCH'}
+                      onChange={() => setSelectedBranchId('MAIN_BRANCH')}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant leading-tight">Access to Main Branch data</p>
+                </div>
+
+                <div
+                  onClick={() => setSelectedBranchId('CHILD_BRANCH')}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer select-none space-y-1 ${
+                    selectedBranchId === 'CHILD_BRANCH'
+                      ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-500/20'
+                      : 'bg-white border-outline-variant/20 hover:bg-surface-container-low'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      🏢 Child Branch (Daroh)
+                    </span>
+                    <input
+                      type="radio"
+                      name="branchScopeRadio"
+                      checked={selectedBranchId === 'CHILD_BRANCH'}
+                      onChange={() => setSelectedBranchId('CHILD_BRANCH')}
+                      className="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant leading-tight">Access strictly restricted to Child Branch ONLY</p>
+                </div>
               </div>
             </div>
 

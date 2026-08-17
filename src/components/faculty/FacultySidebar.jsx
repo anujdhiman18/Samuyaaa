@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useRBAC } from '../../context/RBACContext';
 import { PERMISSIONS } from '../../config/rbacConfig';
 
@@ -27,6 +28,7 @@ const allNavItems = [
 export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
   const location = useLocation();
   const { hasPermission } = useRBAC();
+  const { branchLabel, isChildBranch } = useAuth();
 
   const isLinkActive = (path) => {
     if (path === '/faculty') {
@@ -59,32 +61,42 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
       >
         <div>
           {/* Brand Header */}
-          <div className="h-16 px-6 flex items-center justify-between border-b border-outline-variant/15">
-            <Link to="/faculty" className="flex items-center gap-2.5 group">
-              <img
-                src="/logo.jpg"
-                alt="Saumyaa Faculty Logo"
-                className="w-10 h-10 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
-              />
-              <div>
-                <span className="font-headings font-extrabold text-sm text-secondary block leading-tight">
-                  Saumyaa Portal
-                </span>
-                <span className="text-[10px] font-bold text-primary tracking-wider uppercase">
-                  Faculty Panel
-                </span>
-              </div>
-            </Link>
-            <button
-              onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px]">close</span>
-            </button>
+          <div className="h-20 px-5 flex flex-col justify-center border-b border-outline-variant/15">
+            <div className="flex items-center justify-between">
+              <Link to="/faculty" className="flex items-center gap-2.5 group">
+                <img
+                  src="/logo.jpg"
+                  alt="Saumyaa Faculty Logo"
+                  className="w-9 h-9 object-contain rounded-xl shadow-md group-hover:scale-105 transition-transform duration-200 bg-white p-0.5"
+                />
+                <div>
+                  <span className="font-headings font-extrabold text-xs text-secondary block leading-tight">
+                    Saumyaa Portal
+                  </span>
+                  <span className="text-[9px] font-bold text-primary tracking-wider uppercase">
+                    Faculty Panel
+                  </span>
+                </div>
+              </Link>
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Assigned Branch Badge */}
+            <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border self-start shadow-xs">
+              <span className={`w-1.5 h-1.5 rounded-full ${isChildBranch ? 'bg-amber-500' : 'bg-blue-500'}`} />
+              <span className={isChildBranch ? 'text-amber-900 font-bold' : 'text-blue-900 font-bold'}>
+                🏢 {branchLabel}
+              </span>
+            </div>
           </div>
 
           {/* Dynamic Navigation Links */}
-          <nav className="p-4 space-y-1 font-body overflow-y-auto max-h-[calc(100vh-130px)] sidebar-scroll">
+          <nav className="p-4 space-y-1 font-body overflow-y-auto max-h-[calc(100vh-140px)] sidebar-scroll">
             <div className="px-3 pb-2 text-[10px] font-headings font-bold uppercase tracking-widest text-on-surface-variant/70">
               Role Authorized Tools ({visibleNavItems.length})
             </div>

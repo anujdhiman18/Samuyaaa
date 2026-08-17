@@ -359,3 +359,37 @@ export const computePermissionsForUser = (userRoleCodes = [], customPermissionOv
 
   return Array.from(permissionsSet);
 };
+
+export const BRANCHES = {
+  MAIN: {
+    id: 'MAIN_BRANCH',
+    code: 'Bagru',
+    name: 'Main Branch (Bagru)',
+    shortName: 'Bagru Main',
+    isMain: true,
+  },
+  CHILD: {
+    id: 'CHILD_BRANCH',
+    code: 'Daroh',
+    name: 'Child Branch (Daroh)',
+    shortName: 'Daroh Child',
+    isMain: false,
+  },
+};
+
+export const normalizeBranchId = (branchInput) => {
+  if (!branchInput) return 'MAIN_BRANCH';
+  const str = String(branchInput).trim().toLowerCase();
+  if (str === 'child_branch' || str === 'daroh' || str.includes('daroh') || str.includes('child')) {
+    return 'CHILD_BRANCH';
+  }
+  return 'MAIN_BRANCH';
+};
+
+export const getBranchCode = (branchId) => {
+  return normalizeBranchId(branchId) === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru';
+};
+
+export const getBranchLabel = (branchInput) => {
+  return normalizeBranchId(branchInput) === 'CHILD_BRANCH' ? 'Child Branch (Daroh)' : 'Main Branch (Bagru)';
+};

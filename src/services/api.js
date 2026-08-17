@@ -399,11 +399,27 @@ export const getStoredStudents = () => {
     const list = raw ? JSON.parse(raw) : initialMockStudents;
     const deleted = getDeletedIds('students');
     return list.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)))
-      .map((s) => ({ ...s, className: normalizeClassCode(s.className) }));
+      .map((s) => {
+        const bId = normalizeBranchId(s.branchId || s.branch);
+        return {
+          ...s,
+          className: normalizeClassCode(s.className),
+          branchId: bId,
+          branch: s.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
+        };
+      });
   } catch (e) {
     const deleted = getDeletedIds('students');
     return initialMockStudents.filter((s) => s && !deleted.includes(String(s._id)) && !deleted.includes(String(s.id)))
-      .map((s) => ({ ...s, className: normalizeClassCode(s.className) }));
+      .map((s) => {
+        const bId = normalizeBranchId(s.branchId || s.branch);
+        return {
+          ...s,
+          className: normalizeClassCode(s.className),
+          branchId: bId,
+          branch: s.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
+        };
+      });
   }
 };
 
@@ -2762,17 +2778,20 @@ export const getStoredFaculty = () => {
       }
     });
 
-    // Sanitize list to preserve active assigned roles
+    // Sanitize list to preserve active assigned roles & branch assignments
     list = list.map((f) => {
       const derivedRoles = Array.isArray(f.roles) && f.roles.length > 0
         ? f.roles
         : (f.role && f.role !== 'Faculty' ? [f.role] : ['SUBJECT_TEACHER']);
+      const bId = normalizeBranchId(f.branchId || f.branch);
       return {
         ...f,
         email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
         password: f.password || 'faculty123',
         roles: derivedRoles,
         role: derivedRoles[0] || 'SUBJECT_TEACHER',
+        branchId: bId,
+        branch: f.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
         assignedClasses: f.assignedClasses || [],
         assignedSubjects: f.assignedSubjects || [],
         responsibilities: f.responsibilities || [],
@@ -4565,20 +4584,24 @@ export const facultyPanelService = {
 
     const currentUserStr = localStorage.getItem('saumyaa_user');
     let resps = [];
+    let userBranchId = 'MAIN_BRANCH';
     if (currentUserStr) {
       try {
         const u = JSON.parse(currentUserStr);
         resps = u.responsibilities || [];
+        userBranchId = normalizeBranchId(u.branchId || u.branch);
       } catch (e) {}
     }
 
     const assignedClasses = Array.from(new Set(resps.map((r) => r.className)));
-    if (assignedClasses.length === 0) {
-      return { success: true, students: [] };
-    }
 
     const allStudents = getStoredStudents();
-    let filtered = allStudents.filter((s) => assignedClasses.includes(s.className));
+    let filtered = allStudents.filter((s) => {
+      const sBId = normalizeBranchId(s.branchId || s.branch);
+      if (sBId !== userBranchId) return false;
+      if (assignedClasses.length > 0) return assignedClasses.includes(s.className);
+      return true;
+    });
 
     if (params.className && params.className !== 'All') {
       filtered = filtered.filter((s) => s.className === params.className);
