@@ -2907,13 +2907,27 @@ export const facultyService = {
 
   updateFaculty: async (id, data) => {
     try {
+      await apiCall(`/faculty/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch (e) {
+      console.warn('Backend updateFaculty apiCall error:', e.message);
+    }
+
+    try {
       await setDoc(doc(db, 'faculty', String(id)), data, { merge: true });
     } catch (fsErr) {
       console.warn('Firestore updateDoc faculty error:', fsErr.message);
     }
 
     const list = getStoredFaculty();
-    const idx = list.findIndex((f) => String(f._id) === String(id) || String(f.id) === String(id));
+    const idx = list.findIndex(
+      (f) =>
+        String(f._id || f.id) === String(id) ||
+        (f.email && data.email && f.email.toLowerCase() === data.email.toLowerCase()) ||
+        (f.name && data.name && f.name.toLowerCase() === data.name.toLowerCase())
+    );
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
       setStoredFaculty(list);
@@ -2923,14 +2937,18 @@ export const facultyService = {
         const currentUserStr = localStorage.getItem('saumyaa_user');
         if (currentUserStr) {
           const curr = JSON.parse(currentUserStr);
-          if (String(curr._id || curr.id) === String(id)) {
+          if (
+            String(curr._id || curr.id) === String(id) ||
+            (curr.email && data.email && curr.email.toLowerCase() === data.email.toLowerCase())
+          ) {
             const updatedUser = { ...curr, ...data };
             localStorage.setItem('saumyaa_user', JSON.stringify(updatedUser));
           }
         }
       } catch (e) {}
     }
-    return { success: true, faculty: list[idx], message: 'Faculty credentials & details updated successfully!' };
+    notifyDataUpdate();
+    return { success: true, faculty: idx !== -1 ? list[idx] : data, message: 'Faculty credentials & details updated successfully!' };
   },
 
   assignResponsibilities: async (facultyId, newItems = [], assignedBy = 'System Admin') => {

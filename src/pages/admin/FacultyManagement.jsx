@@ -496,17 +496,21 @@ export default function FacultyManagement() {
       ? member.assignedSubjects.join(', ')
       : (member.assignedSubjects || member.subject || '');
 
+    const activeBId = normalizeBranchId(member.branchId || member.branch);
+    const activeBCode = getBranchCode(activeBId);
+
     setForm({
       name: member.name || '',
       email: member.email || '',
       password: member.password || 'faculty123',
-      phone: member.phone || '9816099999',
+      phone: member.phone || '',
       designation: member.designation || 'Senior Faculty Member',
       department: member.department || 'Science & Mathematics',
       subject: member.subject || 'Mathematics Advanced',
       qualification: member.qualification || 'Master’s Degree',
       experience: member.experience || '5+ Years',
-      branch: member.branch || 'Bagru',
+      branch: activeBCode,
+      branchId: activeBId,
       assignedClasses: classesStr,
       assignedSubjects: subjectsStr,
       photo_url: member.photo_url || '',
