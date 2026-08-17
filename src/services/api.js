@@ -5014,22 +5014,32 @@ export const rbacService = {
       list[idx] = updatedFac;
       setStoredFaculty(list);
 
-      // Sync Firestore DB
+      // Sync Firestore DB (update doc by ID and any legacy doc matching email)
       try {
         const firestoreDocId = String(list[idx].id || list[idx]._id || facultyId);
-        await setDoc(
-          doc(db, 'faculty', firestoreDocId),
-          {
-            roles: updatedFac.roles,
-            role: updatedFac.role,
-            designation: updatedFac.designation,
-            branchId: updatedFac.branchId,
-            branch: updatedFac.branch,
-            permissionOverrides: updatedFac.permissionOverrides,
-            is_active: updatedFac.is_active,
-          },
-          { merge: true }
-        );
+        const updatePayload = {
+          roles: updatedFac.roles,
+          role: updatedFac.role,
+          designation: updatedFac.designation,
+          branchId: updatedFac.branchId,
+          branch: updatedFac.branch,
+          permissionOverrides: updatedFac.permissionOverrides,
+          is_active: updatedFac.is_active,
+        };
+        await setDoc(doc(db, 'faculty', firestoreDocId), updatePayload, { merge: true });
+
+        if (updatedFac.email) {
+          const fsList = await syncFirestoreCollection('faculty', []);
+          if (fsList && Array.isArray(fsList)) {
+            const matches = fsList.filter((f) => f.email && f.email.toLowerCase() === updatedFac.email.toLowerCase());
+            for (const matchDoc of matches) {
+              const docId = String(matchDoc.id || matchDoc._id);
+              if (docId !== firestoreDocId) {
+                await setDoc(doc(db, 'faculty', docId), updatePayload, { merge: true });
+              }
+            }
+          }
+        }
       } catch (e) {}
 
       // Update active session user if matched
