@@ -18,6 +18,7 @@ const COURSES = [
   'English Literature',
   'Accountancy & Business',
 ];
+const SUBJECTS = COURSES;
 const BATCHES = ['2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
 const CLASSES = CLASS_CATEGORIES.map((c) => c.code);
 
