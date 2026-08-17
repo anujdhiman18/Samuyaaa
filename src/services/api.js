@@ -2677,7 +2677,7 @@ export const initialMockFaculty = [
     display_order: 1,
     is_active: true,
     role: 'HEAD_OF_DEPARTMENT',
-    roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+    roles: ['HEAD_OF_DEPARTMENT'],
   },
   {
     _id: 'fac_2',
@@ -2697,7 +2697,7 @@ export const initialMockFaculty = [
     display_order: 2,
     is_active: true,
     role: 'HEAD_OF_DEPARTMENT',
-    roles: ['HEAD_OF_DEPARTMENT', 'SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+    roles: ['HEAD_OF_DEPARTMENT'],
   },
   {
     _id: 'fac_3',
@@ -2717,7 +2717,7 @@ export const initialMockFaculty = [
     display_order: 3,
     is_active: true,
     role: 'SENIOR_FACULTY',
-    roles: ['SENIOR_FACULTY', 'SUBJECT_TEACHER'],
+    roles: ['SENIOR_FACULTY'],
   },
   {
     _id: 'fac_4',
@@ -4959,6 +4959,7 @@ export const rbacService = {
         ...(remoteFaculty || {}),
         roles: newRoles,
         role: payload.role || newRoles[0] || 'SUBJECT_TEACHER',
+        designation: payload.designation || list[idx].designation,
         permissionOverrides: payload.permissionOverrides !== undefined ? payload.permissionOverrides : list[idx].permissionOverrides,
         is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
       };
@@ -4970,7 +4971,7 @@ export const rbacService = {
         const firestoreDocId = String(list[idx].id || list[idx]._id || facultyId);
         await setDoc(
           doc(db, 'faculty', firestoreDocId),
-          { roles: updatedFac.roles, role: updatedFac.role, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
+          { roles: updatedFac.roles, role: updatedFac.role, designation: updatedFac.designation, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
           { merge: true }
         );
       } catch (e) {}
