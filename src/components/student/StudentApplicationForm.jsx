@@ -19,6 +19,7 @@ const initialFormData = {
   contactNumber: '',
   dob: '',
   targetClass: 'S2',
+  branch: 'Bagru',
   subjects: ['Mathematics', 'Physics'],
   previousSchool: '',
   parentName: '',
@@ -72,6 +73,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       contactNumber: '9816512345',
       dob: '2010-05-14',
       targetClass: '10th',
+      branch: 'Bagru',
       subjects: ['Mathematics', 'Physics', 'Chemistry'],
       previousSchool: 'DAV Public Senior Secondary School',
       parentName: 'Sanjay Sharma',
@@ -103,6 +105,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     if (!formData.parentContact.trim() || formData.parentContact.length < 10)
       errs.parentContact = 'Valid parent contact number is required';
     if (!formData.targetClass) errs.targetClass = 'Please select a class/grade';
+    if (!formData.branch) errs.branch = 'Please select a preferred branch';
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -161,6 +164,12 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Applying For:</span>
             <span className="font-bold text-secondary">{formatClassLabel(submittedApp.targetClass)}</span>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-on-surface-variant">Preferred Branch:</span>
+            <span className="font-bold text-secondary">
+              {submittedApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}
+            </span>
           </div>
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Parent/Guardian:</span>
@@ -373,6 +382,23 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             </div>
 
             <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Preferred Branch / Location <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={formData.branch || 'Bagru'}
+                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
+                  errors.branch ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
+                }`}
+              >
+                <option value="Bagru">Bagru (Main Branch)</option>
+                <option value="Daroh">Daroh (Branch 2)</option>
+              </select>
+              {errors.branch && <p className="text-[11px] text-rose-500 mt-1">{errors.branch}</p>}
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-secondary mb-1">
                 Previous School / Institution Name
               </label>

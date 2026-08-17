@@ -632,6 +632,7 @@ export default function StudentManagement() {
                       <th className="p-4">App ID</th>
                       <th className="p-4">Candidate Name</th>
                       <th className="p-4">Class Applying For</th>
+                      <th className="p-4">Branch</th>
                       <th className="p-4">Parent & Contact</th>
                       <th className="p-4">Status</th>
                       <th className="p-4">Applied Date</th>
@@ -647,6 +648,11 @@ export default function StudentManagement() {
                           <span className="text-[11px] text-on-surface-variant">{app.email}</span>
                         </td>
                         <td className="p-4 font-bold text-secondary">{formatClassLabel(app.targetClass)}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-0.5 rounded-md bg-surface-container font-bold text-secondary text-[11px] inline-block border border-outline-variant/20">
+                            {app.branch === 'Daroh' ? 'Daroh' : 'Bagru'}
+                          </span>
+                        </td>
                         <td className="p-4">
                           <span className="block font-bold text-secondary">{app.parentName}</span>
                           <span className="text-[11px] text-on-surface-variant font-mono">{app.parentContact}</span>
@@ -845,6 +851,10 @@ export default function StudentManagement() {
                   <span className="font-bold text-secondary">{formatClassLabel(selectedApp.targetClass)}</span>
                 </div>
                 <div>
+                  <span className="text-on-surface-variant block text-[11px]">Preferred Branch:</span>
+                  <span className="font-bold text-secondary">{selectedApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}</span>
+                </div>
+                <div>
                   <span className="text-on-surface-variant block text-[11px]">Previous School:</span>
                   <span className="font-bold text-secondary">{selectedApp.previousSchool || 'N/A'}</span>
                 </div>
@@ -852,7 +862,7 @@ export default function StudentManagement() {
                   <span className="text-on-surface-variant block text-[11px]">Parent / Guardian:</span>
                   <span className="font-bold text-secondary">{selectedApp.parentName} ({selectedApp.parentContact})</span>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <span className="text-on-surface-variant block text-[11px]">Subjects of Interest:</span>
                   <span className="font-bold text-secondary">
                     {Array.isArray(selectedApp.subjects) ? selectedApp.subjects.join(', ') : selectedApp.subjects || 'N/A'}

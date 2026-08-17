@@ -12,6 +12,7 @@ export const submitStudentApplication = async (req, res) => {
       contactNumber,
       dob,
       targetClass: rawClass,
+      branch,
       subjects,
       previousSchool,
       parentName,
@@ -21,10 +22,10 @@ export const submitStudentApplication = async (req, res) => {
 
     const targetClass = normalizeClassCode(rawClass);
 
-    if (!fullName || !email || !contactNumber || !targetClass || !parentName || !parentContact) {
+    if (!fullName || !email || !contactNumber || !targetClass || !parentName || !parentContact || !branch) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields: Full Name, Email, Contact Number, Class/Grade, Parent Name, and Parent Contact.',
+        message: 'Please provide all required fields: Full Name, Email, Contact Number, Class/Grade, Preferred Branch, Parent Name, and Parent Contact.',
       });
     }
 
@@ -40,6 +41,7 @@ export const submitStudentApplication = async (req, res) => {
       contactNumber,
       dob: dob || '',
       targetClass,
+      branch: branch || 'Bagru',
       subjects: Array.isArray(subjects) ? subjects : subjects ? [subjects] : [],
       previousSchool: previousSchool || '',
       parentName,

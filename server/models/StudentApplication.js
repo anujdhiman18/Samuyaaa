@@ -35,6 +35,13 @@ const studentApplicationSchema = new mongoose.Schema(
       default: 'S2',
       trim: true,
     },
+    branch: {
+      type: String,
+      enum: ['Bagru', 'Daroh'],
+      default: 'Bagru',
+      required: [true, 'Preferred branch is required'],
+      trim: true,
+    },
     subjects: {
       type: [String],
       default: [],

@@ -137,6 +137,10 @@ export default function StudentCandidateStatusTracker() {
                 <span className="font-bold text-secondary">{formatClassLabel(resultApp.targetClass)}</span>
               </div>
               <div>
+                <span className="text-on-surface-variant block text-[11px]">Preferred Branch:</span>
+                <span className="font-bold text-secondary">{resultApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}</span>
+              </div>
+              <div>
                 <span className="text-on-surface-variant block text-[11px]">Applied Date:</span>
                 <span className="font-bold text-secondary">
                   {resultApp.appliedAt ? new Date(resultApp.appliedAt).toLocaleDateString() : 'Recent'}
@@ -146,7 +150,7 @@ export default function StudentCandidateStatusTracker() {
                 <span className="text-on-surface-variant block text-[11px]">Parent/Guardian:</span>
                 <span className="font-bold text-secondary">{resultApp.parentName}</span>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <span className="text-on-surface-variant block text-[11px]">Subjects:</span>
                 <span className="font-bold text-secondary">
                   {Array.isArray(resultApp.subjects) ? resultApp.subjects.join(', ') : resultApp.subjects || 'N/A'}
