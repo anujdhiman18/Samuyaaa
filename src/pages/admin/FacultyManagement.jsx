@@ -56,7 +56,7 @@ export default function FacultyManagement() {
   // Faculty Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(initialFacultyForm);
   const [saving, setSaving] = useState(false);
 
   // File upload states
@@ -470,9 +470,9 @@ export default function FacultyManagement() {
   const handleOpenAdd = () => {
     setEditingMember(null);
     setForm({
-      ...initialForm,
-      assignedClasses: Array.isArray(initialForm.assignedClasses) ? initialForm.assignedClasses.join(', ') : (initialForm.assignedClasses || ''),
-      assignedSubjects: Array.isArray(initialForm.assignedSubjects) ? initialForm.assignedSubjects.join(', ') : (initialForm.assignedSubjects || ''),
+      ...initialFacultyForm,
+      assignedClasses: Array.isArray(initialFacultyForm.assignedClasses) ? initialFacultyForm.assignedClasses.join(', ') : (initialFacultyForm.assignedClasses || ''),
+      assignedSubjects: Array.isArray(initialFacultyForm.assignedSubjects) ? initialFacultyForm.assignedSubjects.join(', ') : (initialFacultyForm.assignedSubjects || ''),
       display_order: facultyList.length + 1,
     });
     setPreviewUrl('');
