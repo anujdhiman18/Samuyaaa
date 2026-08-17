@@ -1122,22 +1122,26 @@ export const studentService = {
     }
 
     const payload = { ...data, rollNumber: finalRollNumber };
-    const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
-    if (remote) return remote;
+    let remoteStudent = null;
+    try {
+      const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
+      if (remote && remote.student) remoteStudent = remote.student;
+    } catch (e) {}
 
-    const id = 's_' + Date.now();
-    const newStudent = { ...payload, _id: id };
+    const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
+    const newStudent = remoteStudent || { ...payload, _id: id, id };
 
     // Save to Firebase Firestore DB
     try {
-      await setDoc(doc(db, 'students', id), newStudent);
+      await setDoc(doc(db, 'students', String(id)), newStudent);
     } catch (fsErr) {
       console.warn('Firestore setDoc student error:', fsErr.message);
     }
 
     const list = getStoredStudents();
-    setStoredStudents([newStudent, ...list]);
-    return { success: true, student: newStudent, message: 'Student registered in Firebase Firestore DB' };
+    const updatedList = [newStudent, ...list.filter((s) => String(s._id || s.id) !== String(id))];
+    setStoredStudents(updatedList);
+    return { success: true, student: newStudent, message: 'Student registered successfully' };
   },
 
   updateStudent: async (id, data) => {
@@ -3592,21 +3596,21 @@ export const studentApplicationService = {
     const newStudentData = {
       fullName: app.fullName,
       email: app.email,
-      phone: app.contactNumber,
+      phone: app.contactNumber || app.phone,
       fatherName: app.parentName || 'Guardian',
       motherName: '',
-      parentPhone: app.parentContact || app.contactNumber,
+      parentPhone: app.parentContact || app.contactNumber || app.phone,
       className: app.targetClass || '10th',
       subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'General Academics'],
       batch: '2026-2027',
-      branch: 'Bagru',
+      branch: app.branch || 'Bagru',
       monthlyFee: 2500,
       monthlyDueDay: 5,
       status: 'Active',
     };
 
     const res = await studentService.createStudent(newStudentData);
-    await studentApplicationService.updateApplicationStatus(app._id || app.id, 'Approved', 'Approved & Enrolled to Student Directory');
+    await studentApplicationService.deleteApplication(app._id || app.id);
     return res;
   }
 };

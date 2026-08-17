@@ -166,12 +166,24 @@ export default function StudentManagement() {
     if (!app) return;
     setUpdatingApp(true);
     try {
-      await studentApplicationService.approveAndConvertToStudent(app);
+      const res = await studentApplicationService.approveAndConvertToStudent(app);
+      const newSt = res && res.student;
+
+      // Remove application immediately from local UI state
+      const targetAppId = String(app._id || app.id);
+      setApplications((prev) => prev.filter((a) => String(a._id || a.id) !== targetAppId));
+
+      // Add new student immediately to local UI state
+      if (newSt) {
+        setStudents((prev) => [newSt, ...prev.filter((s) => String(s._id || s.id) !== String(newSt._id || newSt.id))]);
+      }
+
       addToast(`Approved & enrolled ${app.fullName} to Student Directory!`, 'success');
       setSelectedApp(null);
-      fetchStudents();
-      fetchApplications();
+      await fetchStudents();
+      await fetchApplications();
       setActiveTab('directory');
+      setSearchParams({ tab: 'directory' });
     } catch (err) {
       addToast('Error enrolling student: ' + err.message, 'error');
     } finally {
@@ -240,10 +252,14 @@ export default function StudentManagement() {
 
     setFormSubmitting(true);
     try {
-      await studentService.createStudent(form);
+      const res = await studentService.createStudent(form);
+      if (res && res.student) {
+        const newSt = res.student;
+        setStudents((prev) => [newSt, ...prev.filter((s) => String(s._id || s.id) !== String(newSt._id || newSt.id))]);
+      }
       addToast(`Added new student "${form.fullName}" successfully!`, 'success');
       setIsModalOpen(false);
-      fetchStudents();
+      await fetchStudents();
     } catch (err) {
       addToast(err.message || 'Error saving student', 'error');
     } finally {
