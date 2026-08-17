@@ -2766,20 +2766,21 @@ export const getStoredFaculty = () => {
       return initialMockFaculty;
     }
 
-    // Ensure default initial faculty members are restored if missing
+    const map = new Map();
+    list.forEach((f) => {
+      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      if (k) map.set(k, f);
+    });
+
+    // Ensure default initial faculty members exist if missing, without overwriting edits
     initialMockFaculty.forEach((defaultFac) => {
-      const exists = list.some(
-        (f) =>
-          String(f._id || f.id) === String(defaultFac._id || defaultFac.id) ||
-          (f.email && defaultFac.email && f.email.toLowerCase() === defaultFac.email.toLowerCase())
-      );
-      if (!exists) {
-        list.push(defaultFac);
+      const k = (defaultFac.email && typeof defaultFac.email === 'string' ? defaultFac.email.toLowerCase() : String(defaultFac._id || defaultFac.id || '')).trim();
+      if (!map.has(k)) {
+        map.set(k, defaultFac);
       }
     });
 
-    // Sanitize list to preserve active assigned roles & branch assignments
-    list = list.map((f) => {
+    let mergedList = Array.from(map.values()).map((f) => {
       const derivedRoles = Array.isArray(f.roles) && f.roles.length > 0
         ? f.roles
         : (f.role && f.role !== 'Faculty' ? [f.role] : ['SUBJECT_TEACHER']);
@@ -2789,7 +2790,7 @@ export const getStoredFaculty = () => {
         email: f.email || `${(f.name || 'faculty').toLowerCase().replace(/[^a-z0-9]/g, '.')}@saumyaa.edu.in`,
         password: f.password || 'faculty123',
         roles: derivedRoles,
-        role: derivedRoles[0] || 'SUBJECT_TEACHER',
+        role: f.role || derivedRoles[0] || 'SUBJECT_TEACHER',
         branchId: bId,
         branch: f.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
         assignedClasses: f.assignedClasses || [],
@@ -2798,8 +2799,8 @@ export const getStoredFaculty = () => {
       };
     });
 
-    localStorage.setItem('saumyaa_faculty', JSON.stringify(list));
-    return list;
+    localStorage.setItem('saumyaa_faculty', JSON.stringify(mergedList));
+    return mergedList;
   } catch (e) {
     return initialMockFaculty;
   }
@@ -2821,40 +2822,37 @@ export const facultyService = {
     const localStored = getStoredFaculty();
 
     if (remote && remote.success && Array.isArray(remote.faculty)) {
-      const merged = remote.faculty.map((remoteFac) => {
-        const localFac = localStored.find(
-          (s) =>
-            String(s._id || s.id) === String(remoteFac._id || remoteFac.id) ||
-            (s.email && remoteFac.email && s.email.toLowerCase() === remoteFac.email.toLowerCase())
-        );
-        const localRoles = Array.isArray(localFac?.roles) && localFac.roles.length > 0 ? localFac.roles : [];
-        const remoteRoles = Array.isArray(remoteFac?.roles) && remoteFac.roles.length > 0 ? remoteFac.roles : [];
-        const rolesToUse = localRoles.length > 0 ? localRoles : (remoteRoles.length > 0 ? remoteRoles : [remoteFac.role || 'SUBJECT_TEACHER']);
-
-        return {
-          ...remoteFac,
-          ...(localFac || {}),
-          roles: rolesToUse,
-          role: localFac?.role || remoteFac.role || rolesToUse[0] || 'SUBJECT_TEACHER',
-          designation: localFac?.designation || remoteFac.designation,
-        };
+      const combined = new Map();
+      remote.faculty.forEach((r) => {
+        const k = (r.email && typeof r.email === 'string' ? r.email.toLowerCase() : String(r._id || r.id || '')).trim();
+        if (k) combined.set(k, r);
       });
+      localStored.forEach((l) => {
+        const k = (l.email && typeof l.email === 'string' ? l.email.toLowerCase() : String(l._id || l.id || '')).trim();
+        if (k) {
+          const existing = combined.get(k) || {};
+          combined.set(k, { ...existing, ...l });
+        }
+      });
+      const merged = Array.from(combined.values());
       setStoredFaculty(merged, true);
       return { ...remote, faculty: merged };
     }
 
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
     
-    // Deduplicate and prioritize localStored edits over Firestore initial defaults
+    // Deduplicate strictly by email / ID and prioritize localStored edits over Firestore initial defaults
     const combinedMap = new Map();
     (fsFaculty || []).forEach((f) => {
-      const key = String(f._id || f.id || f.email).toLowerCase();
-      combinedMap.set(key, f);
+      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      if (k) combinedMap.set(k, f);
     });
     localStored.forEach((f) => {
-      const key = String(f._id || f.id || f.email).toLowerCase();
-      const existing = combinedMap.get(key) || {};
-      combinedMap.set(key, { ...existing, ...f });
+      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      if (k) {
+        const existing = combinedMap.get(k) || {};
+        combinedMap.set(k, { ...existing, ...f });
+      }
     });
 
     let list = Array.from(combinedMap.values());

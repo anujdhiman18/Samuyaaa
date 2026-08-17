@@ -228,17 +228,19 @@ export default function FacultyManagement() {
         const stored = getStoredFaculty();
         const combinedMap = new Map();
 
-        // 1. Put Firestore list items into Map
+        // 1. Put Firestore list items into Map keyed strictly by email / ID
         list.forEach((item) => {
-          const key = String(item._id || item.id || item.email).toLowerCase();
-          combinedMap.set(key, item);
+          const k = (item.email && typeof item.email === 'string' ? item.email.toLowerCase() : String(item._id || item.id || '')).trim();
+          if (k) combinedMap.set(k, item);
         });
 
         // 2. Merge stored user edits on top (guarantees saved roles & branch are preserved on refresh)
         stored.forEach((item) => {
-          const key = String(item._id || item.id || item.email).toLowerCase();
-          const existing = combinedMap.get(key) || {};
-          combinedMap.set(key, { ...existing, ...item });
+          const k = (item.email && typeof item.email === 'string' ? item.email.toLowerCase() : String(item._id || item.id || '')).trim();
+          if (k) {
+            const existing = combinedMap.get(k) || {};
+            combinedMap.set(k, { ...existing, ...item });
+          }
         });
 
         const merged = Array.from(combinedMap.values()).map((f) => {
