@@ -78,6 +78,12 @@ export const updateFaculty = async (req, res) => {
       updateData.roles = [updateData.role];
     }
 
+    if (updateData.branchId || updateData.branch) {
+      const bId = updateData.branchId || (updateData.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
+      updateData.branchId = bId;
+      updateData.branch = updateData.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+    }
+
     const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });
     res.json({ success: true, faculty: updated, message: 'Faculty updated successfully' });
   } catch (error) {

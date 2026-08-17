@@ -267,6 +267,7 @@ export const assignFacultyRoles = async (req, res) => {
     const newRoles = Array.isArray(roles) ? roles : [req.body.position || req.body.role || 'SUBJECT_TEACHER'];
     const primaryRole = req.body.position || req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
     const primaryPosition = req.body.position || primaryRole;
+    const isActiveBool = status !== undefined ? status === 'Active' : true;
     const bIdVal = req.body.branchId || (faculty ? faculty.branchId : null) || (req.body.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
     const bCodeVal = req.body.branch || (faculty ? faculty.branch : null) || (bIdVal === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
 
