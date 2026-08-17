@@ -104,32 +104,14 @@ export default function FacultyManagement() {
         (s.email && faculty.email && s.email.toLowerCase() === faculty.email.toLowerCase())
     );
 
-    let primaryRole = 'SUBJECT_TEACHER';
-    const roleCandidate =
-      (Array.isArray(faculty.roles) && faculty.roles[0] && faculty.roles[0] !== 'Faculty' ? faculty.roles[0] : null) ||
-      (faculty.position && faculty.position !== 'Faculty' ? faculty.position : null) ||
-      (faculty.role && faculty.role !== 'Faculty' && faculty.role !== 'Admin' ? faculty.role : null) ||
-      (Array.isArray(storedFac?.roles) && storedFac.roles[0] && storedFac.roles[0] !== 'Faculty' ? storedFac.roles[0] : null) ||
-      (storedFac?.position && storedFac.position !== 'Faculty' ? storedFac.position : null) ||
-      (storedFac?.role && storedFac.role !== 'Faculty' && storedFac.role !== 'Admin' ? storedFac.role : null) ||
-      faculty.designation ||
-      storedFac?.designation;
+    const activeRoles =
+      (Array.isArray(faculty.roles) && faculty.roles.length > 0 ? faculty.roles : null) ||
+      (faculty.role && faculty.role !== 'Faculty' ? [faculty.role] : null) ||
+      (Array.isArray(storedFac?.roles) && storedFac.roles.length > 0 ? storedFac.roles : null) ||
+      (storedFac?.role && storedFac.role !== 'Faculty' ? [storedFac.role] : null) ||
+      ['SUBJECT_TEACHER'];
 
-    if (roleCandidate) {
-      const s = String(roleCandidate).toUpperCase().trim();
-      if (s.includes('HOD') || s.includes('HEAD OF DEPARTMENT') || s === 'HEAD_OF_DEPARTMENT') {
-        primaryRole = 'HEAD_OF_DEPARTMENT';
-      } else if (s.includes('SENIOR') || s === 'SENIOR_FACULTY') {
-        primaryRole = 'SENIOR_FACULTY';
-      } else if (s.includes('COORDINATOR') || s === 'ACADEMIC_COORDINATOR') {
-        primaryRole = 'ACADEMIC_COORDINATOR';
-      } else if (s.includes('SUPER') || s.includes('ADMIN') || s === 'SUPER_ADMIN') {
-        primaryRole = 'ADMIN';
-      } else {
-        primaryRole = 'SUBJECT_TEACHER';
-      }
-    }
-
+    const primaryRole = activeRoles[0] || 'SUBJECT_TEACHER';
     setSelectedRoles([primaryRole]);
   };
 

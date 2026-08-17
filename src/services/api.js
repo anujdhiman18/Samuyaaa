@@ -2799,32 +2799,25 @@ export const facultyService = {
   getFaculty: async ({ activeOnly = false } = {}) => {
     const query = activeOnly ? '?activeOnly=true' : '';
     const remote = await apiCall(`/faculty${query}`);
+    const localStored = getStoredFaculty();
+
     if (remote && remote.success && Array.isArray(remote.faculty)) {
-      const stored = getStoredFaculty();
       const merged = remote.faculty.map((remoteFac) => {
-        const localFac = stored.find(
+        const localFac = localStored.find(
           (s) =>
             String(s._id || s.id) === String(remoteFac._id || remoteFac.id) ||
             (s.email && remoteFac.email && s.email.toLowerCase() === remoteFac.email.toLowerCase())
         );
-        const localRoles = Array.isArray(localFac?.roles) ? localFac.roles : [];
-        const remoteRoles = Array.isArray(remoteFac?.roles) ? remoteFac.roles : [];
-
-        let rolesToUse = [];
-        if (remoteRoles.length > 0) {
-          rolesToUse = remoteRoles;
-        } else if (localRoles.length > 0) {
-          rolesToUse = localRoles;
-        } else if (remoteFac.role && remoteFac.role !== 'Faculty') {
-          rolesToUse = [remoteFac.role];
-        } else {
-          rolesToUse = ['SUBJECT_TEACHER'];
-        }
+        const localRoles = Array.isArray(localFac?.roles) && localFac.roles.length > 0 ? localFac.roles : [];
+        const remoteRoles = Array.isArray(remoteFac?.roles) && remoteFac.roles.length > 0 ? remoteFac.roles : [];
+        const rolesToUse = localRoles.length > 0 ? localRoles : (remoteRoles.length > 0 ? remoteRoles : [remoteFac.role || 'SUBJECT_TEACHER']);
 
         return {
           ...remoteFac,
+          ...(localFac || {}),
           roles: rolesToUse,
-          role: remoteFac.role || rolesToUse[0] || 'SUBJECT_TEACHER',
+          role: localFac?.role || remoteFac.role || rolesToUse[0] || 'SUBJECT_TEACHER',
+          designation: localFac?.designation || remoteFac.designation,
         };
       });
       setStoredFaculty(merged, true);
@@ -2832,17 +2825,34 @@ export const facultyService = {
     }
 
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
-    let list = fsFaculty || getStoredFaculty();
-    if (fsFaculty && fsFaculty.length > 0) {
-      setStoredFaculty(list, true);
-    }
+    let rawList = fsFaculty || localStored;
+
+    let list = rawList.map((item) => {
+      const localMatch = localStored.find(
+        (s) =>
+          String(s._id || s.id) === String(item._id || item.id) ||
+          (s.email && item.email && s.email.toLowerCase() === item.email.toLowerCase())
+      );
+      if (localMatch) {
+        return {
+          ...item,
+          ...localMatch,
+          roles: Array.isArray(localMatch.roles) && localMatch.roles.length > 0 ? localMatch.roles : (Array.isArray(item.roles) && item.roles.length > 0 ? item.roles : [item.role || 'SUBJECT_TEACHER']),
+          role: localMatch.role || item.role || 'SUBJECT_TEACHER',
+          designation: localMatch.designation || item.designation,
+        };
+      }
+      return item;
+    });
+
     if (!list || !Array.isArray(list) || list.length === 0) {
-      list = initialMockFaculty;
+      list = localStored.length > 0 ? localStored : initialMockFaculty;
     }
     if (activeOnly) {
       list = list.filter((f) => f.is_active !== false);
     }
     list.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+    setStoredFaculty(list, true);
     return { success: true, faculty: list };
   },
 
