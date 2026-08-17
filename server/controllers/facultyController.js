@@ -9,7 +9,18 @@ export const getFaculty = async (req, res) => {
     const { activeOnly } = req.query;
     const filter = activeOnly === 'true' ? { is_active: true } : {};
 
-    const faculty = await Faculty.find(filter).sort({ display_order: 1, createdAt: -1 });
+    const allFaculty = await Faculty.find(filter).sort({ updatedAt: -1, createdAt: -1 });
+
+    // Deduplicate by email (latest updated document wins)
+    const map = new Map();
+    allFaculty.forEach((f) => {
+      const k = f.email ? f.email.trim().toLowerCase() : String(f._id);
+      if (!map.has(k)) {
+        map.set(k, f);
+      }
+    });
+
+    const faculty = Array.from(map.values()).sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
 
     res.json({ success: true, count: faculty.length, faculty });
   } catch (error) {

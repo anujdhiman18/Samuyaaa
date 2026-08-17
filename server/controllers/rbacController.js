@@ -243,8 +243,6 @@ export const deleteRole = async (req, res) => {
 export const assignFacultyRoles = async (req, res) => {
   try {
     const { facultyId } = req.params;
-    const { roles, permissionOverrides, status, email, name, designation, department } = req.body;
-
     const isValidId = mongoose.Types.ObjectId.isValid(facultyId);
     let faculty = null;
 
@@ -252,16 +250,18 @@ export const assignFacultyRoles = async (req, res) => {
       faculty = await Faculty.findById(facultyId);
     }
 
-    if (!faculty) {
-      if (isValidId) {
-        faculty = await Faculty.findById(facultyId);
+    if (!faculty && email) {
+      const matches = await Faculty.find({ email: new RegExp(`^${email.trim()}$`, 'i') });
+      if (matches.length > 0) {
+        faculty = matches[0];
+        // Clean up duplicate seed documents with same email
+        for (let i = 1; i < matches.length; i++) {
+          await Faculty.findByIdAndDelete(matches[i]._id).catch(() => {});
+        }
       }
-      if (!faculty && email) {
-        faculty = await Faculty.findOne({ email: new RegExp(`^${email.trim()}$`, 'i') });
-      }
-      if (!faculty && name) {
-        faculty = await Faculty.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
-      }
+    }
+    if (!faculty && name) {
+      faculty = await Faculty.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
     }
 
     const newRoles = Array.isArray(roles) ? roles : [req.body.position || req.body.role || 'SUBJECT_TEACHER'];
