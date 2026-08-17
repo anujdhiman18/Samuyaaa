@@ -4987,24 +4987,37 @@ export const rbacService = {
     const newRoles = Array.isArray(payload.roles) ? payload.roles : ['SUBJECT_TEACHER'];
 
     if (idx !== -1) {
+      const bIdVal = payload.branchId || list[idx].branchId || (payload.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
+      const bCodeVal = payload.branch || list[idx].branch || (bIdVal === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+
       const updatedFac = {
         ...list[idx],
         ...(remoteFaculty || {}),
         roles: newRoles,
         role: payload.role || newRoles[0] || 'SUBJECT_TEACHER',
         designation: payload.designation || list[idx].designation,
+        branchId: bIdVal,
+        branch: bCodeVal,
         permissionOverrides: payload.permissionOverrides !== undefined ? payload.permissionOverrides : list[idx].permissionOverrides,
         is_active: payload.status !== undefined ? payload.status === 'Active' : list[idx].is_active,
       };
       list[idx] = updatedFac;
       setStoredFaculty(list);
 
-      // Sync Firestore
+      // Sync Firestore DB
       try {
         const firestoreDocId = String(list[idx].id || list[idx]._id || facultyId);
         await setDoc(
           doc(db, 'faculty', firestoreDocId),
-          { roles: updatedFac.roles, role: updatedFac.role, designation: updatedFac.designation, permissionOverrides: updatedFac.permissionOverrides, is_active: updatedFac.is_active },
+          {
+            roles: updatedFac.roles,
+            role: updatedFac.role,
+            designation: updatedFac.designation,
+            branchId: updatedFac.branchId,
+            branch: updatedFac.branch,
+            permissionOverrides: updatedFac.permissionOverrides,
+            is_active: updatedFac.is_active,
+          },
           { merge: true }
         );
       } catch (e) {}
@@ -5022,6 +5035,8 @@ export const rbacService = {
               ...curr,
               roles: updatedFac.roles,
               role: updatedFac.role,
+              branchId: updatedFac.branchId,
+              branch: updatedFac.branch,
               permissionOverrides: updatedFac.permissionOverrides,
               is_active: updatedFac.is_active,
             };

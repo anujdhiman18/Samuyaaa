@@ -235,10 +235,15 @@ export default function FacultyManagement() {
           const rolesToUse = Array.isArray(match?.roles) && match.roles.length > 0
             ? match.roles
             : (Array.isArray(item.roles) && item.roles.length > 0 ? item.roles : null);
+          const bIdToUse = normalizeBranchId(match?.branchId || match?.branch || item.branchId || item.branch);
+          const bCodeToUse = match?.branch || item.branch || (bIdToUse === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
           return {
             ...item,
+            ...(match || {}),
             roles: rolesToUse || item.roles,
             role: (rolesToUse && rolesToUse[0]) || item.role,
+            branchId: bIdToUse,
+            branch: bCodeToUse,
           };
         });
         setFacultyList(merged);
