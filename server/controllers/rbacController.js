@@ -267,11 +267,14 @@ export const assignFacultyRoles = async (req, res) => {
     const newRoles = Array.isArray(roles) ? roles : [req.body.position || req.body.role || 'SUBJECT_TEACHER'];
     const primaryRole = req.body.position || req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
     const primaryPosition = req.body.position || primaryRole;
-    const isActiveBool = status !== undefined ? status === 'Active' : true;
+    const bIdVal = req.body.branchId || (faculty ? faculty.branchId : null) || (req.body.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
+    const bCodeVal = req.body.branch || (faculty ? faculty.branch : null) || (bIdVal === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
 
     if (faculty) {
       faculty.roles = newRoles;
       faculty.role = primaryRole;
+      faculty.branchId = bIdVal;
+      faculty.branch = bCodeVal;
       if (designation) faculty.designation = designation;
       if (permissionOverrides !== undefined) faculty.permissionOverrides = permissionOverrides;
       faculty.is_active = isActiveBool;
@@ -287,6 +290,8 @@ export const assignFacultyRoles = async (req, res) => {
         department: department || 'Science & Mathematics',
         roles: newRoles,
         role: primaryRole,
+        branchId: bIdVal,
+        branch: bCodeVal,
         permissionOverrides: permissionOverrides || {},
         is_active: isActiveBool,
       });
