@@ -2844,27 +2844,21 @@ export const facultyService = {
     }
 
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
-    let rawList = fsFaculty || localStored;
-
-    let list = rawList.map((item) => {
-      const localMatch = localStored.find(
-        (s) =>
-          String(s._id || s.id) === String(item._id || item.id) ||
-          (s.email && item.email && s.email.toLowerCase() === item.email.toLowerCase())
-      );
-      if (localMatch) {
-        return {
-          ...item,
-          ...localMatch,
-          roles: Array.isArray(localMatch.roles) && localMatch.roles.length > 0 ? localMatch.roles : (Array.isArray(item.roles) && item.roles.length > 0 ? item.roles : [item.role || 'SUBJECT_TEACHER']),
-          role: localMatch.role || item.role || 'SUBJECT_TEACHER',
-          designation: localMatch.designation || item.designation,
-        };
-      }
-      return item;
+    
+    // Deduplicate and prioritize localStored edits over Firestore initial defaults
+    const combinedMap = new Map();
+    (fsFaculty || []).forEach((f) => {
+      const key = String(f._id || f.id || f.email).toLowerCase();
+      combinedMap.set(key, f);
+    });
+    localStored.forEach((f) => {
+      const key = String(f._id || f.id || f.email).toLowerCase();
+      const existing = combinedMap.get(key) || {};
+      combinedMap.set(key, { ...existing, ...f });
     });
 
-    if (!list || !Array.isArray(list) || list.length === 0) {
+    let list = Array.from(combinedMap.values());
+    if (!list || list.length === 0) {
       list = localStored.length > 0 ? localStored : initialMockFaculty;
     }
     if (activeOnly) {

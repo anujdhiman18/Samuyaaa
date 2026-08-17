@@ -226,26 +226,36 @@ export default function FacultyManagement() {
     const unsubscribe = subscribeFirestoreCollection('faculty', initialMockFaculty, (list) => {
       if (list && Array.isArray(list) && list.length > 0) {
         const stored = getStoredFaculty();
-        const merged = list.map((item) => {
-          const match = stored.find(
-            (s) =>
-              String(s._id || s.id) === String(item._id || item.id) ||
-              (s.email && item.email && s.email.toLowerCase() === item.email.toLowerCase())
-          );
-          const rolesToUse = Array.isArray(match?.roles) && match.roles.length > 0
-            ? match.roles
-            : (Array.isArray(item.roles) && item.roles.length > 0 ? item.roles : null);
-          const bIdToUse = normalizeBranchId(match?.branchId || match?.branch || item.branchId || item.branch);
-          const bCodeToUse = match?.branch || item.branch || (bIdToUse === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+        const combinedMap = new Map();
+
+        // 1. Put Firestore list items into Map
+        list.forEach((item) => {
+          const key = String(item._id || item.id || item.email).toLowerCase();
+          combinedMap.set(key, item);
+        });
+
+        // 2. Merge stored user edits on top (guarantees saved roles & branch are preserved on refresh)
+        stored.forEach((item) => {
+          const key = String(item._id || item.id || item.email).toLowerCase();
+          const existing = combinedMap.get(key) || {};
+          combinedMap.set(key, { ...existing, ...item });
+        });
+
+        const merged = Array.from(combinedMap.values()).map((f) => {
+          const bIdToUse = normalizeBranchId(f.branchId || f.branch);
+          const bCodeToUse = f.branch || (bIdToUse === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+          const derivedRoles = Array.isArray(f.roles) && f.roles.length > 0
+            ? f.roles
+            : (f.role && f.role !== 'Faculty' ? [f.role] : ['SUBJECT_TEACHER']);
           return {
-            ...item,
-            ...(match || {}),
-            roles: rolesToUse || item.roles,
-            role: (rolesToUse && rolesToUse[0]) || item.role,
+            ...f,
+            roles: derivedRoles,
+            role: derivedRoles[0] || 'SUBJECT_TEACHER',
             branchId: bIdToUse,
             branch: bCodeToUse,
           };
         });
+
         setFacultyList(merged);
         setLoading(false);
       }
