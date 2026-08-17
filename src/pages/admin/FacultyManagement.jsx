@@ -682,18 +682,6 @@ export default function FacultyManagement() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={async () => {
-              await facultyService.restoreDefaultFaculty();
-              addToast('Restored all default faculty cards successfully!', 'success');
-              fetchFaculty();
-            }}
-            className="bg-white border border-outline-variant/30 hover:bg-surface-container text-secondary font-headings font-bold px-4 py-2.5 rounded-full text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-            title="Restore missing default faculty cards"
-          >
-            <span className="material-symbols-outlined text-[18px]">restore</span>
-            Restore Default Cards
-          </button>
-          <button
             onClick={handleOpenAdd}
             className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center justify-center gap-2 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all shadow-tactile-btn cursor-pointer"
           >
