@@ -143,6 +143,10 @@ export default function StudentManagement() {
   };
 
   const handleUpdateAppStatus = async (appId, newStatus) => {
+    if (newStatus === 'Rejected') {
+      const appToReject = applications.find((a) => String(a._id || a.id) === String(appId)) || selectedApp || { id: appId };
+      return handleRejectApplication(appToReject);
+    }
     setUpdatingApp(true);
     try {
       const res = await studentApplicationService.updateApplicationStatus(appId, newStatus, adminNotes);
@@ -151,12 +155,32 @@ export default function StudentManagement() {
         if (selectedApp) {
           setSelectedApp((prev) => (prev ? { ...prev, status: newStatus, notes: adminNotes } : null));
         }
-        fetchApplications();
+        await fetchApplications();
       } else {
         addToast('Failed to update status', 'error');
       }
     } catch (err) {
       addToast('Error updating application status', 'error');
+    } finally {
+      setUpdatingApp(false);
+    }
+  };
+
+  const handleRejectApplication = async (app) => {
+    if (!app) return;
+    setUpdatingApp(true);
+    try {
+      const targetId = String(app._id || app.id);
+      await studentApplicationService.deleteApplication(targetId);
+
+      // Instantly remove application from UI list
+      setApplications((prev) => prev.filter((a) => String(a._id || a.id) !== targetId));
+
+      addToast(`Application for ${app.fullName || 'candidate'} rejected & deleted successfully`, 'info');
+      setSelectedApp(null);
+      await fetchApplications();
+    } catch (err) {
+      addToast('Error rejecting application: ' + err.message, 'error');
     } finally {
       setUpdatingApp(false);
     }
@@ -871,21 +895,24 @@ export default function StudentManagement() {
                 </button>
                 <button
                   disabled={updatingApp}
-                  onClick={() => handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Rejected')}
-                  className="px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 hover:bg-rose-500 hover:text-white font-bold text-xs transition-all cursor-pointer"
+                  onClick={() => handleRejectApplication(selectedApp)}
+                  className="px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 hover:bg-rose-500 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
                 >
-                  Reject
+                  <span className="material-symbols-outlined text-[15px]">close</span>
+                  Reject & Delete Application
                 </button>
               </div>
 
-              <button
-                disabled={updatingApp}
-                onClick={() => handleApproveAndEnroll(selectedApp)}
-                className="px-5 py-2 rounded-full bg-emerald-600 text-white font-headings font-bold text-xs hover:bg-emerald-700 shadow-md transition-all cursor-pointer flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-                Approve & Enroll as Student
-              </button>
+              {selectedApp?.status !== 'Rejected' && (
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleApproveAndEnroll(selectedApp)}
+                  className="px-5 py-2 rounded-full bg-emerald-600 text-white font-headings font-bold text-xs hover:bg-emerald-700 shadow-md transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                  Approve & Enroll as Student
+                </button>
+              )}
             </div>
           </div>
         </Modal>
