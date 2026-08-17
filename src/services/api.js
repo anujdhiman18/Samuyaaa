@@ -3251,15 +3251,13 @@ const initialMockFacultyApplications = [
 ];
 
 export const getStoredFacultyApplications = () => {
+  const deleted = getDeletedIds('faculty_applications');
   try {
     const data = localStorage.getItem('saumyaa_faculty_applications');
-    if (!data) {
-      localStorage.setItem('saumyaa_faculty_applications', JSON.stringify(initialMockFacultyApplications));
-      return initialMockFacultyApplications;
-    }
-    return JSON.parse(data);
+    const list = data ? JSON.parse(data) : initialMockFacultyApplications;
+    return list.filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)));
   } catch (e) {
-    return initialMockFacultyApplications;
+    return initialMockFacultyApplications.filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)));
   }
 };
 
@@ -3400,13 +3398,17 @@ export const facultyApplicationService = {
   },
 
   deleteApplication: async (id) => {
+    if (!id) return { success: false, message: 'Invalid ID' };
+    const targetStr = String(id);
+    addDeletedId('faculty_applications', targetStr);
+
     try {
-      await deleteDoc(doc(db, 'faculty_applications', String(id)));
+      await deleteDoc(doc(db, 'faculty_applications', targetStr));
     } catch (fsErr) {
       console.warn('Firestore delete application error:', fsErr.message);
     }
 
-    const list = getStoredFacultyApplications().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
+    const list = getStoredFacultyApplications().filter((a) => String(a._id) !== targetStr && String(a.id) !== targetStr);
     setStoredFacultyApplications(list);
     return { success: true, message: 'Application deleted successfully' };
   },
@@ -3472,12 +3474,17 @@ export const initialMockStudentApplications = [
 ];
 
 export const getStoredStudentApplications = () => {
+  const deleted = getDeletedIds('student_applications');
   try {
     const data = localStorage.getItem('saumyaa_student_applications');
     const list = data ? JSON.parse(data) : initialMockStudentApplications;
-    return list.map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
+    return list
+      .filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)) && !deleted.includes(String(a.applicationId)))
+      .map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
   } catch (e) {
-    return initialMockStudentApplications.map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
+    return initialMockStudentApplications
+      .filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)) && !deleted.includes(String(a.applicationId)))
+      .map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
   }
 };
 
@@ -3581,13 +3588,35 @@ export const studentApplicationService = {
   },
 
   deleteApplication: async (id) => {
+    if (!id) return { success: false, message: 'Invalid ID' };
+    const targetStr = String(id);
+    addDeletedId('student_applications', targetStr);
+
+    const currentList = JSON.parse(localStorage.getItem('saumyaa_student_applications') || 'null') || initialMockStudentApplications;
+    const targetItem = currentList.find(
+      (a) => String(a._id) === targetStr || String(a.id) === targetStr || String(a.applicationId) === targetStr
+    );
+    if (targetItem) {
+      if (targetItem._id) addDeletedId('student_applications', targetItem._id);
+      if (targetItem.id) addDeletedId('student_applications', targetItem.id);
+      if (targetItem.applicationId) addDeletedId('student_applications', targetItem.applicationId);
+    }
+
     try {
-      await deleteDoc(doc(db, 'student_applications', String(id)));
+      await deleteDoc(doc(db, 'student_applications', targetStr));
+      if (targetItem && targetItem._id && String(targetItem._id) !== targetStr) {
+        await deleteDoc(doc(db, 'student_applications', String(targetItem._id)));
+      }
     } catch (fsErr) {
       console.warn('Firestore delete student application error:', fsErr.message);
     }
 
-    const list = getStoredStudentApplications().filter((a) => String(a._id) !== String(id) && String(a.id) !== String(id));
+    const list = currentList.filter(
+      (a) =>
+        String(a._id) !== targetStr &&
+        String(a.id) !== targetStr &&
+        String(a.applicationId) !== targetStr
+    );
     setStoredStudentApplications(list);
     return { success: true, message: 'Student application deleted successfully' };
   },
