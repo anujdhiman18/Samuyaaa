@@ -852,7 +852,7 @@ export default function StudentManagement() {
                 </div>
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Preferred Branch:</span>
-                  <span className="font-bold text-secondary">{selectedApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}</span>
+                  <span className="font-bold text-secondary">{selectedApp.branch === 'Daroh' ? 'Daroh (Branch)' : 'Bagru (Main)'}</span>
                 </div>
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Previous School:</span>

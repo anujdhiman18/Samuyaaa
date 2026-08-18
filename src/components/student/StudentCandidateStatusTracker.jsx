@@ -138,7 +138,7 @@ export default function StudentCandidateStatusTracker() {
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Preferred Branch:</span>
-                <span className="font-bold text-secondary">{resultApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}</span>
+                <span className="font-bold text-secondary">{resultApp.branch === 'Daroh' ? 'Daroh (Branch)' : 'Bagru (Main)'}</span>
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Applied Date:</span>

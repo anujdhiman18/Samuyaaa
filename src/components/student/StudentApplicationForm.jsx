@@ -168,7 +168,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Preferred Branch:</span>
             <span className="font-bold text-secondary">
-              {submittedApp.branch === 'Daroh' ? 'Daroh (Branch 2)' : 'Bagru (Main Branch)'}
+              {submittedApp.branch === 'Daroh' ? 'Daroh (Branch)' : 'Bagru (Main)'}
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">
@@ -392,8 +392,8 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
                   errors.branch ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
                 }`}
               >
-                <option value="Bagru">Bagru (Main Branch)</option>
-                <option value="Daroh">Daroh (Branch 2)</option>
+                <option value="Bagru">Bagru (Main)</option>
+                <option value="Daroh">Daroh (Branch)</option>
               </select>
               {errors.branch && <p className="text-[11px] text-rose-500 mt-1">{errors.branch}</p>}
             </div>
