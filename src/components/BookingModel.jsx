@@ -200,8 +200,8 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                   onChange={(e) => updateField('branch', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
                 >
-                  <option value="Bagru">Bagru (Main Branch)</option>
-                  <option value="Daroh">Daroh (Branch 2)</option>
+                  <option value="Bagru">Bagru (Main)</option>
+                  <option value="Daroh">Daroh (Branch)</option>
                 </select>
               </div>
             </div>

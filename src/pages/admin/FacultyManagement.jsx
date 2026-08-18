@@ -1736,8 +1736,8 @@ export default function FacultyManagement() {
                   onChange={(e) => setForm({ ...form, branch: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
                 >
-                  <option value="Bagru">Bagru (Main Branch)</option>
-                  <option value="Daroh">Daroh (Child Branch)</option>
+                  <option value="Bagru">Bagru (Main)</option>
+                  <option value="Daroh">Daroh (Branch)</option>
                 </select>
               </div>
 

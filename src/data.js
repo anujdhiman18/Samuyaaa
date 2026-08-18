@@ -149,7 +149,7 @@ export const timeSlots = [
 export const branches = [
   {
     id: 'bagru',
-    name: 'Bagru (Main Branch)',
+    name: 'Bagru (Main)',
     shortName: 'Bagru Main',
     address: 'Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093',
     coordinates: 'Jamula, Palaid',
@@ -159,7 +159,7 @@ export const branches = [
   },
   {
     id: 'daroh',
-    name: 'Daroh (Branch 2)',
+    name: 'Daroh (Branch)',
     shortName: 'Daroh Branch',
     address: 'Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092',
     coordinates: 'Daroh, HP',

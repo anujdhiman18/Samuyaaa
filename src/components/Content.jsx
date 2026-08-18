@@ -132,7 +132,7 @@ export default function Contact() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                          Bagru (Main Branch)
+                          Bagru (Main)
                         </span>
                         <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                           Main Center
@@ -156,10 +156,10 @@ export default function Contact() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                          Daroh (Branch 2)
+                          Daroh (Branch)
                         </span>
                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                          Branch 2
+                          Branch
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
@@ -284,8 +284,8 @@ export default function Contact() {
                     onChange={(e) => updateField('branch', e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
                   >
-                    <option value="Bagru">Bagru (Main Branch)</option>
-                    <option value="Daroh">Daroh (Child Branch)</option>
+                    <option value="Bagru">Bagru (Main)</option>
+                    <option value="Daroh">Daroh (Branch)</option>
                   </select>
                 </div>
               </div>
