@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { RBACProvider } from './context/RBACContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ForcePasswordChangeModal from './components/common/ForcePasswordChangeModal';
 import { PERMISSIONS } from './config/rbacConfig';
 
 // Public & Auth Pages
@@ -120,6 +121,7 @@ export default function App() {
       <AuthProvider>
         <RBACProvider>
           <ToastProvider>
+            <ForcePasswordChangeModal />
             <BrowserRouter>
               <Routes>
                 {/* Public Website */}

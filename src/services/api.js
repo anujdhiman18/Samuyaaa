@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
 import { normalizeClassCode, formatClassLabel, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
+import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
 
 export const initialMockStudents = [
   {
@@ -576,22 +577,33 @@ export const authService = {
     );
 
     if (student) {
-      const assignedPass = student.password || 'Student123';
-      if (password === assignedPass || password.toLowerCase() === (assignedPass || '').toLowerCase() || password === 'Student123' || password === 'student123' || password === 'student') {
+      const assignedPass = student.initialPassword || student.password || 'Student123';
+      const isPassValid =
+        password === assignedPass ||
+        password === student.password ||
+        password.toLowerCase() === (assignedPass || '').toLowerCase() ||
+        password === 'Student123' ||
+        password === 'student123' ||
+        password === 'student';
+
+      if (isPassValid) {
         const studentUserObj = {
           id: student._id || student.id,
+          _id: student._id || student.id,
           name: student.fullName,
           email: student.email || `${student.rollNumber}@saumyaa.com`,
           role: 'Student',
           rollNumber: student.rollNumber,
           className: student.className,
           avatar: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+          mustChangePassword: student.mustChangePassword !== false,
+          initialPassword: student.initialPassword || null,
           studentProfile: student,
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(studentUserObj));
         return { success: true, user: studentUserObj, token: 'mock_jwt_token_student_2026' };
       } else {
-        throw new Error('Invalid password. Please use the password assigned by your Admin.');
+        throw new Error('Invalid password. Please use the temporary or assigned password.');
       }
     }
 
@@ -602,8 +614,14 @@ export const authService = {
     );
 
     if (facultyMember) {
-      const assignedPass = facultyMember.password || 'faculty123';
-      if (password === assignedPass || password === 'faculty123' || password === 'faculty') {
+      const assignedPass = facultyMember.initialPassword || facultyMember.password || 'faculty123';
+      const isPassValid =
+        password === assignedPass ||
+        password === facultyMember.password ||
+        password === 'faculty123' ||
+        password === 'faculty';
+
+      if (isPassValid) {
         const facultyUserObj = {
           _id: facultyMember._id || facultyMember.id || 'f_jitender',
           id: facultyMember._id || facultyMember.id || 'f_jitender',
@@ -618,6 +636,8 @@ export const authService = {
           assignedSubjects: facultyMember.assignedSubjects || ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
           photo_url: facultyMember.photo_url || '/Unknown.jpg',
           avatar: facultyMember.photo_url || '/Unknown.jpg',
+          mustChangePassword: facultyMember.mustChangePassword !== false,
+          initialPassword: facultyMember.initialPassword || null,
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
         return { success: true, user: facultyUserObj, token: 'mock_jwt_token_faculty_2026' };
@@ -660,6 +680,48 @@ export const authService = {
     }
 
     throw new Error('Invalid email/username or password. Please check your credentials.');
+  },
+
+  changeUserPassword: async ({ id, role, currentPassword, newPassword }) => {
+    if (!id || !newPassword) throw new Error('User ID and new password are required');
+    const targetId = String(id);
+    const hashedPassword = await hashPasswordClient(newPassword);
+
+    if (role === 'Student') {
+      const list = getStoredStudents();
+      const idx = list.findIndex((s) => String(s._id) === targetId || String(s.id) === targetId);
+      if (idx !== -1) {
+        list[idx].password = hashedPassword;
+        list[idx].mustChangePassword = false;
+        list[idx].initialPassword = null;
+        setStoredStudents(list);
+
+        try {
+          await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: false, initialPassword: null }, { merge: true });
+        } catch (e) {}
+        try {
+          await apiCall(`/students/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: hashedPassword, mustChangePassword: false }) });
+        } catch (e) {}
+      }
+    } else {
+      const list = getStoredFaculty();
+      const idx = list.findIndex((f) => String(f._id) === targetId || String(f.id) === targetId);
+      if (idx !== -1) {
+        list[idx].password = hashedPassword;
+        list[idx].mustChangePassword = false;
+        list[idx].initialPassword = null;
+        setStoredFaculty(list);
+
+        try {
+          await setDoc(doc(db, 'faculty', targetId), { password: hashedPassword, mustChangePassword: false, initialPassword: null }, { merge: true });
+        } catch (e) {}
+        try {
+          await apiCall(`/faculty/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: hashedPassword, mustChangePassword: false }) });
+        } catch (e) {}
+      }
+    }
+
+    return { success: true, message: 'Password updated successfully' };
   },
 
   signup: async (data) => {
@@ -1137,7 +1199,18 @@ export const studentService = {
       finalRollNumber = `${prefix}${(maxSeq + 1).toString().padStart(3, '0')}`;
     }
 
-    const payload = { ...data, rollNumber: finalRollNumber };
+    const tempPassword = data.password || generateSecureTemporaryPassword(10);
+    const hashedPassword = await hashPasswordClient(tempPassword);
+
+    const payload = {
+      ...data,
+      rollNumber: finalRollNumber,
+      email: data.email ? data.email.trim().toLowerCase() : `${finalRollNumber.toLowerCase()}@saumyaa.com`,
+      password: hashedPassword,
+      mustChangePassword: true,
+      initialPassword: tempPassword,
+    };
+
     let remoteStudent = null;
     try {
       const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
@@ -1145,7 +1218,7 @@ export const studentService = {
     } catch (e) {}
 
     const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
-    const newStudent = remoteStudent || { ...payload, _id: id, id };
+    const newStudent = remoteStudent ? { ...remoteStudent, initialPassword: tempPassword, mustChangePassword: true } : { ...payload, _id: id, id };
 
     // Save to Firebase Firestore DB
     try {
@@ -1157,7 +1230,37 @@ export const studentService = {
     const list = getStoredStudents();
     const updatedList = [newStudent, ...list.filter((s) => String(s._id || s.id) !== String(id))];
     setStoredStudents(updatedList);
-    return { success: true, student: newStudent, message: 'Student registered successfully' };
+    return { success: true, student: newStudent, temporaryPassword: tempPassword, message: 'Student registered successfully' };
+  },
+
+  resetPassword: async (studentId) => {
+    if (!studentId) return { success: false, message: 'Invalid Student ID' };
+    const targetId = String(studentId);
+    const list = getStoredStudents();
+    const idx = list.findIndex((s) => String(s._id) === targetId || String(s.id) === targetId);
+
+    if (idx === -1) return { success: false, message: 'Student not found' };
+
+    const newTempPassword = generateSecureTemporaryPassword(10);
+    const hashedPassword = await hashPasswordClient(newTempPassword);
+
+    list[idx].password = hashedPassword;
+    list[idx].mustChangePassword = true;
+    list[idx].initialPassword = newTempPassword;
+
+    try {
+      await apiCall(`/students/${targetId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: hashedPassword, mustChangePassword: true }),
+      });
+    } catch (e) {}
+
+    try {
+      await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: true, initialPassword: newTempPassword }, { merge: true });
+    } catch (e) {}
+
+    setStoredStudents(list);
+    return { success: true, temporaryPassword: newTempPassword, message: 'Student password reset successfully' };
   },
 
   updateStudent: async (id, data) => {
@@ -2981,13 +3084,18 @@ export const facultyService = {
     if (!data.name || !data.name.trim()) throw new Error('Faculty name is required');
     if (!data.photo_url) throw new Error('Faculty photo is required');
 
+    const tempPassword = data.password || generateSecureTemporaryPassword(10);
+    const hashedPassword = await hashPasswordClient(tempPassword);
+
     const id = 'fac_' + Date.now();
     const newFaculty = {
       _id: id,
       id,
       name: data.name,
       email: data.email ? data.email.toLowerCase() : `${data.name.toLowerCase().replace(/ /g, '.')}@saumyaa.edu.in`,
-      password: data.password || 'faculty123',
+      password: hashedPassword,
+      mustChangePassword: true,
+      initialPassword: tempPassword,
       phone: data.phone || '9816099999',
       designation: data.designation || 'Senior Faculty Member',
       department: data.department || 'Science & Mathematics',
@@ -3011,8 +3119,39 @@ export const facultyService = {
     }
 
     const list = getStoredFaculty();
-    setStoredFaculty([...list, newFaculty]);
-    return { success: true, faculty: newFaculty, message: 'Faculty account created and assigned successfully!' };
+    const updatedList = [newFaculty, ...list.filter((f) => String(f._id || f.id) !== id)];
+    setStoredFaculty(updatedList);
+    return { success: true, faculty: newFaculty, temporaryPassword: tempPassword, message: 'Faculty member created successfully' };
+  },
+
+  resetPassword: async (facultyId) => {
+    if (!facultyId) return { success: false, message: 'Invalid Faculty ID' };
+    const targetId = String(facultyId);
+    const list = getStoredFaculty();
+    const idx = list.findIndex((f) => String(f._id) === targetId || String(f.id) === targetId);
+
+    if (idx === -1) return { success: false, message: 'Faculty member not found' };
+
+    const newTempPassword = generateSecureTemporaryPassword(10);
+    const hashedPassword = await hashPasswordClient(newTempPassword);
+
+    list[idx].password = hashedPassword;
+    list[idx].mustChangePassword = true;
+    list[idx].initialPassword = newTempPassword;
+
+    try {
+      await apiCall(`/faculty/${targetId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: hashedPassword, mustChangePassword: true }),
+      });
+    } catch (e) {}
+
+    try {
+      await setDoc(doc(db, 'faculty', targetId), { password: hashedPassword, mustChangePassword: true, initialPassword: newTempPassword }, { merge: true });
+    } catch (e) {}
+
+    setStoredFaculty(list);
+    return { success: true, temporaryPassword: newTempPassword, message: 'Faculty password reset successfully' };
   },
 
   updateFaculty: async (id, data) => {

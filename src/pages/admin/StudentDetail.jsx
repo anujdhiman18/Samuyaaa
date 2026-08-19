@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
+import AdminLoginCredentialsCard from '../../components/admin/AdminLoginCredentialsCard';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
 
 const COURSES = [
@@ -456,27 +457,15 @@ export default function StudentDetail() {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-outline-variant/15 bg-blue-50/50 p-4 rounded-xl border border-blue-200/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-blue-950 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px] text-blue-700">key</span>
-                Student Portal Login Credentials
-              </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-200/70 text-blue-900">
-                Student Account
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                <span className="text-[11px] text-blue-800/80 block">Login ID / Email / Roll No:</span>
-                <span className="font-bold font-mono text-secondary">{student.email || student.rollNumber}</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-blue-800/80 block">Assigned Password:</span>
-                <span className="font-bold font-mono text-secondary">{student.password || 'Student123'}</span>
-              </div>
-            </div>
-          </div>
+          <AdminLoginCredentialsCard
+            user={student}
+            userType="student"
+            onResetPassword={async (id) => {
+              const res = await studentService.resetPassword(id);
+              fetchStudentDetail();
+              return res;
+            }}
+          />
         </div>
 
         {/* Quick Summary Sidebar Card */}

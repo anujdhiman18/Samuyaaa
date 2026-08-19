@@ -136,6 +136,18 @@ const studentSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    password: {
+      type: String,
+      default: '',
+    },
+    mustChangePassword: {
+      type: Boolean,
+      default: true,
+    },
+    initialPassword: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

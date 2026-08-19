@@ -38,6 +38,14 @@ const facultySchema = new mongoose.Schema(
       type: String,
       default: 'faculty123',
     },
+    mustChangePassword: {
+      type: Boolean,
+      default: true,
+    },
+    initialPassword: {
+      type: String,
+      default: null,
+    },
     phone: {
       type: String,
       default: '9816099999',

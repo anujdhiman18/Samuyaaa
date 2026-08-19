@@ -5,6 +5,7 @@ import { SYSTEM_ROLES, normalizeBranchId, getBranchCode, getBranchLabel } from '
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import AdminLoginCredentialsCard from '../../components/admin/AdminLoginCredentialsCard';
 import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 const initialFacultyForm = {
@@ -1848,6 +1849,20 @@ export default function FacultyManagement() {
               </span>
             </label>
           </div>
+
+          {editingMember && (
+            <div className="pt-2 border-t border-outline-variant/15">
+              <AdminLoginCredentialsCard
+                user={editingMember}
+                userType="faculty"
+                onResetPassword={async (id) => {
+                  const res = await facultyService.resetPassword(id);
+                  fetchFaculty();
+                  return res;
+                }}
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
             <button
