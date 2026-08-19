@@ -462,7 +462,9 @@ export default function StudentDetail() {
             userType="student"
             onResetPassword={async (id) => {
               const res = await studentService.resetPassword(id);
-              fetchStudentDetail();
+              if (typeof fetchStudentData === 'function') {
+                fetchStudentData();
+              }
               return res;
             }}
           />
