@@ -1,4 +1,9 @@
+import React, { useState, useEffect } from 'react';
+import { subjectService, getStoredSubjects } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+import Modal from '../../components/admin/Modal';
+import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const initialSubjectForm = {
   name: '',
