@@ -7,6 +7,7 @@ import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
 import { normalizeClassCode, formatClassLabel, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
+import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 
 export const initialMockStudents = [
   {
