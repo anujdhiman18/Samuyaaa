@@ -168,17 +168,27 @@ export const updateStudent = async (req, res) => {
   }
 };
 
-// @desc    Delete student
-// @route   DELETE /api/students/:id
 export const deleteStudent = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
     if (!student) {
-      return res.status(404).json({ success: false, message: 'Student not found' });
+      return res.status(404).json({ success: false, message: 'Student not found in database' });
     }
 
     await Student.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Student record deleted successfully' });
+
+    try {
+      const StudentLeave = (await import('../models/StudentLeave.js')).default;
+      await StudentLeave.deleteMany({
+        $or: [
+          { studentId: req.params.id },
+          { admissionNo: student.admissionNumber },
+          { studentName: student.fullName },
+        ],
+      });
+    } catch (e) {}
+
+    res.json({ success: true, message: 'Student record deleted successfully from database' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -194,8 +204,21 @@ export const bulkActionStudents = async (req, res) => {
     }
 
     if (action === 'delete') {
+      const students = await Student.find({ _id: { $in: studentIds } });
+      const admissionNos = students.map((s) => s.admissionNumber).filter(Boolean);
       await Student.deleteMany({ _id: { $in: studentIds } });
-      return res.json({ success: true, message: `${studentIds.length} student records deleted successfully` });
+
+      try {
+        const StudentLeave = (await import('../models/StudentLeave.js')).default;
+        await StudentLeave.deleteMany({
+          $or: [
+            { studentId: { $in: studentIds } },
+            { admissionNo: { $in: admissionNos } },
+          ],
+        });
+      } catch (e) {}
+
+      return res.json({ success: true, message: `${studentIds.length} student records deleted successfully from database` });
     }
 
     if (action === 'status') {

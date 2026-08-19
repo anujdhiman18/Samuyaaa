@@ -50,6 +50,42 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const verifyUserNotDeleted = () => {
+      if (!user) return;
+      if (user.role === 'Admin' || user.role === 'SuperAdmin') return;
+
+      try {
+        const uId = String(user._id || user.id || '');
+        const uEmail = (user.email || '').toLowerCase();
+        const uRoll = (user.rollNumber || '').toLowerCase();
+
+        const deletedStudents = JSON.parse(localStorage.getItem('saumyaa_deleted_students') || '[]');
+        const deletedFaculty = JSON.parse(localStorage.getItem('saumyaa_deleted_faculty') || '[]');
+
+        const isStudentDeleted = user.role === 'Student' && (
+          deletedStudents.includes(uId) || (uEmail && deletedStudents.includes(uEmail)) || (uRoll && deletedStudents.includes(uRoll))
+        );
+
+        const isFacultyDeleted = user.role !== 'Student' && (
+          deletedFaculty.includes(uId) || (uEmail && deletedFaculty.includes(uEmail))
+        );
+
+        if (isStudentDeleted || isFacultyDeleted) {
+          logout();
+        }
+      } catch (e) {}
+    };
+
+    verifyUserNotDeleted();
+    window.addEventListener('saumyaa_user_session_revoked', verifyUserNotDeleted);
+    window.addEventListener('saumyaa_data_updated', verifyUserNotDeleted);
+    return () => {
+      window.removeEventListener('saumyaa_user_session_revoked', verifyUserNotDeleted);
+      window.removeEventListener('saumyaa_data_updated', verifyUserNotDeleted);
+    };
+  }, [user]);
+
   const login = (userData, authToken) => {
     const isFacultyUser = Boolean(
       userData?.isFaculty ||

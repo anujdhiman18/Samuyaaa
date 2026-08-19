@@ -557,6 +557,16 @@ export const authService = {
       }
     }
 
+    // Check if account has been explicitly deleted by Admin
+    const deletedStudents = getDeletedIds('students');
+    const deletedFaculty = getDeletedIds('faculty');
+    if (
+      deletedStudents.includes(cleanEmail) ||
+      deletedFaculty.includes(cleanEmail)
+    ) {
+      throw new Error('Access Revoked: Your account has been deleted by the administrator.');
+    }
+
     // 2. Check Student Directory (by Email or Roll Number)
     const students = getStoredStudents();
     const student = students.find(
@@ -589,19 +599,7 @@ export const authService = {
     const facultyList = getStoredFaculty();
     const facultyMember = facultyList.find(
       (f) => (f.email && f.email.trim().toLowerCase() === cleanEmail)
-    ) || (cleanEmail === 'jitender.sharma@saumyaa.edu.in' || cleanEmail === 'faculty@saumyaa.edu.in' || cleanEmail.includes('jitender') || cleanEmail.includes('faculty') ? (facultyList[0] || {
-      _id: 'f_jitender',
-      id: 'f_jitender',
-      name: 'Prof. Jitender Sharma',
-      email: cleanEmail,
-      password: 'faculty123',
-      role: 'Faculty',
-      designation: 'Senior Mathematics & Physics Faculty',
-      department: 'Science & Mathematics',
-      assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
-      assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-      photo_url: '/Unknown.jpg',
-    }) : null);
+    );
 
     if (facultyMember) {
       const assignedPass = facultyMember.password || 'faculty123';
@@ -1183,24 +1181,81 @@ export const studentService = {
   },
 
   deleteStudent: async (id) => {
-    addDeletedId('students', id);
+    if (!id) return { success: false, message: 'Invalid Student ID' };
+    const targetId = String(id);
+    const students = getStoredStudents();
+    const targetStudent = students.find(
+      (s) =>
+        String(s._id) === targetId ||
+        String(s.id) === targetId ||
+        (s.email && s.email.toLowerCase() === targetId.toLowerCase()) ||
+        (s.rollNumber && s.rollNumber.toLowerCase() === targetId.toLowerCase())
+    );
 
+    const emailToDelete = targetStudent?.email?.toLowerCase();
+    const rollToDelete = targetStudent?.rollNumber?.toLowerCase();
+    const idToDelete = targetStudent?._id || targetStudent?.id || targetId;
+
+    // Track deletion across all key identifiers
+    addDeletedId('students', targetId);
+    if (idToDelete) addDeletedId('students', String(idToDelete));
+    if (emailToDelete) addDeletedId('students', emailToDelete);
+    if (rollToDelete) addDeletedId('students', rollToDelete);
+
+    // Hard delete from MongoDB backend
     try {
-      await apiCall(`/students/${id}`, { method: 'DELETE' });
+      await apiCall(`/students/${targetId}`, { method: 'DELETE' });
     } catch (e) {
       console.warn('Remote delete call failed:', e);
     }
 
     // Delete from Firebase Firestore DB
     try {
-      await deleteDoc(doc(db, 'students', String(id)));
+      await deleteDoc(doc(db, 'students', String(targetId)));
+      if (idToDelete && String(idToDelete) !== targetId) {
+        await deleteDoc(doc(db, 'students', String(idToDelete)));
+      }
     } catch (fsErr) {
       console.warn('Firestore deleteDoc student error:', fsErr.message);
     }
 
-    const list = getStoredStudents().filter((s) => String(s._id) !== String(id) && String(s.id) !== String(id));
-    setStoredStudents(list);
-    return { success: true, message: 'Student deleted successfully' };
+    // Filter from local storage
+    const remaining = students.filter((s) => {
+      const sId = String(s._id || s.id);
+      const sEmail = (s.email || '').toLowerCase();
+      const sRoll = (s.rollNumber || '').toLowerCase();
+      return (
+        sId !== targetId &&
+        sId !== String(idToDelete) &&
+        (!emailToDelete || sEmail !== emailToDelete) &&
+        (!rollToDelete || sRoll !== rollToDelete)
+      );
+    });
+    setStoredStudents(remaining);
+
+    // Instant session revocation if deleted user is logged in
+    const currentUserStr = localStorage.getItem('saumyaa_user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        const curId = String(currentUser._id || currentUser.id || '');
+        const curEmail = (currentUser.email || '').toLowerCase();
+        const curRoll = (currentUser.rollNumber || '').toLowerCase();
+        if (
+          curId === targetId ||
+          curId === String(idToDelete) ||
+          (emailToDelete && curEmail === emailToDelete) ||
+          (rollToDelete && curRoll === rollToDelete)
+        ) {
+          localStorage.removeItem('saumyaa_user');
+          localStorage.removeItem('saumyaa_student_profile');
+          localStorage.removeItem('saumyaa_token');
+          window.dispatchEvent(new Event('saumyaa_user_session_revoked'));
+        }
+      } catch (e) {}
+    }
+
+    return { success: true, message: 'Student deleted successfully from database & session revoked' };
   },
 
   bulkActionStudents: async ({ action, studentIds, newStatus }) => {
@@ -2761,23 +2816,33 @@ export const initialMockFaculty = [
 
 export const getStoredFaculty = () => {
   try {
+    const deleted = getDeletedIds('faculty');
     const data = localStorage.getItem('saumyaa_faculty');
     let list = data ? JSON.parse(data) : null;
-    if (!list || !Array.isArray(list) || list.length === 0) {
-      localStorage.setItem('saumyaa_faculty', JSON.stringify(initialMockFaculty));
-      return initialMockFaculty;
+    if (!list || !Array.isArray(list)) {
+      list = initialMockFaculty;
     }
 
     const map = new Map();
     list.forEach((f) => {
-      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      if (!f) return;
+      const fId = String(f._id || f.id || '');
+      const fEmail = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : '').trim();
+      if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
+        return; // Exclude deleted faculty
+      }
+      const k = fEmail || fId;
       if (k) map.set(k, f);
     });
 
-    // Ensure default initial faculty members exist if missing, without overwriting edits
     initialMockFaculty.forEach((defaultFac) => {
-      const k = (defaultFac.email && typeof defaultFac.email === 'string' ? defaultFac.email.toLowerCase() : String(defaultFac._id || defaultFac.id || '')).trim();
-      if (!map.has(k)) {
+      const fId = String(defaultFac._id || defaultFac.id || '');
+      const fEmail = (defaultFac.email && typeof defaultFac.email === 'string' ? defaultFac.email.toLowerCase() : '').trim();
+      if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
+        return; // Do NOT re-add default faculty if deleted
+      }
+      const k = fEmail || fId;
+      if (k && !map.has(k)) {
         map.set(k, defaultFac);
       }
     });
@@ -2804,7 +2869,7 @@ export const getStoredFaculty = () => {
     localStorage.setItem('saumyaa_faculty', JSON.stringify(mergedList));
     return mergedList;
   } catch (e) {
-    return initialMockFaculty;
+    return [];
   }
 };
 
@@ -3174,19 +3239,74 @@ export const facultyService = {
   },
 
   deleteFaculty: async (id, photoUrl) => {
+    if (!id) return { success: false, message: 'Invalid Faculty ID' };
+    const targetId = String(id);
+    const facultyList = getStoredFaculty();
+    const targetFac = facultyList.find(
+      (f) =>
+        String(f._id) === targetId ||
+        String(f.id) === targetId ||
+        (f.email && f.email.toLowerCase() === targetId.toLowerCase())
+    );
+
+    const emailToDelete = targetFac?.email?.toLowerCase();
+    const idToDelete = targetFac?._id || targetFac?.id || targetId;
+
+    // Track deletion across key identifiers
+    addDeletedId('faculty', targetId);
+    if (idToDelete) addDeletedId('faculty', String(idToDelete));
+    if (emailToDelete) addDeletedId('faculty', emailToDelete);
+
     if (photoUrl) {
       deleteFirebaseFile(photoUrl).catch(() => {});
     }
 
+    // Hard delete from MongoDB backend
     try {
-      await deleteDoc(doc(db, 'faculty', String(id)));
+      await apiCall(`/faculty/${targetId}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Backend delete faculty warning:', e.message);
+    }
+
+    // Delete from Firebase Firestore DB
+    try {
+      await deleteDoc(doc(db, 'faculty', String(targetId)));
+      if (idToDelete && String(idToDelete) !== targetId) {
+        await deleteDoc(doc(db, 'faculty', String(idToDelete)));
+      }
     } catch (fsErr) {
       console.warn('Firestore deleteDoc faculty error:', fsErr.message);
     }
 
-    const list = getStoredFaculty().filter((f) => String(f._id) !== String(id) && String(f.id) !== String(id));
-    setStoredFaculty(list);
-    return { success: true, message: 'Faculty member deleted successfully' };
+    // Filter local storage
+    const remaining = facultyList.filter((f) => {
+      const fId = String(f._id || f.id);
+      const fEmail = (f.email || '').toLowerCase();
+      return fId !== targetId && fId !== String(idToDelete) && (!emailToDelete || fEmail !== emailToDelete);
+    });
+    setStoredFaculty(remaining);
+
+    // Instant session revocation if deleted user is logged in
+    const currentUserStr = localStorage.getItem('saumyaa_user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        const curId = String(currentUser._id || currentUser.id || '');
+        const curEmail = (currentUser.email || '').toLowerCase();
+        if (
+          curId === targetId ||
+          curId === String(idToDelete) ||
+          (emailToDelete && curEmail === emailToDelete)
+        ) {
+          localStorage.removeItem('saumyaa_user');
+          localStorage.removeItem('saumyaa_admin');
+          localStorage.removeItem('saumyaa_token');
+          window.dispatchEvent(new Event('saumyaa_user_session_revoked'));
+        }
+      } catch (e) {}
+    }
+
+    return { success: true, message: 'Faculty member deleted successfully from database & session revoked' };
   },
 
   restoreDefaultFaculty: async () => {

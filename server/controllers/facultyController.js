@@ -102,17 +102,27 @@ export const updateFaculty = async (req, res) => {
   }
 };
 
-// @desc    Delete faculty member
-// @route   DELETE /api/faculty/:id
 export const deleteFaculty = async (req, res) => {
   try {
     const faculty = await Faculty.findById(req.params.id);
     if (!faculty) {
-      return res.status(404).json({ success: false, message: 'Faculty member not found' });
+      return res.status(404).json({ success: false, message: 'Faculty member not found in database' });
     }
 
     await Faculty.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Faculty member removed successfully' });
+
+    try {
+      const FacultyLeave = (await import('../models/FacultyLeave.js')).default;
+      await FacultyLeave.deleteMany({
+        $or: [
+          { facultyId: req.params.id },
+          { facultyEmail: faculty.email },
+          { facultyName: faculty.name },
+        ],
+      });
+    } catch (e) {}
+
+    res.json({ success: true, message: 'Faculty member removed successfully from database' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
