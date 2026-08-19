@@ -26,7 +26,7 @@ export default function StudentDashboard() {
   const fetchStudentDashboardData = async () => {
     setLoading(true);
     try {
-      const studentId = user?._id || user?.id || 's1';
+      const studentId = user?._id || user?.id || user?.rollNumber || user?.email || 's1';
       const attRes = await attendanceService.getStudentAttendance(studentId);
       const annRes = await announcementService.getAnnouncements();
 

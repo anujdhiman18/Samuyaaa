@@ -20,7 +20,7 @@ export default function StudentAttendance() {
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      const studentId = user?._id || user?.id || 's1';
+      const studentId = user?._id || user?.id || user?.rollNumber || user?.email || 's1';
       const data = await attendanceService.getStudentAttendance(studentId);
       if (data && data.attendance) {
         setAttendance(data.attendance);

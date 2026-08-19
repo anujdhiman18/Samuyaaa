@@ -1962,38 +1962,81 @@ const normalizeDateKey = (rawDate) => {
 // Attendance Service with Firebase Firestore DB
 export const attendanceService = {
   getStudentAttendance: async (studentId) => {
-    const remote = await apiCall(`/attendance?studentId=${studentId}`);
-    if (remote) return remote;
+    let remoteRecords = [];
+    let remoteStats = null;
+    if (studentId) {
+      try {
+        const remote = await apiCall(`/attendance?studentId=${studentId}`);
+        if (remote && remote.success && Array.isArray(remote.attendance)) {
+          remoteRecords = remote.attendance;
+          if (remote.stats) remoteStats = remote.stats;
+        }
+      } catch (e) {}
+    }
 
     const fsAttendance = await syncFirestoreCollection('attendance', initialMockAttendance);
-    let allRecords = getCombinedAttendance(fsAttendance);
+    let localFsRecords = getCombinedAttendance(fsAttendance);
 
-    let list = allRecords;
-    if (studentId) {
-      const targetId = String(studentId);
-      list = allRecords.filter(
-        (a) =>
-          String(a.student) === targetId ||
-          String(a.student?._id) === targetId ||
-          String(a.student?.id) === targetId
-      );
-    }
+    const storedStudents = getStoredStudents();
+    const targetStudent = storedStudents.find(
+      (s) =>
+        String(s._id) === String(studentId) ||
+        String(s.id) === String(studentId) ||
+        (s.email && s.email.toLowerCase() === String(studentId).toLowerCase()) ||
+        (s.rollNumber && s.rollNumber.toLowerCase() === String(studentId).toLowerCase())
+    );
+
+    const matchIds = new Set(
+      [
+        String(studentId),
+        targetStudent ? String(targetStudent._id) : null,
+        targetStudent ? String(targetStudent.id) : null,
+        targetStudent ? String(targetStudent.rollNumber) : null,
+        targetStudent ? String(targetStudent.email) : null,
+      ].filter(Boolean)
+    );
+
+    const recordMap = new Map();
+
+    const processRecord = (a) => {
+      if (!a) return;
+      const aStId = String(a.student?._id || a.student?.id || a.student || '');
+      const aRoll = String(a.rollNumber || a.student?.rollNumber || '');
+      const aEmail = String(a.student?.email || '');
+
+      const isMatch =
+        matchIds.has(aStId) ||
+        (aRoll && matchIds.has(aRoll)) ||
+        (aEmail && matchIds.has(aEmail));
+
+      if (isMatch) {
+        const key = a._id || `${normalizeDateKey(a.date)}_${a.subject || 'General'}`;
+        recordMap.set(key, a);
+      }
+    };
+
+    remoteRecords.forEach(processRecord);
+    localFsRecords.forEach(processRecord);
+
+    const list = Array.from(recordMap.values()).sort(
+      (a, b) => new Date(b.date || Date.now()) - new Date(a.date || Date.now())
+    );
 
     const presentCount = list.filter((a) => a.status === 'Present').length;
     const absentCount = list.filter((a) => a.status === 'Absent').length;
     const lateCount = list.filter((a) => a.status === 'Late').length;
     const totalCount = list.length;
 
-    const percentage = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : 100;
+    const percentage = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : (remoteStats?.attendancePercentage ?? 100);
 
     return {
       success: true,
       attendance: list,
       stats: {
-        presentDays: presentCount,
-        absentDays: absentCount,
-        lateDays: lateCount,
-        totalDays: totalCount,
+        presentDays: presentCount || (remoteStats?.presentDays ?? 0),
+        absentDays: absentCount || (remoteStats?.absentDays ?? 0),
+        lateDays: lateCount || (remoteStats?.lateDays ?? 0),
+        totalDays: totalCount || (remoteStats?.totalDays ?? 0),
         attendancePercentage: percentage,
       },
     };
