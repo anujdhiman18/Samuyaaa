@@ -78,7 +78,7 @@ export default function ForcePasswordChangeModal() {
             Password Change Required
           </h2>
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            Please create a new permanent password before continuing to your dashboard.
+            Please create a new password to continue.
           </p>
         </div>
 

@@ -577,7 +577,7 @@ export const authService = {
     );
 
     if (student) {
-      const assignedPass = student.initialPassword || student.password || 'Student123';
+      const assignedPass = student.password || 'Student123';
       const isPassValid =
         password === assignedPass ||
         password === student.password ||
@@ -597,7 +597,6 @@ export const authService = {
           className: student.className,
           avatar: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
           mustChangePassword: student.mustChangePassword !== false,
-          initialPassword: student.initialPassword || null,
           studentProfile: student,
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(studentUserObj));
@@ -614,7 +613,7 @@ export const authService = {
     );
 
     if (facultyMember) {
-      const assignedPass = facultyMember.initialPassword || facultyMember.password || 'faculty123';
+      const assignedPass = facultyMember.password || 'faculty123';
       const isPassValid =
         password === assignedPass ||
         password === facultyMember.password ||
@@ -637,7 +636,6 @@ export const authService = {
           photo_url: facultyMember.photo_url || '/Unknown.jpg',
           avatar: facultyMember.photo_url || '/Unknown.jpg',
           mustChangePassword: facultyMember.mustChangePassword !== false,
-          initialPassword: facultyMember.initialPassword || null,
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
         return { success: true, user: facultyUserObj, token: 'mock_jwt_token_faculty_2026' };
@@ -1208,7 +1206,6 @@ export const studentService = {
       email: data.email ? data.email.trim().toLowerCase() : `${finalRollNumber.toLowerCase()}@saumyaa.com`,
       password: hashedPassword,
       mustChangePassword: true,
-      initialPassword: tempPassword,
     };
 
     let remoteStudent = null;
@@ -1218,7 +1215,7 @@ export const studentService = {
     } catch (e) {}
 
     const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
-    const newStudent = remoteStudent ? { ...remoteStudent, initialPassword: tempPassword, mustChangePassword: true } : { ...payload, _id: id, id };
+    const newStudent = remoteStudent ? { ...remoteStudent, mustChangePassword: true } : { ...payload, _id: id, id };
 
     // Save to Firebase Firestore DB
     try {
@@ -1246,7 +1243,6 @@ export const studentService = {
 
     list[idx].password = hashedPassword;
     list[idx].mustChangePassword = true;
-    list[idx].initialPassword = newTempPassword;
 
     try {
       await apiCall(`/students/${targetId}`, {
@@ -1256,7 +1252,7 @@ export const studentService = {
     } catch (e) {}
 
     try {
-      await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: true, initialPassword: newTempPassword }, { merge: true });
+      await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: true }, { merge: true });
     } catch (e) {}
 
     setStoredStudents(list);
@@ -3095,7 +3091,6 @@ export const facultyService = {
       email: data.email ? data.email.toLowerCase() : `${data.name.toLowerCase().replace(/ /g, '.')}@saumyaa.edu.in`,
       password: hashedPassword,
       mustChangePassword: true,
-      initialPassword: tempPassword,
       phone: data.phone || '9816099999',
       designation: data.designation || 'Senior Faculty Member',
       department: data.department || 'Science & Mathematics',
@@ -3137,7 +3132,6 @@ export const facultyService = {
 
     list[idx].password = hashedPassword;
     list[idx].mustChangePassword = true;
-    list[idx].initialPassword = newTempPassword;
 
     try {
       await apiCall(`/faculty/${targetId}`, {
@@ -3147,7 +3141,7 @@ export const facultyService = {
     } catch (e) {}
 
     try {
-      await setDoc(doc(db, 'faculty', targetId), { password: hashedPassword, mustChangePassword: true, initialPassword: newTempPassword }, { merge: true });
+      await setDoc(doc(db, 'faculty', targetId), { password: hashedPassword, mustChangePassword: true }, { merge: true });
     } catch (e) {}
 
     setStoredFaculty(list);
