@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService, subjectService, getStoredSubjects } from '../../services/api';
+import { sortClassList } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 export default function FacultyAssignments() {
@@ -43,9 +44,9 @@ export default function FacultyAssignments() {
   let availableClasses = [];
   if (isAdmin || rawUserClasses.length === 0) {
     const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
-    availableClasses = Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]));
+    availableClasses = sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
   } else {
-    availableClasses = Array.from(new Set(rawUserClasses));
+    availableClasses = sortClassList(rawUserClasses);
   }
 
   const [assignments, setAssignments] = useState([]);
@@ -55,7 +56,7 @@ export default function FacultyAssignments() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newClass, setNewClass] = useState(() => availableClasses[0] || '10th');
+  const [newClass, setNewClass] = useState(() => availableClasses[0] || 'S2');
 
   const userAssignedSubjects = user?.assignedSubjects || [];
   const userSubjects = responsibilities.length > 0

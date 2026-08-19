@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService } from '../../services/api';
+import { sortClassList } from '../../config/classConfig';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 
 export default function FacultyStudents() {
   const { user } = useAuth();
@@ -19,8 +20,8 @@ export default function FacultyStudents() {
     : userAssignedClasses;
 
   const availableClasses = (isAdmin || rawUserClasses.length === 0)
-    ? Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES]))
-    : Array.from(new Set(rawUserClasses));
+    ? sortClassList([...rawUserClasses, ...DEFAULT_CLASSES])
+    : sortClassList(rawUserClasses);
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -15,6 +15,44 @@ export const CLASS_CATEGORIES = [
 
 export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
 
+export const SORTED_CLASS_ORDER = [
+  'S1',
+  'S2',
+  'S3',
+  'S4',
+  'Nursery',
+  'LKG',
+  'UKG',
+  '1st',
+  '2nd',
+  '3rd',
+  '4th',
+  '5th',
+  '6th',
+  '7th',
+  '8th',
+  '9th',
+  '10th',
+  '11th (+1)',
+  '12th (+2)',
+  '11th',
+  '12th',
+  'Higher Education',
+];
+
+export const sortClassList = (classes = []) => {
+  if (!Array.isArray(classes)) return [];
+  const unique = Array.from(new Set(classes.filter(Boolean)));
+  return unique.sort((a, b) => {
+    const indexA = SORTED_CLASS_ORDER.indexOf(a);
+    const indexB = SORTED_CLASS_ORDER.indexOf(b);
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+};
+
 export const STAGE_CLASSES = {
   S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
   S2: ['6th', '7th', '8th', '9th', '10th'],
