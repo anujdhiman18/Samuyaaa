@@ -2053,19 +2053,37 @@ export const marksService = {
           (m.examType === examType || m.title === examType)
       );
 
+      const totalMax = Number(item.totalMax) || 100;
+      const pct = Math.min(100, Math.round((totalObtained / totalMax) * 100));
+      let calcGrade = 'A';
+      if (pct >= 90) calcGrade = 'A+';
+      else if (pct >= 75) calcGrade = 'A';
+      else if (pct >= 60) calcGrade = 'B';
+      else if (pct >= 50) calcGrade = 'C';
+      else calcGrade = 'D';
+
+      const todayIso = new Date().toISOString().split('T')[0];
+
       const recordObj = {
         _id: existingIdx >= 0 ? updatedMarks[existingIdx]._id : 'mark_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         student: studentId,
+        studentId: studentId,
         className,
-        subject,
+        subject: subject || 'General Academics',
         examType: examType || 'Internal Assessment',
         title: examType || 'Internal Assessment',
+        examName: examType || 'Internal Assessment',
         theoryMarks: theory,
         practicalMarks: practical,
         assignmentMarks: assignment,
         marksObtained: totalObtained,
-        totalMarks: Number(item.totalMax) || 100,
-        percentage: Math.min(100, Math.round((totalObtained / (Number(item.totalMax) || 100)) * 100)),
+        obtainedMarks: totalObtained,
+        totalMarks: totalMax,
+        maxMarks: totalMax,
+        percentage: pct,
+        grade: calcGrade,
+        examDate: todayIso,
+        date: todayIso,
         publishedBy,
         updatedAt: new Date().toISOString(),
       };

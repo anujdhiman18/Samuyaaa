@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { marksService } from '../../services/api';
 
+const calculateGrade = (pct) => {
+  const p = Number(pct) || 0;
+  if (p >= 90) return 'A+';
+  if (p >= 75) return 'A';
+  if (p >= 60) return 'B';
+  if (p >= 50) return 'C';
+  return 'D';
+};
+
+const formatDateSafely = (dateVal) => {
+  if (!dateVal) return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 export default function StudentMarks() {
   const { user } = useAuth();
   const [marks, setMarks] = useState([]);
@@ -15,21 +31,85 @@ export default function StudentMarks() {
   const fetchMarks = async () => {
     setLoading(true);
     try {
-      const data = await marksService.getStudentMarks(user?.id || 's1');
+      const studentId = user?._id || user?.id || 's1';
+      const data = await marksService.getStudentMarks(studentId);
       if (data && data.marks) {
         setMarks(data.marks);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching student marks:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const normalizedMarks = marks.map((m) => {
+    const subject = m.subject || m.subjectName || 'General Academics';
+    const examName = m.examName || m.examType || m.title || 'Internal Assessment';
+    const maxMarks = Number(m.maxMarks || m.totalMarks || m.totalMax) || 100;
+
+    let obtainedMarks = 0;
+    if (m.obtainedMarks !== undefined && m.obtainedMarks !== null) {
+      obtainedMarks = Number(m.obtainedMarks);
+    } else if (m.marksObtained !== undefined && m.marksObtained !== null) {
+      obtainedMarks = Number(m.marksObtained);
+    } else {
+      obtainedMarks = (Number(m.theoryMarks) || 0) + (Number(m.practicalMarks) || 0) + (Number(m.assignmentMarks) || 0);
+    }
+
+    const percentage = m.percentage !== undefined && m.percentage !== null
+      ? Number(m.percentage)
+      : Math.min(100, Math.round((obtainedMarks / maxMarks) * 100));
+
+    const grade = m.grade || calculateGrade(percentage);
+    const examDate = formatDateSafely(m.examDate || m.date || m.updatedAt || m.createdAt);
+
+    return {
+      _id: m._id || m.id || `mark_${Math.random()}`,
+      subject,
+      examName,
+      maxMarks,
+      obtainedMarks,
+      percentage,
+      grade,
+      examDate,
+    };
+  });
+
   const avgPercentage =
-    marks.length > 0
-      ? (marks.reduce((sum, m) => sum + (m.percentage || 0), 0) / marks.length).toFixed(1)
+    normalizedMarks.length > 0
+      ? (normalizedMarks.reduce((sum, m) => sum + (m.percentage || 0), 0) / normalizedMarks.length).toFixed(1)
       : 92.0;
+
+  const highestMark = normalizedMarks.length > 0
+    ? Math.max(...normalizedMarks.map((m) => m.obtainedMarks))
+    : 96;
+
+  const highestMarkRecord = normalizedMarks.find((m) => m.obtainedMarks === highestMark);
+
+  // Group subject performance for chart
+  const subjectMap = {};
+  normalizedMarks.forEach((m) => {
+    if (!subjectMap[m.subject]) {
+      subjectMap[m.subject] = { totalPct: 0, count: 0 };
+    }
+    subjectMap[m.subject].totalPct += m.percentage;
+    subjectMap[m.subject].count += 1;
+  });
+
+  const subjectBreakdown = Object.keys(subjectMap).length > 0
+    ? Object.entries(subjectMap).map(([sub, data]) => {
+        const avg = Math.round(data.totalPct / data.count);
+        return {
+          subject: sub,
+          score: avg,
+          grade: calculateGrade(avg),
+        };
+      })
+    : [
+        { subject: 'Mathematics Advanced', score: 96, grade: 'A+' },
+        { subject: 'Integrated Science', score: 88, grade: 'A' },
+      ];
 
   return (
     <div className="space-y-6 font-body">
@@ -49,7 +129,7 @@ export default function StudentMarks() {
             Total Examinations
           </p>
           <h3 className="font-headings font-extrabold text-3xl text-secondary mt-2">
-            {marks.length} Tests
+            {normalizedMarks.length} Tests
           </h3>
           <p className="text-[10px] text-on-surface-variant font-semibold mt-1">
             Mid-term board mocks &amp; weekly assessments
@@ -63,7 +143,9 @@ export default function StudentMarks() {
           <h3 className="font-headings font-extrabold text-3xl text-emerald-700 mt-2">
             {avgPercentage}%
           </h3>
-          <p className="text-[10px] text-emerald-700 font-semibold mt-1">Consistently Grade A+</p>
+          <p className="text-[10px] text-emerald-700 font-semibold mt-1">
+            Grade: {calculateGrade(avgPercentage)}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15">
@@ -71,10 +153,10 @@ export default function StudentMarks() {
             Highest Score
           </p>
           <h3 className="font-headings font-extrabold text-3xl text-primary mt-2">
-            96 / 100
+            {highestMark} Marks
           </h3>
           <p className="text-[10px] text-on-surface-variant font-semibold mt-1">
-            Mathematics Advanced Mock
+            {highestMarkRecord ? `${highestMarkRecord.subject} (${highestMarkRecord.examName})` : 'Mathematics Advanced Mock'}
           </p>
         </div>
       </div>
@@ -86,10 +168,7 @@ export default function StudentMarks() {
         </h3>
 
         <div className="space-y-4">
-          {[
-            { subject: 'Mathematics Advanced', score: 96, grade: 'A+' },
-            { subject: 'Integrated Science', score: 88, grade: 'A' },
-          ].map((item) => (
+          {subjectBreakdown.map((item) => (
             <div key={item.subject} className="space-y-1">
               <div className="flex justify-between text-xs font-bold">
                 <span className="text-on-surface">{item.subject}</span>
@@ -117,7 +196,11 @@ export default function StudentMarks() {
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-xs animate-pulse">Loading marks records...</div>
+          <div className="p-8 text-center text-xs animate-pulse text-on-surface-variant">Loading marks records...</div>
+        ) : normalizedMarks.length === 0 ? (
+          <div className="p-8 text-center text-xs text-on-surface-variant">
+            No published examination marks or test records found yet.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -133,7 +216,7 @@ export default function StudentMarks() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/15 text-xs font-body">
-                {marks.map((m) => (
+                {normalizedMarks.map((m) => (
                   <tr
                     key={m._id}
                     className="hover:bg-surface-container-low transition-colors"
@@ -144,13 +227,13 @@ export default function StudentMarks() {
                     <td className="py-3.5 px-4 font-bold text-on-surface">
                       {m.examName}
                     </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant">
+                    <td className="py-3.5 px-4 text-on-surface-variant font-mono">
                       {m.maxMarks}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-primary">
+                    <td className="py-3.5 px-4 font-bold text-primary font-mono">
                       {m.obtainedMarks}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-700">
+                    <td className="py-3.5 px-4 font-bold text-emerald-700 font-mono">
                       {m.percentage}%
                     </td>
                     <td className="py-3.5 px-4">
@@ -159,7 +242,7 @@ export default function StudentMarks() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-on-surface-variant">
-                      {new Date(m.examDate).toLocaleDateString()}
+                      {m.examDate}
                     </td>
                   </tr>
                 ))}
