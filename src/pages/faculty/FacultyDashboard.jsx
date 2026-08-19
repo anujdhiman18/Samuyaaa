@@ -4,6 +4,7 @@ import { useRBAC } from '../../context/RBACContext';
 import { PERMISSIONS } from '../../config/rbacConfig';
 import { facultyPanelService } from '../../services/api';
 import { Link } from 'react-router-dom';
+import TodayAttendanceCard from '../../components/faculty/TodayAttendanceCard';
 
 export default function FacultyDashboard() {
   const { user, updateUser } = useAuth();
@@ -105,6 +106,9 @@ export default function FacultyDashboard() {
           )}
         </div>
       </div>
+
+      {/* Geofencing Automatic Attendance Card */}
+      <TodayAttendanceCard />
 
       {/* Role-Based Quick Actions & Capabilities */}
       <div className="space-y-3">

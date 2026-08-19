@@ -6,7 +6,7 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
-import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, isExactClassMatch, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
+import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, isExactClassMatch, CLASS_CATEGORIES, CLASS_CODES, DEFAULT_CENTER_CONFIGS } from '../config/classConfig';
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
 
@@ -5516,6 +5516,305 @@ export const rbacService = {
     } catch (e) {
       return { success: true, history: [] };
     }
+  },
+};
+
+// ==========================================
+// Haversine Distance & Geofencing Calculator
+// ==========================================
+export const calculateHaversineDistanceMeters = (lat1, lon1, lat2, lon2) => {
+  const R = 6371000; // Earth radius in meters
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+};
+
+export const geofenceService = {
+  getCenterConfigs: async () => {
+    const remote = await apiCall('/geofence/centers');
+    if (remote && remote.centers) return remote;
+
+    const fsCenters = await syncFirestoreCollection('geofence_centers', []);
+    let stored = fsCenters;
+    if (!stored || stored.length === 0) {
+      try {
+        stored = JSON.parse(localStorage.getItem('geofence_center_configs') || 'null');
+      } catch (e) {}
+    }
+
+    if (!stored || stored.length === 0) {
+      stored = [
+        DEFAULT_CENTER_CONFIGS['Main Center'],
+        DEFAULT_CENTER_CONFIGS['Branch'],
+      ];
+      localStorage.setItem('geofence_center_configs', JSON.stringify(stored));
+    }
+
+    const configMap = {};
+    stored.forEach((c) => {
+      if (c && c.name) configMap[c.name] = c;
+    });
+
+    if (!configMap['Main Center']) configMap['Main Center'] = DEFAULT_CENTER_CONFIGS['Main Center'];
+    if (!configMap['Branch']) configMap['Branch'] = DEFAULT_CENTER_CONFIGS['Branch'];
+
+    return { success: true, centers: configMap };
+  },
+
+  updateCenterConfig: async (centerName, configData) => {
+    const remote = await apiCall(`/geofence/centers/${encodeURIComponent(centerName)}`, {
+      method: 'PUT',
+      body: JSON.stringify(configData),
+    });
+    if (remote) return remote;
+
+    const currentRes = await geofenceService.getCenterConfigs();
+    const configMap = currentRes.centers || {};
+    const updatedObj = {
+      ...configMap[centerName],
+      ...configData,
+      name: centerName,
+    };
+    configMap[centerName] = updatedObj;
+
+    const arr = Object.values(configMap);
+    localStorage.setItem('geofence_center_configs', JSON.stringify(arr));
+
+    try {
+      await setDoc(doc(db, 'geofence_centers', centerName), updatedObj);
+    } catch (e) {}
+
+    notifyDataUpdate();
+    return { success: true, center: updatedObj };
+  },
+};
+
+export const facultyAttendanceService = {
+  getFacultyTodayAttendance: async (facultyId) => {
+    const remote = await apiCall(`/faculty-attendance/today?facultyId=${facultyId}`);
+    if (remote) return remote;
+
+    const todayDate = getTodayLocalString();
+    const fsRecords = await syncFirestoreCollection('faculty_attendance', []);
+    let records = fsRecords;
+    if (!records || records.length === 0) {
+      try {
+        records = JSON.parse(localStorage.getItem('saumyaa_faculty_attendance') || '[]');
+      } catch (e) {}
+    }
+
+    const matched = records.find(
+      (r) => String(r.facultyId) === String(facultyId) && r.date === todayDate
+    );
+
+    return { success: true, record: matched || null };
+  },
+
+  verifyAndAutoCheckIn: async ({ facultyId, facultyName, latitude, longitude }) => {
+    // 1. Fetch current center configs
+    const configsRes = await geofenceService.getCenterConfigs();
+    const centers = configsRes.centers;
+
+    // 2. Fetch faculty user profile & assigned center
+    const currentUserStr = localStorage.getItem('saumyaa_user');
+    let facultyUser = null;
+    if (currentUserStr) {
+      try {
+        facultyUser = JSON.parse(currentUserStr);
+      } catch (e) {}
+    }
+
+    const assignedCenter = normalizeBranchId(facultyUser?.branchId || facultyUser?.branch || 'MAIN_CENTER') === 'BRANCH'
+      ? 'Branch'
+      : 'Main Center';
+
+    const targetCenterConfig = centers[assignedCenter] || DEFAULT_CENTER_CONFIGS[assignedCenter];
+
+    // 3. Check anti-duplicate: Has faculty already checked in today?
+    const todayRes = await facultyAttendanceService.getFacultyTodayAttendance(facultyId);
+    if (todayRes && todayRes.record) {
+      return {
+        success: false,
+        alreadyMarked: true,
+        record: todayRes.record,
+        message: 'Attendance already recorded for today',
+      };
+    }
+
+    // 4. Verify coordinates & calculate distance
+    const distMeters = calculateHaversineDistanceMeters(
+      latitude,
+      longitude,
+      targetCenterConfig.latitude,
+      targetCenterConfig.longitude
+    );
+
+    const isInsideGeofence = distMeters <= targetCenterConfig.radiusMeters;
+
+    if (!isInsideGeofence) {
+      return {
+        success: false,
+        locationVerification: 'FAILED',
+        reason: 'OUTSIDE_GEOFENCE',
+        distanceMeters: distMeters,
+        allowedRadius: targetCenterConfig.radiusMeters,
+        centerName: assignedCenter,
+        message: `You are ${distMeters} meters away from ${assignedCenter}. Maximum allowed radius is ${targetCenterConfig.radiusMeters} meters.`,
+      };
+    }
+
+    // 5. Calculate Arrival Time & Status (EARLY, ON_TIME, LATE)
+    const now = new Date();
+    const nowHours = now.getHours();
+    const nowMinutes = now.getMinutes();
+    const currentTotalMinutes = nowHours * 60 + nowMinutes;
+
+    const [repHours, repMins] = (targetCenterConfig.reportingTime || '09:00').split(':').map(Number);
+    const reportingTotalMinutes = repHours * 60 + repMins;
+    const graceMinutes = Number(targetCenterConfig.gracePeriodMinutes) || 5;
+
+    let status = 'ON_TIME';
+    let lateByMinutes = 0;
+
+    if (currentTotalMinutes < reportingTotalMinutes) {
+      status = 'EARLY';
+      lateByMinutes = 0;
+    } else if (currentTotalMinutes <= reportingTotalMinutes + graceMinutes) {
+      status = 'ON_TIME';
+      lateByMinutes = 0;
+    } else {
+      status = 'LATE';
+      lateByMinutes = currentTotalMinutes - reportingTotalMinutes;
+    }
+
+    const checkInTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newRecord = {
+      _id: 'fa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      facultyId: String(facultyId),
+      facultyName: facultyName || facultyUser?.name || 'Faculty Member',
+      date: getTodayLocalString(),
+      center: assignedCenter,
+      checkInTime: checkInTimeStr,
+      reportingTime: targetCenterConfig.reportingTime || '09:00',
+      status,
+      lateByMinutes,
+      latitude,
+      longitude,
+      distanceMeters: distMeters,
+      locationVerification: 'VERIFIED',
+      createdAt: now.toISOString(),
+      source: 'GEOLOCATION_AUTO',
+    };
+
+    let records = [];
+    try {
+      records = JSON.parse(localStorage.getItem('saumyaa_faculty_attendance') || '[]');
+    } catch (e) {}
+    records.unshift(newRecord);
+    localStorage.setItem('saumyaa_faculty_attendance', JSON.stringify(records));
+
+    try {
+      await setDoc(doc(db, 'faculty_attendance', newRecord._id), newRecord);
+    } catch (e) {}
+
+    rbacService.logActivity(
+      'FACULTY_CHECKIN_AUTO',
+      'Attendance',
+      `${newRecord.facultyName} checked in at ${assignedCenter} (${status}${status === 'LATE' ? ` by ${lateByMinutes} mins` : ''}) via GPS verification (${distMeters}m away)`,
+      'SUCCESS'
+    );
+
+    notifyDataUpdate();
+
+    return {
+      success: true,
+      record: newRecord,
+      message: `Attendance marked successfully as ${status.replace('_', ' ')}!`,
+    };
+  },
+
+  getAllFacultyAttendance: async ({ date, center, status, search } = {}) => {
+    const remote = await apiCall('/faculty-attendance');
+    if (remote && remote.records) return remote;
+
+    const fsRecords = await syncFirestoreCollection('faculty_attendance', []);
+    let records = fsRecords || [];
+    if (!records || records.length === 0) {
+      try {
+        records = JSON.parse(localStorage.getItem('saumyaa_faculty_attendance') || '[]');
+      } catch (e) {}
+    }
+
+    if (date) {
+      records = records.filter((r) => r.date === date);
+    }
+    if (center && center !== 'All') {
+      records = records.filter((r) => r.center === center);
+    }
+    if (status && status !== 'All') {
+      records = records.filter((r) => r.status === status);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      records = records.filter(
+        (r) =>
+          r.facultyName?.toLowerCase().includes(q) ||
+          r.facultyId?.toLowerCase().includes(q)
+      );
+    }
+
+    return { success: true, records };
+  },
+
+  manualAdminCorrection: async ({ recordId, facultyId, date, center, status, checkInTime, lateByMinutes, reason, adminName }) => {
+    let records = [];
+    try {
+      records = JSON.parse(localStorage.getItem('saumyaa_faculty_attendance') || '[]');
+    } catch (e) {}
+
+    let record = records.find((r) => r._id === recordId || r.id === recordId);
+    if (!record) {
+      record = {
+        _id: 'fa_' + Date.now(),
+        facultyId: String(facultyId),
+        facultyName: 'Faculty Member',
+        date: date || getTodayLocalString(),
+        center: center || 'Main Center',
+        createdAt: new Date().toISOString(),
+      };
+      records.unshift(record);
+    }
+
+    record.status = status;
+    record.checkInTime = checkInTime || record.checkInTime || '09:00 AM';
+    record.lateByMinutes = Number(lateByMinutes) || 0;
+    record.locationVerification = 'VERIFIED';
+    record.source = 'ADMIN_MANUAL';
+    record.modifiedBy = adminName || 'Admin';
+    record.modificationReason = reason || 'Admin Manual Override';
+    record.updatedAt = new Date().toISOString();
+
+    localStorage.setItem('saumyaa_faculty_attendance', JSON.stringify(records));
+
+    try {
+      await setDoc(doc(db, 'faculty_attendance', record._id), record);
+    } catch (e) {}
+
+    rbacService.logActivity(
+      'FACULTY_CHECKIN_MANUAL_CORRECTION',
+      'Attendance',
+      `Admin (${record.modifiedBy}) manually corrected attendance for ${record.facultyName} to ${status} (${reason})`,
+      'SUCCESS'
+    );
+
+    notifyDataUpdate();
+    return { success: true, record };
   },
 };
 

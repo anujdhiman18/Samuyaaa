@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { studentService, attendanceService, subjectService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import AdminFacultyAttendance from '../../components/admin/AdminFacultyAttendance';
 
 import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
@@ -307,29 +308,44 @@ export default function AttendanceManagement() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center bg-surface-container-low p-1.5 rounded-full border border-outline-variant/15 self-start md:self-auto">
+        <div className="flex flex-wrap items-center bg-surface-container-low p-1.5 rounded-full border border-outline-variant/15 self-start md:self-auto gap-1">
           <button
             onClick={() => setActiveTab('register')}
-            className={`px-5 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
               activeTab === 'register'
                 ? 'bg-primary text-white shadow-premium'
                 : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            Daily Register
+            📋 Student Register
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-5 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
               activeTab === 'logs'
                 ? 'bg-primary text-white shadow-premium'
                 : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            Attendance Logs ({existingRecords.length})
+            📜 Student Logs ({existingRecords.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('faculty_gps')}
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+              activeTab === 'faculty_gps'
+                ? 'bg-primary text-white shadow-premium'
+                : 'text-on-surface-variant hover:text-primary'
+            }`}
+          >
+            📍 Faculty GPS &amp; Geofencing
           </button>
         </div>
       </div>
+
+      {activeTab === 'faculty_gps' ? (
+        <AdminFacultyAttendance />
+      ) : (
+        <>
 
       {/* Date Navigation & Control Panel */}
       <div className="bg-white rounded-2xl p-5 shadow-premium border border-outline-variant/15 space-y-4">
@@ -843,6 +859,8 @@ export default function AttendanceManagement() {
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

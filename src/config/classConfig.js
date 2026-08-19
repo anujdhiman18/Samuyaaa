@@ -15,6 +15,25 @@ export const CLASS_CATEGORIES = [
 
 export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
 
+export const DEFAULT_CENTER_CONFIGS = {
+  'Main Center': {
+    name: 'Main Center',
+    latitude: 30.7333,
+    longitude: 76.7794,
+    radiusMeters: 100,
+    reportingTime: '09:00',
+    gracePeriodMinutes: 5,
+  },
+  'Branch': {
+    name: 'Branch',
+    latitude: 32.0850,
+    longitude: 76.5350,
+    radiusMeters: 100,
+    reportingTime: '09:00',
+    gracePeriodMinutes: 5,
+  },
+};
+
 export const SORTED_CLASS_ORDER = [
   'S1',
   'S2',
