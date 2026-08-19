@@ -85,6 +85,22 @@ export const isClassOrStageMatch = (studentClass, queryClass) => {
   return false;
 };
 
+export const isExactClassMatch = (studentClass, queryClass) => {
+  if (!queryClass || queryClass === 'All') return true;
+  if (!studentClass) return false;
+
+  const sClass = String(studentClass).trim().toLowerCase();
+  const qClass = String(queryClass).trim().toLowerCase();
+
+  if (sClass === qClass) return true;
+
+  // Handle +1 and +2 aliases
+  if ((sClass === '11th (+1)' || sClass === '11th') && (qClass === '11th (+1)' || qClass === '11th')) return true;
+  if ((sClass === '12th (+2)' || sClass === '12th') && (qClass === '12th (+2)' || qClass === '12th')) return true;
+
+  return false;
+};
+
 /**
  * Format raw class code or exact current class to formatted label
  * Prioritizes exact current class as primary information.

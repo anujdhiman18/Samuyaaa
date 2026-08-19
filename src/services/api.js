@@ -6,7 +6,7 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
-import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
+import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, isExactClassMatch, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
 
@@ -51,7 +51,7 @@ export const initialMockStudents = [
     parentPhone: '8894190175',
     email: 'rahul.g@gmail.com',
     address: 'House #42, Main Market, Jamula, Palampur',
-    className: 'S2',
+    className: '10th',
     course: 'Science',
     batch: '2025-2026',
     semester: 'S2 (6th - 10th)',
@@ -79,7 +79,7 @@ export const initialMockStudents = [
     parentPhone: '8894190175',
     email: 'damini.s@gmail.com',
     address: 'Main Center',
-    className: 'S2',
+    className: '10th',
     course: 'Science',
     batch: '2025-2026',
     semester: 'S2 (6th - 10th)',
@@ -107,7 +107,7 @@ export const initialMockStudents = [
     parentPhone: '8894190175',
     email: 'aryan.m@gmail.com',
     address: 'Ward No 4, Civil Lines, HP',
-    className: 'S3',
+    className: '11th (+1)',
     course: 'Non-Medical (PCM)',
     batch: '2024-2026',
     semester: 'S3 (10th - 12th)',
@@ -1222,10 +1222,7 @@ export const studentService = {
     let list = fsStudents || getStoredStudents();
 
     if (params.className && params.className !== 'All') {
-      const classMatched = list.filter((s) => isClassOrStageMatch(s.className, params.className));
-      if (classMatched.length > 0) {
-        list = classMatched;
-      }
+      list = list.filter((s) => isExactClassMatch(s.className, params.className));
     }
     if (params.search) {
       const term = params.search.toLowerCase();
@@ -5018,10 +5015,7 @@ export const facultyPanelService = {
     });
 
     if (params.className && params.className !== 'All') {
-      const classMatched = filtered.filter((s) => isClassOrStageMatch(s.className, params.className));
-      if (classMatched.length > 0) {
-        filtered = classMatched;
-      }
+      filtered = filtered.filter((s) => isExactClassMatch(s.className, params.className));
     }
 
     if (params.search) {
