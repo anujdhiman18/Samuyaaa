@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { facultyPanelService, marksService, subjectService, getStoredSubjects } from '../../services/api';
-import { sortClassList } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
+const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
+
+const CATEGORY_OPTIONS = [
+  { code: 'All', label: 'All Categories (S1-S4)' },
+  ...CLASS_CATEGORIES.map((c) => ({ code: c.code, label: `${c.code} — ${c.description}` })),
+];
 
 export default function FacultyMarks() {
   const { addToast } = useToast();
@@ -15,6 +20,7 @@ export default function FacultyMarks() {
     user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
   );
 
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [allSubjectsList, setAllSubjectsList] = useState([]);
 
   useEffect(() => {
@@ -40,15 +46,34 @@ export default function FacultyMarks() {
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
     : userAssignedClasses;
 
-  let availableClasses = [];
-  if (isAdmin || rawUserClasses.length === 0) {
-    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
-    availableClasses = sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
-  } else {
-    availableClasses = sortClassList(rawUserClasses);
-  }
+  const allAvailableClasses = useMemo(() => {
+    if (isAdmin || rawUserClasses.length === 0) {
+      const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+      return sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
+    }
+    return sortClassList(rawUserClasses);
+  }, [isAdmin, rawUserClasses, allSubjectsList]);
 
-  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || 'S2');
+  // Compute filtered classes based on selectedCategory
+  const filteredClasses = useMemo(() => {
+    if (selectedCategory === 'All') {
+      const base = allAvailableClasses.filter((c) => !['S1', 'S2', 'S3', 'S4'].includes(c));
+      return sortClassList(base.length > 0 ? base : DEFAULT_CLASSES);
+    }
+
+    const stageList = STAGE_CLASSES[selectedCategory] || [];
+    const matched = allAvailableClasses.filter((c) => getStageForClass(c) === selectedCategory);
+    const combined = Array.from(new Set([...stageList, ...matched]));
+    return sortClassList(combined);
+  }, [selectedCategory, allAvailableClasses]);
+
+  const [selectedClass, setSelectedClass] = useState(() => filteredClasses[0] || '10th');
+
+  useEffect(() => {
+    if (filteredClasses.length > 0 && (!selectedClass || !filteredClasses.includes(selectedClass))) {
+      setSelectedClass(filteredClasses[0]);
+    }
+  }, [filteredClasses]);
 
   const userAssignedSubjects = user?.assignedSubjects || [];
   const userSubjects = responsibilities.length > 0
@@ -72,15 +97,9 @@ export default function FacultyMarks() {
   const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [examType, setExamType] = useState('Internal Assessment 1');
   const [students, setStudents] = useState([]);
-  const [marksMap, setMarksMap] = useState({}); // studentId -> { marksObtained: '', practicalMarks: '', assignmentMarks: '', totalMax: 100 }
+  const [marksMap, setMarksMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (availableClasses.length > 0 && (!selectedClass || !availableClasses.includes(selectedClass))) {
-      setSelectedClass(availableClasses[0]);
-    }
-  }, [availableClasses, user]);
 
   useEffect(() => {
     if (availableSubjects.length > 0 && (!selectedSubject || !availableSubjects.includes(selectedSubject))) {
@@ -122,7 +141,7 @@ export default function FacultyMarks() {
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [field]: Number(value),
+        [field]: value,
       },
     }));
   };
@@ -177,10 +196,10 @@ export default function FacultyMarks() {
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">edit_note</span>
-            Internal Marks & Gradebook
+            Internal Marks &amp; Gradebook
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Manage internal test scores, practical marks, assignment scores, & publish official grades.
+            Manage internal test scores, practical marks, assignment scores, &amp; publish official grades.
           </p>
         </div>
 
@@ -194,16 +213,29 @@ export default function FacultyMarks() {
         </button>
       </div>
 
-      {/* Control Filters */}
-      <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Control Filters: Category -> Class -> Subject -> Exam Type */}
+      <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Class</label>
+          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Academic Category / Stage</label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
+          >
+            {CATEGORY_OPTIONS.map((cat) => (
+              <option key={cat.code} value={cat.code}>{cat.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Class / Grade</label>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           >
-            {availableClasses.map((cls) => (
+            {filteredClasses.map((cls) => (
               <option key={cls} value={cls}>Class {cls}</option>
             ))}
           </select>
@@ -214,7 +246,7 @@ export default function FacultyMarks() {
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           >
             {availableSubjects.map((sub) => (
               <option key={sub} value={sub}>{sub}</option>
@@ -227,7 +259,7 @@ export default function FacultyMarks() {
           <select
             value={examType}
             onChange={(e) => setExamType(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           >
             <option value="Internal Assessment 1">Internal Assessment 1</option>
             <option value="Mid-Term Practical">Mid-Term Practical</option>

@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { facultyPanelService, attendanceService, subjectService, getStoredSubjects } from '../../services/api';
-import { sortClassList } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
+const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
+
+const CATEGORY_OPTIONS = [
+  { code: 'All', label: 'All Categories (S1-S4)' },
+  ...CLASS_CATEGORIES.map((c) => ({ code: c.code, label: `${c.code} — ${c.description}` })),
+];
 
 export default function FacultyAttendance() {
   const { addToast } = useToast();
@@ -15,6 +20,7 @@ export default function FacultyAttendance() {
     user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
   );
 
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [allSubjectsList, setAllSubjectsList] = useState([]);
 
   useEffect(() => {
@@ -40,13 +46,25 @@ export default function FacultyAttendance() {
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
     : userAssignedClasses;
 
-  let availableClasses = [];
-  if (isAdmin || rawUserClasses.length === 0) {
-    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
-    availableClasses = sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
-  } else {
-    availableClasses = sortClassList(rawUserClasses);
-  }
+  const allAvailableClasses = useMemo(() => {
+    if (isAdmin || rawUserClasses.length === 0) {
+      const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+      return sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
+    }
+    return sortClassList(rawUserClasses);
+  }, [isAdmin, rawUserClasses, allSubjectsList]);
+
+  const filteredClasses = useMemo(() => {
+    if (selectedCategory === 'All') {
+      const base = allAvailableClasses.filter((c) => !['S1', 'S2', 'S3', 'S4'].includes(c));
+      return sortClassList(base.length > 0 ? base : DEFAULT_CLASSES);
+    }
+
+    const stageList = STAGE_CLASSES[selectedCategory] || [];
+    const matched = allAvailableClasses.filter((c) => getStageForClass(c) === selectedCategory);
+    const combined = Array.from(new Set([...stageList, ...matched]));
+    return sortClassList(combined);
+  }, [selectedCategory, allAvailableClasses]);
 
   const getTodayLocalString = () => {
     const d = new Date();
@@ -57,7 +75,13 @@ export default function FacultyAttendance() {
   };
 
   const [date, setDate] = useState(() => getTodayLocalString());
-  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || 'S2');
+  const [selectedClass, setSelectedClass] = useState(() => filteredClasses[0] || '10th');
+
+  useEffect(() => {
+    if (filteredClasses.length > 0 && (!selectedClass || !filteredClasses.includes(selectedClass))) {
+      setSelectedClass(filteredClasses[0]);
+    }
+  }, [filteredClasses]);
 
   const userAssignedSubjects = user?.assignedSubjects || [];
   const userSubjects = responsibilities.length > 0
@@ -85,46 +109,42 @@ export default function FacultyAttendance() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && (!selectedClass || !availableClasses.includes(selectedClass))) {
-      setSelectedClass(availableClasses[0]);
-    }
-  }, [availableClasses, user]);
-
-  useEffect(() => {
     if (availableSubjects.length > 0 && (!selectedSubject || !availableSubjects.includes(selectedSubject))) {
       setSelectedSubject(availableSubjects[0]);
     }
   }, [selectedClass, availableSubjects, user]);
 
   useEffect(() => {
-    fetchClassData();
-  }, [date, selectedClass, selectedSubject]);
+    fetchAttendanceSheet();
+  }, [selectedClass, selectedSubject, date]);
 
-  const fetchClassData = async () => {
+  const fetchAttendanceSheet = async () => {
     setLoading(true);
     try {
-      const studentRes = await facultyPanelService.getAssignedStudents({ className: selectedClass });
-      const list = studentRes?.students || [];
-      setStudents(list);
+      const [studentRes, attendanceRes] = await Promise.all([
+        facultyPanelService.getAssignedStudents({ className: selectedClass }),
+        attendanceService.getAttendanceRecords({ date, className: selectedClass, subject: selectedSubject }),
+      ]);
 
-      const attRes = await attendanceService.getAttendanceRecords({
-        date,
-        className: selectedClass,
-        subject: selectedSubject,
+      const studentList = studentRes?.students || [];
+      setStudents(studentList);
+
+      const existingRecords = attendanceRes?.records || [];
+      const recordMap = {};
+      existingRecords.forEach((r) => {
+        const stId = String(r.student?._id || r.student?.id || r.student);
+        if (stId) recordMap[stId] = r.status;
       });
 
-      const records = attRes?.records || [];
-      const newMap = {};
-
-      list.forEach((st) => {
+      const initialMap = {};
+      studentList.forEach((st) => {
         const stId = String(st._id || st.id);
-        const rec = records.find((r) => String(r.studentId || r.student) === stId);
-        newMap[stId] = rec ? rec.status : 'Present';
+        initialMap[stId] = recordMap[stId] || 'Present';
       });
 
-      setAttendanceMap(newMap);
+      setAttendanceMap(initialMap);
     } catch (err) {
-      addToast('Error loading attendance sheet', 'error');
+      addToast('Error loading attendance register', 'error');
     } finally {
       setLoading(false);
     }
@@ -135,6 +155,14 @@ export default function FacultyAttendance() {
       ...prev,
       [studentId]: status,
     }));
+  };
+
+  const handleMarkAll = (status) => {
+    const updated = {};
+    students.forEach((st) => {
+      updated[String(st._id || st.id)] = status;
+    });
+    setAttendanceMap(updated);
   };
 
   const handleSaveAttendance = async () => {
@@ -149,7 +177,7 @@ export default function FacultyAttendance() {
         };
       });
 
-      const res = await attendanceService.markBatchAttendance({
+      const res = await attendanceService.saveBatchAttendance({
         date,
         className: selectedClass,
         subject: selectedSubject,
@@ -157,7 +185,7 @@ export default function FacultyAttendance() {
       });
 
       if (res && res.success) {
-        addToast(`Attendance saved for ${selectedClass} (${selectedSubject}) on ${date}!`, 'success');
+        addToast(`Attendance saved for Class ${selectedClass} (${selectedSubject})!`, 'success');
       }
     } catch (err) {
       addToast('Error saving attendance', 'error');
@@ -166,47 +194,50 @@ export default function FacultyAttendance() {
     }
   };
 
-  const handleMarkAll = (status) => {
-    const updated = {};
-    students.forEach((st) => {
-      updated[String(st._id || st.id)] = status;
-    });
-    setAttendanceMap(updated);
-  };
-
   return (
-    <div className="space-y-6 font-body pb-12">
-      {/* Header */}
+    <div className="space-y-6 font-body">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-3xl">fact_check</span>
-            Daily Attendance Register
+            <span className="material-symbols-outlined text-primary text-3xl">how_to_reg</span>
+            Class Attendance Register
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Record, update, & publish daily student attendance for your assigned classes.
+            Record daily student attendance, track absences, &amp; generate attendance reports.
           </p>
         </div>
 
         <button
           onClick={handleSaveAttendance}
           disabled={saving || students.length === 0}
-          className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+          className="bg-primary text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">save</span>
-          {saving ? 'Saving...' : 'Submit Attendance'}
+          {saving ? 'Saving...' : 'Save Register'}
         </button>
       </div>
 
-      {/* Control Filters */}
-      <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Academic Stage / Category</label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
+          >
+            {CATEGORY_OPTIONS.map((cat) => (
+              <option key={cat.code} value={cat.code}>{cat.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Attendance Date</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -215,9 +246,9 @@ export default function FacultyAttendance() {
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           >
-            {availableClasses.map((cls) => (
+            {filteredClasses.map((cls) => (
               <option key={cls} value={cls}>Class {cls}</option>
             ))}
           </select>
@@ -228,7 +259,7 @@ export default function FacultyAttendance() {
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
+            className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
           >
             {availableSubjects.map((sub) => (
               <option key={sub} value={sub}>{sub}</option>
