@@ -137,11 +137,12 @@ export default function FacultyMarks() {
   };
 
   const handleMarkChange = (studentId, field, value) => {
+    const parsedVal = value === '' ? '' : Math.max(0, Number(value) || 0);
     setMarksMap((prev) => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [field]: value,
+        [field]: parsedVal,
       },
     }));
   };
@@ -164,10 +165,10 @@ export default function FacultyMarks() {
         const m = marksMap[stId] || { theoryMarks: 40, practicalMarks: 15, assignmentMarks: 15, totalMax: 100 };
         return {
           studentId: stId,
-          theoryMarks: m.theoryMarks,
-          practicalMarks: m.practicalMarks,
-          assignmentMarks: m.assignmentMarks,
-          totalMax: m.totalMax || 100,
+          theoryMarks: Number(m.theoryMarks) || 0,
+          practicalMarks: Number(m.practicalMarks) || 0,
+          assignmentMarks: Number(m.assignmentMarks) || 0,
+          totalMax: Number(m.totalMax) || 100,
         };
       });
 
@@ -297,7 +298,10 @@ export default function FacultyMarks() {
                 {students.map((st) => {
                   const stId = String(st._id || st.id);
                   const m = marksMap[stId] || { theoryMarks: 40, practicalMarks: 20, assignmentMarks: 20 };
-                  const total = (m.theoryMarks || 0) + (m.practicalMarks || 0) + (m.assignmentMarks || 0);
+                  const theory = Number(m.theoryMarks) || 0;
+                  const practical = Number(m.practicalMarks) || 0;
+                  const assignment = Number(m.assignmentMarks) || 0;
+                  const total = theory + practical + assignment;
 
                   let grade = 'A';
                   if (total >= 90) grade = 'A+';
@@ -315,7 +319,7 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={50}
-                          value={m.theoryMarks || ''}
+                          value={m.theoryMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'theoryMarks', e.target.value)}
                           className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
                         />
@@ -325,7 +329,7 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={25}
-                          value={m.practicalMarks || ''}
+                          value={m.practicalMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'practicalMarks', e.target.value)}
                           className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
                         />
@@ -335,7 +339,7 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={25}
-                          value={m.assignmentMarks || ''}
+                          value={m.assignmentMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'assignmentMarks', e.target.value)}
                           className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
                         />
