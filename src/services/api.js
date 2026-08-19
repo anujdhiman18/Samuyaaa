@@ -406,7 +406,7 @@ export const getStoredStudents = () => {
           ...s,
           className: normalizeClassCode(s.className),
           branchId: bId,
-          branch: s.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
+          branch: s.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)'),
         };
       });
   } catch (e) {
@@ -418,7 +418,7 @@ export const getStoredStudents = () => {
           ...s,
           className: normalizeClassCode(s.className),
           branchId: bId,
-          branch: s.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
+          branch: s.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)'),
         };
       });
   }
@@ -2793,7 +2793,7 @@ export const getStoredFaculty = () => {
         roles: derivedRoles,
         role: f.role || derivedRoles[0] || 'SUBJECT_TEACHER',
         branchId: bId,
-        branch: f.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
+        branch: f.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)'),
         assignedClasses: f.assignedClasses || [],
         assignedSubjects: f.assignedSubjects || [],
         responsibilities: f.responsibilities || [],
@@ -4998,8 +4998,8 @@ export const rbacService = {
     const newRoles = Array.isArray(payload.roles) ? payload.roles : ['SUBJECT_TEACHER'];
 
     if (idx !== -1) {
-      const bIdVal = payload.branchId || list[idx].branchId || (payload.branch === 'Branch' ? 'BRANCH' : 'MAIN_CENTER');
-      const bCodeVal = payload.branch || list[idx].branch || (bIdVal === 'BRANCH' ? 'Branch' : 'Main Center');
+      const bIdVal = payload.branchId || list[idx].branchId || (payload.branch?.includes('Daroh') || payload.branch === 'Branch (Daroh)' ? 'BRANCH' : 'MAIN_CENTER');
+      const bCodeVal = payload.branch || list[idx].branch || (bIdVal === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)');
 
       const updatedFac = {
         ...list[idx],

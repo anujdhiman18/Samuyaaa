@@ -80,7 +80,7 @@ export default function FacultyLeave() {
       const facultyName = currentUser?.name || currentUser?.fullName || currentUser?.facultyName || 'Prof. Jitender Sharma';
       const facultyEmail = currentUser?.email || currentUser?.facultyEmail || 'jitender.sharma@saumyaa.edu.in';
       const department = currentUser?.department || currentUser?.dept || 'Science & Mathematics';
-      const branch = currentUser?.branch || 'Main Center';
+      const branch = currentUser?.branch || 'Main Center (Bagru)';
 
       const res = await facultyPanelService.applyFacultyLeave({
         facultyId,

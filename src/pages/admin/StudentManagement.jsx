@@ -14,7 +14,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
-const BRANCHES = ['All', 'Main Center', 'Branch'];
+const BRANCHES = ['All', 'Main Center (Bagru)', 'Branch (Daroh)'];
 
 const initialStudentForm = {
   fullName: '',
@@ -31,7 +31,7 @@ const initialStudentForm = {
   className: 'S2',
   subjects: ['Mathematics Advanced'],
   batch: '2024-2026',
-  branch: 'Main Center',
+  branch: 'Main Center (Bagru)',
   rollNumber: '',
   photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
   monthlyFee: 2500,
@@ -553,7 +553,7 @@ export default function StudentManagement() {
                         </td>
                         <td className="p-4 font-mono text-primary font-bold">{s.rollNumber || s.admissionNumber}</td>
                         <td className="p-4">{formatClassLabel(s.className)}</td>
-                        <td className="p-4">{s.branch || 'Main Center'}</td>
+                        <td className="p-4">{s.branch || 'Main Center (Bagru)'}</td>
                         <td className="p-4 text-on-surface-variant">{s.fatherName || s.motherName || 'N/A'}</td>
                         <td className="p-4 text-right">
                           <button
@@ -652,7 +652,7 @@ export default function StudentManagement() {
                         <td className="p-4 font-bold text-secondary">{formatClassLabel(app.targetClass)}</td>
                         <td className="p-4">
                           <span className="px-2 py-0.5 rounded-md bg-surface-container font-bold text-secondary text-[11px] inline-block border border-outline-variant/20">
-                            {app.branch === 'Branch' ? 'Branch' : 'Main Center'}
+                            {app.branch?.includes('Daroh') || app.branch === 'Branch (Daroh)' ? 'Branch (Daroh)' : 'Main Center (Bagru)'}
                           </span>
                         </td>
                         <td className="p-4">
@@ -883,7 +883,7 @@ export default function StudentManagement() {
                 </div>
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Preferred Center:</span>
-                  <span className="font-bold text-secondary">{selectedApp.branch === 'Branch' ? 'Branch' : 'Main Center'}</span>
+                  <span className="font-bold text-secondary">{selectedApp.branch?.includes('Daroh') || selectedApp.branch === 'Branch (Daroh)' ? 'Branch (Daroh)' : 'Main Center (Bagru)'}</span>
                 </div>
                 <div>
                   <span className="text-on-surface-variant block text-[11px]">Previous School:</span>

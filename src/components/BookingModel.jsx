@@ -26,7 +26,7 @@ const initialFields = {
   parentEmail: '',
   academicStage: '',
   grade: '',
-  branch: 'Main Center',
+  branch: 'Main Center (Bagru)',
   subject: subjectOptions[0],
 };
 
@@ -198,12 +198,12 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 <select
                   id="preferred-branch"
                   required
-                  value={fields.branch || 'Main Center'}
+                  value={fields.branch || 'Main Center (Bagru)'}
                   onChange={(e) => updateField('branch', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
                 >
-                  <option value="Main Center">Main Center</option>
-                  <option value="Branch">Branch</option>
+                  <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                  <option value="Branch (Daroh)">Branch (Daroh)</option>
                 </select>
               </div>
             </div>

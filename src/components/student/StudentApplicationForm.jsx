@@ -21,7 +21,7 @@ const initialFormData = {
   academicStage: '',
   currentClass: '',
   targetClass: '',
-  branch: 'Main Center',
+  branch: 'Main Center (Bagru)',
   subjects: ['Mathematics', 'Physics'],
   previousSchool: '',
   parentName: '',
@@ -231,7 +231,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Preferred Center:</span>
             <span className="font-bold text-secondary">
-              {submittedApp.branch === 'Branch' ? 'Branch' : 'Main Center'}
+              {submittedApp.branch?.includes('Daroh') || submittedApp.branch === 'Branch (Daroh)' ? 'Branch (Daroh)' : 'Main Center (Bagru)'}
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">
@@ -476,14 +476,14 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
                 Select Center <span className="text-rose-500">*</span>
               </label>
               <select
-                value={formData.branch || 'Main Center'}
+                value={formData.branch || 'Main Center (Bagru)'}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
                 className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
                   errors.branch ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
                 }`}
               >
-                <option value="Main Center">Main Center</option>
-                <option value="Branch">Branch</option>
+                <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                <option value="Branch (Daroh)">Branch (Daroh)</option>
               </select>
               {errors.branch && <p className="text-[11px] text-rose-500 mt-1">{errors.branch}</p>}
             </div>

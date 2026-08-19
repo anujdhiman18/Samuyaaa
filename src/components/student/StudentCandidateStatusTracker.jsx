@@ -138,7 +138,7 @@ export default function StudentCandidateStatusTracker() {
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Preferred Center:</span>
-                <span className="font-bold text-secondary">{resultApp.branch === 'Branch' ? 'Branch' : 'Main Center'}</span>
+                <span className="font-bold text-secondary">{resultApp.branch?.includes('Daroh') || resultApp.branch === 'Branch (Daroh)' ? 'Branch (Daroh)' : 'Main Center (Bagru)'}</span>
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Applied Date:</span>

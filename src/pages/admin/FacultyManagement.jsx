@@ -17,7 +17,7 @@ const initialFacultyForm = {
   subject: 'Mathematics Advanced',
   qualification: 'Master’s Degree',
   experience: '5+ Years',
-  branch: 'Main Center',
+  branch: 'Main Center (Bagru)',
   branchId: 'MAIN_CENTER',
   assignedClasses: ['S2', 'S3'],
   assignedSubjects: ['Mathematics Advanced'],
@@ -1728,12 +1728,12 @@ export default function FacultyManagement() {
               <div>
                 <label className="font-bold text-secondary block mb-1">Select Center *</label>
                 <select
-                  value={form.branch || 'Main Center'}
+                  value={form.branch || 'Main Center (Bagru)'}
                   onChange={(e) => setForm({ ...form, branch: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
                 >
-                  <option value="Main Center">Main Center</option>
-                  <option value="Branch">Branch</option>
+                  <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                  <option value="Branch (Daroh)">Branch (Daroh)</option>
                 </select>
               </div>
 
@@ -2318,7 +2318,7 @@ export default function FacultyManagement() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
-                      🏢 Main Center
+                      🏢 Main Center (Bagru)
                     </span>
                     <input
                       type="radio"
@@ -2341,7 +2341,7 @@ export default function FacultyManagement() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      🏢 Branch
+                      🏢 Branch (Daroh)
                     </span>
                     <input
                       type="radio"

@@ -268,8 +268,8 @@ export const assignFacultyRoles = async (req, res) => {
     const primaryRole = req.body.position || req.body.role || newRoles[0] || 'SUBJECT_TEACHER';
     const primaryPosition = req.body.position || primaryRole;
     const isActiveBool = status !== undefined ? status === 'Active' : true;
-    const bIdVal = req.body.branchId || (faculty ? faculty.branchId : null) || (req.body.branch === 'Branch' ? 'BRANCH' : 'MAIN_CENTER');
-    const bCodeVal = req.body.branch || (faculty ? faculty.branch : null) || (bIdVal === 'BRANCH' ? 'Branch' : 'Main Center');
+    const bIdVal = req.body.branchId || (faculty ? faculty.branchId : null) || (req.body.branch?.includes('Daroh') || req.body.branch === 'Branch (Daroh)' ? 'BRANCH' : 'MAIN_CENTER');
+    const bCodeVal = req.body.branch || (faculty ? faculty.branch : null) || (bIdVal === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)');
 
     if (faculty) {
       faculty.roles = newRoles;

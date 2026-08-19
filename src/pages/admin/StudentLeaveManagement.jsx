@@ -209,8 +209,8 @@ export default function StudentLeaveManagement() {
                 className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none cursor-pointer"
               >
                 <option value="All">All Centers</option>
-                <option value="Main Center">Main Center</option>
-                <option value="Branch">Branch</option>
+                <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                <option value="Branch (Daroh)">Branch (Daroh)</option>
               </select>
             </div>
           </div>

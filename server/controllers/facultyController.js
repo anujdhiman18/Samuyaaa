@@ -90,9 +90,9 @@ export const updateFaculty = async (req, res) => {
     }
 
     if (updateData.branchId || updateData.branch) {
-      const bId = updateData.branchId || (updateData.branch === 'Branch' ? 'BRANCH' : 'MAIN_CENTER');
+      const bId = updateData.branchId || (updateData.branch?.includes('Daroh') || updateData.branch === 'Branch (Daroh)' ? 'BRANCH' : 'MAIN_CENTER');
       updateData.branchId = bId;
-      updateData.branch = updateData.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center');
+      updateData.branch = updateData.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)');
     }
 
     const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });

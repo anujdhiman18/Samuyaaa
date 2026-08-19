@@ -21,7 +21,7 @@ export const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Authenticated user account not found' });
       }
 
-      const branchVal = foundUser.branch || 'Main Center';
+      const branchVal = foundUser.branch || 'Main Center (Bagru)';
       const branchIdVal = foundUser.branchId || (String(branchVal).toLowerCase().includes('branch') ? 'BRANCH' : 'MAIN_CENTER');
 
       req.user = {

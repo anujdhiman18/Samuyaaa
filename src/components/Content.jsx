@@ -7,7 +7,7 @@ const initialForm = {
   email: '',
   targetClass: '',
   subject: '',
-  branch: 'Main Center',
+  branch: 'Main Center (Bagru)',
   message: '',
 };
 
@@ -127,51 +127,51 @@ export default function Contact() {
                   </p>
 
                   <div className="space-y-3">
-                    {/* Main Center */}
+                    {/* Main Center (Bagru) */}
                     <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                          Main Center
+                          Main Center (Bagru)
                         </span>
                         <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                           Main Center
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Saumyaa Studies, Main Center
+                        Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
                       </p>
                       <a
-                        href="https://maps.google.com"
+                        href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[14px]">map</span> View Main Center on Google Maps
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Bagru Main Center on Google Maps
                       </a>
                     </div>
 
-                    {/* Branch */}
+                    {/* Branch (Daroh) */}
                     <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                          Branch
+                          Branch (Daroh)
                         </span>
                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                           Branch
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Saumyaa Studies, Branch
+                        Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092
                       </p>
                       <a
-                        href="https://maps.google.com"
+                        href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[14px]">map</span> View Branch on Google Maps
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Daroh Branch on Google Maps
                       </a>
                     </div>
                   </div>
@@ -280,12 +280,12 @@ export default function Contact() {
                   <select
                     id="contact-branch"
                     required
-                    value={form.branch || 'Main Center'}
+                    value={form.branch || 'Main Center (Bagru)'}
                     onChange={(e) => updateField('branch', e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
                   >
-                    <option value="Main Center">Main Center</option>
-                    <option value="Branch">Branch</option>
+                    <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                    <option value="Branch (Daroh)">Branch (Daroh)</option>
                   </select>
                 </div>
               </div>

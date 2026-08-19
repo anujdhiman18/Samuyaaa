@@ -68,8 +68,8 @@ const facultySchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      enum: ['Main Center', 'Branch'],
-      default: 'Main Center',
+      enum: ['Main Center (Bagru)', 'Branch (Daroh)', 'Main Center', 'Branch', 'Bagru', 'Daroh'],
+      default: 'Main Center (Bagru)',
     },
     branchId: {
       type: String,

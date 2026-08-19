@@ -137,7 +137,7 @@ export default function StudentDetail() {
       rollNumber: student.rollNumber || '',
       subjects: student.subjects || [],
       batch: student.batch || '2024-2026',
-      branch: student.branch || 'Main Center',
+      branch: student.branch || 'Main Center (Bagru)',
       className: student.className || '10th',
       photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       phone: student.phone || '',
@@ -417,7 +417,7 @@ export default function StudentDetail() {
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Location</span>
-              <span className="font-extrabold text-primary">🏢 {student.branch || 'Main Center'}</span>
+              <span className="font-extrabold text-primary">🏢 {student.branch || 'Main Center (Bagru)'}</span>
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Class</span>
@@ -688,12 +688,12 @@ export default function StudentDetail() {
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Center</label>
               <select
-                value={editForm.branch || 'Main Center'}
+                value={editForm.branch || 'Main Center (Bagru)'}
                 onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none bg-white"
               >
-                <option value="Main Center">Main Center</option>
-                <option value="Branch">Branch</option>
+                <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                <option value="Branch (Daroh)">Branch (Daroh)</option>
               </select>
             </div>
             <div>

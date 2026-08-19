@@ -6,18 +6,18 @@
  */
 
 export const normalizeBranch = (input) => {
-  if (!input) return { branchId: 'MAIN_CENTER', branch: 'Main Center' };
+  if (!input) return { branchId: 'MAIN_CENTER', branch: 'Main Center (Bagru)' };
   const str = String(input).trim().toLowerCase();
   if (
     str === 'branch' ||
     str === 'child_branch' ||
     str === 'daroh' ||
     str.includes('daroh') ||
-    str.includes('child')
+    (str.includes('branch') && !str.includes('main'))
   ) {
-    return { branchId: 'BRANCH', branch: 'Branch' };
+    return { branchId: 'BRANCH', branch: 'Branch (Daroh)' };
   }
-  return { branchId: 'MAIN_CENTER', branch: 'Main Center' };
+  return { branchId: 'MAIN_CENTER', branch: 'Main Center (Bagru)' };
 };
 
 export const enforceFacultyBranchAccess = (req, res, next) => {

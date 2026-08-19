@@ -363,16 +363,16 @@ export const computePermissionsForUser = (userRoleCodes = [], customPermissionOv
 export const BRANCHES = {
   MAIN: {
     id: 'MAIN_CENTER',
-    code: 'Main Center',
-    name: 'Main Center',
-    shortName: 'Main Center',
+    code: 'Main Center (Bagru)',
+    name: 'Main Center (Bagru)',
+    shortName: 'Main Center (Bagru)',
     isMain: true,
   },
   BRANCH: {
     id: 'BRANCH',
-    code: 'Branch',
-    name: 'Branch',
-    shortName: 'Branch',
+    code: 'Branch (Daroh)',
+    name: 'Branch (Daroh)',
+    shortName: 'Branch (Daroh)',
     isMain: false,
   },
 };
@@ -385,7 +385,7 @@ export const normalizeBranchId = (branchInput) => {
     str === 'child_branch' ||
     str === 'daroh' ||
     str.includes('daroh') ||
-    str.includes('child')
+    (str.includes('branch') && !str.includes('main'))
   ) {
     return 'BRANCH';
   }
@@ -393,10 +393,10 @@ export const normalizeBranchId = (branchInput) => {
 };
 
 export const getBranchCode = (branchId) => {
-  return normalizeBranchId(branchId) === 'BRANCH' ? 'Branch' : 'Main Center';
+  return normalizeBranchId(branchId) === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)';
 };
 
 export const getBranchLabel = (branchInput) => {
-  return normalizeBranchId(branchInput) === 'BRANCH' ? 'Branch' : 'Main Center';
+  return normalizeBranchId(branchInput) === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)';
 };
 
