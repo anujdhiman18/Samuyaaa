@@ -37,11 +37,20 @@ const studentSchema = new mongoose.Schema(
       required: [true, 'Address is required'],
       trim: true,
     },
+    academicStage: {
+      type: String,
+      default: 'S2',
+      trim: true,
+    },
+    currentClass: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     className: {
       type: String,
-      required: [true, 'Class is required'],
-      enum: ['S1', 'S2', 'S3', 'S4'],
       default: 'S2',
+      trim: true,
     },
     rollNumber: {
       type: String,

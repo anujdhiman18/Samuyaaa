@@ -2,31 +2,63 @@
  * Standardized Class / Grade Categories for Saumyaa Studies
  * S1 = Nursery to 5th
  * S2 = 6th to 10th
- * S3 = 10th to 12th
- * S4 = Higher than 12th (Post-12th / College level)
+ * S3 = 11th to 12th
+ * S4 = Higher Education
  */
 
 export const CLASS_CATEGORIES = [
-  { code: 'S1', label: 'S1 (Nursery - 5th)', shortLabel: 'S1 (Nursery - 5th)', description: 'Nursery to 5th Grade' },
-  { code: 'S2', label: 'S2 (6th - 10th)', shortLabel: 'S2 (6th - 10th)', description: '6th to 10th Grade' },
-  { code: 'S3', label: 'S3 (10th - 12th)', shortLabel: 'S3 (10th - 12th)', description: '10th to 12th Grade' },
-  { code: 'S4', label: 'S4 (Higher than 12th)', shortLabel: 'S4 (Higher than 12th)', description: 'Higher than 12th (Post-12th / College)' },
+  { code: 'S1', label: 'S1 — Nursery to 5th', shortLabel: 'S1 — Nursery to 5th', description: 'Nursery to 5th Grade' },
+  { code: 'S2', label: 'S2 — 6th to 10th', shortLabel: 'S2 — 6th to 10th', description: '6th to 10th Grade' },
+  { code: 'S3', label: 'S3 — 11th to 12th', shortLabel: 'S3 — 11th to 12th', description: '11th to 12th Grade' },
+  { code: 'S4', label: 'S4 — Higher Education', shortLabel: 'S4 — Higher Education', description: 'Higher Education (College / University)' },
 ];
 
 export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
 
+export const STAGE_CLASSES = {
+  S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
+  S2: ['6th', '7th', '8th', '9th', '10th'],
+  S3: ['11th', '12th'],
+  S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Other'],
+};
+
 /**
- * Format raw class code or legacy class string to formatted category label
- * e.g., 'S1' -> 'S1 (Nursery - 5th)'
- * e.g., '10th' -> 'S2 (6th - 10th)' (Legacy migration fallback)
+ * Get stage code (S1, S2, S3, S4) for a given class or code
  */
-export const formatClassLabel = (code) => {
-  if (!code) return 'S2 (6th - 10th)';
-  if (code === 'S1') return 'S1 (Nursery - 5th)';
-  if (code === 'S2') return 'S2 (6th - 10th)';
-  if (code === 'S3') return 'S3 (10th - 12th)';
-  if (code === 'S4') return 'S4 (Higher than 12th)';
+export const getStageForClass = (val) => {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  if (CLASS_CODES.includes(trimmed)) return trimmed;
+
+  for (const [stage, classes] of Object.entries(STAGE_CLASSES)) {
+    if (classes.includes(trimmed)) return stage;
+  }
+
+  return normalizeClassCode(trimmed);
+};
+
+/**
+ * Format raw class code or exact current class to formatted label
+ * Prioritizes exact current class as primary information.
+ */
+export const formatClassLabel = (code, currentClass) => {
+  if (currentClass) {
+    const stage = getStageForClass(currentClass) || getStageForClass(code);
+    return stage ? `${currentClass} (${stage})` : currentClass;
+  }
+
+  if (!code) return 'S2 — 6th to 10th';
+  if (code === 'S1') return 'S1 — Nursery to 5th';
+  if (code === 'S2') return 'S2 — 6th to 10th';
+  if (code === 'S3') return 'S3 — 11th to 12th';
+  if (code === 'S4') return 'S4 — Higher Education';
   if (code === 'All') return 'All Categories';
+
+  // Check if code itself is an exact class
+  const derivedStage = getStageForClass(code);
+  if (derivedStage && derivedStage !== code) {
+    return `${code} (${derivedStage})`;
+  }
 
   // Legacy fallback mapping
   const normalized = normalizeClassCode(code);
@@ -34,7 +66,7 @@ export const formatClassLabel = (code) => {
 };
 
 /**
- * Normalize old class values (e.g., '9th', '10th', 'Nursery') to standard code ('S1', 'S2', 'S3', 'S4')
+ * Normalize old class values to standard stage code ('S1', 'S2', 'S3', 'S4')
  */
 export const normalizeClassCode = (val) => {
   if (!val) return 'S2';
@@ -69,7 +101,7 @@ export const normalizeClassCode = (val) => {
     return 'S2';
   }
 
-  // 10th - 12th (+1, +2)
+  // 11th - 12th (+1, +2)
   if (
     str.includes('11th') ||
     str.includes('12th') ||
@@ -80,10 +112,12 @@ export const normalizeClassCode = (val) => {
     return 'S3';
   }
 
-  // Higher than 12th
+  // Higher Education
   if (
     str.includes('higher') ||
     str.includes('college') ||
+    str.includes('undergraduate') ||
+    str.includes('postgraduate') ||
     str.includes('repeater') ||
     str.includes('entrance') ||
     str.includes('target')
@@ -93,3 +127,4 @@ export const normalizeClassCode = (val) => {
 
   return 'S2';
 };
+

@@ -2,11 +2,30 @@
  * Standardized Class / Grade Categories for Server-side Mongoose Schemas & Validation
  * S1 = Nursery to 5th
  * S2 = 6th to 10th
- * S3 = 10th to 12th
- * S4 = Higher than 12th (Post-12th / College level)
+ * S3 = 11th to 12th
+ * S4 = Higher Education
  */
 
 export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
+
+export const STAGE_CLASSES = {
+  S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
+  S2: ['6th', '7th', '8th', '9th', '10th'],
+  S3: ['11th', '12th'],
+  S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Other'],
+};
+
+export const getStageForClass = (val) => {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  if (CLASS_CODES.includes(trimmed)) return trimmed;
+
+  for (const [stage, classes] of Object.entries(STAGE_CLASSES)) {
+    if (classes.includes(trimmed)) return stage;
+  }
+
+  return normalizeClassCode(trimmed);
+};
 
 export const normalizeClassCode = (val) => {
   if (!val) return 'S2';
@@ -52,6 +71,8 @@ export const normalizeClassCode = (val) => {
   if (
     str.includes('higher') ||
     str.includes('college') ||
+    str.includes('undergraduate') ||
+    str.includes('postgraduate') ||
     str.includes('repeater') ||
     str.includes('entrance') ||
     str.includes('target')
@@ -61,3 +82,4 @@ export const normalizeClassCode = (val) => {
 
   return 'S2';
 };
+

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { subjectOptions, timeSlots } from '../data.js';
+import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass } from '../config/classConfig';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -23,6 +24,7 @@ const initialFields = {
   studentName: '',
   parentPhone: '',
   parentEmail: '',
+  academicStage: '',
   grade: '',
   branch: 'Bagru',
   subject: subjectOptions[0],
@@ -226,36 +228,56 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
 
             <div className="space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="student-grade">
-                  Current Grade / Class *
+                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="academic-stage">
+                  Academic Stage *
                 </label>
                 <select
-                  id="student-grade"
+                  id="academic-stage"
                   required
-                  value={fields.grade}
-                  onChange={(e) => updateField('grade', e.target.value)}
+                  value={fields.academicStage || ''}
+                  onChange={(e) => {
+                    const stage = e.target.value;
+                    const validClasses = STAGE_CLASSES[stage] || [];
+                    const newGrade = validClasses.includes(fields.grade) ? fields.grade : '';
+                    updateField('academicStage', stage);
+                    updateField('grade', newGrade);
+                  }}
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
                 >
                   <option value="" disabled>
-                    Choose class
+                    Select academic stage
                   </option>
-                  <option value="Nursery">Nursery</option>
-                  <option value="LKG">LKG</option>
-                  <option value="UKG">UKG</option>
-                  <option value="Class 1st">Class 1st</option>
-                  <option value="Class 2nd">Class 2nd</option>
-                  <option value="Class 3rd">Class 3rd</option>
-                  <option value="Class 4th">Class 4th</option>
-                  <option value="Class 5th">Class 5th</option>
-                  <option value="Class 6th">Class 6th</option>
-                  <option value="Class 7th">Class 7th</option>
-                  <option value="Class 8th">Class 8th</option>
-                  <option value="Class 9th">Class 9th</option>
-                  <option value="Class 10th">Class 10th</option>
-                  <option value="Class 11th">Class 11th</option>
-                  <option value="Class 12th">Class 12th</option>
+                  {CLASS_CATEGORIES.map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.label}
+                    </option>
+                  ))}
                 </select>
               </div>
+
+              {fields.academicStage ? (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="student-grade">
+                    Current Class / Grade *
+                  </label>
+                  <select
+                    id="student-grade"
+                    required
+                    value={fields.grade || ''}
+                    onChange={(e) => updateField('grade', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
+                  >
+                    <option value="" disabled>
+                      Select current class / grade
+                    </option>
+                    {(STAGE_CLASSES[fields.academicStage] || []).map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="subject-interest">

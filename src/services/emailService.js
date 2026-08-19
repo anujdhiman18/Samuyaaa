@@ -111,6 +111,8 @@ export const sendStudentApplicationNotification = async (application) => {
     dob,
     email,
     contactNumber,
+    academicStage,
+    currentClass,
     targetClass,
     subjects,
     previousSchool,
@@ -120,6 +122,7 @@ export const sendStudentApplicationNotification = async (application) => {
     appliedAt,
   } = application;
 
+  const displayClass = currentClass ? `${currentClass} (${academicStage || targetClass})` : (targetClass || academicStage || 'N/A');
   const formattedSubjects = Array.isArray(subjects) ? subjects.join(', ') : subjects || 'N/A';
 
   try {
@@ -130,13 +133,15 @@ export const sendStudentApplicationNotification = async (application) => {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        _subject: `New Student Admission Application - ${fullName} (${targetClass})`,
+        _subject: `New Student Admission Application - ${fullName} (${displayClass})`,
         "Application ID": applicationId,
         "Student Name": fullName,
         "Date of Birth": dob || 'Not Specified',
         "Student Email": email,
         "Student Contact": contactNumber,
-        "Class Applying For": targetClass,
+        "Current Class / Grade": currentClass || 'Not Specified',
+        "Academic Stage": academicStage || targetClass || 'Not Specified',
+        "Class Applying For": displayClass,
         "Subjects of Interest": formattedSubjects,
         "Previous School": previousSchool || 'N/A',
         "Parent / Guardian Name": parentName,

@@ -11,7 +11,7 @@ import {
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
-import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 const BRANCHES = ['All', 'Bagru', 'Daroh'];
@@ -26,6 +26,8 @@ const initialStudentForm = {
   email: '',
   password: 'Student123',
   address: '',
+  academicStage: '',
+  currentClass: '',
   className: 'S2',
   subjects: ['Mathematics Advanced'],
   batch: '2024-2026',
@@ -723,12 +725,19 @@ export default function StudentManagement() {
               </div>
 
               <div>
-                <label className="block font-bold text-secondary mb-1">Class / Grade *</label>
+                <label className="block font-bold text-secondary mb-1">Academic Stage *</label>
                 <select
-                  value={form.className}
-                  onChange={(e) => setForm({ ...form, className: e.target.value })}
+                  required
+                  value={form.academicStage || ''}
+                  onChange={(e) => {
+                    const stage = e.target.value;
+                    const validClasses = STAGE_CLASSES[stage] || [];
+                    const newClass = validClasses.includes(form.currentClass) ? form.currentClass : '';
+                    setForm({ ...form, academicStage: stage, currentClass: newClass, className: newClass || stage });
+                  }}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary font-bold"
                 >
+                  <option value="" disabled>Select academic stage</option>
                   {CLASS_CATEGORIES.map((cat) => (
                     <option key={cat.code} value={cat.code}>
                       {cat.label}
@@ -736,6 +745,28 @@ export default function StudentManagement() {
                   ))}
                 </select>
               </div>
+
+              {form.academicStage ? (
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Current Class / Grade *</label>
+                  <select
+                    required
+                    value={form.currentClass || ''}
+                    onChange={(e) => {
+                      const cls = e.target.value;
+                      setForm({ ...form, currentClass: cls, className: cls || form.academicStage });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary font-bold"
+                  >
+                    <option value="" disabled>Select current class / grade</option>
+                    {(STAGE_CLASSES[form.academicStage] || []).map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
               <div>
                 <label className="block font-bold text-secondary mb-1">Roll Number</label>

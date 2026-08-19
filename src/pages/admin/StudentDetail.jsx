@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
-import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
 
 const COURSES = [
   'Science (PCM)',
@@ -315,7 +315,7 @@ export default function StudentDetail() {
               <span>&bull;</span>
               <span>Roll: <strong className="text-secondary">{student.rollNumber}</strong></span>
               <span>&bull;</span>
-              <span>Class: <strong className="text-secondary">{formatClassLabel(student.className)}</strong></span>
+              <span>Class: <strong className="text-secondary">{formatClassLabel(student.className, student.currentClass)}</strong></span>
               <span>&bull;</span>
               <span>Batch: <strong className="text-secondary">{student.batch || '2024-2026'}</strong></span>
             </div>
@@ -697,12 +697,18 @@ export default function StudentDetail() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Class</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Academic Stage</label>
               <select
-                value={editForm.className || 'S2'}
-                onChange={(e) => setEditForm({ ...editForm, className: e.target.value, semester: formatClassLabel(e.target.value) })}
+                value={editForm.academicStage || ''}
+                onChange={(e) => {
+                  const stage = e.target.value;
+                  const validClasses = STAGE_CLASSES[stage] || [];
+                  const newClass = validClasses.includes(editForm.currentClass) ? editForm.currentClass : '';
+                  setEditForm({ ...editForm, academicStage: stage, currentClass: newClass, className: newClass || stage });
+                }}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
+                <option value="" disabled>Select academic stage</option>
                 {CLASS_CATEGORIES.map((cat) => (
                   <option key={cat.code} value={cat.code}>
                     {cat.label}
@@ -710,6 +716,26 @@ export default function StudentDetail() {
                 ))}
               </select>
             </div>
+            {editForm.academicStage ? (
+              <div>
+                <label className="block text-xs font-bold text-secondary mb-1">Current Class / Grade</label>
+                <select
+                  value={editForm.currentClass || ''}
+                  onChange={(e) => {
+                    const cls = e.target.value;
+                    setEditForm({ ...editForm, currentClass: cls, className: cls || editForm.academicStage });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
+                >
+                  <option value="" disabled>Select current class / grade</option>
+                  {(STAGE_CLASSES[editForm.academicStage] || []).map((cls) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Status</label>
               <select

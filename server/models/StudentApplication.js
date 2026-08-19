@@ -28,10 +28,18 @@ const studentApplicationSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    academicStage: {
+      type: String,
+      default: 'S2',
+      trim: true,
+    },
+    currentClass: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     targetClass: {
       type: String,
-      required: [true, 'Class/Grade applying for is required'],
-      enum: ['S1', 'S2', 'S3', 'S4'],
       default: 'S2',
       trim: true,
     },

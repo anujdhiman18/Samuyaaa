@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
 
 const SUBJECT_OPTIONS = [
   'Mathematics',
@@ -18,7 +18,9 @@ const initialFormData = {
   email: '',
   contactNumber: '',
   dob: '',
-  targetClass: 'S2',
+  academicStage: '',
+  currentClass: '',
+  targetClass: '',
   branch: 'Bagru',
   subjects: ['Mathematics', 'Physics'],
   previousSchool: '',
@@ -40,7 +42,27 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     try {
       const saved = localStorage.getItem('saumyaa_student_app_draft');
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved) }));
+        const parsed = JSON.parse(saved);
+        let stage = parsed.academicStage || '';
+        let currClass = parsed.currentClass || '';
+
+        if (!stage && parsed.targetClass) {
+          stage = getStageForClass(parsed.targetClass);
+          if (!currClass && parsed.targetClass !== stage) {
+            currClass = parsed.targetClass;
+          }
+        }
+        if (stage && currClass && STAGE_CLASSES[stage] && !STAGE_CLASSES[stage].includes(currClass)) {
+          currClass = '';
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          ...parsed,
+          academicStage: stage,
+          currentClass: currClass,
+          targetClass: currClass || stage,
+        }));
         setDraftSaved(true);
       }
     } catch (e) {
@@ -72,6 +94,8 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       email: 'aarav.sharma@gmail.com',
       contactNumber: '9816512345',
       dob: '2010-05-14',
+      academicStage: 'S2',
+      currentClass: '10th',
       targetClass: '10th',
       branch: 'Bagru',
       subjects: ['Mathematics', 'Physics', 'Chemistry'],
@@ -82,6 +106,35 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     });
     setErrors({});
     addToast('Demo student details auto-filled!', 'success');
+  };
+
+  const handleStageChange = (stageCode) => {
+    setFormData((prev) => {
+      const validClasses = STAGE_CLASSES[stageCode] || [];
+      const newClass = validClasses.includes(prev.currentClass) ? prev.currentClass : '';
+      return {
+        ...prev,
+        academicStage: stageCode,
+        currentClass: newClass,
+        targetClass: newClass || stageCode,
+      };
+    });
+    if (errors.academicStage || errors.currentClass) {
+      setErrors((prev) => ({ ...prev, academicStage: null, currentClass: null }));
+    }
+  };
+
+  const handleClassChange = (className) => {
+    setFormData((prev) => {
+      return {
+        ...prev,
+        currentClass: className,
+        targetClass: className || prev.academicStage,
+      };
+    });
+    if (errors.currentClass) {
+      setErrors((prev) => ({ ...prev, currentClass: null }));
+    }
   };
 
   const handleSubjectToggle = (subj) => {
@@ -104,7 +157,8 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     if (!formData.parentName.trim()) errs.parentName = 'Parent/Guardian name is required';
     if (!formData.parentContact.trim() || formData.parentContact.length < 10)
       errs.parentContact = 'Valid parent contact number is required';
-    if (!formData.targetClass) errs.targetClass = 'Please select a class/grade';
+    if (!formData.academicStage) errs.academicStage = 'Please select an academic stage';
+    if (!formData.currentClass) errs.currentClass = 'Please select your current class / grade';
     if (!formData.branch) errs.branch = 'Please select a preferred branch';
 
     setErrors(errs);
@@ -163,7 +217,16 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           </div>
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Applying For:</span>
-            <span className="font-bold text-secondary">{formatClassLabel(submittedApp.targetClass)}</span>
+            <span className="font-bold text-secondary">
+              {submittedApp.currentClass ? (
+                <>
+                  <span className="text-primary font-extrabold mr-1">{submittedApp.currentClass}</span>
+                  <span className="text-on-surface-variant text-[11px]">({formatClassLabel(submittedApp.academicStage || submittedApp.targetClass)})</span>
+                </>
+              ) : (
+                formatClassLabel(submittedApp.targetClass)
+              )}
+            </span>
           </div>
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Preferred Branch:</span>
@@ -298,13 +361,13 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
-                Student Phone / Mobile <span className="text-rose-500">*</span>
+                Student Contact Number <span className="text-rose-500">*</span>
               </label>
               <input
                 type="tel"
                 value={formData.contactNumber}
                 onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                placeholder="10-digit mobile number"
+                placeholder="e.g. 9816512345"
                 className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
                   errors.contactNumber ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
                 }`}
@@ -324,7 +387,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
-                Parent / Guardian Name <span className="text-rose-500">*</span>
+                Parent / Guardian Full Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -340,13 +403,13 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
-                Parent Contact Number <span className="text-rose-500">*</span>
+                Parent / Guardian Contact Number <span className="text-rose-500">*</span>
               </label>
               <input
                 type="tel"
                 value={formData.parentContact}
                 onChange={(e) => setFormData({ ...formData, parentContact: e.target.value })}
-                placeholder="10-digit parent mobile number"
+                placeholder="e.g. 9816598765"
                 className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
                   errors.parentContact ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
                 }`}
@@ -366,20 +429,47 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
-                Class / Grade Applying For <span className="text-rose-500">*</span>
+                Academic Stage <span className="text-rose-500">*</span>
               </label>
               <select
-                value={formData.targetClass}
-                onChange={(e) => setFormData({ ...formData, targetClass: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-2xl border border-outline-variant/30 text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                value={formData.academicStage || ''}
+                onChange={(e) => handleStageChange(e.target.value)}
+                className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
+                  errors.academicStage ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
+                }`}
               >
+                <option value="" disabled>Select academic stage</option>
                 {CLASS_CATEGORIES.map((cat) => (
                   <option key={cat.code} value={cat.code}>
                     {cat.label}
                   </option>
                 ))}
               </select>
+              {errors.academicStage && <p className="text-[11px] text-rose-500 mt-1">{errors.academicStage}</p>}
             </div>
+
+            {formData.academicStage ? (
+              <div>
+                <label className="block text-xs font-bold text-secondary mb-1">
+                  Current Class / Grade <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.currentClass || ''}
+                  onChange={(e) => handleClassChange(e.target.value)}
+                  className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
+                    errors.currentClass ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
+                  }`}
+                >
+                  <option value="" disabled>Select current class / grade</option>
+                  {(STAGE_CLASSES[formData.academicStage] || []).map((cls) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+                {errors.currentClass && <p className="text-[11px] text-rose-500 mt-1">{errors.currentClass}</p>}
+              </div>
+            ) : null}
 
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
