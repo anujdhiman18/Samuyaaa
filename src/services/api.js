@@ -570,20 +570,53 @@ export const authService = {
 
     const enteredHash = await hashPasswordClient(password);
 
-    // 2. Check Student Directory (by Email or Roll Number)
-    const students = getStoredStudents();
-    const student = students.find(
+    // 2. Check Student Directory (by Email, Roll Number, Admission Number, or Phone)
+    let students = getStoredStudents();
+    let student = students.find(
       (s) =>
         (s.email && s.email.trim().toLowerCase() === cleanEmail) ||
-        (s.rollNumber && s.rollNumber.trim().toLowerCase() === cleanEmail)
+        (s.rollNumber && s.rollNumber.trim().toLowerCase() === cleanEmail) ||
+        (s.admissionNumber && s.admissionNumber.trim().toLowerCase() === cleanEmail) ||
+        (s.phone && s.phone.trim() === cleanEmail) ||
+        (s.parentPhone && s.parentPhone.trim() === cleanEmail)
     );
+
+    // If student not found in local cache, sync latest student records from Firestore DB
+    if (!student) {
+      try {
+        const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+        if (fsStudents && fsStudents.length > 0) {
+          students = fsStudents;
+          setStoredStudents(students);
+          student = students.find(
+            (s) =>
+              (s.email && s.email.trim().toLowerCase() === cleanEmail) ||
+              (s.rollNumber && s.rollNumber.trim().toLowerCase() === cleanEmail) ||
+              (s.admissionNumber && s.admissionNumber.trim().toLowerCase() === cleanEmail) ||
+              (s.phone && s.phone.trim() === cleanEmail) ||
+              (s.parentPhone && s.parentPhone.trim() === cleanEmail)
+          );
+        }
+      } catch (e) {
+        console.warn('Firestore sync during student login warning:', e);
+      }
+    }
 
     if (student) {
       const storedPass = student.password || '';
+      const initialPass = student.initialPassword || '';
+      const tempPass = student.tempPassword || student.temporaryPassword || '';
+
       const isPassValid =
-        enteredHash === storedPass ||
-        password === storedPass ||
+        (storedPass && enteredHash === storedPass) ||
+        (initialPass && enteredHash === initialPass) ||
+        (tempPass && enteredHash === tempPass) ||
+        (storedPass && password === storedPass) ||
+        (initialPass && password === initialPass) ||
+        (tempPass && password === tempPass) ||
         (storedPass && password.toLowerCase() === storedPass.toLowerCase()) ||
+        (initialPass && password.toLowerCase() === initialPass.toLowerCase()) ||
+        (tempPass && password.toLowerCase() === tempPass.toLowerCase()) ||
         password === 'Student123' ||
         password === 'student123' ||
         password === 'student';
@@ -695,10 +728,20 @@ export const authService = {
       const idx = list.findIndex((s) => String(s._id) === targetId || String(s.id) === targetId);
       if (idx !== -1) {
         const storedPass = list[idx].password || '';
+        const initialPass = list[idx].initialPassword || '';
+        const tempPass = list[idx].tempPassword || list[idx].temporaryPassword || '';
+
         const isValidCurrent =
           !currentPassword ||
-          enteredCurrentHash === storedPass ||
-          currentPassword === storedPass ||
+          (storedPass && enteredCurrentHash === storedPass) ||
+          (initialPass && enteredCurrentHash === initialPass) ||
+          (tempPass && enteredCurrentHash === tempPass) ||
+          (storedPass && currentPassword === storedPass) ||
+          (initialPass && currentPassword === initialPass) ||
+          (tempPass && currentPassword === tempPass) ||
+          (storedPass && currentPassword.toLowerCase() === storedPass.toLowerCase()) ||
+          (initialPass && currentPassword.toLowerCase() === initialPass.toLowerCase()) ||
+          (tempPass && currentPassword.toLowerCase() === tempPass.toLowerCase()) ||
           currentPassword === 'Student123' ||
           currentPassword === 'student';
 
@@ -709,10 +752,13 @@ export const authService = {
         list[idx].password = newHashedPassword;
         list[idx].mustChangePassword = false;
         list[idx].passwordType = 'PERMANENT';
+        list[idx].initialPassword = null;
+        list[idx].tempPassword = null;
+        list[idx].temporaryPassword = null;
         setStoredStudents(list);
 
         try {
-          await setDoc(doc(db, 'students', targetId), { password: newHashedPassword, mustChangePassword: false, passwordType: 'PERMANENT' }, { merge: true });
+          await setDoc(doc(db, 'students', targetId), { password: newHashedPassword, mustChangePassword: false, passwordType: 'PERMANENT', initialPassword: null, tempPassword: null }, { merge: true });
         } catch (e) {}
         try {
           await apiCall(`/students/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: newHashedPassword, mustChangePassword: false }) });
@@ -1234,6 +1280,8 @@ export const studentService = {
       rollNumber: finalRollNumber,
       email: data.email ? data.email.trim().toLowerCase() : `${finalRollNumber.toLowerCase()}@saumyaa.com`,
       password: hashedPassword,
+      initialPassword: tempPassword,
+      tempPassword: tempPassword,
       mustChangePassword: true,
     };
 
@@ -1244,7 +1292,7 @@ export const studentService = {
     } catch (e) {}
 
     const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
-    const newStudent = remoteStudent ? { ...remoteStudent, mustChangePassword: true } : { ...payload, _id: id, id };
+    const newStudent = remoteStudent ? { ...remoteStudent, initialPassword: tempPassword, tempPassword: tempPassword, mustChangePassword: true } : { ...payload, _id: id, id };
 
     // Save to Firebase Firestore DB
     try {
@@ -1271,17 +1319,19 @@ export const studentService = {
     const hashedPassword = await hashPasswordClient(newTempPassword);
 
     list[idx].password = hashedPassword;
+    list[idx].initialPassword = newTempPassword;
+    list[idx].tempPassword = newTempPassword;
     list[idx].mustChangePassword = true;
 
     try {
       await apiCall(`/students/${targetId}`, {
         method: 'PUT',
-        body: JSON.stringify({ password: hashedPassword, mustChangePassword: true }),
+        body: JSON.stringify({ password: hashedPassword, initialPassword: newTempPassword, tempPassword: newTempPassword, mustChangePassword: true }),
       });
     } catch (e) {}
 
     try {
-      await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: true }, { merge: true });
+      await setDoc(doc(db, 'students', targetId), { password: hashedPassword, initialPassword: newTempPassword, tempPassword: newTempPassword, mustChangePassword: true }, { merge: true });
     } catch (e) {}
 
     setStoredStudents(list);
