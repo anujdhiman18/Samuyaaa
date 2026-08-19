@@ -6,7 +6,7 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
-import { normalizeClassCode, formatClassLabel, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
+import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, CLASS_CATEGORIES, CLASS_CODES } from '../config/classConfig';
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
 
@@ -1222,7 +1222,10 @@ export const studentService = {
     let list = fsStudents || getStoredStudents();
 
     if (params.className && params.className !== 'All') {
-      list = list.filter((s) => s.className === params.className);
+      const classMatched = list.filter((s) => isClassOrStageMatch(s.className, params.className));
+      if (classMatched.length > 0) {
+        list = classMatched;
+      }
     }
     if (params.search) {
       const term = params.search.toLowerCase();
@@ -5002,17 +5005,25 @@ export const facultyPanelService = {
 
     const assignedClasses = Array.from(new Set(resps.map((r) => r.className)));
 
-    const allStudents = getStoredStudents();
+    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
+    const allStudents = fsStudents || getStoredStudents();
+
     let filtered = allStudents.filter((s) => {
       const sBId = normalizeBranchId(s.branchId || s.branch);
       if (userBranchId === 'BRANCH' && sBId !== 'BRANCH') return false;
-      if (!isAdminUser && assignedClasses.length > 0) return assignedClasses.includes(s.className);
+      if (!isAdminUser && assignedClasses.length > 0) {
+        return assignedClasses.some((ac) => isClassOrStageMatch(s.className, ac));
+      }
       return true;
     });
 
     if (params.className && params.className !== 'All') {
-      filtered = filtered.filter((s) => s.className === params.className);
+      const classMatched = filtered.filter((s) => isClassOrStageMatch(s.className, params.className));
+      if (classMatched.length > 0) {
+        filtered = classMatched;
+      }
     }
+
     if (params.search) {
       const term = params.search.toLowerCase();
       filtered = filtered.filter(

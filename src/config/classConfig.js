@@ -75,6 +75,16 @@ export const getStageForClass = (val) => {
   return normalizeClassCode(trimmed);
 };
 
+export const isClassOrStageMatch = (studentClass, queryClass) => {
+  if (!queryClass || queryClass === 'All') return true;
+  if (!studentClass) return true;
+  if (studentClass === queryClass) return true;
+  const qStage = getStageForClass(queryClass);
+  const sStage = getStageForClass(studentClass);
+  if (qStage && sStage && qStage === sStage) return true;
+  return false;
+};
+
 /**
  * Format raw class code or exact current class to formatted label
  * Prioritizes exact current class as primary information.
