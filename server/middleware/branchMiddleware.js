@@ -1,18 +1,23 @@
 /**
- * Branch Access Control Middleware
- * Enforces strict branch-level data isolation.
- * Admin: Full access to both Main Branch and Child Branch.
- * Main Branch Faculty: Locked to MAIN_BRANCH (Bagru).
- * Child Branch Faculty: Locked strictly to CHILD_BRANCH (Daroh). Rejects cross-branch requests with 403 Forbidden.
+ * Center Access Control Middleware
+ * Enforces strict center-level data isolation.
+ * Main Center: Full access to Main Center data and administrative oversight.
+ * Branch: Locked strictly to Branch. Rejects cross-center requests with 403 Forbidden.
  */
 
 export const normalizeBranch = (input) => {
-  if (!input) return { branchId: 'MAIN_BRANCH', branch: 'Bagru' };
+  if (!input) return { branchId: 'MAIN_CENTER', branch: 'Main Center' };
   const str = String(input).trim().toLowerCase();
-  if (str === 'child_branch' || str === 'daroh' || str.includes('daroh') || str.includes('child')) {
-    return { branchId: 'CHILD_BRANCH', branch: 'Daroh' };
+  if (
+    str === 'branch' ||
+    str === 'child_branch' ||
+    str === 'daroh' ||
+    str.includes('daroh') ||
+    str.includes('child')
+  ) {
+    return { branchId: 'BRANCH', branch: 'Branch' };
   }
-  return { branchId: 'MAIN_BRANCH', branch: 'Bagru' };
+  return { branchId: 'MAIN_CENTER', branch: 'Main Center' };
 };
 
 export const enforceFacultyBranchAccess = (req, res, next) => {

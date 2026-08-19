@@ -90,9 +90,9 @@ export const updateFaculty = async (req, res) => {
     }
 
     if (updateData.branchId || updateData.branch) {
-      const bId = updateData.branchId || (updateData.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
+      const bId = updateData.branchId || (updateData.branch === 'Branch' ? 'BRANCH' : 'MAIN_CENTER');
       updateData.branchId = bId;
-      updateData.branch = updateData.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+      updateData.branch = updateData.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center');
     }
 
     const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });
@@ -592,7 +592,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -603,7 +603,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -614,7 +614,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -625,7 +625,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -636,7 +636,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -647,7 +647,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',
@@ -658,7 +658,7 @@ export const getAllFacultyLeaves = async (req, res) => {
           facultyId: 'f_jitender',
           facultyName: 'Prof. Jitender Sharma',
           facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-20',
           endDate: '2026-08-21',

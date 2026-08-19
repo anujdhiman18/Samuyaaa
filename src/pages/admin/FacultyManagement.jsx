@@ -17,8 +17,8 @@ const initialFacultyForm = {
   subject: 'Mathematics Advanced',
   qualification: 'Master’s Degree',
   experience: '5+ Years',
-  branch: 'Bagru',
-  branchId: 'MAIN_BRANCH',
+  branch: 'Main Center',
+  branchId: 'MAIN_CENTER',
   assignedClasses: ['S2', 'S3'],
   assignedSubjects: ['Mathematics Advanced'],
   photo_url: '',
@@ -94,7 +94,7 @@ export default function FacultyManagement() {
   // RBAC Multi-Role Assignment Modal State
   const [roleModalMember, setRoleModalMember] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedBranchId, setSelectedBranchId] = useState('MAIN_BRANCH');
+  const [selectedBranchId, setSelectedBranchId] = useState('MAIN_CENTER');
   const [savingUserRoles, setSavingUserRoles] = useState(false);
 
   const handleOpenRoleModal = (faculty) => {
@@ -245,7 +245,7 @@ export default function FacultyManagement() {
 
         const merged = Array.from(combinedMap.values()).map((f) => {
           const bIdToUse = normalizeBranchId(f.branchId || f.branch);
-          const bCodeToUse = f.branch || (bIdToUse === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+          const bCodeToUse = f.branch || (bIdToUse === 'BRANCH' ? 'Branch' : 'Main Center');
           const derivedRoles = Array.isArray(f.roles) && f.roles.length > 0
             ? f.roles
             : (f.role && f.role !== 'Faculty' ? [f.role] : ['SUBJECT_TEACHER']);
@@ -335,7 +335,7 @@ export default function FacultyManagement() {
             employeeId: l.employeeId || matched?.employeeId || matched?.empId || 'EMP-2025-014',
             department: l.department || matched?.department || matched?.dept || 'Science & Mathematics',
             facultyEmail: l.facultyEmail || matched?.email || 'jitender.sharma@saumyaa.edu.in',
-            branch: l.branch || matched?.branch || 'Bagru',
+            branch: l.branch || matched?.branch || 'Main Center',
           };
         });
 
@@ -860,7 +860,7 @@ export default function FacultyManagement() {
                                   </span>
                                 );
                               })}
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${normalizeBranchId(member.branchId || member.branch) === 'CHILD_BRANCH' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${normalizeBranchId(member.branchId || member.branch) === 'BRANCH' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
                                 🏢 {getBranchLabel(member.branchId || member.branch)}
                               </span>
                             </div>
@@ -1267,12 +1267,8 @@ export default function FacultyManagement() {
                               <span className="block font-medium text-secondary text-[11px]">
                                 {l.department || 'Science & Mathematics'}
                               </span>
-                              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                                (l.branch || 'Bagru') === 'Daroh'
-                                  ? 'bg-teal-100 text-teal-800 border border-teal-200'
-                                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                              }`}>
-                                🏢 {l.branch || 'Bagru'}
+                              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-md font-bold text-[10px] ${(l.branch || 'Main Center') === 'Branch' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-blue-100 text-blue-900 border border-blue-300'}`}>
+                                🏢 {l.branch || 'Main Center'}
                               </span>
                             </div>
                           </td>
@@ -1358,7 +1354,7 @@ export default function FacultyManagement() {
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Department & Location</span>
                 <span className="font-bold text-secondary">{selectedLeaveApp.department || 'Science & Mathematics'}</span>
-                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
+                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Main Center'}</span>
               </div>
             </div>
 
@@ -1730,14 +1726,14 @@ export default function FacultyManagement() {
               </div>
 
               <div>
-                <label className="font-bold text-secondary block mb-1">Preferred LOCATION *</label>
+                <label className="font-bold text-secondary block mb-1">Select Center *</label>
                 <select
-                  value={form.branch || 'Bagru'}
+                  value={form.branch || 'Main Center'}
                   onChange={(e) => setForm({ ...form, branch: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary bg-white"
                 >
-                  <option value="Bagru">Bagru (Main)</option>
-                  <option value="Daroh">Daroh (Branch)</option>
+                  <option value="Main Center">Main Center</option>
+                  <option value="Branch">Branch</option>
                 </select>
               </div>
 
@@ -2306,56 +2302,56 @@ export default function FacultyManagement() {
               </div>
             </div>
 
-            {/* Branch Assignment Scope Selector */}
+            {/* Center Assignment Scope Selector */}
             <div className="space-y-3 pt-3 border-t border-outline-variant/15">
               <h4 className="font-headings font-bold text-xs text-secondary uppercase tracking-wider">
-                Assigned Branch Access Scope:
+                Assigned Center Access Scope:
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
-                  onClick={() => setSelectedBranchId('MAIN_BRANCH')}
+                  onClick={() => setSelectedBranchId('MAIN_CENTER')}
                   className={`p-3 rounded-2xl border transition-all cursor-pointer select-none space-y-1 ${
-                    selectedBranchId === 'MAIN_BRANCH'
+                    selectedBranchId === 'MAIN_CENTER'
                       ? 'bg-blue-50/70 border-blue-400 ring-2 ring-blue-500/20'
                       : 'bg-white border-outline-variant/20 hover:bg-surface-container-low'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
-                      🏢 Main Branch (Bagru)
+                      🏢 Main Center
                     </span>
                     <input
                       type="radio"
                       name="branchScopeRadio"
-                      checked={selectedBranchId === 'MAIN_BRANCH'}
-                      onChange={() => setSelectedBranchId('MAIN_BRANCH')}
+                      checked={selectedBranchId === 'MAIN_CENTER'}
+                      onChange={() => setSelectedBranchId('MAIN_CENTER')}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </div>
-                  <p className="text-[10px] text-on-surface-variant leading-tight">Access to Main Branch data</p>
+                  <p className="text-[10px] text-on-surface-variant leading-tight">Access to Main Center data</p>
                 </div>
 
                 <div
-                  onClick={() => setSelectedBranchId('CHILD_BRANCH')}
+                  onClick={() => setSelectedBranchId('BRANCH')}
                   className={`p-3 rounded-2xl border transition-all cursor-pointer select-none space-y-1 ${
-                    selectedBranchId === 'CHILD_BRANCH'
+                    selectedBranchId === 'BRANCH'
                       ? 'bg-amber-50/70 border-amber-400 ring-2 ring-amber-500/20'
                       : 'bg-white border-outline-variant/20 hover:bg-surface-container-low'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      🏢 Child Branch (Daroh)
+                      🏢 Branch
                     </span>
                     <input
                       type="radio"
                       name="branchScopeRadio"
-                      checked={selectedBranchId === 'CHILD_BRANCH'}
-                      onChange={() => setSelectedBranchId('CHILD_BRANCH')}
+                      checked={selectedBranchId === 'BRANCH'}
+                      onChange={() => setSelectedBranchId('BRANCH')}
                       className="w-4 h-4 text-amber-600 focus:ring-amber-500 cursor-pointer"
                     />
                   </div>
-                  <p className="text-[10px] text-on-surface-variant leading-tight">Access strictly restricted to Child Branch ONLY</p>
+                  <p className="text-[10px] text-on-surface-variant leading-tight">Access strictly restricted to Branch ONLY</p>
                 </div>
               </div>
             </div>

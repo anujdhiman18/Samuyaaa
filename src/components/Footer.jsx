@@ -96,17 +96,17 @@ export default function Footer() {
           </h4>
           <div className="space-y-3 text-xs text-on-surface-variant font-medium">
             <div>
-              <p className="font-bold text-secondary text-[11px] mb-0.5">Bagru (Main)</p>
+              <p className="font-bold text-secondary text-[11px] mb-0.5">Main Center</p>
               <p className="flex items-start gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-[14px] text-primary mt-0.5 shrink-0">location_on</span>
-                <span>Saumyaa Studies, Bagru Garh, Jamula, Palaid, HP 176093</span>
+                <span>Saumyaa Studies, Main Center</span>
               </p>
             </div>
             <div>
-              <p className="font-bold text-secondary text-[11px] mb-0.5">Daroh (Branch)</p>
+              <p className="font-bold text-secondary text-[11px] mb-0.5">Branch</p>
               <p className="flex items-start gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-[14px] text-emerald-600 mt-0.5 shrink-0">location_on</span>
-                <span>Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092</span>
+                <span>Saumyaa Studies, Branch</span>
               </p>
             </div>
             <p className="flex items-center gap-2 pt-1 border-t border-surface-container-high/60">

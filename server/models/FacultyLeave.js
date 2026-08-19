@@ -24,7 +24,7 @@ const facultyLeaveSchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      default: 'Bagru',
+      default: 'Main Center',
     },
     leaveType: {
       type: String,

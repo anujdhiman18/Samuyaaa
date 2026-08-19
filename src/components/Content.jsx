@@ -7,7 +7,7 @@ const initialForm = {
   email: '',
   targetClass: '',
   subject: '',
-  branch: 'Bagru',
+  branch: 'Main Center',
   message: '',
 };
 
@@ -25,7 +25,7 @@ export default function Contact() {
     const classLabel = data.targetClass ? formatClassLabel(data.targetClass) : 'N/A';
     const subjectStr = encodeURIComponent(`Inquiry from ${data.name} (${classLabel}): ${data.subject}`);
     const bodyStr = encodeURIComponent(
-      `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nClass/Grade: ${classLabel}\nPreferred Location: ${data.branch || 'Bagru'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
+      `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nClass/Grade: ${classLabel}\nPreferred Location: ${data.branch || 'Main Center'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
     );
     return `mailto:Jitender0585@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
   }
@@ -50,7 +50,7 @@ export default function Contact() {
       formData.append('email', queryData.email || 'Not Provided');
       formData.append('class', queryData.targetClass ? formatClassLabel(queryData.targetClass) : 'Not Provided');
       formData.append('subject', queryData.subject || 'General Inquiry');
-      formData.append('location', queryData.branch || 'Bagru');
+      formData.append('location', queryData.branch || 'Main Center');
       formData.append('message', queryData.message);
       formData.append(
         '_subject',
@@ -127,51 +127,51 @@ export default function Contact() {
                   </p>
 
                   <div className="space-y-3">
-                    {/* Main Branch - Bagru */}
+                    {/* Main Center */}
                     <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                          Bagru (Main)
+                          Main Center
                         </span>
                         <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                           Main Center
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
+                        Saumyaa Studies, Main Center
                       </p>
                       <a
-                        href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
+                        href="https://maps.google.com"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[14px]">map</span> View Bagru on Google Maps
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Main Center on Google Maps
                       </a>
                     </div>
 
-                    {/* Second Branch - Daroh */}
+                    {/* Branch */}
                     <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                          Daroh (Branch)
+                          Branch
                         </span>
                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                           Branch
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
-                        Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092
+                        Saumyaa Studies, Branch
                       </p>
                       <a
-                        href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
+                        href="https://maps.google.com"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                       >
-                        <span className="material-symbols-outlined text-[14px]">map</span> View Daroh on Google Maps
+                        <span className="material-symbols-outlined text-[14px]">map</span> View Branch on Google Maps
                       </a>
                     </div>
                   </div>
@@ -275,17 +275,17 @@ export default function Contact() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="contact-branch" className="font-body text-xs font-semibold text-on-surface-variant">
-                    Preferred LOCATION *
+                    Select Center *
                   </label>
                   <select
                     id="contact-branch"
                     required
-                    value={form.branch || 'Bagru'}
+                    value={form.branch || 'Main Center'}
                     onChange={(e) => updateField('branch', e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
                   >
-                    <option value="Bagru">Bagru (Main)</option>
-                    <option value="Daroh">Daroh (Branch)</option>
+                    <option value="Main Center">Main Center</option>
+                    <option value="Branch">Branch</option>
                   </select>
                 </div>
               </div>

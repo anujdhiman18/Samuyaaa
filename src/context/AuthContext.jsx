@@ -103,11 +103,12 @@ export const AuthProvider = ({ children }) => {
   );
   const isAdmin = Boolean(user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN'))));
 
-  const branchId = user ? normalizeBranchId(user.branchId || user.branch) : 'MAIN_BRANCH';
+  const branchId = user ? normalizeBranchId(user.branchId || user.branch) : 'MAIN_CENTER';
   const branchName = getBranchCode(branchId);
   const branchLabel = getBranchLabel(branchId);
-  const isChildBranch = branchId === 'CHILD_BRANCH';
-  const isMainBranch = branchId === 'MAIN_BRANCH';
+  const isBranch = branchId === 'BRANCH';
+  const isChildBranch = branchId === 'BRANCH'; // Alias for compatibility
+  const isMainBranch = branchId === 'MAIN_CENTER';
 
   return (
     <AuthContext.Provider

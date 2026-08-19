@@ -29,6 +29,7 @@ export const initialMockStudents = [
     dateOfAdmission: '2025-04-01',
     monthlyFee: 3000,
     monthlyDueDay: 5,
+    branch: 'Main Center',
     status: 'Active',
     attendancePercentage: 96,
     paidTillMonth: 'July 2026',
@@ -75,7 +76,7 @@ export const initialMockStudents = [
     phone: '9876543210',
     parentPhone: '8894190175',
     email: 'damini.s@gmail.com',
-    address: 'Bagru Garh, Palaid, HP 176093',
+    address: 'Main Center',
     className: 'S2',
     course: 'Science',
     batch: '2025-2026',
@@ -405,7 +406,7 @@ export const getStoredStudents = () => {
           ...s,
           className: normalizeClassCode(s.className),
           branchId: bId,
-          branch: s.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
+          branch: s.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
         };
       });
   } catch (e) {
@@ -417,7 +418,7 @@ export const getStoredStudents = () => {
           ...s,
           className: normalizeClassCode(s.className),
           branchId: bId,
-          branch: s.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
+          branch: s.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
         };
       });
   }
@@ -1034,7 +1035,7 @@ const initialMockStudentLeaves = [
     parentPhone: '9816099999',
     className: '10th',
     section: 'Section A',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Sick Leave',
     startDate: '2026-08-10',
     endDate: '2026-08-12',
@@ -1052,7 +1053,7 @@ const initialMockStudentLeaves = [
     parentPhone: '9816088888',
     className: '12th (+2)',
     section: 'Medical',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-15',
     endDate: '2026-08-16',
@@ -1412,7 +1413,7 @@ export const studentService = {
       parentPhone: data.parentPhone || '9816099999',
       className: data.className || '10th',
       section: data.section || 'Section A',
-      branch: data.branch || 'Bagru',
+      branch: data.branch || 'Main Center',
       leaveType: data.leaveType || 'Sick Leave',
       startDate: data.startDate,
       endDate: data.endDate,
@@ -2792,7 +2793,7 @@ export const getStoredFaculty = () => {
         roles: derivedRoles,
         role: f.role || derivedRoles[0] || 'SUBJECT_TEACHER',
         branchId: bId,
-        branch: f.branch || (bId === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru'),
+        branch: f.branch || (bId === 'BRANCH' ? 'Branch' : 'Main Center'),
         assignedClasses: f.assignedClasses || [],
         assignedSubjects: f.assignedSubjects || [],
         responsibilities: f.responsibilities || [],
@@ -3490,7 +3491,7 @@ export const initialMockStudentApplications = [
     message: 'Seeking admission for board exam preparation and advanced coaching.',
     status: 'Pending',
     appliedAt: '2026-08-01T10:30:00.000Z',
-    notes: 'Interested in morning batch at Bagru branch.',
+    notes: 'Interested in morning batch at Main Center.',
   },
   {
     _id: 'app_stu_2',
@@ -3671,7 +3672,7 @@ export const studentApplicationService = {
       className: app.targetClass || '10th',
       subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'General Academics'],
       batch: '2026-2027',
-      branch: app.branch || 'Bagru',
+      branch: app.branch || 'Main Center',
       monthlyFee: 2500,
       monthlyDueDay: 5,
       status: 'Active',
@@ -4278,7 +4279,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4294,7 +4295,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4310,7 +4311,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4326,7 +4327,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4342,7 +4343,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4358,7 +4359,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4374,7 +4375,7 @@ const initialMockFacultyLeaves = [
     facultyName: 'Prof. Jitender Sharma',
     facultyEmail: 'jitender.sharma@saumyaa.edu.in',
     department: 'Mathematics & Science',
-    branch: 'Bagru',
+    branch: 'Main Center',
     leaveType: 'Casual Leave',
     startDate: '2026-08-20',
     endDate: '2026-08-21',
@@ -4594,7 +4595,7 @@ export const facultyPanelService = {
 
     const currentUserStr = localStorage.getItem('saumyaa_user');
     let resps = [];
-    let userBranchId = 'MAIN_BRANCH';
+    let userBranchId = 'MAIN_CENTER';
     if (currentUserStr) {
       try {
         const u = JSON.parse(currentUserStr);
@@ -4608,7 +4609,7 @@ export const facultyPanelService = {
     const allStudents = getStoredStudents();
     let filtered = allStudents.filter((s) => {
       const sBId = normalizeBranchId(s.branchId || s.branch);
-      if (sBId !== userBranchId) return false;
+      if (userBranchId === 'BRANCH' && sBId !== 'BRANCH') return false;
       if (assignedClasses.length > 0) return assignedClasses.includes(s.className);
       return true;
     });
@@ -4814,7 +4815,7 @@ export const facultyPanelService = {
       facultyName: data.facultyName || 'Prof. Jitender Sharma',
       facultyEmail: data.facultyEmail || 'jitender.sharma@saumyaa.edu.in',
       department: data.department || 'Science & Mathematics',
-      branch: data.branch || 'Bagru',
+      branch: data.branch || 'Main Center',
       leaveType: data.leaveType || 'Casual Leave',
       startDate: data.startDate,
       endDate: data.endDate,
@@ -4997,8 +4998,8 @@ export const rbacService = {
     const newRoles = Array.isArray(payload.roles) ? payload.roles : ['SUBJECT_TEACHER'];
 
     if (idx !== -1) {
-      const bIdVal = payload.branchId || list[idx].branchId || (payload.branch === 'Daroh' ? 'CHILD_BRANCH' : 'MAIN_BRANCH');
-      const bCodeVal = payload.branch || list[idx].branch || (bIdVal === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru');
+      const bIdVal = payload.branchId || list[idx].branchId || (payload.branch === 'Branch' ? 'BRANCH' : 'MAIN_CENTER');
+      const bCodeVal = payload.branch || list[idx].branch || (bIdVal === 'BRANCH' ? 'Branch' : 'Main Center');
 
       const updatedFac = {
         ...list[idx],

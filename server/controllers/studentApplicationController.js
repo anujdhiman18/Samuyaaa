@@ -47,7 +47,7 @@ export const submitStudentApplication = async (req, res) => {
       academicStage,
       currentClass,
       targetClass,
-      branch: branch || 'Bagru',
+      branch: branch || 'Main Center',
       subjects: Array.isArray(subjects) ? subjects : subjects ? [subjects] : [],
       previousSchool: previousSchool || '',
       parentName,

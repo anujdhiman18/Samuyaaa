@@ -208,9 +208,9 @@ export default function StudentLeaveManagement() {
                 onChange={(e) => setLeaveBranchFilter(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none cursor-pointer"
               >
-                <option value="All">All Locations</option>
-                <option value="Bagru">Bagru (Main)</option>
-                <option value="Daroh">Daroh (Child)</option>
+                <option value="All">All Centers</option>
+                <option value="Main Center">Main Center</option>
+                <option value="Branch">Branch</option>
               </select>
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function StudentLeaveManagement() {
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="font-bold text-secondary block">{formatClassLabel(l.className)}</span>
-                      <span className="text-[11px] font-semibold text-on-surface-variant">🏢 {l.branch || 'Bagru'}</span>
+                      <span className="text-[11px] font-semibold text-on-surface-variant">🏢 {l.branch || 'Main Center'}</span>
                     </td>
                     <td className="py-3 px-4 font-bold text-purple-800 whitespace-nowrap">{l.leaveType || 'Sick Leave'}</td>
                     <td className="py-3 px-4 whitespace-nowrap">
@@ -324,7 +324,7 @@ export default function StudentLeaveManagement() {
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Class &amp; Location</span>
                 <span className="font-bold text-secondary">{formatClassLabel(selectedLeaveApp.className)}</span>
-                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Bagru'}</span>
+                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Main Center'}</span>
               </div>
             </div>
 

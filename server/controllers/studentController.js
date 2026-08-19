@@ -398,7 +398,7 @@ export const applyStudentLeave = async (req, res) => {
     const parentPhone = req.body.parentPhone || req.user?.phone || req.user?.parentPhone || '9816099999';
     const className = req.body.className || req.user?.className || '10th';
     const section = req.body.section || req.user?.section || 'Section A';
-    const branch = req.body.branch || req.user?.branch || 'Bagru';
+    const branch = req.body.branch || req.user?.branch || 'Main Center';
     const leaveType = req.body.leaveType || 'Sick Leave';
     const startDate = req.body.startDate || new Date().toISOString().split('T')[0];
     const endDate = req.body.endDate || new Date().toISOString().split('T')[0];
@@ -464,7 +464,7 @@ export const getAllStudentLeaves = async (req, res) => {
           parentPhone: '9816099999',
           className: '10th',
           section: 'Section A',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Sick Leave',
           startDate: '2026-08-10',
           endDate: '2026-08-12',
@@ -480,7 +480,7 @@ export const getAllStudentLeaves = async (req, res) => {
           parentPhone: '9816088888',
           className: '12th (+2)',
           section: 'Medical',
-          branch: 'Bagru',
+          branch: 'Main Center',
           leaveType: 'Casual Leave',
           startDate: '2026-08-15',
           endDate: '2026-08-16',

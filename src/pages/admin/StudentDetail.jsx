@@ -95,7 +95,7 @@ export default function StudentDetail() {
           rollNumber: s.rollNumber || '',
           subjects: s.subjects || [],
           batch: s.batch || '2024-2026',
-          branch: s.branch || 'Bagru',
+          branch: s.branch || 'Main Center',
           className: s.className || '10th',
           photo: s.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
           phone: s.phone || '',
@@ -137,7 +137,7 @@ export default function StudentDetail() {
       rollNumber: student.rollNumber || '',
       subjects: student.subjects || [],
       batch: student.batch || '2024-2026',
-      branch: student.branch || 'Bagru',
+      branch: student.branch || 'Main Center',
       className: student.className || '10th',
       photo: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       phone: student.phone || '',
@@ -417,7 +417,7 @@ export default function StudentDetail() {
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Location</span>
-              <span className="font-extrabold text-primary">🏢 {student.branch || 'Bagru'}</span>
+              <span className="font-extrabold text-primary">🏢 {student.branch || 'Main Center'}</span>
             </div>
             <div>
               <span className="text-on-surface-variant text-[11px] block">Class</span>
@@ -686,14 +686,14 @@ export default function StudentDetail() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Preferred LOCATION *</label>
+              <label className="block text-xs font-bold text-secondary mb-1">Center</label>
               <select
-                value={editForm.branch || 'Bagru'}
+                value={editForm.branch || 'Main Center'}
                 onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none bg-white"
               >
-                <option value="Bagru">Bagru (Main)</option>
-                <option value="Daroh">Daroh (Branch)</option>
+                <option value="Main Center">Main Center</option>
+                <option value="Branch">Branch</option>
               </select>
             </div>
             <div>

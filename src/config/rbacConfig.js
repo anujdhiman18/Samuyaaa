@@ -362,34 +362,41 @@ export const computePermissionsForUser = (userRoleCodes = [], customPermissionOv
 
 export const BRANCHES = {
   MAIN: {
-    id: 'MAIN_BRANCH',
-    code: 'Bagru',
-    name: 'Main Branch (Bagru)',
-    shortName: 'Bagru Main',
+    id: 'MAIN_CENTER',
+    code: 'Main Center',
+    name: 'Main Center',
+    shortName: 'Main Center',
     isMain: true,
   },
-  CHILD: {
-    id: 'CHILD_BRANCH',
-    code: 'Daroh',
-    name: 'Child Branch (Daroh)',
-    shortName: 'Daroh Child',
+  BRANCH: {
+    id: 'BRANCH',
+    code: 'Branch',
+    name: 'Branch',
+    shortName: 'Branch',
     isMain: false,
   },
 };
 
 export const normalizeBranchId = (branchInput) => {
-  if (!branchInput) return 'MAIN_BRANCH';
+  if (!branchInput) return 'MAIN_CENTER';
   const str = String(branchInput).trim().toLowerCase();
-  if (str === 'child_branch' || str === 'daroh' || str.includes('daroh') || str.includes('child')) {
-    return 'CHILD_BRANCH';
+  if (
+    str === 'branch' ||
+    str === 'child_branch' ||
+    str === 'daroh' ||
+    str.includes('daroh') ||
+    str.includes('child')
+  ) {
+    return 'BRANCH';
   }
-  return 'MAIN_BRANCH';
+  return 'MAIN_CENTER';
 };
 
 export const getBranchCode = (branchId) => {
-  return normalizeBranchId(branchId) === 'CHILD_BRANCH' ? 'Daroh' : 'Bagru';
+  return normalizeBranchId(branchId) === 'BRANCH' ? 'Branch' : 'Main Center';
 };
 
 export const getBranchLabel = (branchInput) => {
-  return normalizeBranchId(branchInput) === 'CHILD_BRANCH' ? 'Child Branch (Daroh)' : 'Main Branch (Bagru)';
+  return normalizeBranchId(branchInput) === 'BRANCH' ? 'Branch' : 'Main Center';
 };
+

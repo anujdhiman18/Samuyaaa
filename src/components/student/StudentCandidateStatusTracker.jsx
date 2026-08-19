@@ -137,8 +137,8 @@ export default function StudentCandidateStatusTracker() {
                 <span className="font-bold text-secondary">{formatClassLabel(resultApp.targetClass)}</span>
               </div>
               <div>
-                <span className="text-on-surface-variant block text-[11px]">Preferred Branch:</span>
-                <span className="font-bold text-secondary">{resultApp.branch === 'Daroh' ? 'Daroh (Branch)' : 'Bagru (Main)'}</span>
+                <span className="text-on-surface-variant block text-[11px]">Preferred Center:</span>
+                <span className="font-bold text-secondary">{resultApp.branch === 'Branch' ? 'Branch' : 'Main Center'}</span>
               </div>
               <div>
                 <span className="text-on-surface-variant block text-[11px]">Applied Date:</span>

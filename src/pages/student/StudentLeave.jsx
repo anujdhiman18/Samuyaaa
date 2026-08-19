@@ -81,7 +81,7 @@ export default function StudentLeave() {
       const parentPhone = currentUser?.phone || currentUser?.parentPhone || '9816099999';
       const className = currentUser?.className || '10th';
       const section = currentUser?.section || 'Section A';
-      const branch = currentUser?.branch || 'Bagru';
+      const branch = currentUser?.branch || 'Main Center';
 
       const res = await studentService.applyStudentLeave({
         studentId,

@@ -292,7 +292,7 @@ export const applyFacultyLeave = async (req, res) => {
     const facultyName = req.body.facultyName || req.user?.name || req.user?.fullName || 'Prof. Jitender Sharma';
     const facultyEmail = req.body.facultyEmail || req.user?.email || 'jitender.sharma@saumyaa.edu.in';
     const department = req.body.department || req.user?.department || 'Science & Mathematics';
-    const branch = req.body.branch || req.user?.branch || 'Bagru';
+    const branch = req.body.branch || req.user?.branch || 'Main Center';
     const leaveType = req.body.leaveType || 'Casual Leave';
     const startDate = req.body.startDate || new Date().toISOString().split('T')[0];
     const endDate = req.body.endDate || new Date().toISOString().split('T')[0];
