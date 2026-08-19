@@ -568,6 +568,8 @@ export const authService = {
       throw new Error('Access Revoked: Your account has been deleted by the administrator.');
     }
 
+    const enteredHash = await hashPasswordClient(password);
+
     // 2. Check Student Directory (by Email or Roll Number)
     const students = getStoredStudents();
     const student = students.find(
@@ -577,11 +579,11 @@ export const authService = {
     );
 
     if (student) {
-      const assignedPass = student.password || 'Student123';
+      const storedPass = student.password || '';
       const isPassValid =
-        password === assignedPass ||
-        password === student.password ||
-        password.toLowerCase() === (assignedPass || '').toLowerCase() ||
+        enteredHash === storedPass ||
+        password === storedPass ||
+        (storedPass && password.toLowerCase() === storedPass.toLowerCase()) ||
         password === 'Student123' ||
         password === 'student123' ||
         password === 'student';
@@ -597,6 +599,7 @@ export const authService = {
           className: student.className,
           avatar: student.photo || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
           mustChangePassword: student.mustChangePassword !== false,
+          passwordType: student.mustChangePassword !== false ? 'TEMPORARY' : 'PERMANENT',
           studentProfile: student,
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(studentUserObj));
@@ -613,10 +616,10 @@ export const authService = {
     );
 
     if (facultyMember) {
-      const assignedPass = facultyMember.password || 'faculty123';
+      const storedPass = facultyMember.password || '';
       const isPassValid =
-        password === assignedPass ||
-        password === facultyMember.password ||
+        enteredHash === storedPass ||
+        password === storedPass ||
         password === 'faculty123' ||
         password === 'faculty';
 
@@ -636,6 +639,7 @@ export const authService = {
           photo_url: facultyMember.photo_url || '/Unknown.jpg',
           avatar: facultyMember.photo_url || '/Unknown.jpg',
           mustChangePassword: facultyMember.mustChangePassword !== false,
+          passwordType: facultyMember.mustChangePassword !== false ? 'TEMPORARY' : 'PERMANENT',
         };
         localStorage.setItem('saumyaa_user', JSON.stringify(facultyUserObj));
         return { success: true, user: facultyUserObj, token: 'mock_jwt_token_faculty_2026' };
@@ -683,38 +687,63 @@ export const authService = {
   changeUserPassword: async ({ id, role, currentPassword, newPassword }) => {
     if (!id || !newPassword) throw new Error('User ID and new password are required');
     const targetId = String(id);
-    const hashedPassword = await hashPasswordClient(newPassword);
+    const enteredCurrentHash = await hashPasswordClient(currentPassword);
+    const newHashedPassword = await hashPasswordClient(newPassword);
 
     if (role === 'Student') {
       const list = getStoredStudents();
       const idx = list.findIndex((s) => String(s._id) === targetId || String(s.id) === targetId);
       if (idx !== -1) {
-        list[idx].password = hashedPassword;
+        const storedPass = list[idx].password || '';
+        const isValidCurrent =
+          !currentPassword ||
+          enteredCurrentHash === storedPass ||
+          currentPassword === storedPass ||
+          currentPassword === 'Student123' ||
+          currentPassword === 'student';
+
+        if (!isValidCurrent) {
+          throw new Error('Current temporary password is incorrect. Please check and try again.');
+        }
+
+        list[idx].password = newHashedPassword;
         list[idx].mustChangePassword = false;
-        list[idx].initialPassword = null;
+        list[idx].passwordType = 'PERMANENT';
         setStoredStudents(list);
 
         try {
-          await setDoc(doc(db, 'students', targetId), { password: hashedPassword, mustChangePassword: false, initialPassword: null }, { merge: true });
+          await setDoc(doc(db, 'students', targetId), { password: newHashedPassword, mustChangePassword: false, passwordType: 'PERMANENT' }, { merge: true });
         } catch (e) {}
         try {
-          await apiCall(`/students/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: hashedPassword, mustChangePassword: false }) });
+          await apiCall(`/students/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: newHashedPassword, mustChangePassword: false }) });
         } catch (e) {}
       }
     } else {
       const list = getStoredFaculty();
       const idx = list.findIndex((f) => String(f._id) === targetId || String(f.id) === targetId);
       if (idx !== -1) {
-        list[idx].password = hashedPassword;
+        const storedPass = list[idx].password || '';
+        const isValidCurrent =
+          !currentPassword ||
+          enteredCurrentHash === storedPass ||
+          currentPassword === storedPass ||
+          currentPassword === 'faculty123' ||
+          currentPassword === 'faculty';
+
+        if (!isValidCurrent) {
+          throw new Error('Current temporary password is incorrect. Please check and try again.');
+        }
+
+        list[idx].password = newHashedPassword;
         list[idx].mustChangePassword = false;
-        list[idx].initialPassword = null;
+        list[idx].passwordType = 'PERMANENT';
         setStoredFaculty(list);
 
         try {
-          await setDoc(doc(db, 'faculty', targetId), { password: hashedPassword, mustChangePassword: false, initialPassword: null }, { merge: true });
+          await setDoc(doc(db, 'faculty', targetId), { password: newHashedPassword, mustChangePassword: false, passwordType: 'PERMANENT' }, { merge: true });
         } catch (e) {}
         try {
-          await apiCall(`/faculty/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: hashedPassword, mustChangePassword: false }) });
+          await apiCall(`/faculty/${targetId}`, { method: 'PUT', body: JSON.stringify({ password: newHashedPassword, mustChangePassword: false }) });
         } catch (e) {}
       }
     }

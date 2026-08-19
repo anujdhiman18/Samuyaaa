@@ -78,7 +78,7 @@ export default function ForcePasswordChangeModal() {
             Password Change Required
           </h2>
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            Please create a new password to continue.
+            You are currently using a temporary password. Please create a new password to continue.
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function ForcePasswordChangeModal() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-primary text-white font-headings font-bold text-xs hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-primary text-white font-headings font-bold text-xs hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? (
               <>
@@ -177,7 +177,7 @@ export default function ForcePasswordChangeModal() {
                 Updating Password...
               </>
             ) : (
-              'Save New Password & Continue'
+              'Change Password'
             )}
           </button>
         </form>
