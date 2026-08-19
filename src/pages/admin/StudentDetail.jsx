@@ -460,10 +460,10 @@ export default function StudentDetail() {
           <AdminLoginCredentialsCard
             user={student}
             userType="student"
-            onResetPassword={async (id) => {
-              const res = await studentService.resetPassword(id);
-              if (typeof fetchStudentData === 'function') {
-                fetchStudentData();
+            onResetPassword={async (studentId) => {
+              const res = await studentService.resetPassword(studentId);
+              if (res && res.success) {
+                setStudent((prev) => (prev ? { ...prev, mustChangePassword: true } : prev));
               }
               return res;
             }}
