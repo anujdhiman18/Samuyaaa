@@ -1,18 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { facultyPanelService } from '../../services/api';
+import { facultyPanelService, subjectService, getStoredSubjects } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
+
+const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 export default function FacultyAssignments() {
   const { addToast } = useToast();
   const { user } = useAuth();
 
-  const responsibilities = user?.responsibilities || [];
+  const isAdmin = Boolean(
+    user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
+  );
 
-  const availableClasses = responsibilities.length > 0
+  const [allSubjectsList, setAllSubjectsList] = useState([]);
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const res = await subjectService.getSubjects();
+        if (res && res.subjects && res.subjects.length > 0) {
+          setAllSubjectsList(res.subjects);
+        } else {
+          setAllSubjectsList(getStoredSubjects() || []);
+        }
+      } catch (e) {
+        setAllSubjectsList(getStoredSubjects() || []);
+      }
+    };
+    loadSubjects();
+  }, []);
+
+  const responsibilities = user?.responsibilities || [];
+  const userAssignedClasses = user?.assignedClasses || [];
+
+  const rawUserClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || []);
+    : userAssignedClasses;
+
+  let availableClasses = [];
+  if (isAdmin || rawUserClasses.length === 0) {
+    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+    availableClasses = Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]));
+  } else {
+    availableClasses = Array.from(new Set(rawUserClasses));
+  }
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,28 +55,43 @@ export default function FacultyAssignments() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newClass, setNewClass] = useState(() => availableClasses[0] || '');
+  const [newClass, setNewClass] = useState(() => availableClasses[0] || '10th');
 
-  const availableSubjects = responsibilities.length > 0
+  const userAssignedSubjects = user?.assignedSubjects || [];
+  const userSubjects = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.filter((r) => !newClass || r.className === newClass).map((r) => r.subject)))
-    : (user?.assignedSubjects || []);
+    : userAssignedSubjects;
 
-  const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || '');
+  const classSubjects = allSubjectsList
+    .filter((s) => !newClass || s.className === newClass || s.className === 'All')
+    .map((s) => s.name);
+
+  let availableSubjects = [];
+  if (isAdmin || userSubjects.length === 0) {
+    availableSubjects = Array.from(new Set([...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
+  } else {
+    availableSubjects = Array.from(new Set(userSubjects));
+    if (availableSubjects.length === 0) {
+      availableSubjects = Array.from(new Set([...classSubjects, ...DEFAULT_SUBJECTS]));
+    }
+  }
+
+  const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [newDueDate, setNewDueDate] = useState('2026-08-15');
   const [newMarks, setNewMarks] = useState(50);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && !availableClasses.includes(newClass)) {
+    if (availableClasses.length > 0 && (!newClass || !availableClasses.includes(newClass))) {
       setNewClass(availableClasses[0]);
     }
-  }, [user]);
+  }, [availableClasses, user]);
 
   useEffect(() => {
-    if (availableSubjects.length > 0 && !availableSubjects.includes(newSubject)) {
+    if (availableSubjects.length > 0 && (!newSubject || !availableSubjects.includes(newSubject))) {
       setNewSubject(availableSubjects[0]);
     }
-  }, [newClass, user]);
+  }, [newClass, availableSubjects, user]);
 
   // Review Submissions Modal
   const [reviewAssignment, setReviewAssignment] = useState(null);

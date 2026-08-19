@@ -3,13 +3,24 @@ import { facultyPanelService } from '../../services/api';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
 
+const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+
 export default function FacultyStudents() {
   const { user } = useAuth();
-  const responsibilities = user?.responsibilities || [];
+  const isAdmin = Boolean(
+    user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
+  );
 
-  const availableClasses = responsibilities.length > 0
+  const responsibilities = user?.responsibilities || [];
+  const userAssignedClasses = user?.assignedClasses || [];
+
+  const rawUserClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || []);
+    : userAssignedClasses;
+
+  const availableClasses = (isAdmin || rawUserClasses.length === 0)
+    ? Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES]))
+    : Array.from(new Set(rawUserClasses));
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,17 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { facultyPanelService, attendanceService } from '../../services/api';
+import { facultyPanelService, attendanceService, subjectService, getStoredSubjects } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+
+const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 export default function FacultyAttendance() {
   const { addToast } = useToast();
   const { user } = useAuth();
 
-  const responsibilities = user?.responsibilities || [];
+  const isAdmin = Boolean(
+    user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
+  );
 
-  const availableClasses = responsibilities.length > 0
+  const [allSubjectsList, setAllSubjectsList] = useState([]);
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const res = await subjectService.getSubjects();
+        if (res && res.subjects && res.subjects.length > 0) {
+          setAllSubjectsList(res.subjects);
+        } else {
+          setAllSubjectsList(getStoredSubjects() || []);
+        }
+      } catch (e) {
+        setAllSubjectsList(getStoredSubjects() || []);
+      }
+    };
+    loadSubjects();
+  }, []);
+
+  const responsibilities = user?.responsibilities || [];
+  const userAssignedClasses = user?.assignedClasses || [];
+
+  const rawUserClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || []);
+    : userAssignedClasses;
+
+  let availableClasses = [];
+  if (isAdmin || rawUserClasses.length === 0) {
+    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+    availableClasses = Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]));
+  } else {
+    availableClasses = Array.from(new Set(rawUserClasses));
+  }
 
   const getTodayLocalString = () => {
     const d = new Date();
@@ -22,29 +56,44 @@ export default function FacultyAttendance() {
   };
 
   const [date, setDate] = useState(() => getTodayLocalString());
-  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '');
+  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '10th');
 
-  const availableSubjects = responsibilities.length > 0
+  const userAssignedSubjects = user?.assignedSubjects || [];
+  const userSubjects = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || r.className === selectedClass).map((r) => r.subject)))
-    : (user?.assignedSubjects || []);
+    : userAssignedSubjects;
 
-  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || '');
+  const classSubjects = allSubjectsList
+    .filter((s) => !selectedClass || s.className === selectedClass || s.className === 'All')
+    .map((s) => s.name);
+
+  let availableSubjects = [];
+  if (isAdmin || userSubjects.length === 0) {
+    availableSubjects = Array.from(new Set([...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
+  } else {
+    availableSubjects = Array.from(new Set(userSubjects));
+    if (availableSubjects.length === 0) {
+      availableSubjects = Array.from(new Set([...classSubjects, ...DEFAULT_SUBJECTS]));
+    }
+  }
+
+  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [students, setStudents] = useState([]);
   const [attendanceMap, setAttendanceMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && !availableClasses.includes(selectedClass)) {
+    if (availableClasses.length > 0 && (!selectedClass || !availableClasses.includes(selectedClass))) {
       setSelectedClass(availableClasses[0]);
     }
-  }, [user]);
+  }, [availableClasses, user]);
 
   useEffect(() => {
-    if (availableSubjects.length > 0 && !availableSubjects.includes(selectedSubject)) {
+    if (availableSubjects.length > 0 && (!selectedSubject || !availableSubjects.includes(selectedSubject))) {
       setSelectedSubject(availableSubjects[0]);
     }
-  }, [selectedClass, user]);
+  }, [selectedClass, availableSubjects, user]);
 
   useEffect(() => {
     fetchClassData();
@@ -54,32 +103,27 @@ export default function FacultyAttendance() {
     setLoading(true);
     try {
       const studentRes = await facultyPanelService.getAssignedStudents({ className: selectedClass });
-      const studentList = studentRes?.students || [];
-      setStudents(studentList);
+      const list = studentRes?.students || [];
+      setStudents(list);
 
-      const attRes = await attendanceService.getAllAttendance({
+      const attRes = await attendanceService.getAttendanceRecords({
         date,
+        className: selectedClass,
         subject: selectedSubject,
       });
 
-      const records = attRes?.attendance || [];
+      const records = attRes?.records || [];
       const newMap = {};
-      studentList.forEach((st) => {
+
+      list.forEach((st) => {
         const stId = String(st._id || st.id);
-        const existing = records.find(
-          (r) =>
-            String(r.student?._id || r.student?.id || r.student) === stId ||
-            (r.rollNumber && st.rollNumber && r.rollNumber === st.rollNumber) ||
-            (r.student?.rollNumber && st.rollNumber && r.student.rollNumber === st.rollNumber)
-        );
-        newMap[stId] = {
-          status: existing ? existing.status || 'Present' : 'Present',
-          remarks: existing ? existing.remarks || '' : '',
-        };
+        const rec = records.find((r) => String(r.studentId || r.student) === stId);
+        newMap[stId] = rec ? rec.status : 'Present';
       });
+
       setAttendanceMap(newMap);
     } catch (err) {
-      addToast('Error loading attendance register', 'error');
+      addToast('Error loading attendance sheet', 'error');
     } finally {
       setLoading(false);
     }
@@ -88,58 +132,45 @@ export default function FacultyAttendance() {
   const handleStatusChange = (studentId, status) => {
     setAttendanceMap((prev) => ({
       ...prev,
-      [studentId]: { ...prev[studentId], status },
+      [studentId]: status,
     }));
-  };
-
-  const handleMarkAll = (status) => {
-    setAttendanceMap((prev) => {
-      const updated = { ...prev };
-      students.forEach((st) => {
-        const stId = String(st._id || st.id);
-        updated[stId] = { ...updated[stId], status };
-      });
-      return updated;
-    });
-    addToast(`Marked all ${students.length} students as ${status}`, 'info');
   };
 
   const handleSaveAttendance = async () => {
     if (students.length === 0) return;
     setSaving(true);
     try {
-      const recordsToSave = students.map((st) => {
+      const records = students.map((st) => {
         const stId = String(st._id || st.id);
-        const data = attendanceMap[stId] || { status: 'Present', remarks: '' };
-        return { studentId: stId, rollNumber: st.rollNumber, status: data.status, remarks: data.remarks };
+        return {
+          studentId: stId,
+          status: attendanceMap[stId] || 'Present',
+        };
       });
 
-      const currentUserStr = localStorage.getItem('saumyaa_user');
-      let facultyName = 'Faculty Member';
-      if (currentUserStr) {
-        try {
-          const u = JSON.parse(currentUserStr);
-          facultyName = u.name || facultyName;
-        } catch (e) {}
-      }
-
-      const res = await attendanceService.saveBatchAttendance({
+      const res = await attendanceService.markBatchAttendance({
         date,
-        subject: selectedSubject,
         className: selectedClass,
-        records: recordsToSave,
-        markedBy: facultyName,
+        subject: selectedSubject,
+        records,
       });
 
       if (res && res.success) {
-        addToast(`Attendance saved & synced to Admin Panel for ${date} (${selectedSubject})!`, 'success');
-        fetchClassData();
+        addToast(`Attendance saved for ${selectedClass} (${selectedSubject}) on ${date}!`, 'success');
       }
     } catch (err) {
-      addToast('Error saving attendance records', 'error');
+      addToast('Error saving attendance', 'error');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleMarkAll = (status) => {
+    const updated = {};
+    students.forEach((st) => {
+      updated[String(st._id || st.id)] = status;
+    });
+    setAttendanceMap(updated);
   };
 
   return (
@@ -149,10 +180,10 @@ export default function FacultyAttendance() {
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">fact_check</span>
-            Assigned Class Attendance Register
+            Daily Attendance Register
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Mark daily attendance for your assigned classes and subjects.
+            Record, update, & publish daily student attendance for your assigned classes.
           </p>
         </div>
 
@@ -162,14 +193,14 @@ export default function FacultyAttendance() {
           className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">save</span>
-          {saving ? 'Saving Records...' : 'Save & Submit Attendance'}
+          {saving ? 'Saving...' : 'Submit Attendance'}
         </button>
       </div>
 
-      {/* Filter Toolbar */}
+      {/* Control Filters */}
       <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Date</label>
+          <label className="block text-[11px] font-bold text-on-surface-variant mb-1">Attendance Date</label>
           <input
             type="date"
             value={date}
@@ -185,13 +216,9 @@ export default function FacultyAttendance() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableClasses.length === 0 ? (
-              <option value="">No Assigned Classes</option>
-            ) : (
-              availableClasses.map((cls) => (
-                <option key={cls} value={cls}>Class {cls}</option>
-              ))
-            )}
+            {availableClasses.map((cls) => (
+              <option key={cls} value={cls}>Class {cls}</option>
+            ))}
           </select>
         </div>
 
@@ -202,13 +229,9 @@ export default function FacultyAttendance() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableSubjects.length === 0 ? (
-              <option value="">No Assigned Subjects</option>
-            ) : (
-              availableSubjects.map((sub) => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))
-            )}
+            {availableSubjects.map((sub) => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
           </select>
         </div>
       </div>

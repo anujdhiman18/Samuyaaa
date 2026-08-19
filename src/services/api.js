@@ -4972,11 +4972,13 @@ export const facultyPanelService = {
     const currentUserStr = localStorage.getItem('saumyaa_user');
     let resps = [];
     let userBranchId = 'MAIN_CENTER';
+    let isAdminUser = false;
     if (currentUserStr) {
       try {
         const u = JSON.parse(currentUserStr);
         resps = u.responsibilities || [];
         userBranchId = normalizeBranchId(u.branchId || u.branch);
+        isAdminUser = Boolean(u?.role === 'Admin' || u?.role === 'SuperAdmin' || (Array.isArray(u?.roles) && u.roles.includes('ADMIN')));
       } catch (e) {}
     }
 
@@ -4986,7 +4988,7 @@ export const facultyPanelService = {
     let filtered = allStudents.filter((s) => {
       const sBId = normalizeBranchId(s.branchId || s.branch);
       if (userBranchId === 'BRANCH' && sBId !== 'BRANCH') return false;
-      if (assignedClasses.length > 0) return assignedClasses.includes(s.className);
+      if (!isAdminUser && assignedClasses.length > 0) return assignedClasses.includes(s.className);
       return true;
     });
 

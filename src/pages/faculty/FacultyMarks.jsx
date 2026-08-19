@@ -1,25 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { facultyPanelService, marksService } from '../../services/api';
+import { facultyPanelService, marksService, subjectService, getStoredSubjects } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+
+const DEFAULT_CLASSES = ['10th', '11th (+1)', '12th (+2)', 'S2', 'S3', '6th', '7th', '8th', '9th', 'S1', 'S4'];
+const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 export default function FacultyMarks() {
   const { addToast } = useToast();
   const { user } = useAuth();
 
+  const isAdmin = Boolean(
+    user && (user.role === 'Admin' || user.role === 'SuperAdmin' || (Array.isArray(user.roles) && user.roles.includes('ADMIN')))
+  );
+
+  const [allSubjectsList, setAllSubjectsList] = useState([]);
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const res = await subjectService.getSubjects();
+        if (res && res.subjects && res.subjects.length > 0) {
+          setAllSubjectsList(res.subjects);
+        } else {
+          setAllSubjectsList(getStoredSubjects() || []);
+        }
+      } catch (e) {
+        setAllSubjectsList(getStoredSubjects() || []);
+      }
+    };
+    loadSubjects();
+  }, []);
+
   const responsibilities = user?.responsibilities || [];
+  const userAssignedClasses = user?.assignedClasses || [];
 
-  const availableClasses = responsibilities.length > 0
+  const rawUserClasses = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
-    : (user?.assignedClasses || []);
+    : userAssignedClasses;
 
-  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '');
+  let availableClasses = [];
+  if (isAdmin || rawUserClasses.length === 0) {
+    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+    availableClasses = Array.from(new Set([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]));
+  } else {
+    availableClasses = Array.from(new Set(rawUserClasses));
+  }
 
-  const availableSubjects = responsibilities.length > 0
+  const [selectedClass, setSelectedClass] = useState(() => availableClasses[0] || '10th');
+
+  const userAssignedSubjects = user?.assignedSubjects || [];
+  const userSubjects = responsibilities.length > 0
     ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || r.className === selectedClass).map((r) => r.subject)))
-    : (user?.assignedSubjects || []);
+    : userAssignedSubjects;
 
-  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || '');
+  const classSubjects = allSubjectsList
+    .filter((s) => !selectedClass || s.className === selectedClass || s.className === 'All')
+    .map((s) => s.name);
+
+  let availableSubjects = [];
+  if (isAdmin || userSubjects.length === 0) {
+    availableSubjects = Array.from(new Set([...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
+  } else {
+    availableSubjects = Array.from(new Set(userSubjects));
+    if (availableSubjects.length === 0) {
+      availableSubjects = Array.from(new Set([...classSubjects, ...DEFAULT_SUBJECTS]));
+    }
+  }
+
+  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [examType, setExamType] = useState('Internal Assessment 1');
   const [students, setStudents] = useState([]);
   const [marksMap, setMarksMap] = useState({}); // studentId -> { marksObtained: '', practicalMarks: '', assignmentMarks: '', totalMax: 100 }
@@ -27,16 +76,16 @@ export default function FacultyMarks() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (availableClasses.length > 0 && !availableClasses.includes(selectedClass)) {
+    if (availableClasses.length > 0 && (!selectedClass || !availableClasses.includes(selectedClass))) {
       setSelectedClass(availableClasses[0]);
     }
-  }, [user]);
+  }, [availableClasses, user]);
 
   useEffect(() => {
-    if (availableSubjects.length > 0 && !availableSubjects.includes(selectedSubject)) {
+    if (availableSubjects.length > 0 && (!selectedSubject || !availableSubjects.includes(selectedSubject))) {
       setSelectedSubject(availableSubjects[0]);
     }
-  }, [selectedClass, user]);
+  }, [selectedClass, availableSubjects, user]);
 
   useEffect(() => {
     fetchClassStudents();
@@ -153,13 +202,9 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableClasses.length === 0 ? (
-              <option value="">No Assigned Classes</option>
-            ) : (
-              availableClasses.map((cls) => (
-                <option key={cls} value={cls}>Class {cls}</option>
-              ))
-            )}
+            {availableClasses.map((cls) => (
+              <option key={cls} value={cls}>Class {cls}</option>
+            ))}
           </select>
         </div>
 
@@ -170,13 +215,9 @@ export default function FacultyMarks() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
           >
-            {availableSubjects.length === 0 ? (
-              <option value="">No Assigned Subjects</option>
-            ) : (
-              availableSubjects.map((sub) => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))
-            )}
+            {availableSubjects.map((sub) => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
           </select>
         </div>
 
