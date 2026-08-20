@@ -160,7 +160,7 @@ const initialMockSubjects = [
   {
     _id: 'sub2',
     name: 'Physics IIT-JEE Prep',
-    className: '11th',
+    className: '11th (+1)',
     description: 'Mechanics, Electromagnetism, Modern Physics',
     teacherName: 'Jitender Sharma',
     batchTime: '6:30 PM - 8:00 PM',
@@ -169,7 +169,7 @@ const initialMockSubjects = [
   {
     _id: 'sub3',
     name: 'Chemistry Foundation',
-    className: '10th',
+    className: '12th (+2)',
     description: 'Organic & Inorganic Chemistry formulation',
     teacherName: 'Dr. Ramesh Verma',
     batchTime: '4:00 PM - 5:30 PM',
@@ -183,6 +183,24 @@ const initialMockSubjects = [
     teacherName: 'Jitender Sharma',
     batchTime: '4:30 PM - 6:00 PM',
     totalEnrolled: 12,
+  },
+  {
+    _id: 'sub5',
+    name: 'Biology Higher Prep',
+    className: '12th (+2)',
+    description: 'Botany, Zoology & Medical Foundation',
+    teacherName: 'Dr. Ramesh Verma',
+    batchTime: '2:00 PM - 3:30 PM',
+    totalEnrolled: 16,
+  },
+  {
+    _id: 'sub6',
+    name: 'Mathematics Higher (12th)',
+    className: '12th (+2)',
+    description: 'Advanced Differential Calculus & Vectors',
+    teacherName: 'Prof. Jitender Sharma',
+    batchTime: '5:00 PM - 6:30 PM',
+    totalEnrolled: 18,
   },
 ];
 
@@ -5016,6 +5034,19 @@ export const facultyPanelService = {
 
     if (params.className && params.className !== 'All') {
       filtered = filtered.filter((s) => isExactClassMatch(s.className, params.className));
+    }
+
+    if (params.subject && params.subject !== 'All') {
+      const targetSub = params.subject.trim().toLowerCase();
+      filtered = filtered.filter((s) => {
+        if (Array.isArray(s.subjects) && s.subjects.length > 0) {
+          return s.subjects.some((sub) => String(sub).trim().toLowerCase() === targetSub);
+        }
+        if (s.subject) {
+          return String(s.subject).trim().toLowerCase() === targetSub;
+        }
+        return true;
+      });
     }
 
     if (params.search) {

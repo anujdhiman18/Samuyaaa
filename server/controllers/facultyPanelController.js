@@ -177,7 +177,7 @@ export const getFacultyDashboard = async (req, res) => {
 // @route   GET /api/faculty-panel/students
 export const getAssignedStudents = async (req, res) => {
   try {
-    const { className, search } = req.query;
+    const { className, subject, search } = req.query;
     const facultyId = req.user?.id;
     const faculty = await Faculty.findById(facultyId);
     const responsibilities = faculty?.responsibilities || [];
@@ -190,6 +190,10 @@ export const getAssignedStudents = async (req, res) => {
     const query = { className: { $in: assignedClasses } };
     if (className && className !== 'All') {
       query.className = className;
+    }
+
+    if (subject && subject !== 'All') {
+      query.subjects = subject;
     }
 
     if (search) {

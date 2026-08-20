@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { facultyPanelService, marksService, subjectService, getStoredSubjects, smsNotificationService } from '../../services/api';
-import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass } from '../../config/classConfig';
+import { facultyPanelService, marksService, subjectService, getStoredSubjects, getStoredStudents, smsNotificationService } from '../../services/api';
+import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -77,22 +77,35 @@ export default function FacultyMarks() {
 
   const userAssignedSubjects = user?.assignedSubjects || [];
   const userSubjects = responsibilities.length > 0
-    ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || r.className === selectedClass).map((r) => r.subject)))
+    ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || isExactClassMatch(r.className, selectedClass)).map((r) => r.subject)))
     : userAssignedSubjects;
 
-  const classSubjects = allSubjectsList
-    .filter((s) => !selectedClass || s.className === selectedClass || s.className === 'All')
-    .map((s) => s.name);
+  const availableSubjects = useMemo(() => {
+    let matched = allSubjectsList
+      .filter((s) => !selectedClass || isExactClassMatch(s.className, selectedClass) || s.className === selectedClass || s.className === 'All')
+      .map((s) => s.name);
 
-  let availableSubjects = [];
-  if (isAdmin || userSubjects.length === 0) {
-    availableSubjects = Array.from(new Set([...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
-  } else {
-    availableSubjects = Array.from(new Set(userSubjects));
-    if (availableSubjects.length === 0) {
-      availableSubjects = Array.from(new Set([...classSubjects, ...DEFAULT_SUBJECTS]));
+    if (userSubjects.length > 0) {
+      matched = Array.from(new Set([...userSubjects, ...matched]));
+    } else {
+      matched = Array.from(new Set(matched));
     }
-  }
+
+    if (matched.length > 0) {
+      return matched;
+    }
+
+    const studentSubjects = (getStoredStudents() || [])
+      .filter((s) => isExactClassMatch(s.className, selectedClass))
+      .flatMap((s) => s.subjects || (s.subject ? [s.subject] : []));
+
+    const uniqueStudentSubjects = Array.from(new Set(studentSubjects.filter(Boolean)));
+    if (uniqueStudentSubjects.length > 0) {
+      return uniqueStudentSubjects;
+    }
+
+    return DEFAULT_SUBJECTS;
+  }, [allSubjectsList, selectedClass, userSubjects]);
 
   const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
   const [examType, setExamType] = useState('Internal Assessment 1');
@@ -114,8 +127,27 @@ export default function FacultyMarks() {
   const fetchClassStudents = async () => {
     setLoading(true);
     try {
-      const studentRes = await facultyPanelService.getAssignedStudents({ className: selectedClass });
-      const list = studentRes?.students || [];
+      const studentRes = await facultyPanelService.getAssignedStudents({
+        className: selectedClass,
+        subject: selectedSubject,
+      });
+      let list = studentRes?.students || [];
+
+      if (selectedSubject && selectedSubject !== 'All') {
+        const targetSub = selectedSubject.trim().toLowerCase();
+        list = list.filter((st) => {
+          if (Array.isArray(st.subjects) && st.subjects.length > 0) {
+            return st.subjects.some(
+              (sub) => String(sub).trim().toLowerCase() === targetSub
+            );
+          }
+          if (st.subject) {
+            return String(st.subject).trim().toLowerCase() === targetSub;
+          }
+          return true;
+        });
+      }
+
       setStudents(list);
 
       const newMap = {};
