@@ -61,8 +61,16 @@ export const SORTED_CLASS_ORDER = [
 
 export const sortClassList = (classes = []) => {
   if (!Array.isArray(classes)) return [];
-  const unique = Array.from(new Set(classes.filter(Boolean)));
-  return unique.sort((a, b) => {
+  const rawList = classes.filter(Boolean);
+  const normalized = [];
+  for (const item of rawList) {
+    if (item === '11th' && rawList.includes('11th (+1)')) continue;
+    if (item === '12th' && rawList.includes('12th (+2)')) continue;
+    if (!normalized.includes(item)) {
+      normalized.push(item);
+    }
+  }
+  return normalized.sort((a, b) => {
     const indexA = SORTED_CLASS_ORDER.indexOf(a);
     const indexB = SORTED_CLASS_ORDER.indexOf(b);
     if (indexA !== -1 && indexB !== -1) return indexA - indexB;
@@ -75,7 +83,7 @@ export const sortClassList = (classes = []) => {
 export const STAGE_CLASSES = {
   S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
   S2: ['6th', '7th', '8th', '9th', '10th'],
-  S3: ['11th (+1)', '12th (+2)', '11th', '12th'],
+  S3: ['11th (+1)', '12th (+2)'],
   S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Higher Education', 'Other'],
 };
 

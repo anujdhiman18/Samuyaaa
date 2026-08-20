@@ -11,7 +11,7 @@ export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
 export const STAGE_CLASSES = {
   S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
   S2: ['6th', '7th', '8th', '9th', '10th'],
-  S3: ['11th', '12th'],
+  S3: ['11th (+1)', '12th (+2)', '11th', '12th'],
   S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Other'],
 };
 
