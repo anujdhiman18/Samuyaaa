@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { facultyPanelService, attendanceService, subjectService, getStoredSubjects, getStoredStudents, smsNotificationService } from '../../services/api';
-import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -87,19 +87,26 @@ export default function FacultyAttendance() {
 
   const userAssignedSubjects = user?.assignedSubjects || [];
   const userSubjects = responsibilities.length > 0
-    ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || isExactClassMatch(r.className, selectedClass)).map((r) => r.subject)))
+    ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || isClassOrStageMatch(r.className, selectedClass)).map((r) => r.subject)))
     : userAssignedSubjects;
 
   const availableSubjectObjects = useMemo(() => {
     let matched = allSubjectsList.filter(
       (s) =>
         s.isActive !== false &&
-        (!selectedClass || isExactClassMatch(s.className, selectedClass) || s.className === selectedClass || s.className === 'All')
+        (!selectedClass ||
+          isExactClassMatch(s.className, selectedClass) ||
+          isClassOrStageMatch(s.className, selectedClass) ||
+          s.className === selectedClass ||
+          s.className === 'All')
     );
 
-    if (userSubjects.length > 0) {
+    if (!isAdmin && userSubjects.length > 0) {
       const userSubNames = userSubjects.map((s) => s.trim().toLowerCase());
-      matched = matched.filter((s) => userSubNames.includes(s.name.trim().toLowerCase()));
+      const filteredByFaculty = matched.filter((s) => userSubNames.includes(s.name.trim().toLowerCase()));
+      if (filteredByFaculty.length > 0) {
+        matched = filteredByFaculty;
+      }
     }
 
     if (matched.length > 0) {
@@ -107,19 +114,23 @@ export default function FacultyAttendance() {
     }
 
     const studentSubjects = (getStoredStudents() || [])
-      .filter((s) => isExactClassMatch(s.className, selectedClass))
+      .filter((s) => isClassOrStageMatch(s.className, selectedClass))
       .flatMap((s) => s.subjects || (s.subject ? [s.subject] : []));
 
     const uniqueStudentSubjects = Array.from(new Set(studentSubjects.filter(Boolean)));
-    return uniqueStudentSubjects.map((subName, idx) => ({
-      _id: `sub_st_${idx}`,
-      name: subName,
-      className: selectedClass,
-    }));
-  }, [allSubjectsList, selectedClass, userSubjects]);
+    if (uniqueStudentSubjects.length > 0) {
+      return uniqueStudentSubjects.map((subName, idx) => ({
+        _id: `sub_st_${idx}`,
+        name: subName,
+        className: selectedClass,
+      }));
+    }
+
+    return allSubjectsList.filter((s) => s.isActive !== false);
+  }, [allSubjectsList, selectedClass, userSubjects, isAdmin]);
 
   const availableSubjects = useMemo(() => {
-    return availableSubjectObjects.map((s) => s.name);
+    return Array.from(new Set(availableSubjectObjects.map((s) => s.name).filter(Boolean)));
   }, [availableSubjectObjects]);
 
   const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || '');
@@ -129,10 +140,14 @@ export default function FacultyAttendance() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (availableSubjects.length > 0 && (!selectedSubject || !availableSubjects.includes(selectedSubject))) {
-      setSelectedSubject(availableSubjects[0]);
+    if (availableSubjects.length > 0) {
+      if (!selectedSubject || !availableSubjects.includes(selectedSubject)) {
+        setSelectedSubject(availableSubjects[0]);
+      }
+    } else {
+      setSelectedSubject('');
     }
-  }, [selectedClass, availableSubjects, user]);
+  }, [selectedClass, availableSubjects]);
 
   useEffect(() => {
     fetchAttendanceSheet();
