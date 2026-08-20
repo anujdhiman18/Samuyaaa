@@ -7,15 +7,7 @@ import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 
-const DEFAULT_SUBJECTS = [
-  'Mathematics',
-  'Integrated Science',
-  'Physics',
-  'Chemistry',
-  'Biology',
-  'English',
-  'General',
-];
+
 
 const getTodayLocalString = () => {
   const d = new Date();

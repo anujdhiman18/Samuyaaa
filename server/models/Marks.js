@@ -17,6 +17,10 @@ const marksSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Subject is required'],
     },
+    subjectId: {
+      type: String,
+      trim: true,
+    },
     maxMarks: {
       type: Number,
       required: true,

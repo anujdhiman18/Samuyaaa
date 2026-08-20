@@ -10,8 +10,7 @@ const subjectSchema = new mongoose.Schema(
     className: {
       type: String,
       required: [true, 'Class is required'],
-      enum: ['S1', 'S2', 'S3', 'S4'],
-      default: 'S2',
+      default: '10th',
       trim: true,
     },
     description: {
@@ -30,6 +29,10 @@ const subjectSchema = new mongoose.Schema(
     totalEnrolled: {
       type: Number,
       default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

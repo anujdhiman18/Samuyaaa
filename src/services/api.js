@@ -1731,24 +1731,34 @@ export const subjectService = {
   getSubjects: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const remote = await apiCall(`/subjects?${query}`);
-    if (remote) return remote;
+    if (remote && remote.subjects) return remote;
 
     const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
     let list = fsSubjects || getStoredSubjects();
+    if (params.includeInactive !== true && params.includeInactive !== 'true') {
+      list = list.filter((s) => s.isActive !== false);
+    }
+    if (params.className && params.className !== 'All') {
+      list = list.filter((s) => isExactClassMatch(s.className, params.className) || s.className === 'All');
+    }
     if (params.search) {
       const term = params.search.toLowerCase();
-      list = list.filter((s) => s.name.toLowerCase().includes(term) || s.teacherName.toLowerCase().includes(term));
+      list = list.filter((s) => s.name?.toLowerCase().includes(term) || s.teacherName?.toLowerCase().includes(term));
     }
     setStoredSubjects(list);
     return { success: true, subjects: list };
   },
 
   createSubject: async (data) => {
-    const remote = await apiCall('/subjects', { method: 'POST', body: JSON.stringify(data) });
-    if (remote) return remote;
+    const newSubData = { ...data, isActive: true };
+    const remote = await apiCall('/subjects', { method: 'POST', body: JSON.stringify(newSubData) });
+    if (remote && remote.success) {
+      notifyDataUpdate();
+      return remote;
+    }
 
     const id = 'sub_' + Date.now();
-    const newSubject = { ...data, _id: id };
+    const newSubject = { ...newSubData, _id: id };
 
     try {
       await setDoc(doc(db, 'subjects', id), newSubject);
@@ -1758,12 +1768,16 @@ export const subjectService = {
 
     const list = getStoredSubjects();
     setStoredSubjects([newSubject, ...list]);
+    notifyDataUpdate();
     return { success: true, subject: newSubject, message: 'Subject created in Firebase DB' };
   },
 
   updateSubject: async (id, data) => {
     const remote = await apiCall(`/subjects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-    if (remote) return remote;
+    if (remote && remote.success) {
+      notifyDataUpdate();
+      return remote;
+    }
 
     try {
       await setDoc(doc(db, 'subjects', String(id)), data, { merge: true });
@@ -1772,27 +1786,36 @@ export const subjectService = {
     }
 
     const list = getStoredSubjects();
-    const idx = list.findIndex((s) => s._id === id);
+    const idx = list.findIndex((s) => String(s._id || s.id) === String(id));
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
       setStoredSubjects(list);
     }
+    notifyDataUpdate();
     return { success: true, subject: list[idx], message: 'Subject updated in Firebase DB' };
   },
 
   deleteSubject: async (id) => {
     const remote = await apiCall(`/subjects/${id}`, { method: 'DELETE' });
-    if (remote) return remote;
+    if (remote && remote.success) {
+      notifyDataUpdate();
+      return remote;
+    }
 
     try {
-      await deleteDoc(doc(db, 'subjects', String(id)));
+      await setDoc(doc(db, 'subjects', String(id)), { isActive: false }, { merge: true });
     } catch (fsErr) {
       console.warn('Firestore deleteDoc subject error:', fsErr.message);
     }
 
-    const list = getStoredSubjects().filter((s) => s._id !== id);
-    setStoredSubjects(list);
-    return { success: true, message: 'Subject deleted from Firebase DB' };
+    const list = getStoredSubjects();
+    const idx = list.findIndex((s) => String(s._id || s.id) === String(id));
+    if (idx !== -1) {
+      list[idx].isActive = false;
+      setStoredSubjects(list);
+    }
+    notifyDataUpdate();
+    return { success: true, message: 'Subject deactivated successfully (soft-deleted)' };
   },
 };
 

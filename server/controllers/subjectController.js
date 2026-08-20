@@ -4,8 +4,12 @@ import Subject from '../models/Subject.js';
 // @route   GET /api/subjects
 export const getSubjects = async (req, res) => {
   try {
-    const { search, className } = req.query;
+    const { search, className, includeInactive } = req.query;
     const query = {};
+
+    if (includeInactive !== 'true') {
+      query.isActive = { $ne: false };
+    }
 
     if (className && className !== 'All') {
       query.className = className;
@@ -30,7 +34,7 @@ export const getSubjects = async (req, res) => {
 // @route   POST /api/subjects
 export const createSubject = async (req, res) => {
   try {
-    const subject = await Subject.create(req.body);
+    const subject = await Subject.create({ ...req.body, isActive: true });
     res.status(201).json({ success: true, subject, message: 'Subject created successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -51,15 +55,15 @@ export const updateSubject = async (req, res) => {
   }
 };
 
-// @desc    Delete subject
+// @desc    Delete subject (Soft Delete to protect historical academic records)
 // @route   DELETE /api/subjects/:id
 export const deleteSubject = async (req, res) => {
   try {
-    const subject = await Subject.findByIdAndDelete(req.params.id);
+    const subject = await Subject.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
     if (!subject) {
       return res.status(404).json({ success: false, message: 'Subject not found' });
     }
-    res.json({ success: true, message: 'Subject deleted successfully' });
+    res.json({ success: true, message: 'Subject deactivated successfully (soft-deleted)' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

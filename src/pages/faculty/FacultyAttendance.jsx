@@ -5,7 +5,6 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
-const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 const CATEGORY_OPTIONS = [
   { code: 'All', label: 'All Categories (S1-S4)' },
@@ -26,17 +25,20 @@ export default function FacultyAttendance() {
   useEffect(() => {
     const loadSubjects = async () => {
       try {
-        const res = await subjectService.getSubjects();
-        if (res && res.subjects && res.subjects.length > 0) {
+        const res = await subjectService.getSubjects({ includeInactive: false });
+        if (res && res.subjects) {
           setAllSubjectsList(res.subjects);
         } else {
-          setAllSubjectsList(getStoredSubjects() || []);
+          setAllSubjectsList((getStoredSubjects() || []).filter((s) => s.isActive !== false));
         }
       } catch (e) {
-        setAllSubjectsList(getStoredSubjects() || []);
+        setAllSubjectsList((getStoredSubjects() || []).filter((s) => s.isActive !== false));
       }
     };
     loadSubjects();
+
+    window.addEventListener('saumyaa_data_updated', loadSubjects);
+    return () => window.removeEventListener('saumyaa_data_updated', loadSubjects);
   }, []);
 
   const responsibilities = user?.responsibilities || [];
@@ -88,15 +90,16 @@ export default function FacultyAttendance() {
     ? Array.from(new Set(responsibilities.filter((r) => !selectedClass || isExactClassMatch(r.className, selectedClass)).map((r) => r.subject)))
     : userAssignedSubjects;
 
-  const availableSubjects = useMemo(() => {
-    let matched = allSubjectsList
-      .filter((s) => !selectedClass || isExactClassMatch(s.className, selectedClass) || s.className === selectedClass || s.className === 'All')
-      .map((s) => s.name);
+  const availableSubjectObjects = useMemo(() => {
+    let matched = allSubjectsList.filter(
+      (s) =>
+        s.isActive !== false &&
+        (!selectedClass || isExactClassMatch(s.className, selectedClass) || s.className === selectedClass || s.className === 'All')
+    );
 
     if (userSubjects.length > 0) {
-      matched = Array.from(new Set([...userSubjects, ...matched]));
-    } else {
-      matched = Array.from(new Set(matched));
+      const userSubNames = userSubjects.map((s) => s.trim().toLowerCase());
+      matched = matched.filter((s) => userSubNames.includes(s.name.trim().toLowerCase()));
     }
 
     if (matched.length > 0) {
@@ -108,14 +111,18 @@ export default function FacultyAttendance() {
       .flatMap((s) => s.subjects || (s.subject ? [s.subject] : []));
 
     const uniqueStudentSubjects = Array.from(new Set(studentSubjects.filter(Boolean)));
-    if (uniqueStudentSubjects.length > 0) {
-      return uniqueStudentSubjects;
-    }
-
-    return DEFAULT_SUBJECTS;
+    return uniqueStudentSubjects.map((subName, idx) => ({
+      _id: `sub_st_${idx}`,
+      name: subName,
+      className: selectedClass,
+    }));
   }, [allSubjectsList, selectedClass, userSubjects]);
 
-  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');
+  const availableSubjects = useMemo(() => {
+    return availableSubjectObjects.map((s) => s.name);
+  }, [availableSubjectObjects]);
+
+  const [selectedSubject, setSelectedSubject] = useState(() => availableSubjects[0] || '');
   const [students, setStudents] = useState([]);
   const [attendanceMap, setAttendanceMap] = useState({});
   const [loading, setLoading] = useState(true);

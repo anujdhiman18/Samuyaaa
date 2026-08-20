@@ -6,7 +6,6 @@ import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
-const DEFAULT_SUBJECTS = ['Mathematics Advanced', 'Physics IIT-JEE Prep', 'Chemistry Foundation', 'Integrated Science', 'Biology', 'English Literature', 'Social Studies', 'Computer Science'];
 
 export default function FacultyAssignments() {
   const { addToast } = useToast();
@@ -21,17 +20,20 @@ export default function FacultyAssignments() {
   useEffect(() => {
     const loadSubjects = async () => {
       try {
-        const res = await subjectService.getSubjects();
-        if (res && res.subjects && res.subjects.length > 0) {
+        const res = await subjectService.getSubjects({ includeInactive: false });
+        if (res && res.subjects) {
           setAllSubjectsList(res.subjects);
         } else {
-          setAllSubjectsList(getStoredSubjects() || []);
+          setAllSubjectsList((getStoredSubjects() || []).filter((s) => s.isActive !== false));
         }
       } catch (e) {
-        setAllSubjectsList(getStoredSubjects() || []);
+        setAllSubjectsList((getStoredSubjects() || []).filter((s) => s.isActive !== false));
       }
     };
     loadSubjects();
+
+    window.addEventListener('saumyaa_data_updated', loadSubjects);
+    return () => window.removeEventListener('saumyaa_data_updated', loadSubjects);
   }, []);
 
   const responsibilities = user?.responsibilities || [];
@@ -41,13 +43,12 @@ export default function FacultyAssignments() {
     ? Array.from(new Set(responsibilities.map((r) => r.className)))
     : userAssignedClasses;
 
-  let availableClasses = [];
-  if (isAdmin || rawUserClasses.length === 0) {
-    const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
-    availableClasses = sortClassList([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses]);
-  } else {
-    availableClasses = sortClassList(rawUserClasses);
-  }
+  const dynamicClasses = allSubjectsList.map((s) => s.className).filter(Boolean);
+  const availableClasses = sortClassList(
+    isAdmin || rawUserClasses.length === 0 
+      ? [...new Set([...rawUserClasses, ...DEFAULT_CLASSES, ...dynamicClasses])]
+      : rawUserClasses
+  );
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
