@@ -5928,54 +5928,74 @@ export const smsNotificationService = {
     const formattedPhone = cleanPhone.length === 10 ? `+91 ${cleanPhone}` : `+${cleanPhone}`;
     const generatedEventKey = eventKey || `${studentId || studentName}_${notificationType}_${relatedRecordId || Date.now()}`;
 
-    // Read existing logs
+    // 1. Send via Backend Server API (/api/sms-notifications/dispatch)
+    try {
+      const remote = await apiCall('/sms-notifications/dispatch', {
+        method: 'POST',
+        body: JSON.stringify({
+          studentId,
+          studentName,
+          phoneNumber: formattedPhone,
+          notificationType,
+          message,
+          triggeredBy,
+          relatedRecordId,
+          eventKey: generatedEventKey,
+        }),
+      });
+      if (remote && remote.success) {
+        console.log(`[SMS Dispatched via Backend API] to ${studentName} (${formattedPhone})`);
+      }
+    } catch (err) {
+      console.warn('[SMS Dispatch Remote Call Warn]:', err.message);
+    }
+
+    // 2. Backup to Local Storage for Standalone/Client-side UI visibility
     let logs = [];
     try {
       logs = JSON.parse(localStorage.getItem('saumyaa_sms_logs') || '[]');
     } catch (e) {}
 
-    // Deduplication check
     const existing = logs.find((l) => l.eventKey === generatedEventKey && l.status === 'sent');
-    if (existing) {
-      console.log(`[SMS Duplicate Suppressed] ${generatedEventKey}`);
-      return;
+    if (!existing) {
+      const newLog = {
+        _id: 'sms_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        studentId: String(studentId || ''),
+        studentName: studentName || 'Student',
+        phoneNumber: formattedPhone,
+        notificationType,
+        message,
+        triggeredBy: triggeredBy || 'Faculty / Staff',
+        relatedRecordId: String(relatedRecordId || ''),
+        eventKey: generatedEventKey,
+        status: 'sent',
+        providerMessageId: 'SMS_DISPATCH_' + Date.now(),
+        sentAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+
+      logs.unshift(newLog);
+      localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs));
     }
-
-    const newLog = {
-      _id: 'sms_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      studentId: String(studentId || ''),
-      studentName: studentName || 'Student',
-      phoneNumber: formattedPhone,
-      notificationType,
-      message,
-      triggeredBy: triggeredBy || 'Faculty / Staff',
-      relatedRecordId: String(relatedRecordId || ''),
-      eventKey: generatedEventKey,
-      status: 'sent', // Standalone mode auto-simulates success
-      providerMessageId: 'SIMULATED_SMS_' + Date.now(),
-      sentAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-
-    logs.unshift(newLog);
-    localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs));
     notifyDataUpdate();
   },
 
   /**
    * Helper: Dispatch Attendance SMS for a batch of student records
    */
-  triggerAttendanceSMSBatch: async ({ date, subject, records, currentUser }) => {
+  triggerAttendanceSMSBatch: async ({ date, subject, records, studentsList = [], currentUser }) => {
     if (!Array.isArray(records) || records.length === 0) return;
-    const allStudents = getStoredStudents() || [];
+    const allStudents = (Array.isArray(studentsList) && studentsList.length > 0)
+      ? studentsList
+      : (getStoredStudents() || []);
 
     const triggeredBy = currentUser?.name || currentUser?.role || 'Faculty';
 
     records.forEach((rec) => {
       const stId = String(rec.studentId || rec.student);
       const stObj = allStudents.find((s) => String(s._id || s.id) === stId);
-      const stName = stObj?.fullName || stObj?.name || 'Student';
-      const stPhone = stObj?.phone || stObj?.parentPhone || '9876543210';
+      const stName = stObj?.fullName || stObj?.name || rec.studentName || 'Student';
+      const stPhone = stObj?.phone || stObj?.parentPhone || rec.phone || '9876543210';
       const pct = stObj?.attendancePercentage || 90;
       const status = rec.status || 'Present';
 
@@ -5998,9 +6018,11 @@ export const smsNotificationService = {
   /**
    * Helper: Dispatch Grade/Marks SMS for a batch of student records
    */
-  triggerGradeSMSBatch: async ({ subject, examType, marksList, currentUser, isUpdate = false }) => {
+  triggerGradeSMSBatch: async ({ subject, examType, marksList, studentsList = [], currentUser, isUpdate = false }) => {
     if (!Array.isArray(marksList) || marksList.length === 0) return;
-    const allStudents = getStoredStudents() || [];
+    const allStudents = (Array.isArray(studentsList) && studentsList.length > 0)
+      ? studentsList
+      : (getStoredStudents() || []);
     const triggeredBy = currentUser?.name || currentUser?.role || 'Faculty';
 
     marksList.forEach((m) => {
@@ -6008,14 +6030,26 @@ export const smsNotificationService = {
       const stObj = allStudents.find((s) => String(s._id || s.id) === stId);
       const stName = stObj?.fullName || stObj?.name || 'Student';
       const stPhone = stObj?.phone || stObj?.parentPhone || '9876543210';
-      const marks = m.theoryMarks || m.marks || 0;
-      const totalMax = m.totalMax || 100;
-      const grade = m.grade || 'A';
+      const theory = Number(m.theoryMarks || m.marks) || 0;
+      const practical = Number(m.practicalMarks) || 0;
+      const assignment = Number(m.assignmentMarks) || 0;
+      const totalObtained = theory + practical + assignment;
+      const totalMax = Number(m.totalMax) || 100;
+
+      const pct = Math.min(100, Math.round((totalObtained / totalMax) * 100));
+      let calcGrade = m.grade;
+      if (!calcGrade) {
+        if (pct >= 90) calcGrade = 'A+';
+        else if (pct >= 75) calcGrade = 'A';
+        else if (pct >= 60) calcGrade = 'B';
+        else if (pct >= 50) calcGrade = 'C';
+        else calcGrade = 'D';
+      }
 
       const subjectInfo = subject ? `${subject} (${examType || 'Exam'})` : examType || 'recent exam';
       const message = isUpdate
-        ? `Dear ${stName}, your marks for ${subjectInfo} have been updated (${marks}/${totalMax}, Grade: ${grade}). Please log in to your student portal for details.`
-        : `Dear ${stName}, your marks for ${subjectInfo} have been published (${marks}/${totalMax}, Grade: ${grade}). Please log in to your student portal to view your result.`;
+        ? `Dear ${stName}, your marks for ${subjectInfo} have been updated (${totalObtained}/${totalMax}, Grade: ${calcGrade}). Please log in to your student portal for details.`
+        : `Dear ${stName}, your marks for ${subjectInfo} have been published (${totalObtained}/${totalMax}, Grade: ${calcGrade}). Please log in to your student portal to view your result.`;
 
       const notificationType = isUpdate ? 'GradeUpdated' : 'GradePublished';
 
@@ -6027,7 +6061,7 @@ export const smsNotificationService = {
         message,
         triggeredBy,
         relatedRecordId: `${subject}_${examType}`,
-        eventKey: `${stId}_${notificationType}_${subject}_${examType}`,
+        eventKey: `${stId}_${notificationType}_${subject}_${examType}_${Date.now()}`,
         smsNotificationsEnabled: stObj?.smsNotificationsEnabled !== false,
       });
     });

@@ -186,6 +186,7 @@ export default function FacultyMarks() {
           subject: selectedSubject,
           examType,
           marksList,
+          studentsList: students,
           currentUser: user,
           isUpdate: Boolean(res.isUpdated),
         });

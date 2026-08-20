@@ -190,6 +190,7 @@ export default function FacultyAttendance() {
           date,
           subject: selectedSubject,
           records,
+          studentsList: students,
           currentUser: user,
         });
       }

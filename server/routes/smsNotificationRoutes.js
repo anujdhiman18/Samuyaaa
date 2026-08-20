@@ -1,9 +1,40 @@
 import express from 'express';
 import SMSNotificationLog from '../models/SMSNotificationLog.js';
 import Student from '../models/Student.js';
-import { notificationService } from '../services/notificationService.js';
+import { notificationService, processSMSDispatch } from '../services/notificationService.js';
 
 const router = express.Router();
+
+// POST /api/sms-notifications/dispatch - Dispatch SMS Notification
+router.post('/dispatch', async (req, res) => {
+  try {
+    const {
+      studentId,
+      studentName,
+      phoneNumber,
+      notificationType,
+      message,
+      triggeredBy,
+      relatedRecordId,
+      eventKey,
+    } = req.body;
+
+    const result = await processSMSDispatch({
+      studentId,
+      studentObj: studentName ? { fullName: studentName, phone: phoneNumber } : null,
+      notificationType: notificationType || 'GradePublished',
+      message,
+      triggeredBy: triggeredBy || 'Faculty',
+      relatedRecordId,
+      eventKeySuffix: eventKey || Date.now(),
+    });
+
+    return res.json(result);
+  } catch (err) {
+    console.error('Error in dispatching SMS:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // GET /api/sms-notifications - Get SMS Notification logs with filtering
 router.get('/', async (req, res) => {
