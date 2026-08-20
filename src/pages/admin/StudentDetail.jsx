@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { studentService, feeService, attendanceService, marksService, getFeeDueDateStatus } from '../../services/api';
+import { studentService, feeService, attendanceService, marksService, getFeeDueDateStatus, smsNotificationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -150,6 +150,7 @@ export default function StudentDetail() {
       fatherName: student.fatherName || '',
       motherName: student.motherName || '',
       address: student.address || '',
+      smsNotificationsEnabled: student.smsNotificationsEnabled !== false,
     });
     setEditModalOpen(true);
   };
@@ -161,6 +162,17 @@ export default function StudentDetail() {
       await studentService.updateStudent(id, editForm);
       addToast('Student profile updated successfully!', 'success');
       setEditModalOpen(false);
+
+      // Trigger Account Update SMS (Non-blocking)
+      smsNotificationService.triggerAccountUpdateSMS({
+        studentId: id,
+        studentName: editForm.fullName || student?.fullName || 'Student',
+        phoneNumber: editForm.phone || student?.phone,
+        updatedFields: 'Profile & Academic Details',
+        currentUser: null,
+        smsNotificationsEnabled: editForm.smsNotificationsEnabled !== false,
+      });
+
       fetchStudentData();
     } catch (err) {
       addToast(err.message || 'Failed to update student profile', 'error');
@@ -782,6 +794,26 @@ export default function StudentDetail() {
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
               />
             </div>
+          </div>
+
+          {/* SMS Notification Preference Toggle */}
+          <div className="bg-surface-container-low p-3.5 rounded-xl border border-outline-variant/15 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px] text-primary">sms</span>
+                Automatic SMS Notifications
+              </p>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">Send SMS alerts for attendance, grades, & profile changes</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editForm.smsNotificationsEnabled !== false}
+                onChange={(e) => setEditForm({ ...editForm, smsNotificationsEnabled: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-outline-variant/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-outline-variant/15">

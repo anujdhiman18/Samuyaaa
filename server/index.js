@@ -21,6 +21,7 @@ import attendanceRoutes from './routes/attendanceRoutes.js';
 import facultyPanelRoutes from './routes/facultyPanelRoutes.js';
 import rbacRoutes from './routes/admin/rbacRoutes.js';
 import studentApplicationRoutes from './routes/studentApplicationRoutes.js';
+import smsNotificationRoutes from './routes/smsNotificationRoutes.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
@@ -60,6 +61,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/faculty-panel', facultyPanelRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/student-applications', studentApplicationRoutes);
+app.use('/api/sms-notifications', smsNotificationRoutes);
 app.post('/api/student-panel/leaves', applyStudentLeave);
 app.get('/api/student-panel/leaves', getStudentLeaves);
 

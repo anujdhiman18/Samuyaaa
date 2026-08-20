@@ -33,6 +33,7 @@ import ToppersManagement from './pages/admin/ToppersManagement';
 import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdminSMSLogs from './pages/admin/AdminSMSLogs';
 
 // Student Portal Pages
 import StudentLayout from './layouts/StudentLayout';
@@ -223,6 +224,7 @@ export default function App() {
                   <Route path="toppers" element={<ToppersManagement />} />
                   <Route path="fees" element={<FeeManagement />} />
                   <Route path="reminders" element={<FeeReminders />} />
+                  <Route path="sms-logs" element={<AdminSMSLogs />} />
                   <Route path="profile" element={<AdminProfile />} />
                 </Route>
 

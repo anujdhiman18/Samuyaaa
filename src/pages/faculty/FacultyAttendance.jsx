@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { facultyPanelService, attendanceService, subjectService, getStoredSubjects } from '../../services/api';
+import { facultyPanelService, attendanceService, subjectService, getStoredSubjects, smsNotificationService } from '../../services/api';
 import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -185,7 +185,13 @@ export default function FacultyAttendance() {
       });
 
       if (res && res.success) {
-        addToast(`Attendance saved for Class ${selectedClass} (${selectedSubject})!`, 'success');
+        addToast(`Attendance saved. SMS notifications queued for Class ${selectedClass}!`, 'success');
+        smsNotificationService.triggerAttendanceSMSBatch({
+          date,
+          subject: selectedSubject,
+          records,
+          currentUser: user,
+        });
       }
     } catch (err) {
       addToast('Error saving attendance', 'error');

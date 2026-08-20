@@ -148,6 +148,10 @@ const studentSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    smsNotificationsEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

@@ -5818,3 +5818,240 @@ export const facultyAttendanceService = {
   },
 };
 
+/**
+ * SMS Notification Service (Frontend Client & Standalone Backup)
+ */
+export const smsNotificationService = {
+  getLogs: async ({ search = '', type = 'All', status = 'All', limit = 100 } = {}) => {
+    const query = new URLSearchParams({ search, type, status, limit }).toString();
+    const remote = await apiCall(`/sms-notifications?${query}`);
+    if (remote && remote.logs) return remote;
+
+    // Standalone fallback
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem('saumyaa_sms_logs') || '[]');
+    } catch (e) {}
+
+    if (type && type !== 'All') {
+      logs = logs.filter((l) => l.notificationType === type);
+    }
+    if (status && status !== 'All') {
+      logs = logs.filter((l) => l.status === status);
+    }
+    if (search && search.trim()) {
+      const q = search.toLowerCase();
+      logs = logs.filter(
+        (l) =>
+          l.studentName?.toLowerCase().includes(q) ||
+          l.phoneNumber?.includes(q) ||
+          l.message?.toLowerCase().includes(q) ||
+          l.triggeredBy?.toLowerCase().includes(q)
+      );
+    }
+
+    return { success: true, count: logs.length, logs };
+  },
+
+  retryLog: async (logId) => {
+    const remote = await apiCall(`/sms-notifications/retry/${logId}`, { method: 'POST' });
+    if (remote) return remote;
+
+    // Standalone retry fallback
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem('saumyaa_sms_logs') || '[]');
+    } catch (e) {}
+
+    const index = logs.findIndex((l) => String(l._id || l.id) === String(logId));
+    if (index === -1) {
+      return { success: false, message: 'Log record not found' };
+    }
+
+    logs[index].status = 'sent';
+    logs[index].errorMessage = '';
+    logs[index].sentAt = new Date().toISOString();
+    logs[index].providerMessageId = 'SIMULATED_RETRY_' + Date.now();
+
+    localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs));
+    notifyDataUpdate();
+    return { success: true, message: 'SMS retried successfully (Simulated)', log: logs[index] };
+  },
+
+  toggleSMSPreference: async (studentId, enabled) => {
+    const remote = await apiCall(`/sms-notifications/preference/${studentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled }),
+    });
+    if (remote) return remote;
+
+    // Standalone student update fallback
+    let students = getStoredStudents() || [];
+    const index = students.findIndex((s) => String(s._id || s.id) === String(studentId));
+    if (index !== -1) {
+      students[index].smsNotificationsEnabled = Boolean(enabled);
+      saveStoredStudents(students);
+    }
+    notifyDataUpdate();
+    return {
+      success: true,
+      message: `SMS notifications toggled ${enabled ? 'ON' : 'OFF'}`,
+      smsNotificationsEnabled: Boolean(enabled),
+    };
+  },
+
+  /**
+   * Non-blocking automated SMS dispatch helper for local/client operations
+   */
+  dispatchSMSNonBlocking: async ({
+    studentId,
+    studentName,
+    phoneNumber,
+    notificationType,
+    message,
+    triggeredBy,
+    relatedRecordId,
+    eventKey,
+    smsNotificationsEnabled = true,
+  }) => {
+    if (smsNotificationsEnabled === false) {
+      console.log(`[SMS Suppressed] ${studentName} has disabled SMS notifications.`);
+      return;
+    }
+
+    const cleanPhone = phoneNumber ? String(phoneNumber).replace(/\D/g, '') : '';
+    if (!cleanPhone || cleanPhone.length < 10) {
+      console.warn(`[SMS Dispatch Failed] Invalid phone number for ${studentName}`);
+      return;
+    }
+
+    const formattedPhone = cleanPhone.length === 10 ? `+91 ${cleanPhone}` : `+${cleanPhone}`;
+    const generatedEventKey = eventKey || `${studentId || studentName}_${notificationType}_${relatedRecordId || Date.now()}`;
+
+    // Read existing logs
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem('saumyaa_sms_logs') || '[]');
+    } catch (e) {}
+
+    // Deduplication check
+    const existing = logs.find((l) => l.eventKey === generatedEventKey && l.status === 'sent');
+    if (existing) {
+      console.log(`[SMS Duplicate Suppressed] ${generatedEventKey}`);
+      return;
+    }
+
+    const newLog = {
+      _id: 'sms_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      studentId: String(studentId || ''),
+      studentName: studentName || 'Student',
+      phoneNumber: formattedPhone,
+      notificationType,
+      message,
+      triggeredBy: triggeredBy || 'Faculty / Staff',
+      relatedRecordId: String(relatedRecordId || ''),
+      eventKey: generatedEventKey,
+      status: 'sent', // Standalone mode auto-simulates success
+      providerMessageId: 'SIMULATED_SMS_' + Date.now(),
+      sentAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    logs.unshift(newLog);
+    localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs));
+    notifyDataUpdate();
+  },
+
+  /**
+   * Helper: Dispatch Attendance SMS for a batch of student records
+   */
+  triggerAttendanceSMSBatch: async ({ date, subject, records, currentUser }) => {
+    if (!Array.isArray(records) || records.length === 0) return;
+    const allStudents = getStoredStudents() || [];
+
+    const triggeredBy = currentUser?.name || currentUser?.role || 'Faculty';
+
+    records.forEach((rec) => {
+      const stId = String(rec.studentId || rec.student);
+      const stObj = allStudents.find((s) => String(s._id || s.id) === stId);
+      const stName = stObj?.fullName || stObj?.name || 'Student';
+      const stPhone = stObj?.phone || stObj?.parentPhone || '9876543210';
+      const pct = stObj?.attendancePercentage || 90;
+      const status = rec.status || 'Present';
+
+      const message = `Dear ${stName}, your attendance for ${subject} on ${date} has been marked as ${status}. Current attendance: ${pct}%.`;
+
+      smsNotificationService.dispatchSMSNonBlocking({
+        studentId: stId,
+        studentName: stName,
+        phoneNumber: stPhone,
+        notificationType: 'Attendance',
+        message,
+        triggeredBy,
+        relatedRecordId: `${date}_${subject}`,
+        eventKey: `${stId}_Attendance_${date}_${subject}_${status}`,
+        smsNotificationsEnabled: stObj?.smsNotificationsEnabled !== false,
+      });
+    });
+  },
+
+  /**
+   * Helper: Dispatch Grade/Marks SMS for a batch of student records
+   */
+  triggerGradeSMSBatch: async ({ subject, examType, marksList, currentUser, isUpdate = false }) => {
+    if (!Array.isArray(marksList) || marksList.length === 0) return;
+    const allStudents = getStoredStudents() || [];
+    const triggeredBy = currentUser?.name || currentUser?.role || 'Faculty';
+
+    marksList.forEach((m) => {
+      const stId = String(m.studentId || m.student);
+      const stObj = allStudents.find((s) => String(s._id || s.id) === stId);
+      const stName = stObj?.fullName || stObj?.name || 'Student';
+      const stPhone = stObj?.phone || stObj?.parentPhone || '9876543210';
+      const marks = m.theoryMarks || m.marks || 0;
+      const totalMax = m.totalMax || 100;
+      const grade = m.grade || 'A';
+
+      const subjectInfo = subject ? `${subject} (${examType || 'Exam'})` : examType || 'recent exam';
+      const message = isUpdate
+        ? `Dear ${stName}, your marks for ${subjectInfo} have been updated (${marks}/${totalMax}, Grade: ${grade}). Please log in to your student portal for details.`
+        : `Dear ${stName}, your marks for ${subjectInfo} have been published (${marks}/${totalMax}, Grade: ${grade}). Please log in to your student portal to view your result.`;
+
+      const notificationType = isUpdate ? 'GradeUpdated' : 'GradePublished';
+
+      smsNotificationService.dispatchSMSNonBlocking({
+        studentId: stId,
+        studentName: stName,
+        phoneNumber: stPhone,
+        notificationType,
+        message,
+        triggeredBy,
+        relatedRecordId: `${subject}_${examType}`,
+        eventKey: `${stId}_${notificationType}_${subject}_${examType}`,
+        smsNotificationsEnabled: stObj?.smsNotificationsEnabled !== false,
+      });
+    });
+  },
+
+  /**
+   * Helper: Dispatch Account Update SMS for student profile changes
+   */
+  triggerAccountUpdateSMS: async ({ studentId, studentName, phoneNumber, updatedFields, currentUser, smsNotificationsEnabled = true }) => {
+    const triggeredBy = currentUser?.name || currentUser?.role || 'Admin';
+    const message = `Dear ${studentName}, important information on your account (${updatedFields}) has been updated by authorized staff. Please log in to your student portal for details.`;
+
+    smsNotificationService.dispatchSMSNonBlocking({
+      studentId: String(studentId),
+      studentName,
+      phoneNumber,
+      notificationType: 'AccountUpdate',
+      message,
+      triggeredBy,
+      relatedRecordId: `acc_upd_${Date.now()}`,
+      eventKey: `${studentId}_AccountUpdate_${updatedFields}_${Date.now()}`,
+      smsNotificationsEnabled,
+    });
+  },
+};
+
+

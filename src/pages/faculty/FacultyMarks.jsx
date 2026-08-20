@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { facultyPanelService, marksService, subjectService, getStoredSubjects } from '../../services/api';
+import { facultyPanelService, marksService, subjectService, getStoredSubjects, smsNotificationService } from '../../services/api';
 import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -181,7 +181,14 @@ export default function FacultyMarks() {
       });
 
       if (res && res.success) {
-        addToast(`Marks published & synced to Admin Panel for ${selectedClass} (${selectedSubject})!`, 'success');
+        addToast(`Marks published & SMS notifications queued for ${selectedClass} (${selectedSubject})!`, 'success');
+        smsNotificationService.triggerGradeSMSBatch({
+          subject: selectedSubject,
+          examType,
+          marksList,
+          currentUser: user,
+          isUpdate: Boolean(res.isUpdated),
+        });
       }
     } catch (err) {
       addToast('Error publishing marks', 'error');

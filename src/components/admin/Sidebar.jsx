@@ -16,6 +16,7 @@ const mainNavItems = [
   { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
   { path: '/admin/reminders', label: 'Fee Reminders', icon: 'notifications_active' },
+  { path: '/admin/sms-logs', label: 'SMS Notification Logs', icon: 'sms' },
   { path: '/admin/profile', label: 'Admin Profile', icon: 'manage_accounts' },
 ];
 
