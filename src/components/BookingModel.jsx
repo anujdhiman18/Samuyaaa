@@ -88,8 +88,19 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       ).sort()
     : [];
 
-  // 3. Available Classes for selected Subject + Category (Student can select ANY class)
-  const baseClasses = ['Class S1', 'Class S2', 'Class S3', 'Class S4', 'S1', 'S2', 'S3', 'S4'];
+  // 3. Available Classes for selected Subject + Category (Clean & Non-duplicated)
+  const normalizeDisplayClass = (clsStr) => {
+    if (!clsStr) return '';
+    const str = String(clsStr).trim();
+    if (str === 'S1' || str === 'Class S1') return 'Class S1';
+    if (str === 'S2' || str === 'Class S2') return 'Class S2';
+    if (str === 'S3' || str === 'Class S3') return 'Class S3';
+    if (str === 'S4' || str === 'Class S4') return 'Class S4';
+    if (str.startsWith('Class ')) return str;
+    return `Class ${str}`;
+  };
+
+  const standardClasses = ['Class S1', 'Class S2', 'Class S3', 'Class S4'];
   const adminClasses = liveSubjects
     .filter(
       (s) =>
@@ -97,11 +108,11 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         s.name?.trim() === selectedSubject ||
         selectedSubject.includes(s.name?.trim())
     )
-    .map((s) => s.className?.trim())
+    .map((s) => normalizeDisplayClass(s.className?.trim()))
     .filter(Boolean);
 
-  const availableClasses = Array.from(new Set([...baseClasses, ...adminClasses])).sort((a, b) => {
-    const order = ['Class S1', 'S1', 'Class S2', 'S2', 'Class S3', 'S3', 'Class S4', 'S4'];
+  const availableClasses = Array.from(new Set([...standardClasses, ...adminClasses])).sort((a, b) => {
+    const order = ['Class S1', 'Class S2', 'Class S3', 'Class S4'];
     const idxA = order.indexOf(a);
     const idxB = order.indexOf(b);
     if (idxA !== -1 && idxB !== -1) return idxA - idxB;
