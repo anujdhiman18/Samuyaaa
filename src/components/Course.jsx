@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { courses as defaultCourses, courseFilters } from '../data.js';
+import { courseFilters } from '../data.js';
 import { subjectService } from '../services/api.js';
 
 export default function Courses({ onOpenBooking }) {
@@ -32,27 +32,42 @@ export default function Courses({ onOpenBooking }) {
     };
   }, []);
 
-  const displayCourses =
-    liveSubjects.length > 0
-      ? liveSubjects.map((sub, idx) => ({
-          id: sub._id || `live-${idx}`,
-          title: sub.name,
-          category: sub.className ? sub.className.toLowerCase() : '10th',
-          tags: [`Class ${sub.className}`, sub.teacherName || 'Jitender Sharma'],
-          description: sub.description || 'Comprehensive conceptual coaching and board exam preparation.',
-          batch: sub.batchTime || '5:00 PM - 6:30 PM',
-          program: sub.name,
-          icon: 'school',
-          iconBg: 'bg-primary/10',
-          iconColor: 'text-primary',
-        }))
-      : defaultCourses;
+  // Group live subjects by distinct subject name to build clean course cards
+  const distinctSubjectsMap = new Map();
+  liveSubjects.forEach((sub) => {
+    const sName = sub.name ? sub.name.trim() : '';
+    if (sName && !distinctSubjectsMap.has(sName)) {
+      distinctSubjectsMap.set(sName, {
+        id: sub._id || sName,
+        title: sName,
+        teacherName: sub.teacherName || 'Jitender Sharma',
+        description: sub.description || 'Comprehensive conceptual coaching and board exam preparation.',
+        program: sName,
+        icon: sName.toLowerCase().includes('math')
+          ? 'functions'
+          : sName.toLowerCase().includes('physic')
+          ? 'bolt'
+          : sName.toLowerCase().includes('chem')
+          ? 'science'
+          : sName.toLowerCase().includes('bio')
+          ? 'biotech'
+          : 'school',
+        iconBg: 'bg-primary/10',
+        iconColor: 'text-primary',
+      });
+    }
+  });
 
-  const visibleCourses = displayCourses.filter(
-    (course) =>
-      activeFilter === 'all' ||
-      (course.category && String(course.category).toLowerCase().includes(activeFilter.toLowerCase()))
-  );
+  const displayCourses = Array.from(distinctSubjectsMap.values());
+
+  const visibleCourses = displayCourses.filter((course) => {
+    if (activeFilter === 'all') return true;
+    const t = course.title.toLowerCase();
+    if (activeFilter === 'math') return t.includes('math');
+    if (activeFilter === 'science') return t.includes('physic') || t.includes('chem') || t.includes('bio') || t.includes('sci');
+    if (activeFilter === 'english') return t.includes('eng') || t.includes('comm');
+    return true;
+  });
 
   return (
     <section id="courses" className="bg-surface-container-low border-y border-outline-variant/15 py-16 md:py-24 font-body">
@@ -63,10 +78,10 @@ export default function Courses({ onOpenBooking }) {
               Empowering Every Grade &bull; Live Batches
             </span>
             <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-on-surface mb-3">
-              Our Academic Programs &amp; Active Subjects
+              Our Academic Programs &amp; Active Courses
             </h2>
             <p className="text-on-surface-variant font-body text-sm md:text-base leading-relaxed">
-              Managed live from the Admin Control Panel. Small batch sizes with individual focus by Jitender Sharma.
+              Managed live from the Admin Control Panel. Small batch sizes with individual focus by Jitender Sharma &amp; Expert Faculty.
             </p>
           </div>
 
@@ -93,37 +108,32 @@ export default function Courses({ onOpenBooking }) {
               key={course.id}
               className="course-card bg-white rounded-2xl p-6 shadow-premium hover:shadow-premium-hover border border-outline-variant/15 flex flex-col hover:-translate-y-1.5 transition-all duration-300"
             >
-              <div className={`w-12 h-12 ${course.iconBg} flex items-center justify-center rounded-xl mb-6`}>
+              <div className={`w-12 h-12 ${course.iconBg} flex items-center justify-center rounded-xl mb-4`}>
                 <span className={`material-symbols-outlined ${course.iconColor} text-[24px]`}>
                   {course.icon}
                 </span>
               </div>
+
               <h3 className="font-headings font-bold text-xl text-on-surface mb-2">{course.title}</h3>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {course.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-surface-container-low text-on-surface-variant px-3 py-1 rounded-full font-body text-xs font-semibold border border-outline-variant/15"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+
+              {course.teacherName && (
+                <div className="flex items-center gap-1.5 text-xs text-secondary font-semibold mb-3">
+                  <span className="material-symbols-outlined text-[16px]">person</span>
+                  <span>{course.teacherName}</span>
+                </div>
+              )}
+
               <p className="text-on-surface-variant font-body text-sm leading-relaxed mb-6 flex-grow">
                 {course.description}
               </p>
-              <div className="border-t border-outline-variant/15 pt-4 mt-auto flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                    Batch Time
-                  </span>
-                  <span className="font-body text-xs font-semibold text-secondary">{course.batch}</span>
-                </div>
+
+              <div className="border-t border-outline-variant/15 pt-4 mt-auto flex justify-end items-center">
                 <button
                   onClick={() => onOpenBooking(course.program)}
-                  className="bg-primary text-white hover:bg-primary-container px-4 py-2 rounded-full font-headings font-bold text-xs transition-colors shadow-tactile-btn shadow-premium"
+                  className="bg-primary text-white hover:bg-primary-container px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-colors shadow-tactile-btn shadow-premium flex items-center gap-1.5"
                 >
-                  Enquire Now
+                  <span>Enquire Now</span>
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>
             </div>

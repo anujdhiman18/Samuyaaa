@@ -7,10 +7,11 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const initialSubjectForm = {
   name: '',
-  className: 'S2',
+  category: 'Foundation',
+  className: 'Class S2',
   description: '',
   teacherName: 'Jitender Sharma',
-  batchTime: '5:00 PM - 6:30 PM',
+  batchTime: '5:00 PM – 6:30 PM',
 };
 
 export default function SubjectManagement() {
@@ -109,7 +110,7 @@ export default function SubjectManagement() {
             Subjects &amp; Batch Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Configure active subject offerings, faculty assignments, and batch timings.
+            Configure active subject offerings, faculty assignments, categories, and batch timings.
           </p>
         </div>
 
@@ -140,12 +141,15 @@ export default function SubjectManagement() {
               className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col justify-between hover:scale-[1.01] transition-all"
             >
               <div>
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary font-bold text-xs">
-                    {formatClassLabel(sub.className)}
+                    {sub.className || 'Class S2'}
                   </span>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                    {sub.totalEnrolled || 15} Students
+                  <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                    Category: {sub.category || 'Foundation'}
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full ml-auto">
+                    {sub.totalEnrolled || 15} Enrolled
                   </span>
                 </div>
 
@@ -205,7 +209,7 @@ export default function SubjectManagement() {
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Mathematics Advanced"
+              placeholder="e.g. Mathematics"
               className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
             />
           </div>
@@ -213,33 +217,44 @@ export default function SubjectManagement() {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Class / Grade *
-              </label>
-              <select
-                value={form.className}
-                onChange={(e) => setForm({ ...form, className: e.target.value })}
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
-              >
-                {CLASS_CATEGORIES.map((cat) => (
-                  <option key={cat.code} value={cat.code}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Batch Time *
+                Category *
               </label>
               <input
                 type="text"
                 required
-                value={form.batchTime}
-                onChange={(e) => setForm({ ...form, batchTime: e.target.value })}
-                placeholder="5:00 PM - 6:30 PM"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono"
+                value={form.category || ''}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                placeholder="Foundation / Advanced / JEE / Olympiad / NEET"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               />
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Class / Grade *
+              </label>
+              <input
+                type="text"
+                required
+                value={form.className || ''}
+                onChange={(e) => setForm({ ...form, className: e.target.value })}
+                placeholder="Class S1 / Class S2 / Class S3 / Class S4"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-headings font-bold text-on-surface-variant">
+              Batch Time *
+            </label>
+            <input
+              type="text"
+              required
+              value={form.batchTime}
+              onChange={(e) => setForm({ ...form, batchTime: e.target.value })}
+              placeholder="e.g. 5:00 PM – 6:30 PM"
+              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono"
+            />
           </div>
 
           <div className="flex flex-col gap-1">

@@ -1,429 +1,503 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { subjectOptions, timeSlots } from '../data.js';
-import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass } from '../config/classConfig';
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function generateDemoDays() {
-  const days = [];
-  for (let i = 1; i <= 3; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    days.push({
-      label: `${DAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`,
-      dayShort: DAYS[date.getDay()].slice(0, 3),
-      dayNum: date.getDate(),
-      month: MONTHS[date.getMonth()],
-    });
-  }
-  return days;
-}
-
-const initialFields = {
-  studentName: '',
-  parentPhone: '',
-  parentEmail: '',
-  academicStage: '',
-  grade: '',
-  branch: 'Main Center (Bagru)',
-  subject: subjectOptions[0],
-};
+import React, { useEffect, useState } from 'react';
+import { subjectService } from '../services/api.js';
 
 export default function BookingModal({ open, prefilledProgram, onClose }) {
   const [animateIn, setAnimateIn] = useState(false);
-  const [step, setStep] = useState(1);
-  const [fields, setFields] = useState(initialFields);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const demoDays = useMemo(() => generateDemoDays(), [open]);
+  const [loading, setLoading] = useState(false);
+  const [liveSubjects, setLiveSubjects] = useState([]);
+
+  // Form selections (Cascading: Subject -> Category -> Class)
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+
+  // Student contact details
+  const [studentName, setStudentName] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [branch, setBranch] = useState('Main Center (Bagru)');
+
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchLiveSubjects = async () => {
+    setLoading(true);
+    try {
+      const data = await subjectService.getSubjects();
+      if (data && data.subjects) {
+        setLiveSubjects(data.subjects);
+      }
+    } catch (err) {
+      console.error('Error fetching subjects for booking modal:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
-      setStep(1);
-      setSelectedDate('');
-      setSelectedTime('');
-      setFields((prev) => ({
-        ...initialFields,
-        subject: prefilledProgram || subjectOptions[0],
-      }));
+      fetchLiveSubjects();
+      setSubmitted(false);
+      setSubmitting(false);
+
       const t = setTimeout(() => setAnimateIn(true), 10);
       return () => clearTimeout(t);
+    } else {
+      setAnimateIn(false);
     }
-    setAnimateIn(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, prefilledProgram]);
+  }, [open]);
 
-  function updateField(field, value) {
-    setFields((prev) => ({ ...prev, [field]: value }));
-  }
+  // Handle prefilled subject from course card click
+  useEffect(() => {
+    if (open && liveSubjects.length > 0) {
+      const distinctSubjects = Array.from(
+        new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))
+      );
+      if (prefilledProgram && distinctSubjects.includes(prefilledProgram)) {
+        handleSubjectChange(prefilledProgram, liveSubjects);
+      }
+    }
+  }, [open, liveSubjects, prefilledProgram]);
 
-  function goToStep(next) {
-    if (next === 2 && (!fields.studentName.trim() || !fields.parentPhone.trim())) {
-      alert('Please fill out student name and phone details before proceeding.');
+  // Real-time broadcast sync with Admin Panel
+  useEffect(() => {
+    if (!open) return;
+    const handleUpdate = () => fetchLiveSubjects();
+    window.addEventListener('saumyaa_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('saumyaa_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [open]);
+
+  // 1. Available Subjects from admin data
+  const availableSubjects = Array.from(
+    new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))
+  ).sort();
+
+  // 2. Available Categories for selected Subject
+  const availableCategories = selectedSubject
+    ? Array.from(
+        new Set(
+          liveSubjects
+            .filter((s) => s.name?.trim() === selectedSubject)
+            .map((s) => s.category?.trim() || 'Foundation')
+            .filter(Boolean)
+        )
+      ).sort()
+    : [];
+
+  // 3. Available Classes for selected Subject + Category
+  const availableClasses = (selectedSubject && selectedCategory)
+    ? Array.from(
+        new Set(
+          liveSubjects
+            .filter(
+              (s) =>
+                s.name?.trim() === selectedSubject &&
+                (s.category?.trim() || 'Foundation') === selectedCategory
+            )
+            .map((s) => s.className?.trim() || 'Class S2')
+            .filter(Boolean)
+        )
+      ).sort()
+    : [];
+
+  // 4. Automatically assigned batch timings from admin dataset (Read-Only)
+  const assignedBatchTimes = (selectedSubject && selectedCategory && selectedClass)
+    ? Array.from(
+        new Set(
+          liveSubjects
+            .filter(
+              (s) =>
+                s.name?.trim() === selectedSubject &&
+                (s.category?.trim() || 'Foundation') === selectedCategory &&
+                (s.className?.trim() || 'Class S2') === selectedClass
+            )
+            .map((s) => s.batchTime?.trim())
+            .filter(Boolean)
+        )
+      )
+    : [];
+
+  const autoBatchTimeText = assignedBatchTimes.length > 0 ? assignedBatchTimes.join(' | ') : '';
+
+  // Reset lower-level selections when Subject changes
+  const handleSubjectChange = (val, subjectsList = liveSubjects) => {
+    setSelectedSubject(val);
+    setSelectedCategory('');
+    setSelectedClass('');
+
+    const categoriesForSub = Array.from(
+      new Set(
+        subjectsList
+          .filter((s) => s.name?.trim() === val)
+          .map((s) => s.category?.trim() || 'Foundation')
+          .filter(Boolean)
+      )
+    );
+    if (categoriesForSub.length === 1) {
+      const cat = categoriesForSub[0];
+      setSelectedCategory(cat);
+
+      const classesForSubCat = Array.from(
+        new Set(
+          subjectsList
+            .filter(
+              (s) =>
+                s.name?.trim() === val &&
+                (s.category?.trim() || 'Foundation') === cat
+            )
+            .map((s) => s.className?.trim() || 'Class S2')
+            .filter(Boolean)
+        )
+      );
+      if (classesForSubCat.length === 1) {
+        setSelectedClass(classesForSubCat[0]);
+      }
+    }
+  };
+
+  // Reset lower-level selections when Category changes
+  const handleCategoryChange = (val) => {
+    setSelectedCategory(val);
+    setSelectedClass('');
+
+    const classesForSubCat = Array.from(
+      new Set(
+        liveSubjects
+          .filter(
+            (s) =>
+              s.name?.trim() === selectedSubject &&
+              (s.category?.trim() || 'Foundation') === val
+          )
+          .map((s) => s.className?.trim() || 'Class S2')
+          .filter(Boolean)
+      )
+    );
+    if (classesForSubCat.length === 1) {
+      setSelectedClass(classesForSubCat[0]);
+    }
+  };
+
+  // Reset when Class changes
+  const handleClassChange = (val) => {
+    setSelectedClass(val);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedSubject || !selectedCategory || !selectedClass) {
+      alert('Please select Subject, Category, and Class before booking.');
       return;
     }
-    if (next === 3 && !fields.grade) {
-      alert('Please select the current Class/Grade level.');
+    if (assignedBatchTimes.length === 0) {
+      alert('No batch timing is currently available for this class selection.');
       return;
     }
-    setStep(next);
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!selectedDate || !selectedTime) {
-      alert('Please select both a date and a time slot for the demo class.');
+    if (!studentName.trim() || !parentPhone.trim()) {
+      alert('Please fill out Student Name and Parent Phone Number.');
       return;
     }
 
+    setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append('studentName', fields.studentName);
-      formData.append('parentPhone', fields.parentPhone);
-      formData.append('parentEmail', fields.parentEmail || 'Not Provided');
-      formData.append('grade', fields.grade);
-      formData.append('program', fields.subject);
-      formData.append('scheduledDate', selectedDate);
-      formData.append('timeSlot', selectedTime);
-      formData.append('_subject', `Demo Class Booking: ${fields.studentName} (${fields.grade})`);
-      formData.append('_captcha', 'false');
+      formData.append('studentName', studentName);
+      formData.append('parentPhone', parentPhone);
+      formData.append('parentEmail', parentEmail || 'Not Provided');
+      formData.append('branch', branch);
+      formData.append('subject', selectedSubject);
+      formData.append('category', selectedCategory);
+      formData.append('class', selectedClass);
+      formData.append('batchTime', autoBatchTimeText);
+      formData.append('_subject', `Live Demo Booking: ${selectedSubject} - ${selectedCategory} (${selectedClass}) [${autoBatchTimeText}]`);
 
       fetch('https://formsubmit.co/ajax/f785f212ac6d3b7066a696d35d1be84f', {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
+        headers: { Accept: 'application/json' },
         body: formData,
-      }).catch((err) => console.warn('Background booking note:', err));
-    } catch (err) {
-      console.warn('Booking trigger note:', err);
-    }
+      }).catch((err) => console.warn('Form submission notification error:', err));
+    } catch (err) {}
 
     setTimeout(() => {
-      setStep(4);
+      setSubmitting(false);
+      setSubmitted(true);
     }, 400);
-  }
+  };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-body" role="dialog" aria-modal="true">
+      {/* Backdrop */}
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity duration-300 ${animateIn ? 'opacity-100' : 'opacity-0'
-          }`}
+        className={`absolute inset-0 bg-inverse-surface/50 backdrop-blur-sm transition-opacity duration-300 ${
+          animateIn ? 'opacity-100' : 'opacity-0'
+        }`}
       />
 
+      {/* Modal Card */}
       <div
-        className={`bg-white w-full max-w-lg mx-gutter rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/10 relative transform transition-all duration-300 ease-out z-10 ${animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          }`}
+        className={`bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/15 relative transform transition-all duration-300 ease-out z-10 ${
+          animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
       >
-        <div className="bg-surface-container-low px-6 py-4 border-b border-surface-container flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px]">calendar_today</span>
+        {/* Modal Header */}
+        <div className="bg-surface-container-low px-6 py-4 border-b border-outline-variant/15 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-[22px]">calendar_month</span>
             </span>
-            <h3 className="font-headings font-bold text-base text-secondary">Book a Free Live Demo Class</h3>
+            <div>
+              <h3 className="font-headings font-extrabold text-lg text-secondary">
+                Book a Free Live Demo Class
+              </h3>
+              <p className="text-[11px] text-on-surface-variant">
+                Select your class to view automatically assigned batch timing
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+            aria-label="Close modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        <div className="h-1 bg-surface-container w-full relative">
-          <div
-            className="absolute h-full bg-primary left-0 transition-all duration-300"
-            style={{ width: `${step * 25}%` }}
-          />
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          {/* Step 1 */}
-          <div className={`modal-step ${step === 1 ? 'active' : ''}`}>
-            <h4 className="font-headings font-bold text-base text-on-surface mb-1">Contact Profile</h4>
-            <p className="text-xs text-on-surface-variant mb-4">
-              Please specify who is attending and contact parameters.
-            </p>
-
-            <div className="space-y-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="student-name">
-                  Student Name *
-                </label>
-                <input
-                  type="text"
-                  id="student-name"
-                  required
-                  value={fields.studentName}
-                  onChange={(e) => updateField('studentName', e.target.value)}
-                  placeholder="Enter student's full name"
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="parent-phone">
-                  Parent's Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  id="parent-phone"
-                  required
-                  value={fields.parentPhone}
-                  onChange={(e) => updateField('parentPhone', e.target.value)}
-                  placeholder="Enter 10-digit mobile number"
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="parent-email">
-                  Parent's Email Address
-                </label>
-                <input
-                  type="email"
-                  id="parent-email"
-                  value={fields.parentEmail}
-                  onChange={(e) => updateField('parentEmail', e.target.value)}
-                  placeholder="example@domain.com"
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="preferred-branch">
-                  Select Center *
-                </label>
-                <select
-                  id="preferred-branch"
-                  required
-                  value={fields.branch || 'Main Center (Bagru)'}
-                  onChange={(e) => updateField('branch', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm font-body bg-white"
-                >
-                  <option value="Main Center (Bagru)">Main Center (Bagru)</option>
-                  <option value="Branch (Daroh)">Branch (Daroh)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => goToStep(2)}
-                className="bg-secondary text-white px-5 py-2.5 rounded-lg font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors flex items-center gap-1 shadow-sm"
-              >
-                Next Stage <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </button>
-            </div>
+        {loading ? (
+          <div className="p-12 text-center text-xs text-on-surface-variant animate-pulse flex flex-col items-center gap-3">
+            <span className="material-symbols-outlined text-[32px] text-primary animate-spin">sync</span>
+            <span>Loading active course and batch data...</span>
           </div>
-
-          {/* Step 2 */}
-          <div className={`modal-step ${step === 2 ? 'active' : ''}`}>
-            <h4 className="font-headings font-bold text-base text-on-surface mb-1">Academic Preferences</h4>
-            <p className="text-xs text-on-surface-variant mb-4">
-              Help us place the student in the correct demo batch.
+        ) : submitted ? (
+          /* Confirmation Screen */
+          <div className="p-8 text-center">
+            <span className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <span className="material-symbols-outlined text-[36px]">event_available</span>
+            </span>
+            <h4 className="font-headings font-bold text-xl text-on-surface mb-2">Demo Booked Successfully!</h4>
+            <p className="text-xs text-on-surface-variant max-w-sm mx-auto leading-relaxed mb-6">
+              A live demo slot has been scheduled for <strong className="text-secondary font-bold">{studentName}</strong>. Our academic coordinator will contact you with access instructions.
             </p>
 
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="academic-stage">
-                  Academic Stage *
-                </label>
-                <select
-                  id="academic-stage"
-                  required
-                  value={fields.academicStage || ''}
-                  onChange={(e) => {
-                    const stage = e.target.value;
-                    const validClasses = STAGE_CLASSES[stage] || [];
-                    const newGrade = validClasses.includes(fields.grade) ? fields.grade : '';
-                    updateField('academicStage', stage);
-                    updateField('grade', newGrade);
-                  }}
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
-                >
-                  <option value="" disabled>
-                    Select academic stage
+            <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 text-left space-y-2 text-xs font-medium text-on-surface mb-6 max-w-sm mx-auto">
+              <p className="flex justify-between border-b border-outline-variant/15 pb-2">
+                <span className="text-on-surface-variant">Subject:</span>
+                <strong className="text-secondary">{selectedSubject}</strong>
+              </p>
+              <p className="flex justify-between border-b border-outline-variant/15 pb-2">
+                <span className="text-on-surface-variant">Category:</span>
+                <strong>{selectedCategory}</strong>
+              </p>
+              <p className="flex justify-between border-b border-outline-variant/15 pb-2">
+                <span className="text-on-surface-variant">Selected Class:</span>
+                <strong className="text-primary">{selectedClass}</strong>
+              </p>
+              <p className="flex justify-between border-b border-outline-variant/15 pb-2">
+                <span className="text-on-surface-variant">Scheduled Batch Time:</span>
+                <strong className="font-mono text-emerald-700">{autoBatchTimeText}</strong>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-on-surface-variant">Center:</span>
+                <span>{branch}</span>
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3 rounded-full text-xs transition-all shadow-tactile-btn"
+            >
+              Done &amp; Close Form
+            </button>
+          </div>
+        ) : (
+          /* Cascading Form */
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* Step 1 — Select Subject */}
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-xs text-on-surface flex items-center gap-1">
+                <span className="text-primary font-extrabold">1.</span> Select Subject
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => handleSubjectChange(e.target.value)}
+                required
+                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-semibold text-on-surface transition-all cursor-pointer"
+              >
+                <option value="" disabled>
+                  [ Select Subject ▼ ]
+                </option>
+                {availableSubjects.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
                   </option>
-                  {CLASS_CATEGORIES.map((cat) => (
-                    <option key={cat.code} value={cat.code}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
+                ))}
+              </select>
+            </div>
+
+            {/* Step 2 — Select Category */}
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-xs text-on-surface flex items-center gap-1">
+                <span className="text-primary font-extrabold">2.</span> Select Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                disabled={!selectedSubject}
+                required
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                  !selectedSubject
+                    ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
+                    : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
+                }`}
+              >
+                <option value="" disabled>
+                  [ Select Category ▼ ]
+                </option>
+                {availableCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Step 3 — Select Class */}
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-xs text-on-surface flex items-center gap-1">
+                <span className="text-primary font-extrabold">3.</span> Select Class
+              </label>
+              <select
+                value={selectedClass}
+                onChange={(e) => handleClassChange(e.target.value)}
+                disabled={!selectedCategory}
+                required
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                  !selectedCategory
+                    ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
+                    : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
+                }`}
+              >
+                <option value="" disabled>
+                  [ Select Class ▼ ]
+                </option>
+                {availableClasses.map((cls) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Step 4 — Automatically Display Assigned Batch Time (Information Only) */}
+            {selectedClass && (
+              <div className="pt-1">
+                {assignedBatchTimes.length > 0 ? (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3.5 space-y-1.5 shadow-sm">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-on-surface-variant font-semibold">Selected Class:</span>
+                      <strong className="text-secondary">{selectedClass}</strong>
+                    </div>
+                    <div className="flex justify-between items-center text-xs border-t border-primary/10 pt-1.5">
+                      <span className="text-on-surface-variant font-semibold">Assigned Batch Time:</span>
+                      <strong className="font-mono text-primary text-sm bg-white px-2.5 py-0.5 rounded-md border border-primary/15">
+                        {autoBatchTimeText}
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-amber-600">info</span>
+                    <span>No batch timing is currently available for this class.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Student Contact Information */}
+            <div className="pt-2 border-t border-outline-variant/15 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                    Student Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="Student full name"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                    Parent's Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={parentPhone}
+                    onChange={(e) => setParentPhone(e.target.value)}
+                    placeholder="10-digit mobile number"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                  />
+                </div>
               </div>
 
-              {fields.academicStage ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="student-grade">
-                    Current Class / Grade *
+                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                    Parent's Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                    Preferred Center
                   </label>
                   <select
-                    id="student-grade"
-                    required
-                    value={fields.grade || ''}
-                    onChange={(e) => updateField('grade', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs bg-white font-body"
                   >
-                    <option value="" disabled>
-                      Select current class / grade
-                    </option>
-                    {(STAGE_CLASSES[fields.academicStage] || []).map((cls) => (
-                      <option key={cls} value={cls}>
-                        {cls}
-                      </option>
-                    ))}
+                    <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                    <option value="Branch (Daroh)">Branch (Daroh)</option>
                   </select>
                 </div>
-              ) : null}
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-on-surface-variant" htmlFor="subject-interest">
-                  Subject / Batch Interest *
-                </label>
-                <select
-                  id="subject-interest"
-                  required
-                  value={fields.subject}
-                  onChange={(e) => updateField('subject', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 text-sm"
-                >
-                  {subjectOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
-            <div className="flex justify-between gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => goToStep(1)}
-                className="border border-outline-variant text-on-surface-variant px-5 py-2.5 rounded-lg font-headings font-semibold text-xs hover:bg-surface-container transition-colors flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back
-              </button>
-              <button
-                type="button"
-                onClick={() => goToStep(3)}
-                className="bg-secondary text-white px-5 py-2.5 rounded-lg font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors flex items-center gap-1 shadow-sm"
-              >
-                Next Stage <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className={`modal-step ${step === 3 ? 'active' : ''}`}>
-            <h4 className="font-headings font-bold text-base text-on-surface mb-1">Schedule Live Slot</h4>
-            <p className="text-xs text-on-surface-variant mb-4">Choose a suitable date and preferred time slot.</p>
-
-            <div className="space-y-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-on-surface-variant">Select Day *</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {demoDays.map((d) => (
-                    <button
-                      key={d.label}
-                      type="button"
-                      onClick={() => setSelectedDate(d.label)}
-                      className={`date-btn border rounded-lg py-2 flex flex-col items-center justify-center transition-all hover:border-secondary hover:bg-surface-container-low ${selectedDate === d.label
-                        ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
-                        : 'border-outline-variant/60'
-                        }`}
-                    >
-                      <span className="text-[10px] text-on-surface-variant font-medium">{d.dayShort}</span>
-                      <span className="text-sm font-bold text-on-surface">{d.dayNum}</span>
-                      <span className="text-[9px] uppercase tracking-wider text-secondary font-bold">{d.month}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-on-surface-variant">Select Time Slot *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {timeSlots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setSelectedTime(slot)}
-                      className={`time-btn border py-2.5 rounded-lg text-xs font-semibold transition-all ${selectedTime === slot
-                        ? 'border-primary bg-primary-fixed ring-1 ring-primary/20'
-                        : 'border-outline-variant/60 hover:border-secondary'
-                        }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => goToStep(2)}
-                className="border border-outline-variant text-on-surface-variant px-5 py-2.5 rounded-lg font-headings font-semibold text-xs hover:bg-surface-container transition-colors flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back
-              </button>
+            {/* Submit Button */}
+            <div className="pt-3">
               <button
                 type="submit"
-                className="bg-primary text-white hover:bg-primary-container px-6 py-2.5 rounded-lg font-headings font-bold text-xs transition-colors flex items-center gap-1 shadow-md shadow-tactile-btn"
+                disabled={submitting || (selectedClass && assignedBatchTimes.length === 0)}
+                className="w-full bg-primary hover:bg-primary-container disabled:bg-surface-container-highest text-white font-headings font-bold py-3 rounded-full text-xs transition-colors shadow-tactile-btn shadow-premium flex items-center justify-center gap-2 cursor-pointer"
               >
-                Book Live Demo <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                {submitting ? (
+                  <span>Processing Demo Booking...</span>
+                ) : (
+                  <>
+                    <span>Book Live Demo</span>
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  </>
+                )}
               </button>
             </div>
-          </div>
-
-          {/* Step 4 */}
-          <div className={`modal-step ${step === 4 ? 'active' : ''}`}>
-            <div className="text-center py-6">
-              <span className="w-16 h-16 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-[36px]">event_available</span>
-              </span>
-
-              <h4 className="font-headings font-bold text-xl text-on-surface mb-2">Demo Booked Successfully!</h4>
-              <p className="text-xs text-on-surface-variant max-w-sm mx-auto leading-relaxed mb-6">
-                A live class link and confirmation details have been sent to you. We are looking forward to
-                helping <strong className="text-secondary font-bold">{fields.studentName}</strong> start their
-                conceptual journey.
-              </p>
-
-              <div className="bg-surface-container-low p-4 rounded-xl border border-surface-container text-left space-y-2 text-xs font-medium text-on-surface mb-6 max-w-sm mx-auto">
-                <p className="flex justify-between border-b border-surface-container pb-1.5">
-                  <span className="text-on-surface-variant">Selected Program:</span>
-                  <span className="font-bold text-secondary text-right">{fields.subject}</span>
-                </p>
-                <p className="flex justify-between border-b border-surface-container pb-1.5">
-                  <span className="text-on-surface-variant">Class Level:</span>
-                  <span className="font-bold">{fields.grade}</span>
-                </p>
-                <p className="flex justify-between border-b border-surface-container pb-1.5">
-                  <span className="text-on-surface-variant">Scheduled Day:</span>
-                  <span className="font-bold text-primary">{selectedDate}</span>
-                </p>
-                <p className="flex justify-between">
-                  <span className="text-on-surface-variant">Time Slot:</span>
-                  <span className="font-bold">{selectedTime}</span>
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3 rounded-lg text-xs transition-all shadow-sm"
-              >
-                Finish &amp; Close Form
-              </button>
-            </div>
-          </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );

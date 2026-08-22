@@ -13,6 +13,11 @@ const subjectSchema = new mongoose.Schema(
       default: '10th',
       trim: true,
     },
+    category: {
+      type: String,
+      default: 'Foundation',
+      trim: true,
+    },
     description: {
       type: String,
       trim: true,
