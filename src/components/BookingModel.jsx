@@ -76,17 +76,23 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))
   ).sort();
 
-  // 2. Available Categories for selected Subject
-  const availableCategories = selectedSubject
-    ? Array.from(
-        new Set(
-          liveSubjects
-            .filter((s) => s.name?.trim() === selectedSubject)
-            .map((s) => s.category?.trim() || 'Foundation')
-            .filter(Boolean)
+  // 2. Available Categories for selected Subject (with standard fallback)
+  const standardCategories = ['Foundation', 'Advanced', 'JEE', 'NEET', 'Olympiad'];
+  const categoriesFromData = selectedSubject
+    ? liveSubjects
+        .filter(
+          (s) =>
+            s.name?.trim() === selectedSubject ||
+            selectedSubject.includes(s.name?.trim() || '') ||
+            (s.name?.trim() || '').includes(selectedSubject)
         )
-      ).sort()
+        .map((s) => s.category?.trim())
+        .filter(Boolean)
     : [];
+
+  const availableCategories = Array.from(
+    new Set([...categoriesFromData, ...standardCategories])
+  ).sort();
 
   // 3. Available Classes for selected Subject + Category (Clean & Non-duplicated)
   const normalizeDisplayClass = (clsStr) => {
@@ -121,42 +127,80 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     return a.localeCompare(b);
   });
 
-  // 4. Automatically assigned batch timings from admin dataset (Read-Only)
-  const assignedBatchTimes = (selectedSubject && selectedCategory && selectedClass)
-    ? Array.from(
-        new Set(
-          liveSubjects
-            .filter((s) => {
-              const sName = s.name?.trim() || '';
-              const subMatch =
-                sName === selectedSubject ||
-                selectedSubject.includes(sName) ||
-                sName.includes(selectedSubject);
+  // 4. Automatically assigned batch timings from admin dataset (Read-Only with multi-tier fallback)
+  const getAssignedBatchTimes = () => {
+    if (!selectedSubject || !selectedClass) return [];
 
-              const catMatch =
-                !selectedCategory ||
-                (s.category?.trim() || 'Foundation').toLowerCase() === selectedCategory.toLowerCase();
+    // Exact match: Subject + Category + Class
+    const exactMatches = liveSubjects.filter((s) => {
+      const sName = s.name?.trim() || '';
+      const subMatch =
+        sName === selectedSubject ||
+        selectedSubject.includes(sName) ||
+        sName.includes(selectedSubject);
 
-              const sCls = (s.className?.trim() || '').toLowerCase();
-              const selCls = selectedClass.toLowerCase();
-              const clsMatch =
-                sCls === selCls ||
-                (sCls.includes('s1') && selCls.includes('s1')) ||
-                (sCls.includes('s2') && selCls.includes('s2')) ||
-                (sCls.includes('s3') && selCls.includes('s3')) ||
-                (sCls.includes('s4') && selCls.includes('s4')) ||
-                (sCls.includes('10th') && selCls.includes('s2')) ||
-                (sCls.includes('11th') && selCls.includes('s3')) ||
-                (sCls.includes('12th') && selCls.includes('s3'));
+      const catMatch =
+        !selectedCategory ||
+        (s.category?.trim() || '').toLowerCase() === selectedCategory.toLowerCase();
 
-              return subMatch && catMatch && clsMatch;
-            })
-            .map((s) => s.batchTime?.trim())
-            .filter(Boolean)
-        )
-      )
-    : [];
+      const sCls = (s.className?.trim() || '').toLowerCase();
+      const selCls = selectedClass.toLowerCase();
+      const clsMatch =
+        sCls === selCls ||
+        (sCls.includes('s1') && selCls.includes('s1')) ||
+        (sCls.includes('s2') && selCls.includes('s2')) ||
+        (sCls.includes('s3') && selCls.includes('s3')) ||
+        (sCls.includes('s4') && selCls.includes('s4'));
 
+      return subMatch && catMatch && clsMatch;
+    });
+
+    if (exactMatches.length > 0) {
+      return Array.from(new Set(exactMatches.map((s) => s.batchTime?.trim()).filter(Boolean)));
+    }
+
+    // Fallback 1: Subject + Class (ignore category mismatch)
+    const fallbackClassMatches = liveSubjects.filter((s) => {
+      const sName = s.name?.trim() || '';
+      const subMatch =
+        sName === selectedSubject ||
+        selectedSubject.includes(sName) ||
+        sName.includes(selectedSubject);
+
+      const sCls = (s.className?.trim() || '').toLowerCase();
+      const selCls = selectedClass.toLowerCase();
+      const clsMatch =
+        sCls === selCls ||
+        (sCls.includes('s1') && selCls.includes('s1')) ||
+        (sCls.includes('s2') && selCls.includes('s2')) ||
+        (sCls.includes('s3') && selCls.includes('s3')) ||
+        (sCls.includes('s4') && selCls.includes('s4'));
+
+      return subMatch && clsMatch;
+    });
+
+    if (fallbackClassMatches.length > 0) {
+      return Array.from(new Set(fallbackClassMatches.map((s) => s.batchTime?.trim()).filter(Boolean)));
+    }
+
+    // Fallback 2: Subject default batch timing
+    const subjectMatches = liveSubjects.filter((s) => {
+      const sName = s.name?.trim() || '';
+      return (
+        sName === selectedSubject ||
+        selectedSubject.includes(sName) ||
+        sName.includes(selectedSubject)
+      );
+    });
+
+    if (subjectMatches.length > 0) {
+      return Array.from(new Set(subjectMatches.map((s) => s.batchTime?.trim()).filter(Boolean)));
+    }
+
+    return [];
+  };
+
+  const assignedBatchTimes = getAssignedBatchTimes();
   const autoBatchTimeText = assignedBatchTimes.length > 0 ? assignedBatchTimes.join(' | ') : '';
 
   // Reset lower-level selections when Subject changes
@@ -195,10 +239,6 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       alert('Please select Subject, Category, and Class before booking.');
       return;
     }
-    if (assignedBatchTimes.length === 0) {
-      alert('No batch timing is currently available for this class selection.');
-      return;
-    }
     if (!studentName.trim() || !parentPhone.trim()) {
       alert('Please fill out Student Name and Parent Phone Number.');
       return;
@@ -214,8 +254,8 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       formData.append('subject', selectedSubject);
       formData.append('category', selectedCategory);
       formData.append('class', selectedClass);
-      formData.append('batchTime', autoBatchTimeText);
-      formData.append('_subject', `Live Demo Booking: ${selectedSubject} - ${selectedCategory} (${selectedClass}) [${autoBatchTimeText}]`);
+      formData.append('batchTime', autoBatchTimeText || 'To Be Assigned');
+      formData.append('_subject', `Live Demo Booking: ${selectedSubject} - ${selectedCategory} (${selectedClass}) [${autoBatchTimeText || 'Pending'}]`);
 
       fetch('https://formsubmit.co/ajax/f785f212ac6d3b7066a696d35d1be84f', {
         method: 'POST',
@@ -486,7 +526,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
             <div className="pt-3">
               <button
                 type="submit"
-                disabled={submitting || (selectedClass && assignedBatchTimes.length === 0)}
+                disabled={submitting || !selectedSubject || !selectedCategory || !selectedClass}
                 className="w-full bg-primary hover:bg-primary-container disabled:bg-surface-container-highest text-white font-headings font-bold py-3 rounded-full text-xs transition-colors shadow-tactile-btn shadow-premium flex items-center justify-center gap-2 cursor-pointer"
               >
                 {submitting ? (
