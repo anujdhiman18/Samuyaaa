@@ -88,33 +88,58 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       ).sort()
     : [];
 
-  // 3. Available Classes for selected Subject + Category
-  const availableClasses = (selectedSubject && selectedCategory)
-    ? Array.from(
-        new Set(
-          liveSubjects
-            .filter(
-              (s) =>
-                s.name?.trim() === selectedSubject &&
-                (s.category?.trim() || 'Foundation') === selectedCategory
-            )
-            .map((s) => s.className?.trim() || 'Class S2')
-            .filter(Boolean)
-        )
-      ).sort()
-    : [];
+  // 3. Available Classes for selected Subject + Category (Student can select ANY class)
+  const baseClasses = ['Class S1', 'Class S2', 'Class S3', 'Class S4', 'S1', 'S2', 'S3', 'S4'];
+  const adminClasses = liveSubjects
+    .filter(
+      (s) =>
+        !selectedSubject ||
+        s.name?.trim() === selectedSubject ||
+        selectedSubject.includes(s.name?.trim())
+    )
+    .map((s) => s.className?.trim())
+    .filter(Boolean);
+
+  const availableClasses = Array.from(new Set([...baseClasses, ...adminClasses])).sort((a, b) => {
+    const order = ['Class S1', 'S1', 'Class S2', 'S2', 'Class S3', 'S3', 'Class S4', 'S4'];
+    const idxA = order.indexOf(a);
+    const idxB = order.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
+  });
 
   // 4. Automatically assigned batch timings from admin dataset (Read-Only)
   const assignedBatchTimes = (selectedSubject && selectedCategory && selectedClass)
     ? Array.from(
         new Set(
           liveSubjects
-            .filter(
-              (s) =>
-                s.name?.trim() === selectedSubject &&
-                (s.category?.trim() || 'Foundation') === selectedCategory &&
-                (s.className?.trim() || 'Class S2') === selectedClass
-            )
+            .filter((s) => {
+              const sName = s.name?.trim() || '';
+              const subMatch =
+                sName === selectedSubject ||
+                selectedSubject.includes(sName) ||
+                sName.includes(selectedSubject);
+
+              const catMatch =
+                !selectedCategory ||
+                (s.category?.trim() || 'Foundation').toLowerCase() === selectedCategory.toLowerCase();
+
+              const sCls = (s.className?.trim() || '').toLowerCase();
+              const selCls = selectedClass.toLowerCase();
+              const clsMatch =
+                sCls === selCls ||
+                (sCls.includes('s1') && selCls.includes('s1')) ||
+                (sCls.includes('s2') && selCls.includes('s2')) ||
+                (sCls.includes('s3') && selCls.includes('s3')) ||
+                (sCls.includes('s4') && selCls.includes('s4')) ||
+                (sCls.includes('10th') && selCls.includes('s2')) ||
+                (sCls.includes('11th') && selCls.includes('s3')) ||
+                (sCls.includes('12th') && selCls.includes('s3'));
+
+              return subMatch && catMatch && clsMatch;
+            })
             .map((s) => s.batchTime?.trim())
             .filter(Boolean)
         )
@@ -132,30 +157,13 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     const categoriesForSub = Array.from(
       new Set(
         subjectsList
-          .filter((s) => s.name?.trim() === val)
+          .filter((s) => s.name?.trim() === val || val.includes(s.name?.trim() || ''))
           .map((s) => s.category?.trim() || 'Foundation')
           .filter(Boolean)
       )
     );
     if (categoriesForSub.length === 1) {
-      const cat = categoriesForSub[0];
-      setSelectedCategory(cat);
-
-      const classesForSubCat = Array.from(
-        new Set(
-          subjectsList
-            .filter(
-              (s) =>
-                s.name?.trim() === val &&
-                (s.category?.trim() || 'Foundation') === cat
-            )
-            .map((s) => s.className?.trim() || 'Class S2')
-            .filter(Boolean)
-        )
-      );
-      if (classesForSubCat.length === 1) {
-        setSelectedClass(classesForSubCat[0]);
-      }
+      setSelectedCategory(categoriesForSub[0]);
     }
   };
 
@@ -163,22 +171,6 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   const handleCategoryChange = (val) => {
     setSelectedCategory(val);
     setSelectedClass('');
-
-    const classesForSubCat = Array.from(
-      new Set(
-        liveSubjects
-          .filter(
-            (s) =>
-              s.name?.trim() === selectedSubject &&
-              (s.category?.trim() || 'Foundation') === val
-          )
-          .map((s) => s.className?.trim() || 'Class S2')
-          .filter(Boolean)
-      )
-    );
-    if (classesForSubCat.length === 1) {
-      setSelectedClass(classesForSubCat[0]);
-    }
   };
 
   // Reset when Class changes
