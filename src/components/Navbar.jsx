@@ -81,7 +81,7 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
           </Link>
 
           <Link
-            to="/apply"
+            to="/faculty-application"
             className="border border-outline-variant/50 hover:border-primary text-on-surface-variant hover:text-primary px-3 py-1.5 rounded-full font-headings font-bold transition-all text-xs whitespace-nowrap flex items-center gap-1.5 bg-surface-container-lowest/80 shadow-2xs"
             title="Faculty Recruitment Application"
           >

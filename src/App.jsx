@@ -130,6 +130,9 @@ export default function App() {
 
                 {/* Faculty Online Job Application Form */}
                 <Route path="/faculty-application" element={<FacultyApplicationPage />} />
+                <Route path="/apply-faculty" element={<FacultyApplicationPage />} />
+                <Route path="/apply" element={<FacultyApplicationPage />} />
+                <Route path="/join-faculty" element={<FacultyApplicationPage />} />
 
                 {/* Student Admissions Application Form */}
                 <Route path="/student-application" element={<StudentApplicationPage />} />

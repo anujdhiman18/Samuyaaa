@@ -82,7 +82,7 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link to="/apply" className="text-primary font-bold hover:underline flex items-center gap-1">
+              <Link to="/faculty-application" className="text-primary font-bold hover:underline flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">work</span>
                 Careers / Faculty Application
               </Link>

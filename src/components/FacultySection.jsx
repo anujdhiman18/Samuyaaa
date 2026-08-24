@@ -130,7 +130,7 @@ export default function FacultySection() {
           </div>
           <div className="z-10 shrink-0">
             <Link
-              to="/apply"
+              to="/faculty-application"
               className="bg-white text-secondary hover:bg-surface-container font-headings font-bold text-xs px-7 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">assignment_ind</span>

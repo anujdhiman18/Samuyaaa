@@ -105,7 +105,7 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
           {/* Bottom Actions Section */}
           <div className="border-t border-surface-container-high pt-5 mt-6 flex flex-col gap-2.5 shrink-0">
             <Link
-              to="/apply"
+              to="/faculty-application"
               onClick={onClose}
               className="w-full bg-gradient-to-r from-secondary to-primary text-white text-center py-3 rounded-xl font-headings font-bold hover:opacity-95 transition-all text-xs flex items-center justify-center gap-2 shadow-md"
             >
