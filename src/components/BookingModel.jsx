@@ -432,7 +432,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-semibold text-on-surface transition-all cursor-pointer"
               >
                 <option value="" disabled>
-                  [ Select Subject ▼ ]
+                  -- Select Subject --
                 </option>
                 {availableSubjects.map((sub) => (
                   <option key={sub} value={sub}>
@@ -459,7 +459,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 }`}
               >
                 <option value="" disabled>
-                  [ Select Category ▼ ]
+                  -- Select Category --
                 </option>
                 {availableCategories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -486,7 +486,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 }`}
               >
                 <option value="" disabled>
-                  [ Select Class ▼ ]
+                  -- Select Class --
                 </option>
                 {availableClasses.map((cls) => (
                   <option key={cls} value={cls}>
