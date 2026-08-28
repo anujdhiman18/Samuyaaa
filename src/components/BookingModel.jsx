@@ -49,15 +49,21 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
 
   // Handle prefilled subject from course card click
   useEffect(() => {
-    if (open && liveSubjects.length > 0) {
-      const distinctSubjects = Array.from(
-        new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))
-      );
-      if (prefilledProgram && distinctSubjects.includes(prefilledProgram)) {
-        handleSubjectChange(prefilledProgram, liveSubjects);
-      }
+    if (open && prefilledProgram) {
+      const allSubjects = liveSubjects.length > 0
+        ? Array.from(new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean)))
+        : ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English & Communication'];
+
+      const matched = allSubjects.find(
+        (s) =>
+          s.toLowerCase() === prefilledProgram.toLowerCase() ||
+          prefilledProgram.toLowerCase().includes(s.toLowerCase()) ||
+          s.toLowerCase().includes(prefilledProgram.toLowerCase())
+      ) || prefilledProgram;
+
+      handleSubjectChange(matched, liveSubjects);
     }
-  }, [open, liveSubjects, prefilledProgram]);
+  }, [open, prefilledProgram, liveSubjects]);
 
   // Real-time broadcast sync with Admin Panel
   useEffect(() => {
@@ -73,7 +79,14 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
 
   // 1. Available Subjects from admin data
   const availableSubjects = Array.from(
-    new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))
+    new Set([
+      ...liveSubjects.map((s) => s.name?.trim()).filter(Boolean),
+      'Mathematics',
+      'Physics',
+      'Chemistry',
+      'Biology',
+      'English & Communication',
+    ])
   ).sort();
 
   // 2. Available Categories for selected Subject (with standard fallback)
@@ -245,20 +258,24 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   // Reset lower-level selections when Subject changes
   const handleSubjectChange = (val, subjectsList = liveSubjects) => {
     setSelectedSubject(val);
-    setSelectedCategory('');
     setSelectedClass('');
 
     const categoriesForSub = Array.from(
       new Set(
-        subjectsList
-          .filter((s) => s.name?.trim() === val || val.includes(s.name?.trim() || ''))
-          .map((s) => s.category?.trim() || 'Foundation')
+        (subjectsList || [])
+          .filter(
+            (s) =>
+              s.name?.trim() === val ||
+              val.includes(s.name?.trim() || '') ||
+              (s.name?.trim() || '').includes(val)
+          )
+          .map((s) => s.category?.trim())
           .filter(Boolean)
       )
     );
-    if (categoriesForSub.length === 1) {
-      setSelectedCategory(categoriesForSub[0]);
-    }
+
+    const defaultCat = categoriesForSub[0] || 'Foundation';
+    setSelectedCategory(defaultCat);
   };
 
   // Reset lower-level selections when Category changes
@@ -270,6 +287,9 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   // Reset when Class changes
   const handleClassChange = (val) => {
     setSelectedClass(val);
+    if (!selectedCategory) {
+      setSelectedCategory('Foundation');
+    }
   };
 
   const handleSubmit = (e) => {
@@ -457,10 +477,10 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               <select
                 value={selectedClass}
                 onChange={(e) => handleClassChange(e.target.value)}
-                disabled={!selectedCategory}
+                disabled={!selectedSubject}
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                  !selectedCategory
+                  !selectedSubject
                     ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
                 }`}
