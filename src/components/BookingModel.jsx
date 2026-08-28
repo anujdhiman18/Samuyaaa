@@ -94,31 +94,63 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     new Set([...categoriesFromData, ...standardCategories])
   ).sort();
 
-  // 3. Available Classes for selected Subject + Category (Clean & Non-duplicated)
+  // 3. Available Classes for selected Subject + Category (Clean, user-friendly & non-duplicated)
   const normalizeDisplayClass = (clsStr) => {
     if (!clsStr) return '';
     const str = String(clsStr).trim();
-    if (str === 'S1' || str === 'Class S1') return 'Class S1';
-    if (str === 'S2' || str === 'Class S2') return 'Class S2';
-    if (str === 'S3' || str === 'Class S3') return 'Class S3';
-    if (str === 'S4' || str === 'Class S4') return 'Class S4';
+    if (str === 'S1' || str === 'Class S1') return 'Class S1 (Nursery - 5th)';
+    if (str === 'S2' || str === 'Class S2') return 'Class S2 (6th - 10th)';
+    if (str === 'S3' || str === 'Class S3') return 'Class S3 (11th - 12th)';
+    if (str === 'S4' || str === 'Class S4') return 'Class S4 (Higher Ed)';
     if (str.startsWith('Class ')) return str;
     return `Class ${str}`;
   };
 
-  const standardClasses = ['Class S1', 'Class S2', 'Class S3', 'Class S4'];
+  const standardClasses = [
+    '6th Grade',
+    '7th Grade',
+    '8th Grade',
+    '9th Grade',
+    '10th Grade',
+    '11th (+1)',
+    '12th (+2)',
+    'Class S1 (Nursery - 5th)',
+    'Class S2 (6th - 10th)',
+    'Class S3 (11th - 12th)',
+    'Class S4 (Higher Ed)',
+  ];
+
   const adminClasses = liveSubjects
     .filter(
       (s) =>
         !selectedSubject ||
         s.name?.trim() === selectedSubject ||
-        selectedSubject.includes(s.name?.trim())
+        selectedSubject.includes(s.name?.trim() || '') ||
+        (s.name?.trim() || '').includes(selectedSubject)
+    )
+    .filter(
+      (s) =>
+        !selectedCategory ||
+        !s.category ||
+        s.category.trim().toLowerCase() === selectedCategory.toLowerCase()
     )
     .map((s) => normalizeDisplayClass(s.className?.trim()))
     .filter(Boolean);
 
   const availableClasses = Array.from(new Set([...standardClasses, ...adminClasses])).sort((a, b) => {
-    const order = ['Class S1', 'Class S2', 'Class S3', 'Class S4'];
+    const order = [
+      '6th Grade',
+      '7th Grade',
+      '8th Grade',
+      '9th Grade',
+      '10th Grade',
+      '11th (+1)',
+      '12th (+2)',
+      'Class S1 (Nursery - 5th)',
+      'Class S2 (6th - 10th)',
+      'Class S3 (11th - 12th)',
+      'Class S4 (Higher Ed)',
+    ];
     const idxA = order.indexOf(a);
     const idxB = order.indexOf(b);
     if (idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -130,6 +162,27 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   // 4. Automatically assigned batch timings from admin dataset (Read-Only with multi-tier fallback)
   const getAssignedBatchTimes = () => {
     if (!selectedSubject || !selectedClass) return [];
+
+    const isClassMatchHelper = (sClsRaw, selClsRaw) => {
+      const sCls = (sClsRaw || '').toLowerCase();
+      const selCls = (selClsRaw || '').toLowerCase();
+      return (
+        sCls === selCls ||
+        selCls.includes(sCls) ||
+        sCls.includes(selCls) ||
+        (sCls.includes('s1') && selCls.includes('s1')) ||
+        (sCls.includes('s2') && (selCls.includes('s2') || selCls.includes('6th') || selCls.includes('7th') || selCls.includes('8th') || selCls.includes('9th') || selCls.includes('10th'))) ||
+        (sCls.includes('s3') && (selCls.includes('s3') || selCls.includes('11th') || selCls.includes('12th'))) ||
+        (sCls.includes('s4') && selCls.includes('s4')) ||
+        (sCls.includes('6th') && selCls.includes('6th')) ||
+        (sCls.includes('7th') && selCls.includes('7th')) ||
+        (sCls.includes('8th') && selCls.includes('8th')) ||
+        (sCls.includes('9th') && selCls.includes('9th')) ||
+        (sCls.includes('10th') && selCls.includes('10th')) ||
+        (sCls.includes('11th') && selCls.includes('11th')) ||
+        (sCls.includes('12th') && selCls.includes('12th'))
+      );
+    };
 
     // Exact match: Subject + Category + Class
     const exactMatches = liveSubjects.filter((s) => {
@@ -143,14 +196,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         !selectedCategory ||
         (s.category?.trim() || '').toLowerCase() === selectedCategory.toLowerCase();
 
-      const sCls = (s.className?.trim() || '').toLowerCase();
-      const selCls = selectedClass.toLowerCase();
-      const clsMatch =
-        sCls === selCls ||
-        (sCls.includes('s1') && selCls.includes('s1')) ||
-        (sCls.includes('s2') && selCls.includes('s2')) ||
-        (sCls.includes('s3') && selCls.includes('s3')) ||
-        (sCls.includes('s4') && selCls.includes('s4'));
+      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass);
 
       return subMatch && catMatch && clsMatch;
     });
@@ -167,14 +213,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         selectedSubject.includes(sName) ||
         sName.includes(selectedSubject);
 
-      const sCls = (s.className?.trim() || '').toLowerCase();
-      const selCls = selectedClass.toLowerCase();
-      const clsMatch =
-        sCls === selCls ||
-        (sCls.includes('s1') && selCls.includes('s1')) ||
-        (sCls.includes('s2') && selCls.includes('s2')) ||
-        (sCls.includes('s3') && selCls.includes('s3')) ||
-        (sCls.includes('s4') && selCls.includes('s4'));
+      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass);
 
       return subMatch && clsMatch;
     });

@@ -1191,7 +1191,9 @@ export const syncFirestoreCollection = async (collectionName, defaultData = []) 
     const timeoutTask = new Promise((resolve) => setTimeout(() => resolve(null), 1500));
     return await Promise.race([syncTask, timeoutTask]);
   } catch (err) {
-    console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
+    if (!err.message?.includes('insufficient permissions') && !err.message?.includes('permission-denied')) {
+      console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
+    }
   }
   return null;
 };
@@ -1267,7 +1269,9 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
       if (callback) callback(items);
     },
     (err) => {
-      console.warn(`Firestore onSnapshot notice for ${collectionName}:`, err.message);
+      if (!err.message?.includes('insufficient permissions') && !err.message?.includes('permission-denied')) {
+        console.warn(`Firestore onSnapshot notice for ${collectionName}:`, err.message);
+      }
       if (callback) {
         try {
           const fallback = getStoredCollectionFallback(collectionName, defaultData);
