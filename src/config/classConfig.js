@@ -15,6 +15,18 @@ export const CLASS_CATEGORIES = [
 
 export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
 
+export const DEFAULT_SUBJECTS = [
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'Biology',
+  'English',
+  'Science',
+  'Social Studies',
+  'Computer Science',
+];
+
+
 export const DEFAULT_CENTER_CONFIGS = {
   'Main Center': {
     name: 'Main Center',

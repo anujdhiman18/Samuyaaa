@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService, subjectService, getStoredSubjects } from '../../services/api';
-import { sortClassList } from '../../config/classConfig';
+import { sortClassList, DEFAULT_SUBJECTS } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';

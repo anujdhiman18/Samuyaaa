@@ -3,7 +3,7 @@ import { studentService, attendanceService, subjectService } from '../../service
 import { useToast } from '../../context/ToastContext';
 import AdminFacultyAttendance from '../../components/admin/AdminFacultyAttendance';
 
-import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
+import { CLASS_CATEGORIES, formatClassLabel, DEFAULT_SUBJECTS } from '../../config/classConfig';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 
