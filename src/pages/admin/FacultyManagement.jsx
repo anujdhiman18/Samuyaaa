@@ -92,6 +92,7 @@ export default function FacultyManagement() {
   const [leaveStatusFilter, setLeaveStatusFilter] = useState('All');
   const [leaveTypeFilter, setLeaveTypeFilter] = useState('All');
   const [selectedLeaveApp, setSelectedLeaveApp] = useState(null);
+  const [adminRemarksInput, setAdminRemarksInput] = useState('');
   // RBAC Multi-Role Assignment Modal State
   const [roleModalMember, setRoleModalMember] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
