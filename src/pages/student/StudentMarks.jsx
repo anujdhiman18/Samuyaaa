@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { marksService } from '../../services/api';
-
-const calculateGrade = (pct) => {
-  const p = Number(pct) || 0;
-  if (p >= 90) return 'A+';
-  if (p >= 75) return 'A';
-  if (p >= 60) return 'B';
-  if (p >= 50) return 'C';
-  return 'D';
-};
+import { calculateGrade, calculateGradeBreakdown, getGradeMeta } from '../../utils/gradeUtils';
 
 const formatDateSafely = (dateVal) => {
   if (!dateVal) return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -46,46 +38,39 @@ export default function StudentMarks() {
   const normalizedMarks = marks.map((m) => {
     const subject = m.subject || m.subjectName || 'General Academics';
     const examName = m.examName || m.examType || m.title || 'Internal Assessment';
-    const maxMarks = Number(m.maxMarks || m.totalMarks || m.totalMax) || 100;
 
-    let obtainedMarks = 0;
-    if (m.obtainedMarks !== undefined && m.obtainedMarks !== null) {
-      obtainedMarks = Number(m.obtainedMarks);
-    } else if (m.marksObtained !== undefined && m.marksObtained !== null) {
-      obtainedMarks = Number(m.marksObtained);
-    } else {
-      obtainedMarks = (Number(m.theoryMarks) || 0) + (Number(m.practicalMarks) || 0) + (Number(m.assignmentMarks) || 0);
-    }
-
-    const percentage = m.percentage !== undefined && m.percentage !== null
-      ? Number(m.percentage)
-      : Math.min(100, Math.round((obtainedMarks / maxMarks) * 100));
-
-    const grade = m.grade || calculateGrade(percentage);
+    // Breakdown components (Mid-Term: 50, Assignment: 20, Final Exam: 100, Internal: 25)
+    const breakdown = calculateGradeBreakdown(m);
     const examDate = formatDateSafely(m.examDate || m.date || m.updatedAt || m.createdAt);
+    const meta = getGradeMeta(breakdown.grade);
 
     return {
       _id: m._id || m.id || `mark_${Math.random()}`,
       subject,
       examName,
-      maxMarks,
-      obtainedMarks,
-      percentage,
-      grade,
+      midTerm: breakdown.midTerm,
+      assignment: breakdown.assignment,
+      finalExam: breakdown.finalExam,
+      internal: breakdown.internal,
+      rawTotal: breakdown.rawTotal,
+      maxMarks: breakdown.totalMax,
+      percentage: breakdown.converted100,
+      grade: breakdown.grade,
+      gradeMeta: meta,
       examDate,
     };
   });
 
   const avgPercentage =
     normalizedMarks.length > 0
-      ? (normalizedMarks.reduce((sum, m) => sum + (m.percentage || 0), 0) / normalizedMarks.length).toFixed(1)
+      ? Number((normalizedMarks.reduce((sum, m) => sum + (m.percentage || 0), 0) / normalizedMarks.length).toFixed(1))
       : 92.0;
 
   const highestMark = normalizedMarks.length > 0
-    ? Math.max(...normalizedMarks.map((m) => m.obtainedMarks))
-    : 96;
+    ? Math.max(...normalizedMarks.map((m) => m.rawTotal))
+    : 176;
 
-  const highestMarkRecord = normalizedMarks.find((m) => m.obtainedMarks === highestMark);
+  const highestMarkRecord = normalizedMarks.find((m) => m.rawTotal === highestMark);
 
   // Group subject performance for chart
   const subjectMap = {};
@@ -99,26 +84,26 @@ export default function StudentMarks() {
 
   const subjectBreakdown = Object.keys(subjectMap).length > 0
     ? Object.entries(subjectMap).map(([sub, data]) => {
-        const avg = Math.round(data.totalPct / data.count);
-        return {
-          subject: sub,
-          score: avg,
-          grade: calculateGrade(avg),
-        };
-      })
+      const avg = Math.round(data.totalPct / data.count);
+      return {
+        subject: sub,
+        score: avg,
+        grade: calculateGrade(avg),
+      };
+    })
     : [
-        { subject: 'Mathematics Advanced', score: 96, grade: 'A+' },
-        { subject: 'Integrated Science', score: 88, grade: 'A' },
-      ];
+      { subject: 'Mathematics Advanced', score: 96, grade: 'A+' },
+      { subject: 'Integrated Science', score: 88, grade: 'A' },
+    ];
 
   return (
     <div className="space-y-6 font-body">
       <div>
         <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-          Academic Marks &amp; Test Results
+          Academic Marks &amp; Gradebook
         </h1>
         <p className="font-body text-xs text-on-surface-variant mt-1">
-          Detailed performance breakdown, exam grades, and subject averages.
+          Detailed performance breakdown, component scores (Mid-Term, Assignment, Final Exam, Internal), 100-mark conversion, &amp; published grades.
         </p>
       </div>
 
@@ -132,7 +117,7 @@ export default function StudentMarks() {
             {normalizedMarks.length} Tests
           </h3>
           <p className="text-[10px] text-on-surface-variant font-semibold mt-1">
-            Mid-term board mocks &amp; weekly assessments
+            Term assessments &amp; gradebook dispatches
           </p>
         </div>
 
@@ -153,7 +138,7 @@ export default function StudentMarks() {
             Highest Score
           </p>
           <h3 className="font-headings font-extrabold text-3xl text-primary mt-2">
-            {highestMark} Marks
+            {highestMark} / 195 Marks
           </h3>
           <p className="text-[10px] text-on-surface-variant font-semibold mt-1">
             {highestMarkRecord ? `${highestMarkRecord.subject} (${highestMarkRecord.examName})` : 'Mathematics Advanced Mock'}
@@ -207,11 +192,13 @@ export default function StudentMarks() {
               <thead>
                 <tr className="border-b border-outline-variant/20 text-[11px] font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                   <th className="py-3.5 px-4">Subject</th>
-                  <th className="py-3.5 px-4">Exam Name</th>
-                  <th className="py-3.5 px-4">Max Marks</th>
-                  <th className="py-3.5 px-4">Obtained Marks</th>
-                  <th className="py-3.5 px-4">Percentage</th>
-                  <th className="py-3.5 px-4">Grade</th>
+                  <th className="py-3.5 px-4">Mid-Term (50)</th>
+                  <th className="py-3.5 px-4">Assignment (20)</th>
+                  <th className="py-3.5 px-4">Final Exam (100)</th>
+                  <th className="py-3.5 px-4">Internal (25)</th>
+                  <th className="py-3.5 px-4 text-center">Raw Total (/195)</th>
+                  <th className="py-3.5 px-4 text-center">Converted (/100)</th>
+                  <th className="py-3.5 px-4 text-center">Grade</th>
                   <th className="py-3.5 px-4">Exam Date</th>
                 </tr>
               </thead>
@@ -223,21 +210,30 @@ export default function StudentMarks() {
                   >
                     <td className="py-3.5 px-4 font-bold text-secondary">
                       {m.subject}
+                      <div className="text-[10px] text-on-surface-variant font-normal">{m.examName}</div>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-on-surface">
-                      {m.examName}
+                    <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
+                      {m.midTerm} / 50
                     </td>
-                    <td className="py-3.5 px-4 text-on-surface-variant font-mono">
-                      {m.maxMarks}
+                    <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
+                      {m.assignment} / 20
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-primary font-mono">
-                      {m.obtainedMarks}
+                    <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
+                      {m.finalExam} / 100
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-700 font-mono">
-                      {m.percentage}%
+                    <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
+                      {m.internal} / 25
                     </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
+                    <td className="py-3.5 px-4 text-center font-extrabold text-secondary font-mono">
+                      {m.rawTotal} / {m.maxMarks}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="font-extrabold text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-mono">
+                        {m.percentage} / 100
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-full font-extrabold text-xs border ${m.gradeMeta.bgClass}`}>
                         {m.grade}
                       </span>
                     </td>
@@ -254,3 +250,4 @@ export default function StudentMarks() {
     </div>
   );
 }
+

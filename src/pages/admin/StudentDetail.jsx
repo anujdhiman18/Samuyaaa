@@ -7,6 +7,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 import AdminLoginCredentialsCard from '../../components/admin/AdminLoginCredentialsCard';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
+import { calculateGradeBreakdown, getGradeMeta } from '../../utils/gradeUtils';
 
 const COURSES = [
   'Science (PCM)',
@@ -605,35 +606,50 @@ export default function StudentDetail() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[10px]">
-                  <th className="py-3 px-4">Subject</th>
-                  <th className="py-3 px-4">Assessment / Exam</th>
-                  <th className="py-3 px-4 text-center">Theory</th>
-                  <th className="py-3 px-4 text-center">Practical</th>
-                  <th className="py-3 px-4 text-center">Assignment</th>
-                  <th className="py-3 px-4 text-center">Total Marks</th>
+                  <th className="py-3 px-4">Subject / Exam</th>
+                  <th className="py-3 px-4 text-center">Mid-Term (50)</th>
+                  <th className="py-3 px-4 text-center">Assignment (20)</th>
+                  <th className="py-3 px-4 text-center">Final Exam (100)</th>
+                  <th className="py-3 px-4 text-center">Internal (25)</th>
+                  <th className="py-3 px-4 text-center">Raw Total (/195)</th>
+                  <th className="py-3 px-4 text-center">Converted (/100)</th>
+                  <th className="py-3 px-4 text-center">Grade</th>
                   <th className="py-3 px-4 text-right">Published By</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
-                {studentMarks.map((m) => (
-                  <tr key={m._id || m.id} className="hover:bg-surface-container-lowest">
-                    <td className="py-3 px-4 font-bold text-secondary">{m.subject}</td>
-                    <td className="py-3 px-4 font-semibold text-primary">{m.examType || m.title || 'Internal Test'}</td>
-                    <td className="py-3 px-4 text-center font-mono">{m.theoryMarks ?? '-'}</td>
-                    <td className="py-3 px-4 text-center font-mono">{m.practicalMarks ?? '-'}</td>
-                    <td className="py-3 px-4 text-center font-mono">{m.assignmentMarks ?? '-'}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[11px]">
-                        {m.marksObtained} / {m.totalMarks || 100} ({m.percentage || 0}%)
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-on-surface-variant">
-                      <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
-                        {m.publishedBy || 'Faculty'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {studentMarks.map((m) => {
+                  const bd = calculateGradeBreakdown(m);
+                  const meta = getGradeMeta(bd.grade);
+                  return (
+                    <tr key={m._id || m.id} className="hover:bg-surface-container-lowest">
+                      <td className="py-3 px-4 font-bold text-secondary">
+                        {m.subject}
+                        <div className="text-[10px] text-on-surface-variant font-normal">{m.examType || m.title || 'Internal Test'}</div>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono text-on-surface">{bd.midTerm}</td>
+                      <td className="py-3 px-4 text-center font-mono text-on-surface">{bd.assignment}</td>
+                      <td className="py-3 px-4 text-center font-mono text-on-surface">{bd.finalExam}</td>
+                      <td className="py-3 px-4 text-center font-mono text-on-surface">{bd.internal}</td>
+                      <td className="py-3 px-4 text-center font-mono font-bold text-secondary">{bd.rawTotal} / {bd.totalMax}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[11px] font-mono">
+                          {bd.converted100} / 100
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-2 py-0.5 rounded-full font-extrabold text-[10px] border ${meta.bgClass}`}>
+                          {bd.grade}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-medium text-on-surface-variant">
+                        <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
+                          {m.publishedBy || 'Faculty'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

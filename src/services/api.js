@@ -2186,10 +2186,11 @@ export const marksService = {
 
     for (const item of marksList) {
       const studentId = String(item.studentId);
-      const theory = Number(item.theoryMarks) || 0;
-      const practical = Number(item.practicalMarks) || 0;
-      const assignment = Number(item.assignmentMarks) || 0;
-      const totalObtained = theory + practical + assignment;
+      const midTerm = Number(item.midTermMarks ?? item.midTerm) || 0;
+      const assignment = Number(item.assignmentMarks ?? item.assignment) || 0;
+      const finalExam = Number(item.finalExamMarks ?? item.finalExam ?? item.theoryMarks) || 0;
+      const internal = Number(item.internalMarks ?? item.internal ?? item.practicalMarks) || 0;
+      const totalObtained = midTerm + assignment + finalExam + internal;
 
       const existingIdx = updatedMarks.findIndex(
         (m) =>
@@ -2198,14 +2199,16 @@ export const marksService = {
           (m.examType === examType || m.title === examType)
       );
 
-      const totalMax = Number(item.totalMax) || 100;
-      const pct = Math.min(100, Math.round((totalObtained / totalMax) * 100));
-      let calcGrade = 'A';
+      const totalMax = Number(item.totalMax) || 195;
+      const pct = Math.min(100, Math.round(((totalObtained / totalMax) * 100) * 10) / 10);
+      let calcGrade = 'F';
       if (pct >= 90) calcGrade = 'A+';
-      else if (pct >= 75) calcGrade = 'A';
+      else if (pct >= 80) calcGrade = 'A';
+      else if (pct >= 70) calcGrade = 'B+';
       else if (pct >= 60) calcGrade = 'B';
       else if (pct >= 50) calcGrade = 'C';
-      else calcGrade = 'D';
+      else if (pct >= 40) calcGrade = 'D';
+      else calcGrade = 'F';
 
       const todayIso = new Date().toISOString().split('T')[0];
 
@@ -2218,9 +2221,12 @@ export const marksService = {
         examType: examType || 'Internal Assessment',
         title: examType || 'Internal Assessment',
         examName: examType || 'Internal Assessment',
-        theoryMarks: theory,
-        practicalMarks: practical,
+        midTermMarks: midTerm,
         assignmentMarks: assignment,
+        finalExamMarks: finalExam,
+        internalMarks: internal,
+        theoryMarks: finalExam,
+        practicalMarks: internal,
         marksObtained: totalObtained,
         obtainedMarks: totalObtained,
         totalMarks: totalMax,
@@ -6188,20 +6194,23 @@ export const smsNotificationService = {
       const stObj = allStudents.find((s) => String(s._id || s.id) === stId);
       const stName = stObj?.fullName || stObj?.name || 'Student';
       const stPhone = stObj?.phone || stObj?.parentPhone || '9876543210';
-      const theory = Number(m.theoryMarks || m.marks) || 0;
-      const practical = Number(m.practicalMarks) || 0;
-      const assignment = Number(m.assignmentMarks) || 0;
-      const totalObtained = theory + practical + assignment;
-      const totalMax = Number(m.totalMax) || 100;
+      const midTerm = Number(m.midTermMarks ?? m.midTerm) || 0;
+      const assignment = Number(m.assignmentMarks ?? m.assignment) || 0;
+      const finalExam = Number(m.finalExamMarks ?? m.finalExam ?? m.theoryMarks) || 0;
+      const internal = Number(m.internalMarks ?? m.internal ?? m.practicalMarks) || 0;
+      const totalObtained = midTerm + assignment + finalExam + internal;
+      const totalMax = Number(m.totalMax) || 195;
 
-      const pct = Math.min(100, Math.round((totalObtained / totalMax) * 100));
+      const pct = Math.min(100, Math.round(((totalObtained / totalMax) * 100) * 10) / 10);
       let calcGrade = m.grade;
       if (!calcGrade) {
         if (pct >= 90) calcGrade = 'A+';
-        else if (pct >= 75) calcGrade = 'A';
+        else if (pct >= 80) calcGrade = 'A';
+        else if (pct >= 70) calcGrade = 'B+';
         else if (pct >= 60) calcGrade = 'B';
         else if (pct >= 50) calcGrade = 'C';
-        else calcGrade = 'D';
+        else if (pct >= 40) calcGrade = 'D';
+        else calcGrade = 'F';
       }
 
       const subjectInfo = subject ? `${subject} (${examType || 'Exam'})` : examType || 'recent exam';

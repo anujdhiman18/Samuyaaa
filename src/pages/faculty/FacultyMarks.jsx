@@ -3,6 +3,7 @@ import { facultyPanelService, marksService, subjectService, getStoredSubjects, g
 import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { calculateGradeBreakdown, getGradeMeta } from '../../utils/gradeUtils';
 
 const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 
@@ -177,10 +178,11 @@ export default function FacultyMarks() {
       list.forEach((st) => {
         const stId = String(st._id || st.id);
         newMap[stId] = {
-          theoryMarks: 42,
-          practicalMarks: 18,
-          assignmentMarks: 20,
-          totalMax: 100,
+          midTermMarks: 40,
+          assignmentMarks: 16,
+          finalExamMarks: 82,
+          internalMarks: 22,
+          totalMax: 195,
         };
       });
       setMarksMap(newMap);
@@ -212,18 +214,19 @@ export default function FacultyMarks() {
         try {
           const u = JSON.parse(currentUserStr);
           facultyName = u.name || facultyName;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const marksList = students.map((st) => {
         const stId = String(st._id || st.id);
-        const m = marksMap[stId] || { theoryMarks: 40, practicalMarks: 15, assignmentMarks: 15, totalMax: 100 };
+        const m = marksMap[stId] || { midTermMarks: 40, assignmentMarks: 16, finalExamMarks: 80, internalMarks: 20, totalMax: 195 };
         return {
           studentId: stId,
-          theoryMarks: Number(m.theoryMarks) || 0,
-          practicalMarks: Number(m.practicalMarks) || 0,
+          midTermMarks: Number(m.midTermMarks) || 0,
           assignmentMarks: Number(m.assignmentMarks) || 0,
-          totalMax: Number(m.totalMax) || 100,
+          finalExamMarks: Number(m.finalExamMarks) || 0,
+          internalMarks: Number(m.internalMarks) || 0,
+          totalMax: 195,
         };
       });
 
@@ -350,28 +353,21 @@ export default function FacultyMarks() {
                 <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[11px]">
                   <th className="py-3.5 px-4 whitespace-nowrap">Roll No.</th>
                   <th className="py-3.5 px-4 whitespace-nowrap">Student Name</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Theory (Max 50)</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Practical (Max 25)</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Assignment (Max 25)</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Total / 100</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap">Grade</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Mid-Term (Max 50)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Assignment (Max 20)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Final Exam (Max 100)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Internal (Max 25)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Raw Total (/195)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Converted (/100)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Grade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/10">
                 {students.map((st) => {
                   const stId = String(st._id || st.id);
-                  const m = marksMap[stId] || { theoryMarks: 40, practicalMarks: 20, assignmentMarks: 20 };
-                  const theory = Number(m.theoryMarks) || 0;
-                  const practical = Number(m.practicalMarks) || 0;
-                  const assignment = Number(m.assignmentMarks) || 0;
-                  const total = theory + practical + assignment;
-
-                  let grade = 'A';
-                  if (total >= 90) grade = 'A+';
-                  else if (total >= 75) grade = 'A';
-                  else if (total >= 60) grade = 'B';
-                  else if (total >= 50) grade = 'C';
-                  else grade = 'D';
+                  const m = marksMap[stId] || { midTermMarks: 40, assignmentMarks: 16, finalExamMarks: 80, internalMarks: 20 };
+                  const breakdown = calculateGradeBreakdown(m);
+                  const meta = getGradeMeta(breakdown.grade);
 
                   return (
                     <tr key={stId} className="hover:bg-surface-container-lowest transition-colors">
@@ -382,8 +378,8 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={50}
-                          value={m.theoryMarks ?? ''}
-                          onChange={(e) => handleMarkChange(stId, 'theoryMarks', e.target.value)}
+                          value={m.midTermMarks ?? ''}
+                          onChange={(e) => handleMarkChange(stId, 'midTermMarks', e.target.value)}
                           className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
                         />
                       </td>
@@ -391,26 +387,43 @@ export default function FacultyMarks() {
                         <input
                           type="number"
                           min={0}
-                          max={25}
-                          value={m.practicalMarks ?? ''}
-                          onChange={(e) => handleMarkChange(stId, 'practicalMarks', e.target.value)}
-                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
-                        />
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <input
-                          type="number"
-                          min={0}
-                          max={25}
+                          max={20}
                           value={m.assignmentMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'assignmentMarks', e.target.value)}
                           className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
                         />
                       </td>
-                      <td className="py-3 px-4 font-extrabold text-secondary whitespace-nowrap">{total} / 100</td>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="px-2.5 py-0.5 rounded-full font-extrabold text-xs bg-primary/10 text-primary">
-                          {grade}
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={m.finalExamMarks ?? ''}
+                          onChange={(e) => handleMarkChange(stId, 'finalExamMarks', e.target.value)}
+                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                        />
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <input
+                          type="number"
+                          min={0}
+                          max={25}
+                          value={m.internalMarks ?? ''}
+                          onChange={(e) => handleMarkChange(stId, 'internalMarks', e.target.value)}
+                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                        />
+                      </td>
+                      <td className="py-3 px-4 font-extrabold text-secondary text-center whitespace-nowrap">
+                        {breakdown.rawTotal} / {breakdown.totalMax}
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <span className="font-extrabold text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                          {breakdown.converted100} / 100
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full font-extrabold text-xs border ${meta.bgClass}`}>
+                          {breakdown.grade}
                         </span>
                       </td>
                     </tr>
