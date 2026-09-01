@@ -150,10 +150,10 @@ export const formatClassLabel = (code, currentClass) => {
   }
 
   if (!code) return 'Class 10th';
-  if (code === 'S1') return 'Class 5th (S1)';
-  if (code === 'S2') return 'Class 10th (S2)';
-  if (code === 'S3') return 'Class 11th / 12th (S3)';
-  if (code === 'S4') return 'Higher Education (S4)';
+  if (code === 'S1') return 'Class 5th';
+  if (code === 'S2') return 'Class 10th';
+  if (code === 'S3') return 'Class 11th (+1)';
+  if (code === 'S4') return 'Class 12th (+2)';
   if (code === 'All') return 'All Classes';
 
   if (code.startsWith('Class')) return code;

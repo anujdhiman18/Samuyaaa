@@ -520,7 +520,7 @@ export const getStoredStudents = () => {
         const bId = normalizeBranchId(s.branchId || s.branch);
         return {
           ...s,
-          className: normalizeClassCode(s.className),
+          className: s.className || s.currentClass || '10th',
           branchId: bId,
           branch: s.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)'),
         };
@@ -532,7 +532,7 @@ export const getStoredStudents = () => {
         const bId = normalizeBranchId(s.branchId || s.branch);
         return {
           ...s,
-          className: normalizeClassCode(s.className),
+          className: s.className || s.currentClass || '10th',
           branchId: bId,
           branch: s.branch || (bId === 'BRANCH' ? 'Branch (Daroh)' : 'Main Center (Bagru)'),
         };
