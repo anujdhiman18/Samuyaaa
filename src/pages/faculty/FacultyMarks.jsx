@@ -307,6 +307,11 @@ export default function FacultyMarks() {
     }
   };
 
+  const handleConfirmPublish = async () => {
+    setConfirmModalOpen(false);
+    await handleSaveMarks();
+  };
+
   const handleToggleUnlock = () => {
     const nextState = !isPublished;
     setIsPublished(nextState);
