@@ -439,25 +439,8 @@ export default function FacultyMarks() {
         </div>
       </div>
 
-      {/* Mode Banner */}
-      {!isCombinedView ? (
-        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-primary text-xl">assignment</span>
-            <div>
-              <p className="text-xs font-bold text-secondary font-headings">
-                Single Assessment Mode: {examType}
-              </p>
-              <p className="text-[11px] text-on-surface-variant font-body">
-                {currentAssessmentConfig?.description || 'Independent assessment score entry.'} Maximum Marks: <strong>{currentAssessmentConfig?.max}</strong>.
-              </p>
-            </div>
-          </div>
-          <span className="px-3 py-1 bg-primary text-white text-[10px] font-extrabold rounded-full uppercase tracking-wider">
-            Max {currentAssessmentConfig?.max} Marks
-          </span>
-        </div>
-      ) : isPublished ? (
+      {/* Published Lock Banner */}
+      {isCombinedView && isPublished && (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="material-symbols-outlined text-emerald-600 text-xl">lock</span>
@@ -472,7 +455,7 @@ export default function FacultyMarks() {
             Published
           </span>
         </div>
-      ) : null}
+      )}
 
       {/* Gradebook Table */}
       <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
