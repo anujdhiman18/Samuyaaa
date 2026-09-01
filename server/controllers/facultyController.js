@@ -340,6 +340,7 @@ Application ID: ${applicationId}
   try {
     const fsPayload = {
       _subject: `New Faculty Application - ${fullName}`,
+      _captcha: 'false',
       _cc: SECONDARY_EMAIL_TARGET,
       "Application ID": applicationId,
       "Full Name": fullName,
@@ -371,20 +372,21 @@ Application ID: ${applicationId}
       "Submitted At": new Date(appliedAt).toLocaleString(),
     };
 
-    const [resPrimary, resSecondary] = await Promise.allSettled([
-      fetch(`https://formsubmit.co/ajax/${PRIMARY_EMAIL_TARGET}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(fsPayload),
-      }),
+    const resPrimary = await fetch(`https://formsubmit.co/ajax/${PRIMARY_EMAIL_TARGET}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(fsPayload),
+    });
+
+    try {
       fetch(`https://formsubmit.co/ajax/${SECONDARY_EMAIL_TARGET}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(fsPayload),
-      }),
-    ]);
+      }).catch(() => {});
+    } catch (e) {}
 
-    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
+    if (resPrimary.ok) {
       console.log(`✅ [Email Dispatcher] Application data delivered to ${EMAIL_TARGET_STRING}`);
       return res.json({
         success: true,

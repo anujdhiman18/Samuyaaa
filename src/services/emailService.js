@@ -56,6 +56,7 @@ export const sendFacultyApplicationNotification = async (application) => {
 
   const payload = {
     _subject: `New Faculty Application - ${fullName}`,
+    _captcha: 'false',
     _cc: SECONDARY_TARGET_EMAIL,
     "Application ID": applicationId,
     "Full Name": fullName,
@@ -87,26 +88,44 @@ export const sendFacultyApplicationNotification = async (application) => {
     "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
   };
 
-  try {
-    const [resPrimary, resSecondary] = await Promise.allSettled([
-      fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-      fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-    ]);
+  let primaryDelivered = false;
 
-    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
-      console.log(`[Email Service] Email successfully delivered to ${TARGET_EMAILS_STRING}`);
-      return { success: true, deliveredTo: TARGET_EMAILS_STRING };
+  // 1. Primary email dispatch (anujdhiman1706@gmail.com with _cc jitender0585@gmail.com)
+  try {
+    const resPrimary = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (resPrimary.ok) {
+      const data = await resPrimary.json();
+      if (data && (data.success === 'true' || data.success === true || resPrimary.status === 200)) {
+        primaryDelivered = true;
+        console.log(`[Email Service] Faculty application email successfully delivered to ${RECRUITMENT_TARGET_EMAIL} (CC: ${SECONDARY_TARGET_EMAIL})`);
+      }
     }
   } catch (err) {
-    console.warn('[Email Service] Direct email dispatch warning:', err.message);
+    console.warn('[Email Service] Primary faculty email dispatch warning:', err.message);
+  }
+
+  // 2. Secondary direct dispatch (jitender0585@gmail.com)
+  try {
+    fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  } catch (e) {}
+
+  if (primaryDelivered) {
+    return { success: true, deliveredTo: TARGET_EMAILS_STRING };
   }
 
   return { success: true, message: 'Application recorded' };
@@ -139,6 +158,7 @@ export const sendStudentApplicationNotification = async (application) => {
 
   const payload = {
     _subject: `New Student Admission Application - ${fullName} (${displayClass})`,
+    _captcha: 'false',
     _cc: SECONDARY_TARGET_EMAIL,
     "Application ID": applicationId,
     "Student Name": fullName,
@@ -156,26 +176,44 @@ export const sendStudentApplicationNotification = async (application) => {
     "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
   };
 
-  try {
-    const [resPrimary, resSecondary] = await Promise.allSettled([
-      fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-      fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-    ]);
+  let primaryDelivered = false;
 
-    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
-      console.log(`[Email Service] Student application email successfully delivered to ${TARGET_EMAILS_STRING}`);
-      return { success: true, deliveredTo: TARGET_EMAILS_STRING };
+  // 1. Primary email dispatch (anujdhiman1706@gmail.com with _cc jitender0585@gmail.com)
+  try {
+    const resPrimary = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (resPrimary.ok) {
+      const data = await resPrimary.json();
+      if (data && (data.success === 'true' || data.success === true || resPrimary.status === 200)) {
+        primaryDelivered = true;
+        console.log(`[Email Service] Student application email successfully delivered to ${RECRUITMENT_TARGET_EMAIL} (CC: ${SECONDARY_TARGET_EMAIL})`);
+      }
     }
   } catch (err) {
-    console.warn('[Email Service] Student application email dispatch warning:', err.message);
+    console.warn('[Email Service] Primary student email dispatch warning:', err.message);
+  }
+
+  // 2. Secondary direct dispatch (jitender0585@gmail.com)
+  try {
+    fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  } catch (e) {}
+
+  if (primaryDelivered) {
+    return { success: true, deliveredTo: TARGET_EMAILS_STRING };
   }
 
   return { success: true, message: 'Student application recorded' };
