@@ -3938,7 +3938,7 @@ export const facultyApplicationService = {
       emailSent,
       emailWarning,
       message: emailSent
-        ? 'Faculty Application submitted successfully and emailed to anujdhiman1706@gmail.com!'
+        ? 'Faculty Application submitted successfully and emailed to anujdhiman1706@gmail.com & jitender0585@gmail.com!'
         : 'Faculty Application saved successfully.',
     };
   },
@@ -4149,7 +4149,7 @@ export const studentApplicationService = {
       applicationId,
       emailSent,
       message: emailSent
-        ? 'Student Application submitted successfully and emailed to anujdhiman1706@gmail.com!'
+        ? 'Student Application submitted successfully and emailed to anujdhiman1706@gmail.com & jitender0585@gmail.com!'
         : 'Student Application submitted successfully!',
     };
   },

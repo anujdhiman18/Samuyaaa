@@ -409,7 +409,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
         localStorage.removeItem('saumyaa_faculty_app_draft');
         setSubmittedApp(result);
         if (result.emailSent) {
-          addToast('Application submitted & emailed to anujdhiman1706@gmail.com!', 'success');
+          addToast('Application submitted & emailed to anujdhiman1706@gmail.com & jitender0585@gmail.com!', 'success');
         } else {
           addToast(`Application saved! Warning: Email service error (${result.emailWarning || 'Check EMAIL_PASS in server/.env'}).`, 'warning');
         }

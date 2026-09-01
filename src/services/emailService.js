@@ -1,12 +1,17 @@
 /**
- * Faculty Application Email Notification Service
- * Dispatches structured faculty application data to: anujdhiman1706@gmail.com
+ * Application Email Notification Service
+ * Dispatches structured faculty and student application data to:
+ * 1. anujdhiman1706@gmail.com (Primary)
+ * 2. jitender0585@gmail.com (Secondary / Carbon Copy)
  */
 
 export const RECRUITMENT_TARGET_EMAIL = 'anujdhiman1706@gmail.com';
+export const SECONDARY_TARGET_EMAIL = 'jitender0585@gmail.com';
+export const ALL_TARGET_EMAILS = [RECRUITMENT_TARGET_EMAIL, SECONDARY_TARGET_EMAIL];
+export const TARGET_EMAILS_STRING = ALL_TARGET_EMAILS.join(', ');
 
 /**
- * Sends a structured notification email with candidate details to anujdhiman1706@gmail.com
+ * Sends a structured notification email with candidate details to both recipient emails
  * @param {Object} application - Full application form payload
  */
 export const sendFacultyApplicationNotification = async (application) => {
@@ -49,49 +54,56 @@ export const sendFacultyApplicationNotification = async (application) => {
     ? references.map((r, i) => `#${i + 1}: ${r.name} | Contact: ${r.contact} | Role: ${r.relationship}`).join(' ; ')
     : 'None Provided';
 
-  try {
-    const response = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        _subject: `New Faculty Application - ${fullName}`,
-        "Application ID": applicationId,
-        "Full Name": fullName,
-        "Date of Birth": dob,
-        "Gender": gender,
-        "Contact Number": contactNumber,
-        "Email": email,
-        "Current Address": currentAddress,
-        "Permanent Address": permanentAddress,
-        "Highest Degree": highestDegree,
-        "University": universityName,
-        "Graduation Year": graduationYear,
-        "Specialization": specialization,
-        "Certifications": certifications || 'None',
-        "Teaching Experience": totalExperience,
-        "Current Status": currentStatus,
-        "Previous Institutions": previousInstitutions,
-        "Subjects Taught": subjectsTaught,
-        "Position Applied": positionApplied,
-        "Subjects Expertise": formattedSubjects,
-        "Preferred Time Slot": preferredTimeSlot,
-        "Expected Joining Date": expectedJoiningDate,
-        "Why Join": whyJoinReason,
-        "Skills & Achievements": skillsAchievements || 'None',
-        "References": formattedReferences,
-        "Resume File": resumeFileName || 'Not Uploaded',
-        "ID Proof File": idProofFileName || 'Not Uploaded',
-        "Certificates File": certificatesFileName || 'Not Uploaded',
-        "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
-      }),
-    });
+  const payload = {
+    _subject: `New Faculty Application - ${fullName}`,
+    _cc: SECONDARY_TARGET_EMAIL,
+    "Application ID": applicationId,
+    "Full Name": fullName,
+    "Date of Birth": dob,
+    "Gender": gender,
+    "Contact Number": contactNumber,
+    "Email": email,
+    "Current Address": currentAddress,
+    "Permanent Address": permanentAddress,
+    "Highest Degree": highestDegree,
+    "University": universityName,
+    "Graduation Year": graduationYear,
+    "Specialization": specialization,
+    "Certifications": certifications || 'None',
+    "Teaching Experience": totalExperience,
+    "Current Status": currentStatus,
+    "Previous Institutions": previousInstitutions,
+    "Subjects Taught": subjectsTaught,
+    "Position Applied": positionApplied,
+    "Subjects Expertise": formattedSubjects,
+    "Preferred Time Slot": preferredTimeSlot,
+    "Expected Joining Date": expectedJoiningDate,
+    "Why Join": whyJoinReason,
+    "Skills & Achievements": skillsAchievements || 'None',
+    "References": formattedReferences,
+    "Resume File": resumeFileName || 'Not Uploaded',
+    "ID Proof File": idProofFileName || 'Not Uploaded',
+    "Certificates File": certificatesFileName || 'Not Uploaded',
+    "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
+  };
 
-    if (response.ok) {
-      console.log(`[Email Service] Email successfully delivered to ${RECRUITMENT_TARGET_EMAIL}`);
-      return { success: true, deliveredTo: RECRUITMENT_TARGET_EMAIL };
+  try {
+    const [resPrimary, resSecondary] = await Promise.allSettled([
+      fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    ]);
+
+    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
+      console.log(`[Email Service] Email successfully delivered to ${TARGET_EMAILS_STRING}`);
+      return { success: true, deliveredTo: TARGET_EMAILS_STRING };
     }
   } catch (err) {
     console.warn('[Email Service] Direct email dispatch warning:', err.message);
@@ -101,7 +113,7 @@ export const sendFacultyApplicationNotification = async (application) => {
 };
 
 /**
- * Sends structured student admission application email to anujdhiman1706@gmail.com
+ * Sends structured student admission application email to both recipient emails
  * @param {Object} application - Full student application payload
  */
 export const sendStudentApplicationNotification = async (application) => {
@@ -125,35 +137,42 @@ export const sendStudentApplicationNotification = async (application) => {
   const displayClass = currentClass ? `${currentClass} (${academicStage || targetClass})` : (targetClass || academicStage || 'N/A');
   const formattedSubjects = Array.isArray(subjects) ? subjects.join(', ') : subjects || 'N/A';
 
-  try {
-    const response = await fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        _subject: `New Student Admission Application - ${fullName} (${displayClass})`,
-        "Application ID": applicationId,
-        "Student Name": fullName,
-        "Date of Birth": dob || 'Not Specified',
-        "Student Email": email,
-        "Student Contact": contactNumber,
-        "Current Class / Grade": currentClass || 'Not Specified',
-        "Academic Stage": academicStage || targetClass || 'Not Specified',
-        "Class Applying For": displayClass,
-        "Subjects of Interest": formattedSubjects,
-        "Previous School": previousSchool || 'N/A',
-        "Parent / Guardian Name": parentName,
-        "Parent Contact Number": parentContact,
-        "Reason / Message": message || 'None',
-        "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
-      }),
-    });
+  const payload = {
+    _subject: `New Student Admission Application - ${fullName} (${displayClass})`,
+    _cc: SECONDARY_TARGET_EMAIL,
+    "Application ID": applicationId,
+    "Student Name": fullName,
+    "Date of Birth": dob || 'Not Specified',
+    "Student Email": email,
+    "Student Contact": contactNumber,
+    "Current Class / Grade": currentClass || 'Not Specified',
+    "Academic Stage": academicStage || targetClass || 'Not Specified',
+    "Class Applying For": displayClass,
+    "Subjects of Interest": formattedSubjects,
+    "Previous School": previousSchool || 'N/A',
+    "Parent / Guardian Name": parentName,
+    "Parent Contact Number": parentContact,
+    "Reason / Message": message || 'None',
+    "Submitted At": new Date(appliedAt || Date.now()).toLocaleString(),
+  };
 
-    if (response.ok) {
-      console.log(`[Email Service] Student application email successfully delivered to ${RECRUITMENT_TARGET_EMAIL}`);
-      return { success: true, deliveredTo: RECRUITMENT_TARGET_EMAIL };
+  try {
+    const [resPrimary, resSecondary] = await Promise.allSettled([
+      fetch(`https://formsubmit.co/ajax/${RECRUITMENT_TARGET_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`https://formsubmit.co/ajax/${SECONDARY_TARGET_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    ]);
+
+    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
+      console.log(`[Email Service] Student application email successfully delivered to ${TARGET_EMAILS_STRING}`);
+      return { success: true, deliveredTo: TARGET_EMAILS_STRING };
     }
   } catch (err) {
     console.warn('[Email Service] Student application email dispatch warning:', err.message);
@@ -208,7 +227,8 @@ export const sendCandidateStatusNotification = async (application, newStatus, no
       },
       body: JSON.stringify({
         _subject: customSubject,
-        _replyto: 'anujdhiman1706@gmail.com',
+        _replyto: TARGET_EMAILS_STRING,
+        _cc: SECONDARY_TARGET_EMAIL,
         _captcha: 'false',
         _autorespond: simpleMessage,
         "Message": simpleMessage,
@@ -225,4 +245,3 @@ export const sendCandidateStatusNotification = async (application, newStatus, no
 
   return { success: true, message: `Status update recorded for candidate ${fullName}` };
 };
-

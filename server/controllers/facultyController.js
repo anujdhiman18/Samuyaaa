@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Faculty from '../models/Faculty.js';
-import { getTransporter, EMAIL_TARGET } from '../config/nodemailer.js';
+import { getTransporter, EMAIL_TARGET, PRIMARY_EMAIL_TARGET, SECONDARY_EMAIL_TARGET, ALL_EMAIL_TARGETS, EMAIL_TARGET_STRING } from '../config/nodemailer.js';
 
 // @desc    Get all faculty members
 // @route   GET /api/faculty
@@ -315,8 +315,9 @@ Application ID: ${applicationId}
 
       const transporter = getTransporter();
       const mailOptions = {
-        from: `"Saumyaa Studies Recruitment" <${process.env.EMAIL_USER || EMAIL_TARGET}>`,
-        to: EMAIL_TARGET,
+        from: `"Saumyaa Studies Recruitment" <${process.env.EMAIL_USER || PRIMARY_EMAIL_TARGET}>`,
+        to: EMAIL_TARGET_STRING,
+        cc: SECONDARY_EMAIL_TARGET,
         subject: `New Faculty Application - ${fullName}`,
         text: plainTextBody,
         html: htmlBody,
@@ -324,10 +325,10 @@ Application ID: ${applicationId}
       };
 
       const info = await transporter.sendMail(mailOptions);
-      console.log(`✅ [Nodemailer] Email sent to ${EMAIL_TARGET}: ${info.messageId}`);
+      console.log(`✅ [Nodemailer] Email sent to ${EMAIL_TARGET_STRING}: ${info.messageId}`);
       return res.json({
         success: true,
-        message: `Faculty application email sent to ${EMAIL_TARGET} via Nodemailer`,
+        message: `Faculty application email sent to ${EMAIL_TARGET_STRING} via Nodemailer`,
         messageId: info.messageId,
       });
     } catch (nodemailerErr) {
@@ -337,50 +338,57 @@ Application ID: ${applicationId}
 
   // Strategy 2: Direct Fail-Safe Email Dispatch Engine (FormSubmit API)
   try {
-    const fsResponse = await fetch(`https://formsubmit.co/ajax/${EMAIL_TARGET}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        _subject: `New Faculty Application - ${fullName}`,
-        "Application ID": applicationId,
-        "Full Name": fullName,
-        "Date of Birth": dob,
-        "Gender": gender,
-        "Contact Number": contactNumber,
-        "Email": email,
-        "Current Address": currentAddress,
-        "Permanent Address": permanentAddress,
-        "Highest Degree": highestDegree,
-        "University": universityName,
-        "Graduation Year": graduationYear,
-        "Specialization": specialization,
-        "Certifications": certifications || 'None',
-        "Teaching Experience": totalExperience,
-        "Current Status": currentStatus,
-        "Previous Institutions": previousInstitutions,
-        "Subjects Taught": subjectsTaught,
-        "Position Applied": positionApplied,
-        "Subjects Expertise": formattedExpertise,
-        "Preferred Time Slot": preferredTimeSlot,
-        "Expected Joining Date": expectedJoiningDate,
-        "Why Join": whyJoinReason,
-        "Skills & Achievements": skillsAchievements || 'None',
-        "References": referencesText,
-        "Resume File": resumeFileName,
-        "ID Proof File": idProofFileName,
-        "Certificates File": certificatesFileName,
-        "Submitted At": new Date(appliedAt).toLocaleString(),
-      }),
-    });
+    const fsPayload = {
+      _subject: `New Faculty Application - ${fullName}`,
+      _cc: SECONDARY_EMAIL_TARGET,
+      "Application ID": applicationId,
+      "Full Name": fullName,
+      "Date of Birth": dob,
+      "Gender": gender,
+      "Contact Number": contactNumber,
+      "Email": email,
+      "Current Address": currentAddress,
+      "Permanent Address": permanentAddress,
+      "Highest Degree": highestDegree,
+      "University": universityName,
+      "Graduation Year": graduationYear,
+      "Specialization": specialization,
+      "Certifications": certifications || 'None',
+      "Teaching Experience": totalExperience,
+      "Current Status": currentStatus,
+      "Previous Institutions": previousInstitutions,
+      "Subjects Taught": subjectsTaught,
+      "Position Applied": positionApplied,
+      "Subjects Expertise": formattedExpertise,
+      "Preferred Time Slot": preferredTimeSlot,
+      "Expected Joining Date": expectedJoiningDate,
+      "Why Join": whyJoinReason,
+      "Skills & Achievements": skillsAchievements || 'None',
+      "References": referencesText,
+      "Resume File": resumeFileName,
+      "ID Proof File": idProofFileName,
+      "Certificates File": certificatesFileName,
+      "Submitted At": new Date(appliedAt).toLocaleString(),
+    };
 
-    if (fsResponse.ok) {
-      console.log(`✅ [Email Dispatcher] Application data delivered to ${EMAIL_TARGET}`);
+    const [resPrimary, resSecondary] = await Promise.allSettled([
+      fetch(`https://formsubmit.co/ajax/${PRIMARY_EMAIL_TARGET}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(fsPayload),
+      }),
+      fetch(`https://formsubmit.co/ajax/${SECONDARY_EMAIL_TARGET}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(fsPayload),
+      }),
+    ]);
+
+    if ((resPrimary.status === 'fulfilled' && resPrimary.value.ok) || (resSecondary.status === 'fulfilled' && resSecondary.value.ok)) {
+      console.log(`✅ [Email Dispatcher] Application data delivered to ${EMAIL_TARGET_STRING}`);
       return res.json({
         success: true,
-        message: `Faculty Application email delivered to ${EMAIL_TARGET}`,
+        message: `Faculty Application email delivered to ${EMAIL_TARGET_STRING}`,
       });
     }
   } catch (fsError) {
@@ -389,7 +397,7 @@ Application ID: ${applicationId}
 
   return res.json({
     success: true,
-    message: `Application saved to database and queued for ${EMAIL_TARGET}`,
+    message: `Application saved to database and queued for ${EMAIL_TARGET_STRING}`,
   });
 };
 
