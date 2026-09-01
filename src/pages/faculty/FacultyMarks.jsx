@@ -3,7 +3,7 @@ import { facultyPanelService, marksService, subjectService, getStoredSubjects, g
 import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { calculateGradeBreakdown, getGradeMeta, calculateGrade, ASSESSMENT_TYPES_CONFIG } from '../../utils/gradeUtils';
+import { calculateGradeBreakdown, getGradeMeta, calculateGrade, calculateEntranceExamResult, ASSESSMENT_TYPES_CONFIG } from '../../utils/gradeUtils';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
@@ -25,6 +25,7 @@ export default function FacultyMarks() {
   const [allSubjectsList, setAllSubjectsList] = useState([]);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [admittedMap, setAdmittedMap] = useState({});
 
   useEffect(() => {
     const loadSubjects = async () => {
@@ -198,10 +199,11 @@ export default function FacultyMarks() {
       list.forEach((st) => {
         const stId = String(st._id || st.id);
         newMap[stId] = {
-          internalMarks: 22,    // max 25
-          midTermMarks: 40,     // max 50
-          assignmentMarks: 16,  // max 20
-          finalExamMarks: 82,   // max 100
+          internalMarks: 22,       // max 25
+          midTermMarks: 40,        // max 50
+          assignmentMarks: 16,     // max 20
+          finalExamMarks: 82,      // max 100
+          entranceExamMarks: 18,   // max 25 (Standalone Entrance Test)
           totalMax: 195,
         };
       });
@@ -231,6 +233,14 @@ export default function FacultyMarks() {
     }));
   };
 
+  const handleAdmitStudent = (studentId, studentName) => {
+    setAdmittedMap((prev) => ({
+      ...prev,
+      [studentId]: true,
+    }));
+    addToast(`Applicant ${studentName} successfully admitted & enrolled into regular class roster!`, 'success');
+  };
+
   // Save per-assessment type marks or combined gradebook
   const handleSaveMarks = async () => {
     if (students.length === 0) return;
@@ -247,13 +257,14 @@ export default function FacultyMarks() {
 
       const marksList = students.map((st) => {
         const stId = String(st._id || st.id);
-        const m = marksMap[stId] || { internalMarks: 20, midTermMarks: 40, assignmentMarks: 16, finalExamMarks: 80, totalMax: 195 };
+        const m = marksMap[stId] || { internalMarks: 20, midTermMarks: 40, assignmentMarks: 16, finalExamMarks: 80, entranceExamMarks: 18, totalMax: 195 };
         return {
           studentId: stId,
           internalMarks: Number(m.internalMarks) || 0,
           midTermMarks: Number(m.midTermMarks) || 0,
           assignmentMarks: Number(m.assignmentMarks) || 0,
           finalExamMarks: Number(m.finalExamMarks) || 0,
+          entranceExamMarks: Number(m.entranceExamMarks) || 0,
           totalMax: 195,
         };
       });
@@ -330,6 +341,7 @@ export default function FacultyMarks() {
   };
 
   const isCombinedView = examType === 'Combined / Overall Gradebook';
+  const isEntranceExamView = examType === 'Entrance Exam – New Students';
   const currentAssessmentConfig = ASSESSMENT_TYPES_CONFIG[examType];
 
   return (
@@ -344,6 +356,8 @@ export default function FacultyMarks() {
           <p className="font-body text-xs text-on-surface-variant mt-1">
             {isCombinedView
               ? 'Combined Gradebook View — Raw Total (/195), 100-Mark Conversion, & Official Grade Publishing'
+              : isEntranceExamView
+              ? 'Entrance Exam Evaluation — Standalone test for prospective incoming applicants (Max 25, Cutoff 40%)'
               : `Independent Assessment Entry — ${examType} (Max ${currentAssessmentConfig?.max || 100} marks)`}
           </p>
         </div>
@@ -434,6 +448,7 @@ export default function FacultyMarks() {
             <option value="Mid-Term Practical">Mid-Term Practical (Max 50)</option>
             <option value="Assignment Score">Assignment Score (Max 20)</option>
             <option value="Final Term Board Prep">Final Term Board Prep (Max 100)</option>
+            <option value="Entrance Exam – New Students">Entrance Exam – New Students (Max 25)</option>
             <option value="Combined / Overall Gradebook">Combined / Overall Gradebook (Summary View)</option>
           </select>
         </div>
@@ -466,6 +481,79 @@ export default function FacultyMarks() {
         ) : students.length === 0 ? (
           <div className="p-12 text-center text-xs text-on-surface-variant">
             No students found for {selectedClass} ({selectedSubject}).
+          </div>
+        ) : isEntranceExamView ? (
+          /* Entrance Exam View for New/Incoming Applicants */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/20 font-headings font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low text-[11px]">
+                  <th className="py-3.5 px-4 whitespace-nowrap">Applicant ID / Roll No.</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Student Name</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Entrance Exam Marks (Max 25)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Percentage (%)</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Result</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap text-center">Admission Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {students.map((st) => {
+                  const stId = String(st._id || st.id);
+                  const m = marksMap[stId] || { entranceExamMarks: 18 };
+                  const obtainedVal = m.entranceExamMarks ?? '';
+                  const evalResult = calculateEntranceExamResult(obtainedVal, 25, 40);
+                  const isAdmitted = Boolean(admittedMap[stId]);
+
+                  return (
+                    <tr key={stId} className="hover:bg-surface-container-lowest transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-primary whitespace-nowrap">
+                        {st.rollNumber || `APP-${stId.substr(0, 6)}`}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-secondary whitespace-nowrap">{st.fullName}</td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <input
+                          type="number"
+                          min={0}
+                          max={25}
+                          value={obtainedVal}
+                          onChange={(e) => handleMarkChange(stId, 'entranceExamMarks', e.target.value, 25)}
+                          className="w-24 px-3 py-1.5 rounded-lg border border-outline-variant/30 text-xs font-bold text-center focus:outline-none focus:border-primary text-secondary bg-white shadow-inner"
+                        />
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-mono font-bold text-primary whitespace-nowrap">
+                        {evalResult.pct}%
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className={`px-3 py-1 rounded-full font-extrabold text-xs border ${evalResult.bgClass}`}>
+                          {evalResult.result}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {evalResult.result === 'Qualified' ? (
+                          isAdmitted ? (
+                            <span className="px-3 py-1 bg-emerald-600 text-white rounded-full font-extrabold text-[11px] inline-flex items-center gap-1 shadow-sm">
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              Admitted
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleAdmitStudent(stId, st.fullName)}
+                              className="px-3 py-1 rounded-full bg-primary text-white hover:shadow-glow-primary text-xs font-bold font-headings transition-all active:scale-95 cursor-pointer"
+                            >
+                              Admit Student
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-on-surface-variant/60 font-semibold italic text-xs">
+                            Not Eligible
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : !isCombinedView ? (
           /* Single Assessment Type View */

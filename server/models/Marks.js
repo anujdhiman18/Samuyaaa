@@ -22,11 +22,27 @@ const marksSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Entrance Exam Data Model for new/prospective incoming students
+    entranceExam: {
+      applicantId: String,
+      name: String,
+      obtained: { type: Number, default: 0, min: 0, max: 25 },
+      percentage: { type: Number, default: 0 },
+      result: { type: String, enum: ['Qualified', 'Not Qualified'], default: 'Not Qualified' },
+      admitted: { type: Boolean, default: false },
+    },
+    entranceExamMarks: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 25,
+    },
     // Map storing independent assessment types:
     // "Internal Assessment 1": { obtained, max: 25 }
     // "Mid-Term Practical": { obtained, max: 50 }
     // "Assignment Score": { obtained, max: 20 }
     // "Final Term Board Prep": { obtained, max: 100 }
+    // "Entrance Exam – New Students": { obtained, max: 25 }
     marksByType: {
       type: Map,
       of: {
@@ -105,6 +121,23 @@ const marksSchema = new mongoose.Schema(
 );
 
 marksSchema.pre('save', function (next) {
+  // Entrance exam standalone calculation
+  if (this.entranceExamMarks !== undefined || (this.entranceExam && this.entranceExam.obtained !== undefined)) {
+    const entranceObtained = Math.max(0, Math.min(25, Number(this.entranceExamMarks ?? this.entranceExam?.obtained) || 0));
+    const entrancePct = Number(((entranceObtained / 25) * 100).toFixed(1));
+    const isQualified = entrancePct >= 40;
+
+    this.entranceExamMarks = entranceObtained;
+    this.entranceExam = {
+      applicantId: this.entranceExam?.applicantId || this.rollNumber || 'APP-2026-001',
+      name: this.entranceExam?.name || this.studentName || 'New Applicant',
+      obtained: entranceObtained,
+      percentage: entrancePct,
+      result: isQualified ? 'Qualified' : 'Not Qualified',
+      admitted: Boolean(this.entranceExam?.admitted),
+    };
+  }
+
   // Sync individual component fields with marksByType map if populated
   if (this.marksByType) {
     const map = this.marksByType;
@@ -120,9 +153,12 @@ marksSchema.pre('save', function (next) {
     if (map.get && map.get('Final Term Board Prep')) {
       this.finalExamMarks = Math.max(0, Math.min(100, Number(map.get('Final Term Board Prep').obtained) || 0));
     }
+    if (map.get && map.get('Entrance Exam – New Students')) {
+      this.entranceExamMarks = Math.max(0, Math.min(25, Number(map.get('Entrance Exam – New Students').obtained) || 0));
+    }
   }
 
-  // Clamp & calculate raw total
+  // Clamp & calculate raw total for 4 regular components (Entrance Exam is excluded from raw total / 195)
   const midTerm = Math.max(0, Math.min(50, Number(this.midTermPracticalMarks) || 0));
   const assignment = Math.max(0, Math.min(20, Number(this.assignmentMarks) || 0));
   const finalExam = Math.max(0, Math.min(100, Number(this.finalExamMarks) || 0));
@@ -143,6 +179,7 @@ marksSchema.pre('save', function (next) {
     'Mid-Term Practical': { obtained: midTerm, max: 50 },
     'Assignment Score': { obtained: assignment, max: 20 },
     'Final Term Board Prep': { obtained: finalExam, max: 100 },
+    'Entrance Exam – New Students': { obtained: this.entranceExamMarks, max: 25 },
   };
 
   // Grade calculation (A+: 90-100, A: 80-89, B+: 70-79, B: 60-69, C: 50-59, D: 35-49, F: <35)

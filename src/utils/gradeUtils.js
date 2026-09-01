@@ -5,6 +5,7 @@
  * - Mid-Term Practical: 50 marks
  * - Assignment Score: 20 marks
  * - Final Term Board Prep: 100 marks
+ * - Entrance Exam – New Students: 25 marks (Standalone)
  * Total Raw Max: 195 marks
  */
 
@@ -13,6 +14,7 @@ export const MAX_MARKS_CONFIG = {
   assignment: 20,
   finalExam: 100,
   internal: 25,
+  entranceExam: 25,
   totalRawMax: 195,
 };
 
@@ -44,6 +46,15 @@ export const ASSESSMENT_TYPES_CONFIG = {
     label: 'Final Term Board Prep',
     max: 100,
     description: 'Final term examination & board prep mock test',
+  },
+  'Entrance Exam – New Students': {
+    key: 'entranceExam',
+    field: 'entranceExamMarks',
+    label: 'Entrance Exam – New Students',
+    max: 25,
+    cutoffPct: 40, // 40% cutoff (10/25)
+    description: 'Evaluation test for new/incoming students prior to enrollment',
+    isStandalone: true,
   },
 };
 
@@ -79,7 +90,26 @@ export const getGradeMeta = (gradeLetter) => {
 };
 
 /**
- * Full breakdown calculation for the 4 component marks:
+ * Entrance Exam result calculation (cutoff 40% = 10/25)
+ */
+export const calculateEntranceExamResult = (obtainedMarks, maxMarks = 25, cutoffPct = 40) => {
+  const obtained = Math.max(0, Math.min(maxMarks, Number(obtainedMarks) || 0));
+  const pct = Number(((obtained / maxMarks) * 100).toFixed(1));
+  const isQualified = pct >= cutoffPct;
+
+  return {
+    obtained,
+    max: maxMarks,
+    pct,
+    result: isQualified ? 'Qualified' : 'Not Qualified',
+    bgClass: isQualified
+      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+      : 'bg-rose-500/10 text-rose-600 border-rose-500/20',
+  };
+};
+
+/**
+ * Full breakdown calculation for the 4 standard component marks (Excludes Entrance Exam):
  * Returns: { internal, midTerm, assignment, finalExam, rawTotal, totalMax, converted100, grade }
  */
 export const calculateGradeBreakdown = (marksObj = {}) => {
