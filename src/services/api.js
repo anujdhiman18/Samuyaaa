@@ -2207,7 +2207,7 @@ export const marksService = {
       else if (pct >= 70) calcGrade = 'B+';
       else if (pct >= 60) calcGrade = 'B';
       else if (pct >= 50) calcGrade = 'C';
-      else if (pct >= 40) calcGrade = 'D';
+      else if (pct >= 35) calcGrade = 'D';
       else calcGrade = 'F';
 
       const todayIso = new Date().toISOString().split('T')[0];
@@ -2227,6 +2227,12 @@ export const marksService = {
         internalMarks: internal,
         theoryMarks: finalExam,
         practicalMarks: internal,
+        marksByType: {
+          'Internal Assessment 1': { obtained: internal, max: 25 },
+          'Mid-Term Practical': { obtained: midTerm, max: 50 },
+          'Assignment Score': { obtained: assignment, max: 20 },
+          'Final Term Board Prep': { obtained: finalExam, max: 100 },
+        },
         marksObtained: totalObtained,
         obtainedMarks: totalObtained,
         totalMarks: totalMax,

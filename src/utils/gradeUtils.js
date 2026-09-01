@@ -1,10 +1,10 @@
 /**
  * Grade Management System Utilities
  * Assessment Components:
- * - Mid-Term: 50 marks
- * - Assignment: 20 marks
- * - Final Exam: 100 marks
- * - Internal: 25 marks
+ * - Internal Assessment 1: 25 marks
+ * - Mid-Term Practical: 50 marks
+ * - Assignment Score: 20 marks
+ * - Final Term Board Prep: 100 marks
  * Total Raw Max: 195 marks
  */
 
@@ -14,6 +14,37 @@ export const MAX_MARKS_CONFIG = {
   finalExam: 100,
   internal: 25,
   totalRawMax: 195,
+};
+
+export const ASSESSMENT_TYPES_CONFIG = {
+  'Internal Assessment 1': {
+    key: 'internal',
+    field: 'internalMarks',
+    label: 'Internal Assessment 1',
+    max: 25,
+    description: 'Continuous classroom evaluation & internal assessment',
+  },
+  'Mid-Term Practical': {
+    key: 'midTerm',
+    field: 'midTermMarks',
+    label: 'Mid-Term Practical',
+    max: 50,
+    description: 'Mid-term practical & lab experimentation score',
+  },
+  'Assignment Score': {
+    key: 'assignment',
+    field: 'assignmentMarks',
+    label: 'Assignment Score',
+    max: 20,
+    description: 'Homework, projects & subject assignment score',
+  },
+  'Final Term Board Prep': {
+    key: 'finalExam',
+    field: 'finalExamMarks',
+    label: 'Final Term Board Prep',
+    max: 100,
+    description: 'Final term examination & board prep mock test',
+  },
 };
 
 export const GRADE_SCALE = [
@@ -49,19 +80,62 @@ export const getGradeMeta = (gradeLetter) => {
 
 /**
  * Full breakdown calculation for the 4 component marks:
- * - Mid-Term (max 50)
- * - Assignment (max 20)
- * - Final Exam (max 100)
- * - Internal (max 25)
- * Returns: { midTerm, assignment, finalExam, internal, rawTotal, totalMax, converted100, grade }
+ * Returns: { internal, midTerm, assignment, finalExam, rawTotal, totalMax, converted100, grade }
  */
 export const calculateGradeBreakdown = (marksObj = {}) => {
-  const midTerm = Math.max(0, Math.min(MAX_MARKS_CONFIG.midTerm, Number(marksObj.midTermMarks ?? marksObj.midTerm) || 0));
-  const assignment = Math.max(0, Math.min(MAX_MARKS_CONFIG.assignment, Number(marksObj.assignmentMarks ?? marksObj.assignment) || 0));
-  const finalExam = Math.max(0, Math.min(MAX_MARKS_CONFIG.finalExam, Number(marksObj.finalExamMarks ?? marksObj.finalExam ?? marksObj.theoryMarks) || 0));
-  const internal = Math.max(0, Math.min(MAX_MARKS_CONFIG.internal, Number(marksObj.internalMarks ?? marksObj.internal ?? marksObj.practicalMarks) || 0));
+  const marksByType = marksObj.marksByType || {};
 
-  const rawTotal = midTerm + assignment + finalExam + internal;
+  const internal = Math.max(
+    0,
+    Math.min(
+      25,
+      Number(
+        marksByType['Internal Assessment 1']?.obtained ??
+          marksObj.internalMarks ??
+          marksObj.internal ??
+          marksObj.practicalMarks
+      ) || 0
+    )
+  );
+
+  const midTerm = Math.max(
+    0,
+    Math.min(
+      50,
+      Number(
+        marksByType['Mid-Term Practical']?.obtained ??
+          marksObj.midTermMarks ??
+          marksObj.midTerm
+      ) || 0
+    )
+  );
+
+  const assignment = Math.max(
+    0,
+    Math.min(
+      20,
+      Number(
+        marksByType['Assignment Score']?.obtained ??
+          marksObj.assignmentMarks ??
+          marksObj.assignment
+      ) || 0
+    )
+  );
+
+  const finalExam = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(
+        marksByType['Final Term Board Prep']?.obtained ??
+          marksObj.finalExamMarks ??
+          marksObj.finalExam ??
+          marksObj.theoryMarks
+      ) || 0
+    )
+  );
+
+  const rawTotal = internal + midTerm + assignment + finalExam;
   const totalMax = MAX_MARKS_CONFIG.totalRawMax; // 195
   
   // Automatic conversion to 100 marks scale
@@ -69,10 +143,10 @@ export const calculateGradeBreakdown = (marksObj = {}) => {
   const grade = calculateGrade(converted100);
 
   return {
+    internal,
     midTerm,
     assignment,
     finalExam,
-    internal,
     rawTotal,
     totalMax,
     converted100,

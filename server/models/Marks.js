@@ -22,7 +22,20 @@ const marksSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Evaluation Components
+    // Map storing independent assessment types:
+    // "Internal Assessment 1": { obtained, max: 25 }
+    // "Mid-Term Practical": { obtained, max: 50 }
+    // "Assignment Score": { obtained, max: 20 }
+    // "Final Term Board Prep": { obtained, max: 100 }
+    marksByType: {
+      type: Map,
+      of: {
+        obtained: Number,
+        max: Number,
+      },
+      default: {},
+    },
+    // Individual Evaluation Components
     midTermPracticalMarks: {
       type: Number,
       default: 0,
@@ -92,6 +105,23 @@ const marksSchema = new mongoose.Schema(
 );
 
 marksSchema.pre('save', function (next) {
+  // Sync individual component fields with marksByType map if populated
+  if (this.marksByType) {
+    const map = this.marksByType;
+    if (map.get && map.get('Internal Assessment 1')) {
+      this.internalAssessmentMarks = Math.max(0, Math.min(25, Number(map.get('Internal Assessment 1').obtained) || 0));
+    }
+    if (map.get && map.get('Mid-Term Practical')) {
+      this.midTermPracticalMarks = Math.max(0, Math.min(50, Number(map.get('Mid-Term Practical').obtained) || 0));
+    }
+    if (map.get && map.get('Assignment Score')) {
+      this.assignmentMarks = Math.max(0, Math.min(20, Number(map.get('Assignment Score').obtained) || 0));
+    }
+    if (map.get && map.get('Final Term Board Prep')) {
+      this.finalExamMarks = Math.max(0, Math.min(100, Number(map.get('Final Term Board Prep').obtained) || 0));
+    }
+  }
+
   // Clamp & calculate raw total
   const midTerm = Math.max(0, Math.min(50, Number(this.midTermPracticalMarks) || 0));
   const assignment = Math.max(0, Math.min(20, Number(this.assignmentMarks) || 0));
@@ -106,6 +136,14 @@ marksSchema.pre('save', function (next) {
   // Formula: convertedScore = (rawTotal / totalMaxPossible) * 100
   this.convertedScore = Number(((this.rawTotal / 195) * 100).toFixed(1));
   this.percentage = this.convertedScore;
+
+  // Sync back into marksByType map
+  this.marksByType = {
+    'Internal Assessment 1': { obtained: internal, max: 25 },
+    'Mid-Term Practical': { obtained: midTerm, max: 50 },
+    'Assignment Score': { obtained: assignment, max: 20 },
+    'Final Term Board Prep': { obtained: finalExam, max: 100 },
+  };
 
   // Grade calculation (A+: 90-100, A: 80-89, B+: 70-79, B: 60-69, C: 50-59, D: 35-49, F: <35)
   if (this.convertedScore >= 90) this.grade = 'A+';
