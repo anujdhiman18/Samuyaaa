@@ -4071,11 +4071,11 @@ export const getStoredStudentApplications = () => {
     const list = data ? JSON.parse(data) : initialMockStudentApplications;
     return list
       .filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)) && !deleted.includes(String(a.applicationId)))
-      .map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
+      .map((a) => ({ ...a, targetClass: a.targetClass || a.currentClass || '10th' }));
   } catch (e) {
     return initialMockStudentApplications
       .filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)) && !deleted.includes(String(a.applicationId)))
-      .map((a) => ({ ...a, targetClass: normalizeClassCode(a.targetClass) }));
+      .map((a) => ({ ...a, targetClass: a.targetClass || a.currentClass || '10th' }));
   }
 };
 

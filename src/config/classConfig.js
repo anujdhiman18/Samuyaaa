@@ -146,26 +146,22 @@ export const isExactClassMatch = (studentClass, queryClass) => {
  */
 export const formatClassLabel = (code, currentClass) => {
   if (currentClass) {
-    const stage = getStageForClass(currentClass) || getStageForClass(code);
-    return stage ? `${currentClass} (${stage})` : currentClass;
+    return currentClass.startsWith('Class') ? currentClass : `Class ${currentClass}`;
   }
 
-  if (!code) return 'S2 — 6th to 10th';
-  if (code === 'S1') return 'S1 — Nursery to 5th';
-  if (code === 'S2') return 'S2 — 6th to 10th';
-  if (code === 'S3') return 'S3 — 11th to 12th';
-  if (code === 'S4') return 'S4 — Higher Education';
-  if (code === 'All') return 'All Categories';
+  if (!code) return 'Class 10th';
+  if (code === 'S1') return 'Class 5th (S1)';
+  if (code === 'S2') return 'Class 10th (S2)';
+  if (code === 'S3') return 'Class 11th / 12th (S3)';
+  if (code === 'S4') return 'Higher Education (S4)';
+  if (code === 'All') return 'All Classes';
 
-  // Check if code itself is an exact class
-  const derivedStage = getStageForClass(code);
-  if (derivedStage && derivedStage !== code) {
-    return `${code} (${derivedStage})`;
+  if (code.startsWith('Class')) return code;
+  if (['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'].includes(code)) {
+    return `Class ${code}`;
   }
 
-  // Legacy fallback mapping
-  const normalized = normalizeClassCode(code);
-  return formatClassLabel(normalized);
+  return code;
 };
 
 /**
