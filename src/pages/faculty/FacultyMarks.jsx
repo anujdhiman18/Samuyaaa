@@ -3,7 +3,8 @@ import { facultyPanelService, marksService, subjectService, getStoredSubjects, g
 import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import { calculateGradeBreakdown, getGradeMeta } from '../../utils/gradeUtils';
+import { calculateGradeBreakdown, getGradeMeta, MAX_MARKS_CONFIG } from '../../utils/gradeUtils';
+import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 
@@ -11,6 +12,13 @@ const CATEGORY_OPTIONS = [
   { code: 'All', label: 'All Categories (S1-S4)' },
   ...CLASS_CATEGORIES.map((c) => ({ code: c.code, label: `${c.code} — ${c.description}` })),
 ];
+
+const FIELD_MAX = {
+  midTermMarks: MAX_MARKS_CONFIG.midTerm,      // 50
+  assignmentMarks: MAX_MARKS_CONFIG.assignment,  // 20
+  finalExamMarks: MAX_MARKS_CONFIG.finalExam,    // 100
+  internalMarks: MAX_MARKS_CONFIG.internal,      // 25
+};
 
 export default function FacultyMarks() {
   const { addToast } = useToast();
@@ -22,6 +30,8 @@ export default function FacultyMarks() {
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [allSubjectsList, setAllSubjectsList] = useState([]);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
 
   useEffect(() => {
     const loadSubjects = async () => {
@@ -119,7 +129,6 @@ export default function FacultyMarks() {
       }));
     }
 
-    // Fallback: If no subjects are specifically configured for this class/stage, return all active subjects in system
     return allSubjectsList.filter((s) => s.isActive !== false);
   }, [allSubjectsList, selectedClass, userSubjects, isAdmin]);
 
@@ -134,6 +143,9 @@ export default function FacultyMarks() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Key to identify published state in storage
+  const batchKey = `${selectedClass}_${selectedSubject}_${examType}`;
+
   useEffect(() => {
     if (availableSubjects.length > 0) {
       if (!selectedSubject || !availableSubjects.includes(selectedSubject)) {
@@ -146,7 +158,22 @@ export default function FacultyMarks() {
 
   useEffect(() => {
     fetchClassStudents();
-  }, [selectedClass, selectedSubject]);
+    checkPublishedState();
+  }, [selectedClass, selectedSubject, examType]);
+
+  const checkPublishedState = () => {
+    try {
+      const pubData = localStorage.getItem('saumyaa_published_batches');
+      if (pubData) {
+        const pubSet = JSON.parse(pubData);
+        setIsPublished(Boolean(pubSet[batchKey]));
+      } else {
+        setIsPublished(false);
+      }
+    } catch (e) {
+      setIsPublished(false);
+    }
+  };
 
   const fetchClassStudents = async () => {
     setLoading(true);
@@ -194,7 +221,14 @@ export default function FacultyMarks() {
   };
 
   const handleMarkChange = (studentId, field, value) => {
-    const parsedVal = value === '' ? '' : Math.max(0, Number(value) || 0);
+    if (isPublished) {
+      addToast('Marks are published & locked. Click "Unlock & Edit" to make changes.', 'info');
+      return;
+    }
+
+    const maxLimit = FIELD_MAX[field] || 100;
+    const parsedVal = value === '' ? '' : Math.max(0, Math.min(maxLimit, Number(value) || 0));
+
     setMarksMap((prev) => ({
       ...prev,
       [studentId]: {
@@ -204,8 +238,13 @@ export default function FacultyMarks() {
     }));
   };
 
-  const handleSaveMarks = async () => {
+  const handleOpenConfirmModal = () => {
     if (students.length === 0) return;
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    setConfirmModalOpen(false);
     setSaving(true);
     try {
       const currentUserStr = localStorage.getItem('saumyaa_user');
@@ -236,10 +275,20 @@ export default function FacultyMarks() {
         examType,
         marksList,
         publishedBy: facultyName,
+        isPublished: true,
       });
 
       if (res && res.success) {
-        addToast(`Marks published & SMS notifications queued for ${selectedClass} (${selectedSubject})!`, 'success');
+        setIsPublished(true);
+        // Store published status in local storage
+        try {
+          const pubData = localStorage.getItem('saumyaa_published_batches');
+          const pubSet = pubData ? JSON.parse(pubData) : {};
+          pubSet[batchKey] = true;
+          localStorage.setItem('saumyaa_published_batches', JSON.stringify(pubSet));
+        } catch (e) { }
+
+        addToast(`Official Gradebook published & locked for Class ${selectedClass} (${selectedSubject})!`, 'success');
         smsNotificationService.triggerGradeSMSBatch({
           subject: selectedSubject,
           examType,
@@ -250,9 +299,26 @@ export default function FacultyMarks() {
         });
       }
     } catch (err) {
-      addToast('Error publishing marks', 'error');
+      addToast('Error publishing official gradebook', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleUnlock = () => {
+    const nextState = !isPublished;
+    setIsPublished(nextState);
+    try {
+      const pubData = localStorage.getItem('saumyaa_published_batches');
+      const pubSet = pubData ? JSON.parse(pubData) : {};
+      pubSet[batchKey] = nextState;
+      localStorage.setItem('saumyaa_published_batches', JSON.stringify(pubSet));
+    } catch (e) { }
+
+    if (nextState) {
+      addToast('Gradebook locked.', 'info');
+    } else {
+      addToast('Gradebook unlocked for editing.', 'info');
     }
   };
 
@@ -266,18 +332,36 @@ export default function FacultyMarks() {
             Internal Marks &amp; Gradebook
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Manage internal test scores, practical marks, assignment scores, &amp; publish official grades.
+            Manage Mid-Term (50), Assignment (20), Final Exam (100), Internal (25) scores, auto 100 conversion, &amp; publish official grades.
           </p>
         </div>
 
-        <button
-          onClick={handleSaveMarks}
-          disabled={saving || students.length === 0}
-          className="bg-primary text-white font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[18px]">publish</span>
-          {saving ? 'Publishing...' : 'Publish Grades'}
-        </button>
+        <div className="flex items-center gap-3">
+          {isPublished && (
+            <button
+              onClick={handleToggleUnlock}
+              className="px-4 py-2 rounded-full text-xs font-bold font-headings border border-outline-variant/30 text-secondary hover:bg-surface-container-low transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">lock_open</span>
+              Unlock &amp; Edit
+            </button>
+          )}
+
+          <button
+            onClick={handleOpenConfirmModal}
+            disabled={saving || students.length === 0}
+            className={`font-headings font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium transition-all cursor-pointer ${
+              isPublished
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'bg-primary text-white hover:shadow-glow-primary active:scale-95 disabled:opacity-50'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {isPublished ? 'lock' : 'publish'}
+            </span>
+            {saving ? 'Publishing...' : isPublished ? 'Grades Published (Locked)' : 'Publish Grades'}
+          </button>
+        </div>
       </div>
 
       {/* Control Filters: Category -> Class -> Subject -> Exam Type */}
@@ -336,6 +420,24 @@ export default function FacultyMarks() {
         </div>
       </div>
 
+      {/* Lock Banner if published */}
+      {isPublished && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-emerald-600 text-xl">lock</span>
+            <div>
+              <p className="text-xs font-bold text-emerald-900 font-headings">Official Gradebook Published &amp; Locked</p>
+              <p className="text-[11px] text-emerald-700 font-body">
+                Marks records for Class {selectedClass} ({selectedSubject} — {examType}) are published to student/parent portals.
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+            Published
+          </span>
+        </div>
+      )}
+
       {/* Gradebook Table */}
       <div className="bg-white rounded-2xl shadow-premium border border-outline-variant/15 overflow-hidden">
         {loading ? (
@@ -344,7 +446,7 @@ export default function FacultyMarks() {
           </div>
         ) : students.length === 0 ? (
           <div className="p-12 text-center text-xs text-on-surface-variant">
-            No students found.
+            No students found for {selectedClass} ({selectedSubject}).
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -378,9 +480,14 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={50}
+                          disabled={isPublished}
                           value={m.midTermMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'midTermMarks', e.target.value)}
-                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                          className={`w-20 px-2 py-1 rounded-lg border text-xs font-bold text-center focus:outline-none ${
+                            isPublished
+                              ? 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant cursor-not-allowed'
+                              : 'border-outline-variant/30 focus:border-primary text-secondary'
+                          }`}
                         />
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -388,9 +495,14 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={20}
+                          disabled={isPublished}
                           value={m.assignmentMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'assignmentMarks', e.target.value)}
-                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                          className={`w-20 px-2 py-1 rounded-lg border text-xs font-bold text-center focus:outline-none ${
+                            isPublished
+                              ? 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant cursor-not-allowed'
+                              : 'border-outline-variant/30 focus:border-primary text-secondary'
+                          }`}
                         />
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -398,9 +510,14 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={100}
+                          disabled={isPublished}
                           value={m.finalExamMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'finalExamMarks', e.target.value)}
-                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                          className={`w-20 px-2 py-1 rounded-lg border text-xs font-bold text-center focus:outline-none ${
+                            isPublished
+                              ? 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant cursor-not-allowed'
+                              : 'border-outline-variant/30 focus:border-primary text-secondary'
+                          }`}
                         />
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -408,16 +525,21 @@ export default function FacultyMarks() {
                           type="number"
                           min={0}
                           max={25}
+                          disabled={isPublished}
                           value={m.internalMarks ?? ''}
                           onChange={(e) => handleMarkChange(stId, 'internalMarks', e.target.value)}
-                          className="w-20 px-2 py-1 rounded-lg border border-outline-variant/30 text-xs font-bold focus:outline-none focus:border-primary text-center"
+                          className={`w-20 px-2 py-1 rounded-lg border text-xs font-bold text-center focus:outline-none ${
+                            isPublished
+                              ? 'bg-surface-container-low border-outline-variant/20 text-on-surface-variant cursor-not-allowed'
+                              : 'border-outline-variant/30 focus:border-primary text-secondary'
+                          }`}
                         />
                       </td>
-                      <td className="py-3 px-4 font-extrabold text-secondary text-center whitespace-nowrap">
+                      <td className="py-3 px-4 font-extrabold text-secondary text-center whitespace-nowrap font-mono">
                         {breakdown.rawTotal} / {breakdown.totalMax}
                       </td>
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className="font-extrabold text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                        <span className="font-extrabold text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-mono">
                           {breakdown.converted100} / 100
                         </span>
                       </td>
@@ -434,6 +556,17 @@ export default function FacultyMarks() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal before Publishing */}
+      <ConfirmModal
+        isOpen={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={handleConfirmPublish}
+        title="Publish Official Gradebook"
+        message={`Are you sure you want to publish the official grades for Class ${selectedClass} (${selectedSubject} - ${examType})? This action will lock all student marks entries and dispatch official grade SMS dispatches.`}
+        confirmText="Confirm &amp; Publish"
+        loading={saving}
+      />
     </div>
   );
 }
