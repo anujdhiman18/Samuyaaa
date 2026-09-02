@@ -477,16 +477,46 @@ export default function FacultyProfile() {
                     <div className="mt-3 space-y-1.5">
                       <span className="font-bold text-secondary text-[11px] block">Requested Modifications:</span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        {req.requestedValues && Object.keys(req.requestedValues).map((key) => (
-                          <div key={key} className="p-2.5 rounded-lg bg-white border border-outline-variant/15 space-y-0.5">
-                            <span className="text-[10px] font-bold uppercase text-primary tracking-wider">{key.replace('_', ' ')}</span>
-                            <div className="flex items-center gap-1.5 text-[11px]">
-                              <span className="line-through text-on-surface-variant/70">{req.currentValues?.[key] || '—'}</span>
-                              <span className="material-symbols-outlined text-xs text-primary">arrow_forward</span>
-                              <span className="font-bold text-secondary">{req.requestedValues[key]}</span>
+                        {req.requestedValues && Object.keys(req.requestedValues).map((key) => {
+                          const isPhoto = key === 'photo_url' || key === 'photo' || key === 'avatar';
+                          const fieldLabel = isPhoto ? 'Profile Photo' : key.replace(/_/g, ' ');
+                          const oldVal = req.currentValues?.[key];
+                          const newVal = req.requestedValues[key];
+
+                          return (
+                            <div key={key} className={`p-3 rounded-xl bg-white border border-outline-variant/15 space-y-1.5 overflow-hidden ${isPhoto ? 'sm:col-span-2' : ''}`}>
+                              <span className="text-[10px] font-bold uppercase text-primary tracking-wider block capitalize">{fieldLabel}</span>
+                              
+                              {isPhoto ? (
+                                <div className="flex items-center gap-3 flex-wrap pt-0.5">
+                                  <div className="flex items-center gap-2 bg-surface-container-low px-2.5 py-1.5 rounded-xl border border-outline-variant/20">
+                                    {oldVal ? (
+                                      <img src={oldVal} alt="Current" className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0" />
+                                    ) : (
+                                      <span className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant/40 shrink-0">
+                                        <span className="material-symbols-outlined text-base">person</span>
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] font-bold text-on-surface-variant/80 line-through">Old Photo</span>
+                                  </div>
+
+                                  <span className="material-symbols-outlined text-sm text-primary shrink-0">arrow_forward</span>
+
+                                  <div className="flex items-center gap-2 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                                    <img src={newVal} alt="New" className="w-8 h-8 rounded-full object-cover border-2 border-emerald-500 shadow-sm shrink-0" />
+                                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">New Photo</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-[11px] flex-wrap break-all">
+                                  <span className="line-through text-on-surface-variant/70">{oldVal || '—'}</span>
+                                  <span className="material-symbols-outlined text-xs text-primary shrink-0">arrow_forward</span>
+                                  <span className="font-bold text-secondary">{newVal}</span>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 

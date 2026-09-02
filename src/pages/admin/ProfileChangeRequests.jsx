@@ -273,20 +273,48 @@ export default function ProfileChangeRequests() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/15">
-                      {req.requestedValues && Object.keys(req.requestedValues).map((key) => (
-                        <tr key={key} className="hover:bg-surface-container-lowest/60">
-                          <td className="p-3 font-bold text-secondary capitalize">
-                            {key.replace('_', ' ')}
-                          </td>
-                          <td className="p-3 text-on-surface-variant line-through bg-rose-50/20 font-mono text-[11px]">
-                            {req.currentValues?.[key] || '—'}
-                          </td>
-                          <td className="p-3 font-bold text-emerald-800 bg-emerald-50/30 font-mono text-[11px] flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-xs text-emerald-600">arrow_forward</span>
-                            {req.requestedValues[key]}
-                          </td>
-                        </tr>
-                      ))}
+                      {req.requestedValues && Object.keys(req.requestedValues).map((key) => {
+                        const isPhoto = key === 'photo_url' || key === 'photo' || key === 'avatar';
+                        const fieldLabel = isPhoto ? 'Profile Photo' : key.replace(/_/g, ' ');
+                        const oldVal = req.currentValues?.[key];
+                        const newVal = req.requestedValues[key];
+
+                        return (
+                          <tr key={key} className="hover:bg-surface-container-lowest/60">
+                            <td className="p-3 font-bold text-secondary capitalize whitespace-nowrap">
+                              {fieldLabel}
+                            </td>
+                            <td className="p-3 text-on-surface-variant bg-rose-50/20 text-[11px]">
+                              {isPhoto ? (
+                                <div className="flex items-center gap-2">
+                                  {oldVal ? (
+                                    <img src={oldVal} alt="Old Photo" className="w-8 h-8 rounded-full object-cover border border-outline-variant/30 shrink-0" />
+                                  ) : (
+                                    <span className="text-on-surface-variant/50">—</span>
+                                  )}
+                                  <span className="line-through text-on-surface-variant/70 font-mono text-[10px]">Previous</span>
+                                </div>
+                              ) : (
+                                <span className="line-through font-mono break-all">{oldVal || '—'}</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-bold text-emerald-800 bg-emerald-50/30 text-[11px]">
+                              {isPhoto ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-xs text-emerald-600 shrink-0">arrow_forward</span>
+                                  <img src={newVal} alt="New Photo" className="w-8 h-8 rounded-full object-cover border-2 border-emerald-500 shadow-sm shrink-0" />
+                                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">New Photo</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 font-mono break-all">
+                                  <span className="material-symbols-outlined text-xs text-emerald-600 shrink-0">arrow_forward</span>
+                                  <span>{newVal}</span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
