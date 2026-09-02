@@ -4436,24 +4436,43 @@ export const credentialRequestService = {
 // Faculty Profile Change Request Service (Admin Approval Workflow & 30-Day Cooldown)
 export const facultyProfileRequestService = {
   getMyRequests: async (facultyId, facultyEmail) => {
-    const backendRes = await apiCall('/faculty-panel/profile-change-requests');
-    if (backendRes && backendRes.success) {
-      return backendRes;
-    }
-
-    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
-    let list = fsReqs || [];
+    let remoteList = [];
     try {
-      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) list = JSON.parse(stored);
+      const backendRes = await apiCall('/faculty-panel/profile-change-requests');
+      if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
+        remoteList = backendRes.requests;
+      }
     } catch (e) {}
 
-    const myReqs = list.filter(
-      (r) =>
-        (facultyId && (String(r.facultyId) === String(facultyId) || String(r.facultyId) === 'f_jitender')) ||
-        (facultyEmail && r.facultyEmail && r.facultyEmail.toLowerCase() === String(facultyEmail).toLowerCase()) ||
-        (!facultyId && !facultyEmail)
-    );
+    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let localStored = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) localStored = JSON.parse(stored);
+    } catch (e) {}
+
+    const map = new Map();
+    remoteList.forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
+    (fsReqs || []).forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
+    localStored.forEach((r) => {
+      if (r?._id || r?.id) {
+        const idStr = String(r._id || r.id);
+        map.set(idStr, { ...(map.get(idStr) || {}), ...r });
+      }
+    });
+
+    let list = Array.from(map.values());
+    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+
+    const targetId = facultyId ? String(facultyId).toLowerCase() : '';
+    const targetEmail = facultyEmail ? String(facultyEmail).toLowerCase() : '';
+
+    const myReqs = list.filter((r) => {
+      const rId = String(r.facultyId || '').toLowerCase();
+      const rEmail = String(r.facultyEmail || '').toLowerCase();
+      if (!targetId && !targetEmail) return true;
+      return (targetId && (rId === targetId || rId === 'f_jitender')) || (targetEmail && rEmail === targetEmail);
+    });
 
     myReqs.sort((a, b) => new Date(b.requestDate || b.requestedAt || 0) - new Date(a.requestDate || a.requestedAt || 0));
 
@@ -4498,6 +4517,7 @@ export const facultyProfileRequestService = {
   },
 
   submitRequest: async (requestData) => {
+    let remoteReq = null;
     const baseUrl = getApiBaseUrl();
     if (baseUrl) {
       try {
@@ -4513,10 +4533,13 @@ export const facultyProfileRequestService = {
 
         clearTimeout(timeoutId);
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || 'Request failed');
+        if (res.ok && data.request) {
+          remoteReq = data.request;
+        } else if (!res.ok && data.message) {
+          if (data.message.includes('submitted on') || data.message.includes('pending') || data.message.includes('required')) {
+            throw new Error(data.message);
+          }
         }
-        return data;
       } catch (err) {
         if (err.message && (err.message.includes('submitted on') || err.message.includes('pending') || err.message.includes('required') || err.message.includes('changes'))) {
           throw err;
@@ -4539,29 +4562,12 @@ export const facultyProfileRequestService = {
         (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
     );
 
-    if (hasPending) {
+    if (hasPending && !remoteReq) {
       throw new Error('You already have a pending profile change request under review by Administrator.');
     }
 
-    const myPrev = list.filter(
-      (r) =>
-        String(r.facultyId) === String(facultyId) ||
-        (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail)
-    ).sort((a, b) => new Date(b.requestDate || 0) - new Date(a.requestDate || 0));
-
-    if (myPrev.length > 0 && myPrev[0].requestDate) {
-      const lastDate = new Date(myPrev[0].requestDate);
-      const nextDate = new Date(lastDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (new Date() < nextDate) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const lastFormatted = `${lastDate.getDate()} ${months[lastDate.getMonth()]} ${lastDate.getFullYear()}`;
-        const nextFormatted = `${nextDate.getDate()} ${months[nextDate.getMonth()]} ${nextDate.getFullYear()}`;
-        throw new Error(`Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`);
-      }
-    }
-
-    const id = 'freq_' + Date.now();
-    const newReq = {
+    const id = remoteReq?._id || remoteReq?.id || ('freq_' + Date.now());
+    const newReq = remoteReq || {
       _id: id,
       id,
       facultyId,
@@ -4578,13 +4584,20 @@ export const facultyProfileRequestService = {
     };
 
     try {
-      await setDoc(doc(db, 'faculty_profile_requests', id), newReq);
+      await setDoc(doc(db, 'faculty_profile_requests', String(id)), newReq);
     } catch (fsErr) {
       console.warn('Firestore setDoc profile request warning:', fsErr.message);
     }
 
-    list = [newReq, ...list];
+    // Merge into local list
+    const existingIdx = list.findIndex((r) => String(r._id || r.id) === String(id));
+    if (existingIdx !== -1) {
+      list[existingIdx] = newReq;
+    } else {
+      list = [newReq, ...list];
+    }
     localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    notifyDataUpdate();
 
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const reqDateObj = new Date();
@@ -4607,34 +4620,49 @@ export const facultyProfileRequestService = {
   },
 
   getAllRequests: async (statusFilter) => {
-    const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
-    if (backendRes && backendRes.success) {
-      return backendRes;
-    }
-
-    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
-    let list = fsReqs || [];
+    let remoteList = [];
     try {
-      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) list = JSON.parse(stored);
+      const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
+      if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
+        remoteList = backendRes.requests;
+      }
     } catch (e) {}
 
+    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let localStored = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) localStored = JSON.parse(stored);
+    } catch (e) {}
+
+    const map = new Map();
+    remoteList.forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
+    (fsReqs || []).forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
+    localStored.forEach((r) => {
+      if (r?._id || r?.id) {
+        const idStr = String(r._id || r.id);
+        map.set(idStr, { ...(map.get(idStr) || {}), ...r });
+      }
+    });
+
+    let list = Array.from(map.values());
+    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+
     if (statusFilter && statusFilter !== 'All') {
-      list = list.filter((r) => r.status === statusFilter);
+      list = list.filter((r) => String(r.status).toLowerCase() === String(statusFilter).toLowerCase());
     }
-    list.sort((a, b) => new Date(b.requestDate || 0) - new Date(a.requestDate || 0));
+    list.sort((a, b) => new Date(b.requestDate || b.requestedAt || 0) - new Date(a.requestDate || a.requestedAt || 0));
 
     return { success: true, count: list.length, requests: list };
   },
 
   approveRequest: async (requestId, adminComments = '') => {
-    const backendRes = await apiCall(`/admin/profile-change-requests/${requestId}/approve`, {
-      method: 'PUT',
-      body: JSON.stringify({ adminComments }),
-    });
-    if (backendRes && backendRes.success) {
-      return backendRes;
-    }
+    try {
+      await apiCall(`/admin/profile-change-requests/${requestId}/approve`, {
+        method: 'PUT',
+        body: JSON.stringify({ adminComments }),
+      });
+    } catch (e) {}
 
     let list = [];
     try {
@@ -4642,12 +4670,15 @@ export const facultyProfileRequestService = {
       if (stored) list = JSON.parse(stored);
     } catch (e) {}
 
-    const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
+    const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));
     if (idx !== -1) {
-      list[idx].status = 'Approved';
-      list[idx].adminComments = adminComments || 'Approved by System Admin';
-      list[idx].reviewedDate = new Date().toISOString();
-      list[idx].reviewedByName = 'System Admin';
+      list[idx] = {
+        ...list[idx],
+        status: 'Approved',
+        adminComments: adminComments || 'Approved by System Admin',
+        reviewedDate: new Date().toISOString(),
+        reviewedByName: 'System Admin',
+      };
 
       try {
         await setDoc(doc(db, 'faculty_profile_requests', String(requestId)), list[idx], { merge: true });
@@ -4659,30 +4690,17 @@ export const facultyProfileRequestService = {
       const facultyId = reqItem.facultyId;
       const updates = reqItem.requestedValues || {};
 
-      try {
-        const storedFac = localStorage.getItem('mock_faculty');
-        if (storedFac) {
-          const facList = JSON.parse(storedFac);
-          const fIdx = facList.findIndex((f) => String(f._id || f.id) === String(facultyId));
-          if (fIdx !== -1) {
-            Object.assign(facList[fIdx], updates);
-            localStorage.setItem('mock_faculty', JSON.stringify(facList));
-          }
+      // Apply updates directly via facultyService
+      if (facultyId && Object.keys(updates).length > 0) {
+        try {
+          await facultyService.updateFaculty(facultyId, updates);
+        } catch (fErr) {
+          console.warn('Error applying approved profile updates to faculty:', fErr);
         }
-      } catch (e) {}
-
-      try {
-        const currUserStr = localStorage.getItem('saumyaa_user');
-        if (currUserStr) {
-          const currUser = JSON.parse(currUserStr);
-          if (String(currUser._id || currUser.id) === String(facultyId)) {
-            Object.assign(currUser, updates);
-            localStorage.setItem('saumyaa_user', JSON.stringify(currUser));
-          }
-        }
-      } catch (e) {}
+      }
     }
 
+    notifyDataUpdate();
     return { success: true, message: 'Faculty profile change request approved and faculty profile updated successfully!' };
   },
 
@@ -4691,13 +4709,12 @@ export const facultyProfileRequestService = {
       throw new Error('Rejection reason / admin comment is required when rejecting a request.');
     }
 
-    const backendRes = await apiCall(`/admin/profile-change-requests/${requestId}/reject`, {
-      method: 'PUT',
-      body: JSON.stringify({ adminComments }),
-    });
-    if (backendRes && backendRes.success) {
-      return backendRes;
-    }
+    try {
+      await apiCall(`/admin/profile-change-requests/${requestId}/reject`, {
+        method: 'PUT',
+        body: JSON.stringify({ adminComments }),
+      });
+    } catch (e) {}
 
     let list = [];
     try {
@@ -4705,12 +4722,15 @@ export const facultyProfileRequestService = {
       if (stored) list = JSON.parse(stored);
     } catch (e) {}
 
-    const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
+    const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));
     if (idx !== -1) {
-      list[idx].status = 'Rejected';
-      list[idx].adminComments = adminComments.trim();
-      list[idx].reviewedDate = new Date().toISOString();
-      list[idx].reviewedByName = 'System Admin';
+      list[idx] = {
+        ...list[idx],
+        status: 'Rejected',
+        adminComments: adminComments.trim(),
+        reviewedDate: new Date().toISOString(),
+        reviewedByName: 'System Admin',
+      };
 
       try {
         await setDoc(doc(db, 'faculty_profile_requests', String(requestId)), list[idx], { merge: true });
@@ -4719,6 +4739,7 @@ export const facultyProfileRequestService = {
       localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
     }
 
+    notifyDataUpdate();
     return { success: true, message: 'Faculty profile change request rejected.' };
   },
 };

@@ -19,6 +19,18 @@ export default function ProfileChangeRequests() {
 
   useEffect(() => {
     fetchRequests();
+
+    const handleDataUpdate = () => {
+      fetchRequests();
+    };
+
+    window.addEventListener('saumyaa_data_updated', handleDataUpdate);
+    window.addEventListener('storage', handleDataUpdate);
+
+    return () => {
+      window.removeEventListener('saumyaa_data_updated', handleDataUpdate);
+      window.removeEventListener('storage', handleDataUpdate);
+    };
   }, [activeTab]);
 
   const fetchRequests = async () => {
