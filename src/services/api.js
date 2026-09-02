@@ -4558,12 +4558,64 @@ export const credentialRequestService = {
       }
     }
 
-    return { success: true, message: `Credential request ${normalizedAction.toLowerCase()} successfully.` };
+    return { success: true, message: `Credential request processed successfully.` };
   },
 };
 
 // Faculty Profile Change Request Service (Admin Approval Workflow & 30-Day Cooldown)
 export const facultyProfileRequestService = {
+  subscribeRequests: (callback) => {
+    try {
+      const colRef = collection(db, 'faculty_profile_requests');
+      return onSnapshot(
+        colRef,
+        (snapshot) => {
+          let fsReqs = [];
+          if (!snapshot.empty) {
+            snapshot.forEach((docSnap) => {
+              fsReqs.push({ ...docSnap.data(), _id: docSnap.id, id: docSnap.id });
+            });
+          }
+
+          let localStored = [];
+          try {
+            const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+            if (stored) localStored = JSON.parse(stored);
+          } catch (e) {}
+
+          const map = new Map();
+          localStored.forEach((r) => {
+            const idStr = String(r?._id || r?.id || '');
+            if (idStr) map.set(idStr, r);
+          });
+          fsReqs.forEach((r) => {
+            const idStr = String(r?._id || r?.id || '');
+            if (idStr) map.set(idStr, { ...(map.get(idStr) || {}), ...r });
+          });
+
+          const list = Array.from(map.values());
+          if (list.length > 0) {
+            localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+          }
+          list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
+          if (callback) callback(list);
+        },
+        (err) => {
+          console.warn('Firestore subscribeRequests notice:', err.message);
+          let localStored = [];
+          try {
+            const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+            if (stored) localStored = JSON.parse(stored);
+          } catch (e) {}
+          if (callback) callback(localStored);
+        }
+      );
+    } catch (err) {
+      console.warn('Firestore subscribeRequests initialization error:', err);
+      return () => {};
+    }
+  },
+
   getMyRequests: async (facultyId, facultyEmail) => {
     let remoteList = [];
     try {
@@ -4573,7 +4625,18 @@ export const facultyProfileRequestService = {
       }
     } catch (e) {}
 
-    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let fsReqs = [];
+    try {
+      const snapshot = await getDocs(collection(db, 'faculty_profile_requests'));
+      if (!snapshot.empty) {
+        snapshot.forEach((d) => {
+          fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
+        });
+      }
+    } catch (fsErr) {
+      console.warn('Firestore getDocs faculty_profile_requests notice:', fsErr.message);
+    }
+
     let localStored = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
@@ -4581,17 +4644,23 @@ export const facultyProfileRequestService = {
     } catch (e) {}
 
     const map = new Map();
-    remoteList.forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
-    (fsReqs || []).forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
     localStored.forEach((r) => {
-      if (r?._id || r?.id) {
-        const idStr = String(r._id || r.id);
-        map.set(idStr, { ...(map.get(idStr) || {}), ...r });
-      }
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, r);
+    });
+    remoteList.forEach((r) => {
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, { ...(map.get(idStr) || {}), ...r });
+    });
+    fsReqs.forEach((r) => {
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, { ...(map.get(idStr) || {}), ...r });
     });
 
     let list = Array.from(map.values());
-    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    if (list.length > 0) {
+      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    }
 
     const targetId = facultyId ? String(facultyId).toLowerCase() : '';
     const targetEmail = facultyEmail ? String(facultyEmail).toLowerCase() : '';
@@ -4728,7 +4797,9 @@ export const facultyProfileRequestService = {
 
       try {
         await setDoc(doc(db, 'faculty_profile_requests', String(existingReq._id || existingReq.id)), updatedReq, { merge: true });
-      } catch (fsErr) {}
+      } catch (fsErr) {
+        console.warn('Firestore setDoc update error:', fsErr.message);
+      }
 
       list[pendingIdx] = updatedReq;
       localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
@@ -4783,13 +4854,27 @@ export const facultyProfileRequestService = {
   getAllRequests: async (statusFilter) => {
     let remoteList = [];
     try {
-      const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
-      if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
-        remoteList = backendRes.requests;
+      const baseUrl = getApiBaseUrl();
+      if (baseUrl) {
+        const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
+        if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
+          remoteList = backendRes.requests;
+        }
       }
     } catch (e) {}
 
-    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let fsReqs = [];
+    try {
+      const snapshot = await getDocs(collection(db, 'faculty_profile_requests'));
+      if (!snapshot.empty) {
+        snapshot.forEach((d) => {
+          fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
+        });
+      }
+    } catch (fsErr) {
+      console.warn('Firestore getDocs faculty_profile_requests error:', fsErr.message);
+    }
+
     let localStored = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
@@ -4797,17 +4882,23 @@ export const facultyProfileRequestService = {
     } catch (e) {}
 
     const map = new Map();
-    remoteList.forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
-    (fsReqs || []).forEach((r) => { if (r?._id || r?.id) map.set(String(r._id || r.id), r); });
     localStored.forEach((r) => {
-      if (r?._id || r?.id) {
-        const idStr = String(r._id || r.id);
-        map.set(idStr, { ...(map.get(idStr) || {}), ...r });
-      }
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, r);
+    });
+    remoteList.forEach((r) => {
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, { ...(map.get(idStr) || {}), ...r });
+    });
+    fsReqs.forEach((r) => {
+      const idStr = String(r?._id || r?.id || '');
+      if (idStr) map.set(idStr, { ...(map.get(idStr) || {}), ...r });
     });
 
     let list = Array.from(map.values());
-    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    if (list.length > 0) {
+      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    }
 
     if (statusFilter && statusFilter !== 'All') {
       list = list.filter((r) => String(r.status).toLowerCase() === String(statusFilter).toLowerCase());

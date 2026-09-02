@@ -20,6 +20,14 @@ export default function ProfileChangeRequests() {
   useEffect(() => {
     fetchRequests();
 
+    // Real-time Firestore subscription
+    const unsubscribe = facultyProfileRequestService.subscribeRequests((updatedReqs) => {
+      if (Array.isArray(updatedReqs)) {
+        setRequests(updatedReqs);
+        setLoading(false);
+      }
+    });
+
     const handleDataUpdate = () => {
       fetchRequests();
     };
@@ -28,21 +36,21 @@ export default function ProfileChangeRequests() {
     window.addEventListener('storage', handleDataUpdate);
 
     return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
       window.removeEventListener('saumyaa_data_updated', handleDataUpdate);
       window.removeEventListener('storage', handleDataUpdate);
     };
-  }, [activeTab]);
+  }, []);
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await facultyProfileRequestService.getAllRequests(activeTab);
+      const res = await facultyProfileRequestService.getAllRequests('All');
       if (res && res.success) {
         setRequests(res.requests || []);
       }
     } catch (err) {
       console.warn('Error fetching profile change requests:', err);
-      addToast('Failed to load profile change requests', 'error');
     } finally {
       setLoading(false);
     }
@@ -108,19 +116,21 @@ export default function ProfileChangeRequests() {
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  // Filter requests by search term
+  // Filter requests by active tab & search term
   const filteredRequests = requests.filter((r) => {
-    const term = searchTerm.toLowerCase();
-    return (
+    const matchesTab = activeTab === 'All' || String(r.status).toLowerCase() === activeTab.toLowerCase();
+    const term = searchTerm.toLowerCase().trim();
+    const matchesSearch = !term ||
       (r.facultyName && r.facultyName.toLowerCase().includes(term)) ||
       (r.facultyEmail && r.facultyEmail.toLowerCase().includes(term)) ||
-      (r.reason && r.reason.toLowerCase().includes(term))
-    );
+      (r.facultyId && String(r.facultyId).toLowerCase().includes(term)) ||
+      (r.reason && r.reason.toLowerCase().includes(term));
+    return matchesTab && matchesSearch;
   });
 
-  const pendingCount = requests.filter((r) => r.status === 'Pending').length;
-  const approvedCount = requests.filter((r) => r.status === 'Approved').length;
-  const rejectedCount = requests.filter((r) => r.status === 'Rejected').length;
+  const pendingCount = requests.filter((r) => String(r.status).toLowerCase() === 'pending').length;
+  const approvedCount = requests.filter((r) => String(r.status).toLowerCase() === 'approved').length;
+  const rejectedCount = requests.filter((r) => String(r.status).toLowerCase() === 'rejected').length;
 
   return (
     <div className="space-y-6 font-body">
@@ -136,18 +146,28 @@ export default function ProfileChangeRequests() {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-72">
-          <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-on-surface-variant text-lg">
-            search
-          </span>
-          <input
-            type="text"
-            placeholder="Search by faculty name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-full border border-outline-variant/30 text-xs font-body focus:outline-none focus:border-primary"
-          />
+        {/* Search Bar & Refresh */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-72">
+            <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-on-surface-variant text-lg">
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search by faculty name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-full border border-outline-variant/30 text-xs font-body focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <button
+            onClick={fetchRequests}
+            title="Refresh Requests"
+            className="p-2 rounded-full border border-outline-variant/30 hover:bg-surface-container text-on-surface-variant transition-colors cursor-pointer shrink-0"
+          >
+            <span className="material-symbols-outlined text-lg">refresh</span>
+          </button>
         </div>
       </div>
 
