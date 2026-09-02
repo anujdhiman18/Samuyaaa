@@ -4562,16 +4562,103 @@ export const credentialRequestService = {
   },
 };
 
+// Default / Mock Faculty Profile Requests for Demo & initial Cloud Sync
+export const initialMockFacultyProfileRequests = [
+  {
+    _id: 'freq_jitender_1',
+    id: 'freq_jitender_1',
+    facultyId: 'f_jitender',
+    facultyName: 'Prof. Jitender Sharma',
+    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
+    currentValues: {
+      name: 'Prof. Jitender Sharma',
+      phone: '+91 98160 12345',
+      designation: 'Head of Department & Professor',
+      department: 'Computer Science & Engineering',
+      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      qualification: 'Ph.D. in Computer Science',
+      experience: '12+ Years Academic & Industry',
+    },
+    requestedValues: {
+      phone: '+91 98160 99999',
+      department: 'Artificial Intelligence & Data Science',
+      designation: 'Dean of Computing & HOD',
+      experience: '14+ Years Academic & Industry',
+      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+    },
+    reason: 'Updated contact phone number and updated department designation to Dean of Computing & AI.',
+    status: 'Pending',
+    submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    requestDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    adminComments: '',
+    approvedAt: null,
+    rejectedAt: null,
+    nextEligibleDate: null,
+    reviewedDate: null,
+    reviewedBy: null,
+  },
+  {
+    _id: 'freq_dr_anita_2',
+    id: 'freq_dr_anita_2',
+    facultyId: 'f_anita',
+    facultyName: 'Dr. Anita Desai',
+    facultyEmail: 'anita.desai@saumyaa.edu.in',
+    currentValues: {
+      name: 'Dr. Anita Desai',
+      phone: '+91 98765 43210',
+      designation: 'Associate Professor',
+      department: 'Mathematics & Computing',
+      photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+      qualification: 'Ph.D. in Applied Mathematics',
+      experience: '8+ Years Experience',
+    },
+    requestedValues: {
+      qualification: 'Post-Doctorate & Ph.D. in Mathematics',
+      experience: '10+ Years Experience',
+      designation: 'Professor & Research Lead',
+    },
+    reason: 'Completed Post-Doctoral fellowship; updating qualification and academic rank.',
+    status: 'Approved',
+    submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    requestDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    adminComments: 'Approved by Administrator. Congratulations on completing your Post-Doctorate.',
+    approvedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    reviewedDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    nextEligibleDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    reviewedByName: 'System Admin',
+  },
+];
+
 // Faculty Profile Change Request Service (Admin Approval Workflow & 30-Day Cooldown)
 export const facultyProfileRequestService = {
   subscribeRequests: (callback) => {
     try {
+      let initialList = [];
+      try {
+        const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+        if (stored) initialList = JSON.parse(stored);
+      } catch (e) {}
+      if (!initialList || initialList.length === 0) {
+        initialList = initialMockFacultyProfileRequests;
+        localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(initialList));
+      }
+      if (callback) callback(initialList);
+
       const colRef = collection(db, 'faculty_profile_requests');
       return onSnapshot(
         colRef,
-        (snapshot) => {
+        async (snapshot) => {
           let fsReqs = [];
-          if (!snapshot.empty) {
+          if (snapshot.empty) {
+            try {
+              for (const req of initialMockFacultyProfileRequests) {
+                await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
+              }
+              fsReqs = initialMockFacultyProfileRequests;
+            } catch (seedErr) {
+              fsReqs = initialMockFacultyProfileRequests;
+            }
+          } else {
             snapshot.forEach((docSnap) => {
               fsReqs.push({ ...docSnap.data(), _id: docSnap.id, id: docSnap.id });
             });
@@ -4584,6 +4671,7 @@ export const facultyProfileRequestService = {
           } catch (e) {}
 
           const map = new Map();
+          initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
           localStored.forEach((r) => {
             const idStr = String(r?._id || r?.id || '');
             if (idStr) map.set(idStr, r);
@@ -4607,7 +4695,8 @@ export const facultyProfileRequestService = {
             const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
             if (stored) localStored = JSON.parse(stored);
           } catch (e) {}
-          if (callback) callback(localStored);
+          const list = (localStored && localStored.length > 0) ? localStored : initialMockFacultyProfileRequests;
+          if (callback) callback(list);
         }
       );
     } catch (err) {
@@ -4619,9 +4708,12 @@ export const facultyProfileRequestService = {
   getMyRequests: async (facultyId, facultyEmail) => {
     let remoteList = [];
     try {
-      const backendRes = await apiCall('/faculty-panel/profile-change-requests');
-      if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
-        remoteList = backendRes.requests;
+      const baseUrl = getApiBaseUrl();
+      if (baseUrl) {
+        const backendRes = await apiCall('/faculty-panel/profile-change-requests');
+        if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
+          remoteList = backendRes.requests;
+        }
       }
     } catch (e) {}
 
@@ -4632,6 +4724,13 @@ export const facultyProfileRequestService = {
         snapshot.forEach((d) => {
           fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
         });
+      } else {
+        for (const req of initialMockFacultyProfileRequests) {
+          try {
+            await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
+          } catch (e) {}
+        }
+        fsReqs = initialMockFacultyProfileRequests;
       }
     } catch (fsErr) {
       console.warn('Firestore getDocs faculty_profile_requests notice:', fsErr.message);
@@ -4644,6 +4743,7 @@ export const facultyProfileRequestService = {
     } catch (e) {}
 
     const map = new Map();
+    initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
     localStored.forEach((r) => {
       const idStr = String(r?._id || r?.id || '');
       if (idStr) map.set(idStr, r);
@@ -4753,6 +4853,9 @@ export const facultyProfileRequestService = {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
       if (stored) list = JSON.parse(stored);
     } catch (e) {}
+    if (!list || list.length === 0) {
+      list = [...initialMockFacultyProfileRequests];
+    }
 
     const facultyId = requestData.facultyId || 'f_jitender';
     const facultyEmail = (requestData.facultyEmail || '').toLowerCase();
@@ -4870,6 +4973,13 @@ export const facultyProfileRequestService = {
         snapshot.forEach((d) => {
           fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
         });
+      } else {
+        for (const req of initialMockFacultyProfileRequests) {
+          try {
+            await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
+          } catch (e) {}
+        }
+        fsReqs = initialMockFacultyProfileRequests;
       }
     } catch (fsErr) {
       console.warn('Firestore getDocs faculty_profile_requests error:', fsErr.message);
@@ -4882,6 +4992,7 @@ export const facultyProfileRequestService = {
     } catch (e) {}
 
     const map = new Map();
+    initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
     localStored.forEach((r) => {
       const idStr = String(r?._id || r?.id || '');
       if (idStr) map.set(idStr, r);

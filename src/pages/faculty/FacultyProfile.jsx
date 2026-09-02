@@ -38,6 +38,24 @@ export default function FacultyProfile() {
   useEffect(() => {
     fetchProfileRequests();
     fetchCredRequests();
+
+    const unsubscribe = facultyProfileRequestService.subscribeRequests(() => {
+      fetchProfileRequests();
+    });
+
+    const handleDataUpdate = () => {
+      fetchProfileRequests();
+      fetchCredRequests();
+    };
+
+    window.addEventListener('saumyaa_data_updated', handleDataUpdate);
+    window.addEventListener('storage', handleDataUpdate);
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+      window.removeEventListener('saumyaa_data_updated', handleDataUpdate);
+      window.removeEventListener('storage', handleDataUpdate);
+    };
   }, [user]);
 
   const fetchProfileRequests = async () => {
