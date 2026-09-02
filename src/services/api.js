@@ -1904,6 +1904,19 @@ export const studentService = {
 
     return { success: true, message: `Student leave application ${status} successfully` };
   },
+
+  uploadStudentPhoto: async (file, onProgress) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Invalid image format! Only JPG, PNG, and WEBP files are allowed.');
+    }
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('Image size exceeds 5MB limit. Please upload a smaller photo.');
+    }
+
+    return await uploadFirebaseFile(file, 'students', onProgress);
+  },
 };
 
 // Subject Service with Firebase Firestore DB

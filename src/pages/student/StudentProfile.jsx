@@ -13,6 +13,8 @@ export default function StudentProfile() {
   // Student Editable Fields (Phone, Photo)
   const [phone, setPhone] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [updating, setUpdating] = useState(false);
 
   // Credential Request Form State
@@ -56,6 +58,40 @@ export default function StudentProfile() {
       }
     } catch (e) {
       console.warn('Could not fetch requests:', e);
+    }
+  };
+
+  const handlePhotoFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      addToast('Validation Error: Only JPG, PNG, and WEBP files are allowed.', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Validation Error: Photo size must be 5MB or less.', 'error');
+      return;
+    }
+
+    const tempUrl = URL.createObjectURL(file);
+    setPhotoUrl(tempUrl);
+    setUploadingPhoto(true);
+    setUploadProgress(10);
+
+    try {
+      const uploadedUrl = await studentService.uploadStudentPhoto(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      setPhotoUrl(uploadedUrl);
+      addToast('Photo uploaded successfully! Click Save to apply.', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to upload photo', 'error');
+      setPhotoUrl(student?.photo || user?.avatar || '');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -258,21 +294,53 @@ export default function StudentProfile() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="font-headings font-bold text-on-surface-variant">Profile Photo URL</label>
-                <input
-                  type="url"
-                  value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 text-xs"
-                />
+              <div className="flex flex-col gap-2">
+                <label className="font-headings font-bold text-on-surface-variant">Profile Photo (Browse File)</label>
+                
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/20">
+                  <div className="relative w-12 h-12 rounded-full border border-outline-variant/30 overflow-hidden bg-surface-container shrink-0 flex items-center justify-center">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-2xl text-on-surface-variant/40">person</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-1">
+                    <label className="bg-surface-container-high hover:bg-outline-variant/30 text-secondary font-headings font-bold text-xs px-3 py-1.5 rounded-xl cursor-pointer inline-flex items-center gap-1.5 border border-outline-variant/30 transition-all shadow-sm active:scale-95">
+                      <span className="material-symbols-outlined text-[15px] text-primary">cloud_upload</span>
+                      {uploadingPhoto ? 'Uploading...' : 'Browse Image'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePhotoFileChange}
+                        disabled={uploadingPhoto}
+                      />
+                    </label>
+
+                    {uploadingPhoto && (
+                      <div className="space-y-0.5 pt-1">
+                        <div className="flex justify-between text-[9px] text-on-surface-variant font-bold">
+                          <span>Uploading...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all duration-200"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={updating}
-                className="w-full py-2 bg-secondary hover:bg-secondary-container text-white font-headings font-bold text-xs rounded-full shadow-sm transition-all"
+                disabled={updating || uploadingPhoto}
+                className="w-full py-2.5 bg-secondary hover:bg-secondary-container text-white font-headings font-bold text-xs rounded-full shadow-sm transition-all disabled:opacity-50 cursor-pointer"
               >
                 {updating ? 'Saving...' : 'Save Phone & Photo'}
               </button>

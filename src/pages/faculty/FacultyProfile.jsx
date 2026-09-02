@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { facultyProfileRequestService, credentialRequestService } from '../../services/api';
+import { facultyProfileRequestService, credentialRequestService, facultyService } from '../../services/api';
 
 export default function FacultyProfile() {
   const { user } = useAuth();
@@ -17,6 +17,9 @@ export default function FacultyProfile() {
   const [reqDesignation, setReqDesignation] = useState('');
   const [reqDepartment, setReqDepartment] = useState('');
   const [reqPhotoUrl, setReqPhotoUrl] = useState('');
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [reqQualification, setReqQualification] = useState('');
   const [reqExperience, setReqExperience] = useState('');
   const [reason, setReason] = useState('');
@@ -67,13 +70,50 @@ export default function FacultyProfile() {
     }
   };
 
+  const handlePhotoFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      addToast('Validation Error: Only JPG, PNG, and WEBP files are allowed.', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Validation Error: Photo size must be 5MB or less.', 'error');
+      return;
+    }
+
+    const tempUrl = URL.createObjectURL(file);
+    setPhotoPreview(tempUrl);
+    setUploadingPhoto(true);
+    setUploadProgress(10);
+
+    try {
+      const uploadedUrl = await facultyService.uploadFacultyPhoto(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      setReqPhotoUrl(uploadedUrl);
+      addToast('Photo uploaded successfully! Will be submitted with your request.', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to upload photo', 'error');
+      setPhotoPreview(reqPhotoUrl || user?.photo_url || user?.photo || user?.avatar || '');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleOpenRequestForm = () => {
     // Populate form with current values
     setReqName(user?.name || '');
     setReqPhone(user?.phone || '');
     setReqDesignation(user?.designation || '');
     setReqDepartment(user?.department || '');
-    setReqPhotoUrl(user?.photo_url || user?.avatar || '');
+    const currentPhoto = user?.photo_url || user?.photo || user?.avatar || '';
+    setReqPhotoUrl(currentPhoto);
+    setPhotoPreview(currentPhoto);
+    setUploadProgress(0);
     setReqQualification(user?.qualification || 'Master’s Degree');
     setReqExperience(user?.experience || '5+ Years Experience');
     setReason('');
@@ -678,15 +718,54 @@ export default function FacultyProfile() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-secondary mb-1">Photo URL</label>
-                <input
-                  type="url"
-                  value={reqPhotoUrl}
-                  onChange={(e) => setReqPhotoUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 text-xs font-mono text-secondary focus:outline-none focus:border-primary"
-                />
+              {/* Photo Upload / Browse File Section */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-secondary">
+                  Faculty Photo (Upload / Browse)
+                </label>
+
+                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/25">
+                  <div className="relative w-14 h-14 rounded-full border-2 border-primary/30 overflow-hidden bg-surface-container shrink-0 flex items-center justify-center shadow-sm">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Profile Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">person</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-1.5">
+                    <label className="bg-surface-container-high hover:bg-outline-variant/30 text-secondary font-headings font-bold text-xs px-3.5 py-2 rounded-xl cursor-pointer inline-flex items-center gap-2 border border-outline-variant/30 transition-all shadow-sm active:scale-95">
+                      <span className="material-symbols-outlined text-[16px] text-primary">cloud_upload</span>
+                      {uploadingPhoto ? 'Uploading Photo...' : 'Browse Image File'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePhotoFileChange}
+                        disabled={uploadingPhoto}
+                      />
+                    </label>
+
+                    <p className="text-[11px] text-on-surface-variant">
+                      Upload JPG, PNG, or WEBP (Max 5MB). Photo updates upon Admin approval.
+                    </p>
+
+                    {uploadingPhoto && (
+                      <div className="space-y-1 pt-1">
+                        <div className="flex justify-between text-[10px] text-on-surface-variant font-bold">
+                          <span>Uploading photo to cloud...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all duration-200"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Reason for Change (Required!) */}
