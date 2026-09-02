@@ -37,6 +37,8 @@ export default function StudentDetail() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Attendance Modal State
   const [attModalOpen, setAttModalOpen] = useState(false);
@@ -154,6 +156,40 @@ export default function StudentDetail() {
       smsNotificationsEnabled: student.smsNotificationsEnabled !== false,
     });
     setEditModalOpen(true);
+  };
+
+  const handlePhotoFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      addToast('Validation Error: Only JPG, PNG, and WEBP files are allowed.', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Validation Error: Photo size must be 5MB or less.', 'error');
+      return;
+    }
+
+    const tempUrl = URL.createObjectURL(file);
+    setEditForm((prev) => ({ ...prev, photo: tempUrl }));
+    setUploadingPhoto(true);
+    setUploadProgress(10);
+
+    try {
+      const uploadedUrl = await studentService.uploadStudentPhoto(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      setEditForm((prev) => ({ ...prev, photo: uploadedUrl }));
+      addToast('Student photo uploaded successfully!', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to upload photo', 'error');
+      setEditForm((prev) => ({ ...prev, photo: student?.photo || '' }));
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSaveEdit = async (e) => {
@@ -693,14 +729,46 @@ export default function StudentDetail() {
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-mono font-bold focus:outline-none focus:border-primary"
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-secondary mb-1">Photo URL</label>
-              <input
-                type="url"
-                value={editForm.photo}
-                onChange={(e) => setEditForm({ ...editForm, photo: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
-              />
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="block text-xs font-bold text-secondary mb-1">Student Photo (Browse File)</label>
+              <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/25">
+                <div className="relative w-12 h-12 rounded-full border border-outline-variant/30 overflow-hidden bg-surface-container shrink-0 flex items-center justify-center">
+                  {editForm.photo ? (
+                    <img src={editForm.photo} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-2xl text-on-surface-variant/40">person</span>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-1">
+                  <label className="bg-surface-container-high hover:bg-outline-variant/30 text-secondary font-headings font-bold text-xs px-3.5 py-1.5 rounded-xl cursor-pointer inline-flex items-center gap-1.5 border border-outline-variant/30 transition-all shadow-sm active:scale-95">
+                    <span className="material-symbols-outlined text-[15px] text-primary">cloud_upload</span>
+                    {uploadingPhoto ? 'Uploading...' : 'Browse Image File'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handlePhotoFileChange}
+                      disabled={uploadingPhoto}
+                    />
+                  </label>
+
+                  {uploadingPhoto && (
+                    <div className="space-y-0.5 pt-1">
+                      <div className="flex justify-between text-[9px] text-on-surface-variant font-bold">
+                        <span>Uploading photo...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-surface-container-high h-1 rounded-full overflow-hidden">
+                        <div
+                          className="bg-primary h-full transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Enrolled Subject / Stream</label>

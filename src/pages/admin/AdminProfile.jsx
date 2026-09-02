@@ -277,21 +277,6 @@ export default function AdminProfile() {
                 )}
               </div>
 
-              {/* Photo URL Input */}
-              <div className="space-y-1">
-                <label className="font-headings font-bold text-secondary block">Photo Image URL (Optional Direct Link)</label>
-                <input
-                  type="url"
-                  value={profileForm.avatar}
-                  onChange={(e) => {
-                    setProfileForm((prev) => ({ ...prev, avatar: e.target.value }));
-                    updateUser({ avatar: e.target.value });
-                  }}
-                  placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
-                />
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Full Name */}
                 <div className="space-y-1">
