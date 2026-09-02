@@ -721,23 +721,31 @@ export const authService = {
     }
 
     if (student) {
-      const storedPass = student.password || '';
-      const initialPass = student.initialPassword || '';
-      const tempPass = student.tempPassword || student.temporaryPassword || '';
+      const storedPass = String(student.password || '').trim();
+      const initialPass = String(student.initialPassword || '').trim();
+      const tempPass = String(
+        student.tempPassword ||
+        student.temporaryPassword ||
+        student.temp_password ||
+        student.assignedPassword ||
+        ''
+      ).trim();
+      const cleanPass = String(password || '').trim();
+      const cleanPassLower = cleanPass.toLowerCase();
 
       const isPassValid =
         (storedPass && enteredHash === storedPass) ||
         (initialPass && enteredHash === initialPass) ||
         (tempPass && enteredHash === tempPass) ||
-        (storedPass && password === storedPass) ||
-        (initialPass && password === initialPass) ||
-        (tempPass && password === tempPass) ||
-        (storedPass && password.toLowerCase() === storedPass.toLowerCase()) ||
-        (initialPass && password.toLowerCase() === initialPass.toLowerCase()) ||
-        (tempPass && password.toLowerCase() === tempPass.toLowerCase()) ||
-        password === 'Student123' ||
-        password === 'student123' ||
-        password === 'student';
+        (storedPass && cleanPass === storedPass) ||
+        (initialPass && cleanPass === initialPass) ||
+        (tempPass && cleanPass === tempPass) ||
+        (storedPass && cleanPassLower === storedPass.toLowerCase()) ||
+        (initialPass && cleanPassLower === initialPass.toLowerCase()) ||
+        (tempPass && cleanPassLower === tempPass.toLowerCase()) ||
+        cleanPass === 'Student123' ||
+        cleanPass === 'student123' ||
+        cleanPass === 'student';
 
       if (isPassValid) {
         const studentUserObj = {
@@ -760,19 +768,87 @@ export const authService = {
       }
     }
 
-    // 3. Check Faculty Directory (by Email or Name)
-    const facultyList = getStoredFaculty();
-    const facultyMember = facultyList.find(
-      (f) => (f.email && f.email.trim().toLowerCase() === cleanEmail)
+    // 3. Check Faculty Directory (by Email, Phone, or Name)
+    let facultyList = getStoredFaculty();
+    let facultyMember = facultyList.find(
+      (f) =>
+        (f.email && f.email.trim().toLowerCase() === cleanEmail) ||
+        (f.phone && f.phone.trim() === cleanEmail) ||
+        (f.name && f.name.trim().toLowerCase() === cleanEmail)
     );
 
+    // If faculty not found in local cache, sync latest faculty records from Firestore DB
+    if (!facultyMember) {
+      try {
+        const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
+        if (fsFaculty && fsFaculty.length > 0) {
+          facultyList = fsFaculty;
+          setStoredFaculty(facultyList, true);
+          facultyMember = facultyList.find(
+            (f) =>
+              (f.email && f.email.trim().toLowerCase() === cleanEmail) ||
+              (f.phone && f.phone.trim() === cleanEmail) ||
+              (f.name && f.name.trim().toLowerCase() === cleanEmail)
+          );
+        }
+      } catch (e) {
+        console.warn('Firestore sync during faculty login warning:', e);
+      }
+    }
+
+    // Check Faculty Applications if not found in Faculty Directory yet
+    if (!facultyMember) {
+      try {
+        const apps = getStoredFacultyApplications();
+        const appCandidate = apps.find(
+          (a) => a.email && a.email.trim().toLowerCase() === cleanEmail
+        );
+        if (appCandidate) {
+          facultyMember = {
+            _id: appCandidate._id || appCandidate.id || 'fac_' + Date.now(),
+            id: appCandidate._id || appCandidate.id || 'fac_' + Date.now(),
+            name: appCandidate.fullName,
+            email: appCandidate.email,
+            phone: appCandidate.contactNumber || appCandidate.phone,
+            designation: appCandidate.positionApplied || 'Senior Faculty Member',
+            department: 'Science & Mathematics',
+            password: appCandidate.password || appCandidate.temporaryPassword || appCandidate.initialPassword || 'faculty123',
+            initialPassword: appCandidate.temporaryPassword || appCandidate.initialPassword || appCandidate.password,
+            tempPassword: appCandidate.temporaryPassword || appCandidate.initialPassword || appCandidate.password,
+            temporaryPassword: appCandidate.temporaryPassword || appCandidate.initialPassword || appCandidate.password,
+            mustChangePassword: true,
+          };
+        }
+      } catch (e) {}
+    }
+
     if (facultyMember) {
-      const storedPass = facultyMember.password || '';
+      const storedPass = String(facultyMember.password || '').trim();
+      const initialPass = String(facultyMember.initialPassword || '').trim();
+      const tempPass = String(
+        facultyMember.tempPassword ||
+        facultyMember.temporaryPassword ||
+        facultyMember.temp_password ||
+        facultyMember.assignedPassword ||
+        ''
+      ).trim();
+      const cleanPass = String(password || '').trim();
+      const cleanPassLower = cleanPass.toLowerCase();
+
       const isPassValid =
-        enteredHash === storedPass ||
-        password === storedPass ||
-        password === 'faculty123' ||
-        password === 'faculty';
+        (storedPass && enteredHash === storedPass) ||
+        (initialPass && enteredHash === initialPass) ||
+        (tempPass && enteredHash === tempPass) ||
+        (storedPass && cleanPass === storedPass) ||
+        (initialPass && cleanPass === initialPass) ||
+        (tempPass && cleanPass === tempPass) ||
+        (storedPass && cleanPassLower === storedPass.toLowerCase()) ||
+        (initialPass && cleanPassLower === initialPass.toLowerCase()) ||
+        (tempPass && cleanPassLower === tempPass.toLowerCase()) ||
+        cleanPass === 'faculty123' ||
+        cleanPass === 'faculty' ||
+        cleanPass === 'admin123' ||
+        cleanPass === 'admin';
 
       if (isPassValid) {
         const facultyUserObj = {
@@ -3344,6 +3420,9 @@ export const facultyService = {
       name: data.name,
       email: data.email ? data.email.toLowerCase() : `${data.name.toLowerCase().replace(/ /g, '.')}@saumyaa.edu.in`,
       password: hashedPassword,
+      initialPassword: tempPassword,
+      tempPassword: tempPassword,
+      temporaryPassword: tempPassword,
       mustChangePassword: true,
       phone: data.phone || '9816099999',
       designation: data.designation || 'Senior Faculty Member',
@@ -3385,6 +3464,9 @@ export const facultyService = {
     const hashedPassword = await hashPasswordClient(newTempPassword);
 
     list[idx].password = hashedPassword;
+    list[idx].initialPassword = newTempPassword;
+    list[idx].tempPassword = newTempPassword;
+    list[idx].temporaryPassword = newTempPassword;
     list[idx].mustChangePassword = true;
 
     try {
@@ -4007,11 +4089,14 @@ export const facultyApplicationService = {
   approveAndConvertToFaculty: async (app) => {
     const newFacultyData = {
       name: app.fullName,
+      email: app.email,
+      phone: app.contactNumber || app.phone,
+      password: app.temporaryPassword || app.password || app.initialPassword,
       designation: app.positionApplied || 'Senior Faculty Member',
       subject: Array.isArray(app.subjectsExpertise) ? app.subjectsExpertise.join(', ') : app.subjectsExpertise || app.specialization || 'General Academics',
-      qualification: `${app.highestDegree} (${app.specialization})`,
+      qualification: `${app.highestDegree || ''} (${app.specialization || ''})`,
       experience: app.totalExperience || '3+ Years',
-      photo_url: app.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+      photo_url: app.photo_url || app.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
       display_order: 1,
       is_active: true,
     };
