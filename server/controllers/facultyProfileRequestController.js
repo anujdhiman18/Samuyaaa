@@ -1,8 +1,22 @@
+import mongoose from 'mongoose';
 import FacultyProfileRequest from '../models/FacultyProfileRequest.js';
 import Faculty from '../models/Faculty.js';
 
 const COOLDOWN_DAYS = 30;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+// Helper to reliably find a request by either MongoDB ObjectId or custom String ID
+const findRequestById = async (id) => {
+  if (!id) return null;
+  let req = null;
+  if (mongoose.isValidObjectId(id)) {
+    req = await FacultyProfileRequest.findById(id);
+  }
+  if (!req) {
+    req = await FacultyProfileRequest.findOne({ $or: [{ id: String(id) }, { _id: String(id) }] });
+  }
+  return req;
+};
 
 // Helper to format date cleanly: e.g. "1 September 2026"
 const formatDateFormatted = (dateInput) => {
@@ -24,7 +38,7 @@ const formatDateFormatted = (dateInput) => {
 // @access  Protected (Faculty)
 export const createProfileChangeRequest = async (req, res) => {
   try {
-    const facultyId = req.user?._id || req.user?.id || req.body.facultyId || 'f_jitender';
+    const facultyId = req.user?._id || req.user?.id || req.body.facultyId;
     const { requestedValues, reason } = req.body;
 
     if (!reason || !reason.trim()) {
@@ -42,20 +56,29 @@ export const createProfileChangeRequest = async (req, res) => {
     }
 
     // 1. Fetch current Faculty profile
-    let faculty = await Faculty.findById(facultyId);
-    if (!faculty && req.user?.email) {
-      faculty = await Faculty.findOne({ email: req.user.email.toLowerCase() });
+    let faculty = null;
+    if (facultyId && mongoose.isValidObjectId(facultyId)) {
+      faculty = await Faculty.findById(facultyId);
+    }
+    if (!faculty && (req.user?.email || req.body.facultyEmail)) {
+      const emailToLook = (req.user?.email || req.body.facultyEmail || '').toLowerCase();
+      if (emailToLook) {
+        faculty = await Faculty.findOne({ email: emailToLook });
+      }
     }
 
-    // Fallback if user object in memory
-    const facultyName = faculty?.name || req.user?.name || 'Prof. Jitender Sharma';
-    const facultyEmail = faculty?.email || req.user?.email || 'jitender.sharma@saumyaa.edu.in';
+    const facultyName = faculty?.name || req.user?.name || req.body.facultyName || 'Faculty Member';
+    const facultyEmail = faculty?.email || req.user?.email || req.body.facultyEmail || '';
 
     // 2. BACKEND ENFORCED 30-DAY RESTRICTION CHECK (Calculated strictly from APPROVED timestamp)
-    const latestApproved = await FacultyProfileRequest.findOne({
-      $or: [{ facultyId }, { facultyEmail: facultyEmail.toLowerCase() }],
+    const orConditions = [];
+    if (facultyId) orConditions.push({ facultyId });
+    if (facultyEmail) orConditions.push({ facultyEmail: facultyEmail.toLowerCase() });
+
+    const latestApproved = orConditions.length > 0 ? await FacultyProfileRequest.findOne({
+      $or: orConditions,
       status: 'Approved',
-    }).sort({ approvedAt: -1, reviewedDate: -1 });
+    }).sort({ approvedAt: -1, reviewedDate: -1 }) : null;
 
     if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
       const approvedDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
@@ -157,15 +180,16 @@ export const createProfileChangeRequest = async (req, res) => {
 // @access  Protected (Faculty)
 export const getMyProfileChangeRequests = async (req, res) => {
   try {
-    const facultyId = req.user?._id || req.user?.id || 'f_jitender';
-    const facultyEmail = req.user?.email || '';
+    const facultyId = req.user?._id || req.user?.id || req.query.facultyId;
+    const facultyEmail = req.user?.email || req.query.facultyEmail || '';
 
-    const requests = await FacultyProfileRequest.find({
-      $or: [
-        { facultyId },
-        { facultyEmail: facultyEmail ? facultyEmail.toLowerCase() : '' },
-      ],
-    }).sort({ submittedAt: -1, requestDate: -1, createdAt: -1 });
+    const orConditions = [];
+    if (facultyId) orConditions.push({ facultyId });
+    if (facultyEmail) orConditions.push({ facultyEmail: facultyEmail.toLowerCase() });
+
+    const requests = orConditions.length > 0
+      ? await FacultyProfileRequest.find({ $or: orConditions }).sort({ submittedAt: -1, requestDate: -1, createdAt: -1 })
+      : [];
 
     // Find latest APPROVED request for 30-day cooldown enforcement
     const latestApproved = requests.find((r) => r.status === 'Approved' && (r.approvedAt || r.reviewedDate));
@@ -223,7 +247,7 @@ export const getAllProfileChangeRequests = async (req, res) => {
       filter.status = status;
     }
 
-    const requests = await FacultyProfileRequest.find(filter).sort({ requestDate: -1 });
+    const requests = await FacultyProfileRequest.find(filter).sort({ requestDate: -1, createdAt: -1 });
 
     return res.json({
       success: true,
@@ -243,7 +267,7 @@ export const approveProfileChangeRequest = async (req, res) => {
     const { id } = req.params;
     const { adminComments } = req.body;
 
-    const request = await FacultyProfileRequest.findById(id);
+    const request = await findRequestById(id);
     if (!request) {
       return res.status(404).json({ success: false, message: 'Profile change request not found' });
     }
@@ -256,7 +280,10 @@ export const approveProfileChangeRequest = async (req, res) => {
     }
 
     // 1. Update Faculty Profile in database with requested values ONLY
-    let faculty = await Faculty.findById(request.facultyId);
+    let faculty = null;
+    if (request.facultyId && mongoose.isValidObjectId(request.facultyId)) {
+      faculty = await Faculty.findById(request.facultyId);
+    }
     if (!faculty && request.facultyEmail) {
       faculty = await Faculty.findOne({ email: request.facultyEmail.toLowerCase() });
     }
@@ -311,7 +338,7 @@ export const rejectProfileChangeRequest = async (req, res) => {
       });
     }
 
-    const request = await FacultyProfileRequest.findById(id);
+    const request = await findRequestById(id);
     if (!request) {
       return res.status(404).json({ success: false, message: 'Profile change request not found' });
     }

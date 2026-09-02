@@ -4562,117 +4562,98 @@ export const credentialRequestService = {
   },
 };
 
-// Default / Mock Faculty Profile Requests for Demo & initial Cloud Sync
-export const initialMockFacultyProfileRequests = [
-  {
-    _id: 'freq_jitender_1',
-    id: 'freq_jitender_1',
-    facultyId: 'f_jitender',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    currentValues: {
-      name: 'Prof. Jitender Sharma',
-      phone: '+91 98160 12345',
-      designation: 'Head of Department & Professor',
-      department: 'Computer Science & Engineering',
-      photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-      qualification: 'Ph.D. in Computer Science',
-      experience: '12+ Years Academic & Industry',
-    },
-    requestedValues: {
-      phone: '+91 98160 99999',
-      department: 'Artificial Intelligence & Data Science',
-      designation: 'Dean of Computing & HOD',
-      experience: '14+ Years Academic & Industry',
-      photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-    },
-    reason: 'Updated contact phone number and updated department designation to Dean of Computing & AI.',
-    status: 'Pending',
-    submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    requestDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    adminComments: '',
-    approvedAt: null,
-    rejectedAt: null,
-    nextEligibleDate: null,
-    reviewedDate: null,
-    reviewedBy: null,
-  },
-  {
-    _id: 'freq_dr_anita_2',
-    id: 'freq_dr_anita_2',
-    facultyId: 'f_anita',
-    facultyName: 'Dr. Anita Desai',
-    facultyEmail: 'anita.desai@saumyaa.edu.in',
-    currentValues: {
-      name: 'Dr. Anita Desai',
-      phone: '+91 98765 43210',
-      designation: 'Associate Professor',
-      department: 'Mathematics & Computing',
-      photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
-      qualification: 'Ph.D. in Applied Mathematics',
-      experience: '8+ Years Experience',
-    },
-    requestedValues: {
-      qualification: 'Post-Doctorate & Ph.D. in Mathematics',
-      experience: '10+ Years Experience',
-      designation: 'Professor & Research Lead',
-    },
-    reason: 'Completed Post-Doctoral fellowship; updating qualification and academic rank.',
-    status: 'Approved',
-    submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    requestDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    adminComments: 'Approved by Administrator. Congratulations on completing your Post-Doctorate.',
-    approvedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-    reviewedDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-    nextEligibleDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-    reviewedByName: 'System Admin',
-  },
-];
+// Dynamic Faculty Profile Requests (No static mock data)
+export const initialMockFacultyProfileRequests = [];
+
+// Helper to sanitize faculty profile requests and strip out any legacy mock data
+const sanitizeFacultyProfileRequest = (r) => {
+  if (!r) return null;
+  const idStr = String(r._id || r.id || '');
+  if (!idStr || idStr === 'freq_jitender_1' || idStr === 'freq_dr_anita_2') return null;
+  return {
+    ...r,
+    _id: r._id || r.id || idStr,
+    id: r.id || r._id || idStr,
+    facultyId: r.facultyId || r.userId || '',
+    facultyName: r.facultyName || 'Faculty Member',
+    facultyEmail: r.facultyEmail || '',
+    status: r.status || 'Pending',
+    currentValues: r.currentValues || {},
+    requestedValues: r.requestedValues || {},
+    reason: r.reason || '',
+  };
+};
+
+// Purge any stale mock requests stored in localStorage or Firestore
+export const cleanStaleFacultyProfileRequests = async () => {
+  try {
+    const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+          localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(cleaned));
+        }
+      } catch (e) {}
+    }
+    // Delete legacy mock documents from Firestore if present
+    try {
+      await deleteDoc(doc(db, 'faculty_profile_requests', 'freq_jitender_1'));
+      await deleteDoc(doc(db, 'faculty_profile_requests', 'freq_dr_anita_2'));
+    } catch (e) {}
+  } catch (err) {}
+};
+
+// Run stale mock cleanup immediately on module load
+cleanStaleFacultyProfileRequests();
 
 // Faculty Profile Change Request Service (Admin Approval Workflow & 30-Day Cooldown)
 export const facultyProfileRequestService = {
   subscribeRequests: (callback) => {
     try {
-      let initialList = [];
+      cleanStaleFacultyProfileRequests();
+
+      let localStored = [];
       try {
         const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-        if (stored) initialList = JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            localStored = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+          }
+        }
       } catch (e) {}
-      if (!initialList || initialList.length === 0) {
-        initialList = initialMockFacultyProfileRequests;
-        localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(initialList));
-      }
-      if (callback) callback(initialList);
+
+      if (callback) callback(localStored);
 
       const colRef = collection(db, 'faculty_profile_requests');
       return onSnapshot(
         colRef,
         async (snapshot) => {
           let fsReqs = [];
-          if (snapshot.empty) {
-            try {
-              for (const req of initialMockFacultyProfileRequests) {
-                await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
-              }
-              fsReqs = initialMockFacultyProfileRequests;
-            } catch (seedErr) {
-              fsReqs = initialMockFacultyProfileRequests;
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const docId = docSnap.id;
+            const sanitized = sanitizeFacultyProfileRequest({ ...data, _id: docId, id: docId });
+            if (sanitized) {
+              fsReqs.push(sanitized);
             }
-          } else {
-            snapshot.forEach((docSnap) => {
-              fsReqs.push({ ...docSnap.data(), _id: docSnap.id, id: docSnap.id });
-            });
-          }
+          });
 
-          let localStored = [];
+          let currentLocal = [];
           try {
             const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-            if (stored) localStored = JSON.parse(stored);
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed)) {
+                currentLocal = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+              }
+            }
           } catch (e) {}
 
           const map = new Map();
-          initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
-          localStored.forEach((r) => {
+          currentLocal.forEach((r) => {
             const idStr = String(r?._id || r?.id || '');
             if (idStr) map.set(idStr, r);
           });
@@ -4682,21 +4663,23 @@ export const facultyProfileRequestService = {
           });
 
           const list = Array.from(map.values());
-          if (list.length > 0) {
-            localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
-          }
-          list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
+          localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+          list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || b.createdAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || a.createdAt || 0));
           if (callback) callback(list);
         },
         (err) => {
           console.warn('Firestore subscribeRequests notice:', err.message);
-          let localStored = [];
+          let currentLocal = [];
           try {
             const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-            if (stored) localStored = JSON.parse(stored);
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed)) {
+                currentLocal = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+              }
+            }
           } catch (e) {}
-          const list = (localStored && localStored.length > 0) ? localStored : initialMockFacultyProfileRequests;
-          if (callback) callback(list);
+          if (callback) callback(currentLocal);
         }
       );
     } catch (err) {
@@ -4706,13 +4689,20 @@ export const facultyProfileRequestService = {
   },
 
   getMyRequests: async (facultyId, facultyEmail) => {
+    cleanStaleFacultyProfileRequests();
+
     let remoteList = [];
     try {
       const baseUrl = getApiBaseUrl();
       if (baseUrl) {
-        const backendRes = await apiCall('/faculty-panel/profile-change-requests');
+        const queryParams = new URLSearchParams();
+        if (facultyId) queryParams.append('facultyId', facultyId);
+        if (facultyEmail) queryParams.append('facultyEmail', facultyEmail);
+        const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+        const backendRes = await apiCall(`/faculty-panel/profile-change-requests${queryStr}`);
         if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
-          remoteList = backendRes.requests;
+          remoteList = backendRes.requests.map(sanitizeFacultyProfileRequest).filter(Boolean);
         }
       }
     } catch (e) {}
@@ -4722,15 +4712,11 @@ export const facultyProfileRequestService = {
       const snapshot = await getDocs(collection(db, 'faculty_profile_requests'));
       if (!snapshot.empty) {
         snapshot.forEach((d) => {
-          fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
+          const sanitized = sanitizeFacultyProfileRequest({ ...d.data(), _id: d.id, id: d.id });
+          if (sanitized) {
+            fsReqs.push(sanitized);
+          }
         });
-      } else {
-        for (const req of initialMockFacultyProfileRequests) {
-          try {
-            await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
-          } catch (e) {}
-        }
-        fsReqs = initialMockFacultyProfileRequests;
       }
     } catch (fsErr) {
       console.warn('Firestore getDocs faculty_profile_requests notice:', fsErr.message);
@@ -4739,11 +4725,15 @@ export const facultyProfileRequestService = {
     let localStored = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) localStored = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localStored = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+        }
+      }
     } catch (e) {}
 
     const map = new Map();
-    initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
     localStored.forEach((r) => {
       const idStr = String(r?._id || r?.id || '');
       if (idStr) map.set(idStr, r);
@@ -4758,9 +4748,7 @@ export const facultyProfileRequestService = {
     });
 
     let list = Array.from(map.values());
-    if (list.length > 0) {
-      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
-    }
+    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
 
     const targetId = facultyId ? String(facultyId).toLowerCase() : '';
     const targetEmail = facultyEmail ? String(facultyEmail).toLowerCase() : '';
@@ -4769,10 +4757,10 @@ export const facultyProfileRequestService = {
       const rId = String(r.facultyId || '').toLowerCase();
       const rEmail = String(r.facultyEmail || '').toLowerCase();
       if (!targetId && !targetEmail) return true;
-      return (targetId && (rId === targetId || rId === 'f_jitender')) || (targetEmail && rEmail === targetEmail);
+      return (targetId && rId === targetId) || (targetEmail && rEmail === targetEmail);
     });
 
-    myReqs.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
+    myReqs.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || b.createdAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || a.createdAt || 0));
 
     // Find latest APPROVED request for 30-day cooldown calculation strictly from APPROVED timestamp
     const latestApproved = myReqs.find((r) => r.status === 'Approved' && (r.approvedAt || r.reviewedDate));
@@ -4835,9 +4823,9 @@ export const facultyProfileRequestService = {
         clearTimeout(timeoutId);
         const data = await res.json();
         if (res.ok && data.request) {
-          remoteReq = data.request;
+          remoteReq = sanitizeFacultyProfileRequest(data.request);
         } else if (!res.ok && data.message) {
-          if (data.message.includes('approved on') || data.message.includes('cooldown') || data.message.includes('required')) {
+          if (data.message.includes('approved on') || data.message.includes('cooldown') || data.message.includes('required') || data.message.includes('changes')) {
             throw new Error(data.message);
           }
         }
@@ -4851,13 +4839,15 @@ export const facultyProfileRequestService = {
     let list = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) list = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          list = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+        }
+      }
     } catch (e) {}
-    if (!list || list.length === 0) {
-      list = [...initialMockFacultyProfileRequests];
-    }
 
-    const facultyId = requestData.facultyId || 'f_jitender';
+    const facultyId = requestData.facultyId || '';
     const facultyEmail = (requestData.facultyEmail || '').toLowerCase();
 
     // Check 30-day post-approval cooldown
@@ -4865,7 +4855,7 @@ export const facultyProfileRequestService = {
       (r) =>
         r.status === 'Approved' &&
         (r.approvedAt || r.reviewedDate) &&
-        (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
+        ((facultyId && String(r.facultyId) === String(facultyId)) || (facultyEmail && r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
     );
 
     if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
@@ -4883,7 +4873,7 @@ export const facultyProfileRequestService = {
     const pendingIdx = list.findIndex(
       (r) =>
         r.status === 'Pending' &&
-        (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
+        ((facultyId && String(r.facultyId) === String(facultyId)) || (facultyEmail && r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
     );
 
     if (pendingIdx !== -1) {
@@ -4921,8 +4911,8 @@ export const facultyProfileRequestService = {
       _id: id,
       id,
       facultyId,
-      facultyName: requestData.facultyName || 'Prof. Jitender Sharma',
-      facultyEmail: requestData.facultyEmail || 'jitender.sharma@saumyaa.edu.in',
+      facultyName: requestData.facultyName || 'Faculty Member',
+      facultyEmail: requestData.facultyEmail || '',
       currentValues: requestData.currentValues || {},
       requestedValues: requestData.requestedValues || {},
       reason: (requestData.reason || '').trim(),
@@ -4955,13 +4945,16 @@ export const facultyProfileRequestService = {
   },
 
   getAllRequests: async (statusFilter) => {
+    cleanStaleFacultyProfileRequests();
+
     let remoteList = [];
     try {
       const baseUrl = getApiBaseUrl();
       if (baseUrl) {
-        const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
+        const queryStr = statusFilter && statusFilter !== 'All' ? `?status=${encodeURIComponent(statusFilter)}` : '';
+        const backendRes = await apiCall(`/admin/profile-change-requests${queryStr}`);
         if (backendRes && backendRes.success && Array.isArray(backendRes.requests)) {
-          remoteList = backendRes.requests;
+          remoteList = backendRes.requests.map(sanitizeFacultyProfileRequest).filter(Boolean);
         }
       }
     } catch (e) {}
@@ -4971,15 +4964,11 @@ export const facultyProfileRequestService = {
       const snapshot = await getDocs(collection(db, 'faculty_profile_requests'));
       if (!snapshot.empty) {
         snapshot.forEach((d) => {
-          fsReqs.push({ ...d.data(), _id: d.id, id: d.id });
+          const sanitized = sanitizeFacultyProfileRequest({ ...d.data(), _id: d.id, id: d.id });
+          if (sanitized) {
+            fsReqs.push(sanitized);
+          }
         });
-      } else {
-        for (const req of initialMockFacultyProfileRequests) {
-          try {
-            await setDoc(doc(db, 'faculty_profile_requests', String(req._id || req.id)), req);
-          } catch (e) {}
-        }
-        fsReqs = initialMockFacultyProfileRequests;
       }
     } catch (fsErr) {
       console.warn('Firestore getDocs faculty_profile_requests error:', fsErr.message);
@@ -4988,11 +4977,15 @@ export const facultyProfileRequestService = {
     let localStored = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) localStored = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localStored = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+        }
+      }
     } catch (e) {}
 
     const map = new Map();
-    initialMockFacultyProfileRequests.forEach((r) => map.set(String(r._id || r.id), r));
     localStored.forEach((r) => {
       const idStr = String(r?._id || r?.id || '');
       if (idStr) map.set(idStr, r);
@@ -5007,14 +5000,12 @@ export const facultyProfileRequestService = {
     });
 
     let list = Array.from(map.values());
-    if (list.length > 0) {
-      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
-    }
+    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
 
     if (statusFilter && statusFilter !== 'All') {
       list = list.filter((r) => String(r.status).toLowerCase() === String(statusFilter).toLowerCase());
     }
-    list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
+    list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || b.createdAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || a.createdAt || 0));
 
     return { success: true, count: list.length, requests: list };
   },
@@ -5030,7 +5021,12 @@ export const facultyProfileRequestService = {
     let list = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) list = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          list = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+        }
+      }
     } catch (e) {}
 
     const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));
@@ -5088,7 +5084,12 @@ export const facultyProfileRequestService = {
     let list = [];
     try {
       const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
-      if (stored) list = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          list = parsed.map(sanitizeFacultyProfileRequest).filter(Boolean);
+        }
+      }
     } catch (e) {}
 
     const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));

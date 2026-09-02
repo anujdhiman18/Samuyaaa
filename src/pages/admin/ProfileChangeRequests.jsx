@@ -228,7 +228,7 @@ export default function ProfileChangeRequests() {
                     <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
                       {req.facultyName || 'Faculty Member'}
                       <span className="text-[10px] font-mono font-normal text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full border border-outline-variant/30">
-                        ID: {String(req.facultyId || 'f_jitender')}
+                        ID: {String(req.facultyId || req._id || req.id || 'N/A')}
                       </span>
                     </h3>
                     <p className="text-xs text-on-surface-variant flex items-center gap-1">

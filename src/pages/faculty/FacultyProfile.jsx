@@ -61,8 +61,8 @@ export default function FacultyProfile() {
   const fetchProfileRequests = async () => {
     setLoading(true);
     try {
-      const facId = user?._id || user?.id || 'f_jitender';
-      const facEmail = user?.email || 'jitender.sharma@saumyaa.edu.in';
+      const facId = user?._id || user?.id || '';
+      const facEmail = user?.email || '';
       const res = await facultyProfileRequestService.getMyRequests(facId, facEmail);
 
       if (res && res.success) {
@@ -80,8 +80,8 @@ export default function FacultyProfile() {
     try {
       const res = await credentialRequestService.getRequests();
       if (res && res.requests) {
-        const facId = user?._id || user?.id || 'f_jitender';
-        const myReqs = res.requests.filter((r) => r.facultyId === facId || r.facultyName === user?.name);
+        const facId = user?._id || user?.id || '';
+        const myReqs = res.requests.filter((r) => (facId && r.facultyId === facId) || (user?.email && r.facultyEmail === user?.email) || (user?.name && r.facultyName === user?.name));
         setCredRequests(myReqs);
       }
     } catch (e) {
@@ -192,11 +192,11 @@ export default function FacultyProfile() {
 
     setSubmitting(true);
     try {
-      const facId = user?._id || user?.id || 'f_jitender';
-      const facEmail = user?.email || 'jitender.sharma@saumyaa.edu.in';
+      const facId = user?._id || user?.id || '';
+      const facEmail = user?.email || '';
 
       const currentValues = {
-        name: user?.name || '',
+        name: user?.name || user?.fullName || '',
         phone: user?.phone || '',
         designation: user?.designation || '',
         department: user?.department || '',
@@ -207,7 +207,7 @@ export default function FacultyProfile() {
 
       const res = await facultyProfileRequestService.submitRequest({
         facultyId: facId,
-        facultyName: user?.name || 'Prof. Jitender Sharma',
+        facultyName: user?.name || user?.fullName || 'Faculty Member',
         facultyEmail: facEmail,
         currentValues,
         requestedValues: finalRequestedValues,
@@ -241,8 +241,9 @@ export default function FacultyProfile() {
     setRequestingCred(true);
     try {
       const res = await credentialRequestService.submitRequest({
-        facultyId: user?._id || user?.id || 'f_jitender',
-        facultyName: user?.name || 'Prof. Jitender Sharma',
+        facultyId: user?._id || user?.id || '',
+        facultyName: user?.name || user?.fullName || 'Faculty Member',
+        facultyEmail: user?.email || '',
         userType: 'Faculty',
         requestType: 'Username / Email Change',
         oldValue: user?.email,
@@ -270,8 +271,9 @@ export default function FacultyProfile() {
     setRequestingCred(true);
     try {
       const res = await credentialRequestService.submitRequest({
-        facultyId: user?._id || user?.id || 'f_jitender',
-        facultyName: user?.name || 'Prof. Jitender Sharma',
+        facultyId: user?._id || user?.id || '',
+        facultyName: user?.name || user?.fullName || 'Faculty Member',
+        facultyEmail: user?.email || '',
         userType: 'Faculty',
         requestType: 'Password Change',
         oldValue: '••••••••',
@@ -397,9 +399,9 @@ export default function FacultyProfile() {
                   className="w-20 h-20 rounded-2xl object-cover border-2 border-primary/20 shadow-md"
                 />
                 <div>
-                  <h3 className="font-headings font-extrabold text-lg text-secondary">{user?.name || 'Prof. Jitender Sharma'}</h3>
-                  <p className="text-xs text-primary font-bold">{user?.designation || 'Senior Faculty Member'}</p>
-                  <p className="text-xs text-on-surface-variant">{user?.department || 'Science & Mathematics'}</p>
+                  <h3 className="font-headings font-extrabold text-lg text-secondary">{user?.name || user?.fullName || 'Faculty Member'}</h3>
+                  <p className="text-xs text-primary font-bold">{user?.designation || 'Faculty Member'}</p>
+                  <p className="text-xs text-on-surface-variant">{user?.department || 'Department'}</p>
                 </div>
               </div>
 
@@ -413,17 +415,17 @@ export default function FacultyProfile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/15 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/70 block">Full Name</span>
-                <p className="font-bold text-secondary text-xs">{user?.name || 'Prof. Jitender Sharma'}</p>
+                <p className="font-bold text-secondary text-xs">{user?.name || user?.fullName || 'Faculty Member'}</p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/15 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/70 block">Official Email / Username</span>
-                <p className="font-mono text-secondary text-xs">{user?.email || 'jitender.sharma@saumyaa.edu.in'}</p>
+                <p className="font-mono text-secondary text-xs">{user?.email || 'N/A'}</p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/15 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/70 block">Phone Number</span>
-                <p className="font-mono text-secondary text-xs">{user?.phone || '9816099999'}</p>
+                <p className="font-mono text-secondary text-xs">{user?.phone || 'N/A'}</p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/15 space-y-1">
