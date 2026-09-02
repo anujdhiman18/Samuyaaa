@@ -1,12 +1,30 @@
 import StudentApplication from '../models/StudentApplication.js';
 import { normalizeClassCode } from '../config/classConfig.js';
 
-// @desc    Submit a new Student Application
+const COOLDOWN_DAYS = 30;
+const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+const formatDateFormatted = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate();
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
+// @desc    Submit or Modify Student Application
 // @route   POST /api/student-applications
 // @access  Public
 export const submitStudentApplication = async (req, res) => {
   try {
     const {
+      applicationId: existingAppId,
       fullName,
       email,
       contactNumber,
@@ -33,6 +51,74 @@ export const submitStudentApplication = async (req, res) => {
       });
     }
 
+    const emailClean = email.trim().toLowerCase();
+    const contactClean = contactNumber.trim();
+
+    // 1. BACKEND ENFORCED 30-DAY RESTRICTION CHECK (From APPROVED timestamp)
+    const latestApproved = await StudentApplication.findOne({
+      $or: [{ email: emailClean }, { contactNumber: contactClean }],
+      status: 'Approved',
+    }).sort({ approvedAt: -1, updatedAt: -1 });
+
+    if (latestApproved && latestApproved.approvedAt) {
+      const approvedDate = new Date(latestApproved.approvedAt);
+      const nextAllowedDate = new Date(approvedDate.getTime() + COOLDOWN_MS);
+      const now = new Date();
+
+      if (now < nextAllowedDate) {
+        const approvedFormatted = formatDateFormatted(approvedDate);
+        const nextFormatted = formatDateFormatted(nextAllowedDate);
+        const cooldownMessage = `This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`;
+
+        return res.status(400).json({
+          success: false,
+          cooldownActive: true,
+          message: cooldownMessage,
+          approvedAt: approvedDate,
+          nextEligibleDate: nextAllowedDate,
+          formattedApprovedDate: approvedFormatted,
+          formattedNextDate: nextFormatted,
+        });
+      }
+    }
+
+    // 2. Check for active Pending request - allow user to update/modify pending application
+    const existingPending = await StudentApplication.findOne({
+      $or: [
+        ...(existingAppId ? [{ applicationId: existingAppId }] : []),
+        { email: emailClean, status: 'Pending' },
+        { contactNumber: contactClean, status: 'Pending' },
+      ],
+      status: 'Pending',
+    });
+
+    if (existingPending) {
+      existingPending.fullName = fullName.trim();
+      existingPending.email = emailClean;
+      existingPending.contactNumber = contactClean;
+      existingPending.dob = dob || '';
+      existingPending.academicStage = academicStage;
+      existingPending.currentClass = currentClass;
+      existingPending.targetClass = targetClass;
+      existingPending.branch = branch;
+      existingPending.subjects = Array.isArray(subjects) ? subjects : subjects ? [subjects] : [];
+      existingPending.previousSchool = previousSchool || '';
+      existingPending.parentName = parentName.trim();
+      existingPending.parentContact = parentContact.trim();
+      existingPending.message = message || '';
+      existingPending.submittedAt = new Date();
+      existingPending.appliedAt = new Date();
+      await existingPending.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Pending student application updated successfully!',
+        applicationId: existingPending.applicationId,
+        application: existingPending,
+        isUpdate: true,
+      });
+    }
+
     // Generate custom applicationId (e.g., SAU-STU-2026-1084)
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const year = new Date().getFullYear();
@@ -40,19 +126,21 @@ export const submitStudentApplication = async (req, res) => {
 
     const application = await StudentApplication.create({
       applicationId,
-      fullName,
-      email,
-      contactNumber,
+      fullName: fullName.trim(),
+      email: emailClean,
+      contactNumber: contactClean,
       dob: dob || '',
       academicStage,
       currentClass,
       targetClass,
-      branch: branch || 'Main Center',
+      branch: branch || 'Main Center (Bagru)',
       subjects: Array.isArray(subjects) ? subjects : subjects ? [subjects] : [],
       previousSchool: previousSchool || '',
-      parentName,
-      parentContact,
+      parentName: parentName.trim(),
+      parentContact: parentContact.trim(),
       message: message || '',
+      submittedAt: new Date(),
+      appliedAt: new Date(),
       status: 'Pending',
     });
 
@@ -67,6 +155,59 @@ export const submitStudentApplication = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Server Error submitting student application',
+    });
+  }
+};
+
+// @desc    Update/Modify pending application by ID
+// @route   PUT /api/student-applications/:id
+// @access  Public / Applicant
+export const updatePendingStudentApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await StudentApplication.findOne({
+      $or: [{ _id: id }, { applicationId: id }],
+    });
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    if (application.status === 'Approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Approved applications are locked and cannot be modified.',
+      });
+    }
+
+    const updates = req.body;
+    const allowedKeys = ['fullName', 'email', 'contactNumber', 'dob', 'academicStage', 'currentClass', 'targetClass', 'branch', 'subjects', 'previousSchool', 'parentName', 'parentContact', 'message'];
+
+    allowedKeys.forEach((key) => {
+      if (updates[key] !== undefined) {
+        application[key] = updates[key];
+      }
+    });
+
+    // If previously rejected, re-setting to Pending on edit
+    if (application.status === 'Rejected') {
+      application.status = 'Pending';
+      application.rejectedAt = null;
+    }
+
+    application.submittedAt = new Date();
+    await application.save();
+
+    res.json({
+      success: true,
+      message: 'Student application updated successfully!',
+      application,
+    });
+  } catch (error) {
+    console.error('Error in updatePendingStudentApplication:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error updating student application',
     });
   }
 };
@@ -92,7 +233,7 @@ export const getStudentApplications = async (req, res) => {
       ];
     }
 
-    const applications = await StudentApplication.find(query).sort({ createdAt: -1 });
+    const applications = await StudentApplication.find(query).sort({ submittedAt: -1, appliedAt: -1, createdAt: -1 });
 
     res.json({
       success: true,
@@ -124,12 +265,24 @@ export const updateStudentApplicationStatus = async (req, res) => {
       });
     }
 
-    if (status) application.status = status;
+    const now = new Date();
+    if (status) {
+      application.status = status;
+      if (status === 'Approved') {
+        application.approvedAt = now;
+        application.nextEligibleDate = new Date(now.getTime() + COOLDOWN_MS);
+        application.lastApprovedRequestId = application._id ? String(application._id) : '';
+      } else if (status === 'Rejected') {
+        application.rejectedAt = now;
+        application.nextEligibleDate = null;
+      }
+    }
+
     if (notes !== undefined) application.notes = notes;
 
     const historyEntry = {
       status: status || application.status,
-      date: new Date(),
+      date: now,
       notes: notes || '',
       sentTo: application.email,
     };

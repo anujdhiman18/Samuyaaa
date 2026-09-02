@@ -51,49 +51,35 @@ export const createProfileChangeRequest = async (req, res) => {
     const facultyName = faculty?.name || req.user?.name || 'Prof. Jitender Sharma';
     const facultyEmail = faculty?.email || req.user?.email || 'jitender.sharma@saumyaa.edu.in';
 
-    // 2. Check for active Pending request
-    const existingPending = await FacultyProfileRequest.findOne({
+    // 2. BACKEND ENFORCED 30-DAY RESTRICTION CHECK (Calculated strictly from APPROVED timestamp)
+    const latestApproved = await FacultyProfileRequest.findOne({
       $or: [{ facultyId }, { facultyEmail: facultyEmail.toLowerCase() }],
-      status: 'Pending',
-    });
+      status: 'Approved',
+    }).sort({ approvedAt: -1, reviewedDate: -1 });
 
-    if (existingPending) {
-      return res.status(400).json({
-        success: false,
-        message: 'You already have a pending profile change request under review by Administrator.',
-      });
-    }
-
-    // 3. BACKEND ENFORCED 30-DAY RESTRICTION CHECK
-    // Find latest submitted request regardless of status (Pending, Approved, or Rejected)
-    const latestRequest = await FacultyProfileRequest.findOne({
-      $or: [{ facultyId }, { facultyEmail: facultyEmail.toLowerCase() }],
-    }).sort({ requestDate: -1 });
-
-    if (latestRequest && latestRequest.requestDate) {
-      const lastDate = new Date(latestRequest.requestDate);
-      const nextAllowedDate = new Date(lastDate.getTime() + COOLDOWN_MS);
+    if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
+      const approvedDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
+      const nextAllowedDate = new Date(approvedDate.getTime() + COOLDOWN_MS);
       const now = new Date();
 
       if (now < nextAllowedDate) {
-        const lastFormatted = formatDateFormatted(lastDate);
+        const approvedFormatted = formatDateFormatted(approvedDate);
         const nextFormatted = formatDateFormatted(nextAllowedDate);
-
-        const cooldownMessage = `Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`;
+        const cooldownMessage = `This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`;
 
         return res.status(400).json({
           success: false,
           cooldownActive: true,
           message: cooldownMessage,
-          lastSubmittedDate: lastDate,
-          nextAllowedDate: nextAllowedDate,
-          formattedLastDate: lastFormatted,
+          approvedAt: approvedDate,
+          nextEligibleDate: nextAllowedDate,
+          formattedApprovedDate: approvedFormatted,
           formattedNextDate: nextFormatted,
         });
       }
     }
 
-    // 4. Build currentValues snapshot from existing faculty record
+    // 3. Build currentValues snapshot from existing faculty record
     const currentValues = {};
     const allowedKeys = ['name', 'phone', 'designation', 'department', 'photo_url', 'qualification', 'experience', 'email'];
 
@@ -118,9 +104,30 @@ export const createProfileChangeRequest = async (req, res) => {
       });
     }
 
+    // 4. Check for active Pending request - allow user to update/modify pending request!
+    const existingPending = await FacultyProfileRequest.findOne({
+      $or: [{ facultyId }, { facultyEmail: facultyEmail.toLowerCase() }],
+      status: 'Pending',
+    });
+
+    if (existingPending) {
+      existingPending.requestedValues = filteredRequested;
+      existingPending.currentValues = currentValues;
+      existingPending.reason = reason.trim();
+      existingPending.submittedAt = new Date();
+      existingPending.requestDate = new Date();
+      await existingPending.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Pending profile change request updated successfully.',
+        request: existingPending,
+        isUpdate: true,
+      });
+    }
+
     // 5. Create new request in DB
     const requestDate = new Date();
-    const nextAllowedDate = new Date(requestDate.getTime() + COOLDOWN_MS);
 
     const newRequest = await FacultyProfileRequest.create({
       facultyId: faculty?._id || facultyId,
@@ -129,24 +136,15 @@ export const createProfileChangeRequest = async (req, res) => {
       currentValues,
       requestedValues: filteredRequested,
       reason: reason.trim(),
+      submittedAt: requestDate,
       requestDate,
       status: 'Pending',
     });
-
-    const lastFormatted = formatDateFormatted(requestDate);
-    const nextFormatted = formatDateFormatted(nextAllowedDate);
 
     return res.status(201).json({
       success: true,
       message: 'Profile change request submitted successfully to Admin for approval.',
       request: newRequest,
-      cooldownInfo: {
-        lastSubmittedDate: requestDate,
-        nextAllowedDate,
-        formattedLastDate: lastFormatted,
-        formattedNextDate: nextFormatted,
-        cooldownMessage: `Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`,
-      },
     });
   } catch (error) {
     console.error('createProfileChangeRequest error:', error);
@@ -163,41 +161,47 @@ export const getMyProfileChangeRequests = async (req, res) => {
     const facultyEmail = req.user?.email || '';
 
     const requests = await FacultyProfileRequest.find({
-      $or: [{ facultyId }, { facultyEmail: facultyEmail.toLowerCase() }],
-    }).sort({ requestDate: -1 });
+      $or: [
+        { facultyId },
+        { facultyEmail: facultyEmail ? facultyEmail.toLowerCase() : '' },
+      ],
+    }).sort({ submittedAt: -1, requestDate: -1, createdAt: -1 });
+
+    // Find latest APPROVED request for 30-day cooldown enforcement
+    const latestApproved = requests.find((r) => r.status === 'Approved' && (r.approvedAt || r.reviewedDate));
 
     let isCooldownActive = false;
-    let lastSubmittedDate = null;
+    let approvedAtDate = null;
     let nextAllowedDate = null;
-    let formattedLastDate = '';
+    let formattedApprovedDate = '';
     let formattedNextDate = '';
     let cooldownMessage = '';
 
-    const latestRequest = requests[0];
-    if (latestRequest && latestRequest.requestDate) {
-      lastSubmittedDate = new Date(latestRequest.requestDate);
-      nextAllowedDate = new Date(lastSubmittedDate.getTime() + COOLDOWN_MS);
+    if (latestApproved) {
+      approvedAtDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
+      nextAllowedDate = new Date(approvedAtDate.getTime() + COOLDOWN_MS);
+      const now = new Date();
 
-      if (new Date() < nextAllowedDate) {
+      if (now < nextAllowedDate) {
         isCooldownActive = true;
+        formattedApprovedDate = formatDateFormatted(approvedAtDate);
+        formattedNextDate = formatDateFormatted(nextAllowedDate);
+        cooldownMessage = `This request was approved on ${formattedApprovedDate}. You can make another request after ${formattedNextDate}.`;
       }
-
-      formattedLastDate = formatDateFormatted(lastSubmittedDate);
-      formattedNextDate = formatDateFormatted(nextAllowedDate);
-      cooldownMessage = `Your last profile change request was submitted on ${formattedLastDate}. You can submit your next request on ${formattedNextDate}.`;
     }
 
     const hasPending = requests.some((r) => r.status === 'Pending');
 
     return res.json({
       success: true,
+      count: requests.length,
       requests,
       hasPending,
       cooldownInfo: {
         isCooldownActive,
-        lastSubmittedDate,
+        approvedAtDate,
         nextAllowedDate,
-        formattedLastDate,
+        formattedApprovedDate,
         formattedNextDate,
         cooldownMessage,
       },
@@ -265,10 +269,16 @@ export const approveProfileChangeRequest = async (req, res) => {
       await faculty.save();
     }
 
-    // 2. Mark request as Approved
+    // 2. Mark request as Approved with 30-day lock from now
+    const now = new Date();
+    const nextEligible = new Date(now.getTime() + COOLDOWN_MS);
+
     request.status = 'Approved';
     request.adminComments = adminComments || 'Approved by System Admin';
-    request.reviewedDate = new Date();
+    request.approvedAt = now;
+    request.reviewedDate = now;
+    request.nextEligibleDate = nextEligible;
+    request.lastApprovedRequestId = request._id ? String(request._id) : '';
     request.reviewedBy = req.user?._id || req.user?.id || null;
     request.reviewedByName = req.user?.name || 'System Admin';
 
@@ -313,10 +323,13 @@ export const rejectProfileChangeRequest = async (req, res) => {
       });
     }
 
-    // Mark request as Rejected (do NOT update Faculty profile)
+    // Mark request as Rejected (no 30-day lock so user can edit/resubmit)
+    const now = new Date();
     request.status = 'Rejected';
     request.adminComments = adminComments.trim();
-    request.reviewedDate = new Date();
+    request.rejectedAt = now;
+    request.reviewedDate = now;
+    request.nextEligibleDate = null;
     request.reviewedBy = req.user?._id || req.user?.id || null;
     request.reviewedByName = req.user?.name || 'System Admin';
 

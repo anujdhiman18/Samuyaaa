@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   submitStudentApplication,
+  updatePendingStudentApplication,
   getStudentApplications,
   updateStudentApplicationStatus,
   deleteStudentApplication,
@@ -8,8 +9,9 @@ import {
 
 const router = express.Router();
 
-// Public application submission
+// Public application submission & update
 router.post('/', submitStudentApplication);
+router.put('/:id', updatePendingStudentApplication);
 
 // Application management (Admin / Internal)
 router.get('/', getStudentApplications);

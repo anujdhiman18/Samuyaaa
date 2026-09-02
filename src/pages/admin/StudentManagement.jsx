@@ -173,12 +173,9 @@ export default function StudentManagement() {
     setUpdatingApp(true);
     try {
       const targetId = String(app._id || app.id);
-      await studentApplicationService.deleteApplication(targetId);
+      await studentApplicationService.updateApplicationStatus(targetId, 'Rejected', adminNotes || 'Application rejected by admissions admin.');
 
-      // Instantly remove application from UI list
-      setApplications((prev) => prev.filter((a) => String(a._id || a.id) !== targetId));
-
-      addToast(`Application for ${app.fullName || 'candidate'} rejected & deleted successfully`, 'info');
+      addToast(`Application for ${app.fullName || 'candidate'} rejected. Candidate can correct and resubmit without 30-day lock.`, 'info');
       setSelectedApp(null);
       await fetchApplications();
     } catch (err) {
@@ -671,11 +668,16 @@ export default function StudentManagement() {
                                 : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                             }`}
                           >
-                            {app.status}
+                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : app.status}
                           </span>
                         </td>
-                        <td className="p-4 text-on-surface-variant">
-                          {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Recent'}
+                        <td className="p-4 text-on-surface-variant text-[11px]">
+                          <div>Submitted: {app.submittedAt || app.appliedAt ? new Date(app.submittedAt || app.appliedAt).toLocaleDateString() : 'Recent'}</div>
+                          {app.status === 'Approved' && (app.approvedAt || app.updatedAt) && (
+                            <div className="text-[10px] text-emerald-700 font-bold mt-0.5">
+                              Approved: {new Date(app.approvedAt || app.updatedAt).toLocaleDateString()}
+                            </div>
+                          )}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -940,11 +942,11 @@ export default function StudentManagement() {
                   className="px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 hover:bg-rose-500 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[15px]">close</span>
-                  Reject & Delete Application
+                  Reject Application
                 </button>
               </div>
 
-              {selectedApp?.status !== 'Rejected' && (
+              {selectedApp?.status !== 'Approved' && (
                 <button
                   disabled={updatingApp}
                   onClick={() => handleApproveAndEnroll(selectedApp)}

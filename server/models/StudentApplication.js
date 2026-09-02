@@ -83,6 +83,26 @@ const studentApplicationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
+    nextEligibleDate: {
+      type: Date,
+      default: null,
+    },
+    lastApprovedRequestId: {
+      type: String,
+      default: '',
+    },
     notes: {
       type: String,
       default: '',

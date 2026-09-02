@@ -31,6 +31,10 @@ const facultyProfileRequestSchema = new mongoose.Schema(
       required: [true, 'Reason for profile change is required'],
       trim: true,
     },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    },
     requestDate: {
       type: Date,
       default: Date.now,
@@ -44,6 +48,22 @@ const facultyProfileRequestSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
+    },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
+    nextEligibleDate: {
+      type: Date,
+      default: null,
+    },
+    lastApprovedRequestId: {
+      type: String,
+      default: '',
     },
     reviewedDate: {
       type: Date,

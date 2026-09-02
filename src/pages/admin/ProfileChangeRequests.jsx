@@ -198,28 +198,31 @@ export default function ProfileChangeRequests() {
                   : 'border-amber-200/80 hover:border-amber-400'
               }`}
             >
-              {/* Card Top: Faculty Info & Status Badge */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/15 pb-4">
+              {/* Card Header: Faculty Info & Status */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/15 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg border border-primary/20 shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary font-bold flex items-center justify-center font-headings text-base shrink-0 border border-primary/20">
                     {req.facultyName ? req.facultyName.charAt(0) : 'F'}
                   </div>
                   <div>
                     <h3 className="font-headings font-extrabold text-base text-secondary flex items-center gap-2">
-                      {req.facultyName}
-                      <span className="text-xs font-mono font-normal text-on-surface-variant">
-                        ({req.facultyEmail || 'No Email'})
+                      {req.facultyName || 'Faculty Member'}
+                      <span className="text-[10px] font-mono font-normal text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full border border-outline-variant/30">
+                        ID: {String(req.facultyId || 'f_jitender')}
                       </span>
                     </h3>
-                    <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
-                      <span className="material-symbols-outlined text-xs">calendar_today</span>
-                      Requested On: <span className="font-bold text-secondary">{formatDate(req.requestDate || req.createdAt)}</span>
+                    <p className="text-xs text-on-surface-variant flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">mail</span>
+                      {req.facultyEmail || 'No email registered'}
+                      <span className="mx-1">&bull;</span>
+                      <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                      Submitted: <strong>{formatDate(req.submittedAt || req.requestDate || req.createdAt)}</strong>
                     </p>
                   </div>
                 </div>
 
                 {/* Status Badge & Action Buttons */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <span
                     className={`px-3 py-1 rounded-full font-extrabold text-xs flex items-center gap-1.5 ${
                       req.status === 'Approved'
@@ -232,7 +235,11 @@ export default function ProfileChangeRequests() {
                     <span className="material-symbols-outlined text-sm">
                       {req.status === 'Approved' ? 'check_circle' : req.status === 'Rejected' ? 'cancel' : 'schedule'}
                     </span>
-                    {req.status === 'Pending' ? '🟡 Pending Approval' : req.status}
+                    {req.status === 'Approved'
+                      ? '🟢 Approved'
+                      : req.status === 'Rejected'
+                      ? '🔴 Rejected'
+                      : '🟡 Pending Approval'}
                   </span>
 
                   {/* Actions for Pending Requests */}
@@ -256,6 +263,22 @@ export default function ProfileChangeRequests() {
                   )}
                 </div>
               </div>
+
+              {/* Approval / Lock Date Information Banner */}
+              {req.status === 'Approved' && (req.approvedAt || req.reviewedDate) && (
+                <div className="p-3 mt-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-700 text-base">verified</span>
+                    <span>
+                      Approved Date: <strong>{formatDate(req.approvedAt || req.reviewedDate)}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-emerald-100 px-3 py-1 rounded-full text-emerald-800 font-bold text-[11px]">
+                    <span className="material-symbols-outlined text-xs">lock_clock</span>
+                    <span>Next Eligible Date: <strong>{formatDate(req.nextEligibleDate || new Date(new Date(req.approvedAt || req.reviewedDate).getTime() + 30 * 24 * 60 * 60 * 1000))}</strong></span>
+                  </div>
+                </div>
+              )}
 
               {/* Reason for Profile Change */}
               <div className="py-4 space-y-1">
@@ -339,7 +362,7 @@ export default function ProfileChangeRequests() {
                     <span className="font-bold text-secondary">Reviewed By:</span>
                     <span>{req.reviewedByName || 'System Admin'}</span>
                     <span>&bull;</span>
-                    <span>{formatDate(req.reviewedDate)}</span>
+                    <span>{formatDate(req.reviewedDate || req.approvedAt || req.rejectedAt)}</span>
                   </div>
 
                   {req.adminComments && (

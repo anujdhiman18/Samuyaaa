@@ -2,11 +2,20 @@ import React, { useState } from 'react';
 import { studentApplicationService } from '../../services/api';
 import { formatClassLabel } from '../../config/classConfig';
 
-export default function StudentCandidateStatusTracker() {
+export default function StudentCandidateStatusTracker({ onEditApplication }) {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [resultApp, setResultApp] = useState(null);
   const [notFound, setNotFound] = useState(false);
+
+  const formatDateFormatted = (dateInput) => {
+    if (!dateInput) return '';
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return '';
+    const day = d.getDate();
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -47,28 +56,28 @@ export default function StudentCandidateStatusTracker() {
         return (
           <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-extrabold text-xs flex items-center gap-1 border border-emerald-500/20">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Approved & Enrolled
+            🟢 Approved & Enrolled
           </span>
         );
       case 'Rejected':
         return (
           <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 font-extrabold text-xs flex items-center gap-1 border border-rose-500/20">
             <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            Not Selected
+            🔴 Not Selected / Rejected
           </span>
         );
       case 'Under Review':
         return (
           <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 font-extrabold text-xs flex items-center gap-1 border border-amber-500/20">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            Under Review
+            🟡 Under Review
           </span>
         );
       default:
         return (
           <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 font-extrabold text-xs flex items-center gap-1 border border-blue-500/20">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Application Pending
+            🟡 Application Pending
           </span>
         );
     }
@@ -128,8 +137,63 @@ export default function StudentCandidateStatusTracker() {
                   {resultApp.fullName}
                 </h3>
               </div>
-              <div>{getStatusBadge(resultApp.status)}</div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(resultApp.status)}
+              </div>
             </div>
+
+            {/* Approved 30-Day Lock Banner */}
+            {resultApp.status === 'Approved' && (resultApp.approvedAt || resultApp.updatedAt) && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <span className="material-symbols-outlined text-sm text-emerald-700">lock</span>
+                  <span>🔒 30-Day Application Lock Active</span>
+                </div>
+                <p className="text-emerald-800 text-[11px] leading-relaxed">
+                  This request was approved on <strong>{formatDateFormatted(resultApp.approvedAt || resultApp.updatedAt)}</strong>. You can make another request after <strong>{formatDateFormatted(resultApp.nextEligibleDate || new Date(new Date(resultApp.approvedAt || resultApp.updatedAt).getTime() + 30 * 24 * 60 * 60 * 1000))}</strong>.
+                </p>
+              </div>
+            )}
+
+            {/* Pending Modifiable Banner & Action */}
+            {(resultApp.status === 'Pending' || resultApp.status === 'Under Review') && (
+              <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-900 text-xs flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div className="space-y-0.5">
+                  <span className="font-bold block">Application is Under Review</span>
+                  <p className="text-[11px] text-blue-800">
+                    You can edit and correct your application details anytime before final Admin approval.
+                  </p>
+                </div>
+                {onEditApplication && (
+                  <button
+                    onClick={() => onEditApplication(resultApp)}
+                    className="px-4 py-1.5 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 transition-all cursor-pointer shadow-sm"
+                  >
+                    Edit Application
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Rejected Resubmission Banner & Action */}
+            {resultApp.status === 'Rejected' && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-900 text-xs flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div className="space-y-0.5">
+                  <span className="font-bold block">Application Needs Correction</span>
+                  <p className="text-[11px] text-rose-800">
+                    Your application was not approved. You can edit and resubmit your application immediately with NO 30-day restriction.
+                  </p>
+                </div>
+                {onEditApplication && (
+                  <button
+                    onClick={() => onEditApplication(resultApp)}
+                    className="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shrink-0 transition-all cursor-pointer shadow-sm"
+                  >
+                    Edit &amp; Resubmit
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>

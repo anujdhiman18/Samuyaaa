@@ -4200,11 +4200,94 @@ export const studentApplicationService = {
   getApplications: async () => {
     const fsApps = await syncFirestoreCollection('student_applications', initialMockStudentApplications);
     let list = fsApps || getStoredStudentApplications();
-    list.sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0));
+    list.sort((a, b) => new Date(b.submittedAt || b.appliedAt || b.createdAt || 0) - new Date(a.submittedAt || a.appliedAt || a.createdAt || 0));
     return { success: true, applications: list };
   },
 
+  checkEligibility: (email, contactNumber) => {
+    const list = getStoredStudentApplications();
+    const emailClean = (email || '').trim().toLowerCase();
+    const contactClean = (contactNumber || '').trim();
+
+    const latestApproved = list.find(
+      (a) =>
+        a.status === 'Approved' &&
+        (a.approvedAt || a.reviewedDate) &&
+        ((emailClean && a.email && a.email.toLowerCase() === emailClean) ||
+         (contactClean && a.contactNumber && a.contactNumber === contactClean))
+    );
+
+    if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
+      const approvedDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
+      const nextAllowedDate = new Date(approvedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+
+      if (now < nextAllowedDate) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const approvedFormatted = `${approvedDate.getDate()} ${months[approvedDate.getMonth()]} ${approvedDate.getFullYear()}`;
+        const nextFormatted = `${nextAllowedDate.getDate()} ${months[nextAllowedDate.getMonth()]} ${nextAllowedDate.getFullYear()}`;
+        return {
+          isLocked: true,
+          approvedAt: approvedDate,
+          nextEligibleDate: nextAllowedDate,
+          formattedApprovedDate: approvedFormatted,
+          formattedNextDate: nextFormatted,
+          message: `This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`,
+        };
+      }
+    }
+
+    return { isLocked: false };
+  },
+
   submitApplication: async (formData) => {
+    const emailClean = (formData.email || '').trim().toLowerCase();
+    const contactClean = (formData.contactNumber || '').trim();
+
+    // 1. Check 30-day post-approval cooldown
+    const eligibility = studentApplicationService.checkEligibility(emailClean, contactClean);
+    if (eligibility.isLocked) {
+      throw new Error(eligibility.message);
+    }
+
+    const list = getStoredStudentApplications();
+
+    // 2. Check for active pending request - allow update/modify
+    const existingPendingIdx = list.findIndex(
+      (a) =>
+        (formData.applicationId && a.applicationId === formData.applicationId) ||
+        (a.status === 'Pending' &&
+          ((emailClean && a.email && a.email.toLowerCase() === emailClean) ||
+           (contactClean && a.contactNumber && a.contactNumber === contactClean)))
+    );
+
+    if (existingPendingIdx !== -1) {
+      const existingApp = list[existingPendingIdx];
+      const updatedApp = {
+        ...existingApp,
+        ...formData,
+        submittedAt: new Date().toISOString(),
+        appliedAt: new Date().toISOString(),
+        status: 'Pending',
+      };
+
+      try {
+        await setDoc(doc(db, 'student_applications', String(existingApp._id || existingApp.id)), updatedApp, { merge: true });
+      } catch (fsErr) {}
+
+      list[existingPendingIdx] = updatedApp;
+      setStoredStudentApplications([...list]);
+      notifyDataUpdate();
+
+      return {
+        success: true,
+        application: updatedApp,
+        applicationId: updatedApp.applicationId,
+        message: 'Pending student application updated successfully!',
+        isUpdate: true,
+      };
+    }
+
     const id = 'app_stu_' + Date.now();
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const applicationId = `SAU-STU-${new Date().getFullYear()}-${randomCode}`;
@@ -4215,6 +4298,7 @@ export const studentApplicationService = {
       applicationId,
       ...formData,
       status: 'Pending',
+      submittedAt: new Date().toISOString(),
       appliedAt: new Date().toISOString(),
       notes: '',
     };
@@ -4225,9 +4309,9 @@ export const studentApplicationService = {
       console.warn('Firestore setDoc student_application error:', fsErr.message);
     }
 
-    const list = getStoredStudentApplications();
     const updated = [newApp, ...list];
     setStoredStudentApplications(updated);
+    notifyDataUpdate();
 
     try {
       const baseUrl = getApiBaseUrl();
@@ -4241,7 +4325,7 @@ export const studentApplicationService = {
       console.warn('Student application backend POST warning:', apiErr.message);
     }
 
-    // Direct email notification dispatch to admin email (anujdhiman1706@gmail.com)
+    // Direct email notification dispatch to admin email
     let emailSent = false;
     try {
       const emailRes = await sendStudentApplicationNotification(newApp);
@@ -4257,9 +4341,42 @@ export const studentApplicationService = {
       application: newApp,
       applicationId,
       emailSent,
-      message: emailSent
-        ? 'Student Application submitted successfully and emailed to anujdhiman1706@gmail.com & jitender0585@gmail.com!'
-        : 'Student Application submitted successfully!',
+      message: 'Student Application submitted successfully!',
+    };
+  },
+
+  updateApplication: async (id, formData) => {
+    const list = getStoredStudentApplications();
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
+
+    if (idx === -1) {
+      throw new Error('Application not found');
+    }
+
+    if (list[idx].status === 'Approved') {
+      throw new Error('Approved applications are locked and cannot be modified.');
+    }
+
+    const updatedApp = {
+      ...list[idx],
+      ...formData,
+      status: 'Pending',
+      submittedAt: new Date().toISOString(),
+      rejectedAt: null,
+    };
+
+    try {
+      await setDoc(doc(db, 'student_applications', String(list[idx]._id || list[idx].id)), updatedApp, { merge: true });
+    } catch (fsErr) {}
+
+    list[idx] = updatedApp;
+    setStoredStudentApplications([...list]);
+    notifyDataUpdate();
+
+    return {
+      success: true,
+      application: updatedApp,
+      message: 'Application updated and resubmitted successfully!',
     };
   },
 
@@ -4268,9 +4385,19 @@ export const studentApplicationService = {
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
 
     if (idx !== -1) {
+      const now = new Date().toISOString();
       list[idx].status = status;
       if (notes !== undefined) list[idx].notes = notes;
-      list[idx].updatedAt = new Date().toISOString();
+      list[idx].updatedAt = now;
+
+      if (status === 'Approved') {
+        list[idx].approvedAt = now;
+        list[idx].nextEligibleDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        list[idx].lastApprovedRequestId = String(id);
+      } else if (status === 'Rejected') {
+        list[idx].rejectedAt = now;
+        list[idx].nextEligibleDate = null;
+      }
 
       try {
         await setDoc(doc(db, 'student_applications', String(id)), list[idx], { merge: true });
@@ -4279,6 +4406,7 @@ export const studentApplicationService = {
       }
 
       setStoredStudentApplications([...list]);
+      notifyDataUpdate();
     }
 
     return {
@@ -4318,6 +4446,7 @@ export const studentApplicationService = {
         String(a.applicationId) !== targetStr
     );
     setStoredStudentApplications(list);
+    notifyDataUpdate();
     return { success: true, message: 'Student application deleted successfully' };
   },
 
@@ -4474,42 +4603,45 @@ export const facultyProfileRequestService = {
       return (targetId && (rId === targetId || rId === 'f_jitender')) || (targetEmail && rEmail === targetEmail);
     });
 
-    myReqs.sort((a, b) => new Date(b.requestDate || b.requestedAt || 0) - new Date(a.requestDate || a.requestedAt || 0));
+    myReqs.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
+
+    // Find latest APPROVED request for 30-day cooldown calculation strictly from APPROVED timestamp
+    const latestApproved = myReqs.find((r) => r.status === 'Approved' && (r.approvedAt || r.reviewedDate));
 
     let isCooldownActive = false;
-    let lastSubmittedDate = null;
+    let approvedAtDate = null;
     let nextAllowedDate = null;
-    let formattedLastDate = '';
+    let formattedApprovedDate = '';
     let formattedNextDate = '';
     let cooldownMessage = '';
 
-    const latest = myReqs[0];
-    if (latest && (latest.requestDate || latest.requestedAt)) {
-      lastSubmittedDate = new Date(latest.requestDate || latest.requestedAt);
-      nextAllowedDate = new Date(lastSubmittedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (new Date() < nextAllowedDate) {
+    if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
+      approvedAtDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
+      nextAllowedDate = new Date(approvedAtDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+
+      if (now < nextAllowedDate) {
         isCooldownActive = true;
-      }
-      const formatDateFormatted = (d) => {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      };
-      formattedLastDate = formatDateFormatted(lastSubmittedDate);
-      formattedNextDate = formatDateFormatted(nextAllowedDate);
-      cooldownMessage = `Your last profile change request was submitted on ${formattedLastDate}. You can submit your next request on ${formattedNextDate}.`;
+        formattedApprovedDate = `${approvedAtDate.getDate()} ${months[approvedAtDate.getMonth()]} ${approvedAtDate.getFullYear()}`;
+        formattedNextDate = `${nextAllowedDate.getDate()} ${months[nextAllowedDate.getMonth()]} ${nextAllowedDate.getFullYear()}`;
+        cooldownMessage = `This request was approved on ${formattedApprovedDate}. You can make another request after ${formattedNextDate}.`;
+      }
     }
 
-    const hasPending = myReqs.some((r) => r.status === 'Pending');
+    const pendingRequest = myReqs.find((r) => r.status === 'Pending') || null;
+    const hasPending = !!pendingRequest;
 
     return {
       success: true,
       requests: myReqs,
       hasPending,
+      pendingRequest,
       cooldownInfo: {
         isCooldownActive,
-        lastSubmittedDate,
+        approvedAtDate,
         nextAllowedDate,
-        formattedLastDate,
+        formattedApprovedDate,
         formattedNextDate,
         cooldownMessage,
       },
@@ -4536,12 +4668,12 @@ export const facultyProfileRequestService = {
         if (res.ok && data.request) {
           remoteReq = data.request;
         } else if (!res.ok && data.message) {
-          if (data.message.includes('submitted on') || data.message.includes('pending') || data.message.includes('required')) {
+          if (data.message.includes('approved on') || data.message.includes('cooldown') || data.message.includes('required')) {
             throw new Error(data.message);
           }
         }
       } catch (err) {
-        if (err.message && (err.message.includes('submitted on') || err.message.includes('pending') || err.message.includes('required') || err.message.includes('changes'))) {
+        if (err.message && (err.message.includes('approved on') || err.message.includes('cooldown') || err.message.includes('required') || err.message.includes('changes'))) {
           throw err;
         }
       }
@@ -4556,14 +4688,58 @@ export const facultyProfileRequestService = {
     const facultyId = requestData.facultyId || 'f_jitender';
     const facultyEmail = (requestData.facultyEmail || '').toLowerCase();
 
-    const hasPending = list.some(
+    // Check 30-day post-approval cooldown
+    const latestApproved = list.find(
+      (r) =>
+        r.status === 'Approved' &&
+        (r.approvedAt || r.reviewedDate) &&
+        (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
+    );
+
+    if (latestApproved && (latestApproved.approvedAt || latestApproved.reviewedDate)) {
+      const approvedDate = new Date(latestApproved.approvedAt || latestApproved.reviewedDate);
+      const nextAllowedDate = new Date(approvedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (new Date() < nextAllowedDate) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const approvedFormatted = `${approvedDate.getDate()} ${months[approvedDate.getMonth()]} ${approvedDate.getFullYear()}`;
+        const nextFormatted = `${nextAllowedDate.getDate()} ${months[nextAllowedDate.getMonth()]} ${nextAllowedDate.getFullYear()}`;
+        throw new Error(`This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`);
+      }
+    }
+
+    // Check for active Pending request - modify in-place
+    const pendingIdx = list.findIndex(
       (r) =>
         r.status === 'Pending' &&
         (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
     );
 
-    if (hasPending && !remoteReq) {
-      throw new Error('You already have a pending profile change request under review by Administrator.');
+    if (pendingIdx !== -1) {
+      const existingReq = list[pendingIdx];
+      const updatedReq = {
+        ...existingReq,
+        currentValues: requestData.currentValues || existingReq.currentValues,
+        requestedValues: requestData.requestedValues || existingReq.requestedValues,
+        reason: (requestData.reason || existingReq.reason || '').trim(),
+        submittedAt: new Date().toISOString(),
+        requestDate: new Date().toISOString(),
+        status: 'Pending',
+      };
+
+      try {
+        await setDoc(doc(db, 'faculty_profile_requests', String(existingReq._id || existingReq.id)), updatedReq, { merge: true });
+      } catch (fsErr) {}
+
+      list[pendingIdx] = updatedReq;
+      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+      notifyDataUpdate();
+
+      return {
+        success: true,
+        request: updatedReq,
+        message: 'Pending profile change request updated successfully!',
+        isUpdate: true,
+      };
     }
 
     const id = remoteReq?._id || remoteReq?.id || ('freq_' + Date.now());
@@ -4577,8 +4753,12 @@ export const facultyProfileRequestService = {
       requestedValues: requestData.requestedValues || {},
       reason: (requestData.reason || '').trim(),
       status: 'Pending',
+      submittedAt: new Date().toISOString(),
       requestDate: new Date().toISOString(),
       adminComments: '',
+      approvedAt: null,
+      rejectedAt: null,
+      nextEligibleDate: null,
       reviewedDate: null,
       reviewedBy: null,
     };
@@ -4589,33 +4769,14 @@ export const facultyProfileRequestService = {
       console.warn('Firestore setDoc profile request warning:', fsErr.message);
     }
 
-    // Merge into local list
-    const existingIdx = list.findIndex((r) => String(r._id || r.id) === String(id));
-    if (existingIdx !== -1) {
-      list[existingIdx] = newReq;
-    } else {
-      list = [newReq, ...list];
-    }
+    list = [newReq, ...list];
     localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
     notifyDataUpdate();
-
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const reqDateObj = new Date();
-    const nextDateObj = new Date(reqDateObj.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const lastFormatted = `${reqDateObj.getDate()} ${months[reqDateObj.getMonth()]} ${reqDateObj.getFullYear()}`;
-    const nextFormatted = `${nextDateObj.getDate()} ${months[nextDateObj.getMonth()]} ${nextDateObj.getFullYear()}`;
 
     return {
       success: true,
       request: newReq,
       message: 'Profile change request submitted successfully to Admin for approval.',
-      cooldownInfo: {
-        lastSubmittedDate: reqDateObj,
-        nextAllowedDate: nextDateObj,
-        formattedLastDate: lastFormatted,
-        formattedNextDate: nextFormatted,
-        cooldownMessage: `Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`,
-      },
     };
   },
 
@@ -4651,7 +4812,7 @@ export const facultyProfileRequestService = {
     if (statusFilter && statusFilter !== 'All') {
       list = list.filter((r) => String(r.status).toLowerCase() === String(statusFilter).toLowerCase());
     }
-    list.sort((a, b) => new Date(b.requestDate || b.requestedAt || 0) - new Date(a.requestDate || a.requestedAt || 0));
+    list.sort((a, b) => new Date(b.submittedAt || b.requestDate || b.requestedAt || 0) - new Date(a.submittedAt || a.requestDate || a.requestedAt || 0));
 
     return { success: true, count: list.length, requests: list };
   },
@@ -4672,11 +4833,17 @@ export const facultyProfileRequestService = {
 
     const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));
     if (idx !== -1) {
+      const now = new Date().toISOString();
+      const nextEligible = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
       list[idx] = {
         ...list[idx],
         status: 'Approved',
         adminComments: adminComments || 'Approved by System Admin',
-        reviewedDate: new Date().toISOString(),
+        approvedAt: now,
+        reviewedDate: now,
+        nextEligibleDate: nextEligible,
+        lastApprovedRequestId: String(requestId),
         reviewedByName: 'System Admin',
       };
 
@@ -4724,11 +4891,14 @@ export const facultyProfileRequestService = {
 
     const idx = list.findIndex((r) => String(r._id || r.id) === String(requestId));
     if (idx !== -1) {
+      const now = new Date().toISOString();
       list[idx] = {
         ...list[idx],
         status: 'Rejected',
         adminComments: adminComments.trim(),
-        reviewedDate: new Date().toISOString(),
+        rejectedAt: now,
+        reviewedDate: now,
+        nextEligibleDate: null,
         reviewedByName: 'System Admin',
       };
 

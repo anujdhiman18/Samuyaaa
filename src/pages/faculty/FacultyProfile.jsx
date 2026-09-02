@@ -104,19 +104,36 @@ export default function FacultyProfile() {
     }
   };
 
-  const handleOpenRequestForm = () => {
-    // Populate form with current values
-    setReqName(user?.name || '');
-    setReqPhone(user?.phone || '');
-    setReqDesignation(user?.designation || '');
-    setReqDepartment(user?.department || '');
-    const currentPhoto = user?.photo_url || user?.photo || user?.avatar || '';
-    setReqPhotoUrl(currentPhoto);
-    setPhotoPreview(currentPhoto);
+  const handleOpenRequestForm = (existingPendingReq = null) => {
+    const targetPending = existingPendingReq || requests.find((r) => r.status === 'Pending');
+
+    if (targetPending && targetPending.requestedValues) {
+      // Pre-fill with currently pending requested values so user can edit their pending request
+      const reqVals = targetPending.requestedValues || {};
+      setReqName(reqVals.name || user?.name || '');
+      setReqPhone(reqVals.phone || user?.phone || '');
+      setReqDesignation(reqVals.designation || user?.designation || '');
+      setReqDepartment(reqVals.department || user?.department || '');
+      const photoVal = reqVals.photo_url || user?.photo_url || user?.photo || user?.avatar || '';
+      setReqPhotoUrl(photoVal);
+      setPhotoPreview(photoVal);
+      setReqQualification(reqVals.qualification || user?.qualification || 'Master’s Degree');
+      setReqExperience(reqVals.experience || user?.experience || '5+ Years Experience');
+      setReason(targetPending.reason || '');
+    } else {
+      // Populate form with current values
+      setReqName(user?.name || '');
+      setReqPhone(user?.phone || '');
+      setReqDesignation(user?.designation || '');
+      setReqDepartment(user?.department || '');
+      const currentPhoto = user?.photo_url || user?.photo || user?.avatar || '';
+      setReqPhotoUrl(currentPhoto);
+      setPhotoPreview(currentPhoto);
+      setReqQualification(user?.qualification || 'Master’s Degree');
+      setReqExperience(user?.experience || '5+ Years Experience');
+      setReason('');
+    }
     setUploadProgress(0);
-    setReqQualification(user?.qualification || 'Master’s Degree');
-    setReqExperience(user?.experience || '5+ Years Experience');
-    setReason('');
     setShowRequestForm(true);
   };
 
@@ -244,7 +261,8 @@ export default function FacultyProfile() {
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const pendingRequestExists = requests.some((r) => r.status === 'Pending');
+  const pendingRequest = requests.find((r) => r.status === 'Pending') || null;
+  const pendingRequestExists = !!pendingRequest;
   const isCooldownActive = cooldownInfo?.isCooldownActive;
 
   return (
@@ -261,43 +279,71 @@ export default function FacultyProfile() {
           </p>
         </div>
 
-        {/* Request Profile Change Primary Button */}
-        <button
-          onClick={handleOpenRequestForm}
-          className="bg-primary text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-premium hover:bg-primary-container transition-all flex items-center gap-2 cursor-pointer shadow-tactile-btn"
-        >
-          <span className="material-symbols-outlined text-base">edit_note</span>
-          Request Profile Change
-        </button>
+        {/* Action Button: Edit Pending or Request New */}
+        {isCooldownActive ? (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-bold border border-outline-variant/30 cursor-not-allowed">
+            <span className="material-symbols-outlined text-base text-amber-600">lock</span>
+            Profile Locked (30-Day Cooldown)
+          </div>
+        ) : pendingRequestExists ? (
+          <button
+            onClick={() => handleOpenRequestForm(pendingRequest)}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-premium transition-all flex items-center gap-2 cursor-pointer shadow-tactile-btn"
+          >
+            <span className="material-symbols-outlined text-base">edit</span>
+            Modify Pending Request
+          </button>
+        ) : (
+          <button
+            onClick={() => handleOpenRequestForm(null)}
+            className="bg-primary text-white font-bold text-xs px-5 py-2.5 rounded-full shadow-premium hover:bg-primary-container transition-all flex items-center gap-2 cursor-pointer shadow-tactile-btn"
+          >
+            <span className="material-symbols-outlined text-base">edit_note</span>
+            Request Profile Change
+          </button>
+        )}
       </div>
 
-      {/* 30-Day Restriction Alert Banner */}
+      {/* 30-Day Restriction Alert Banner (Post-Approval Lock) */}
       {isCooldownActive && cooldownInfo?.cooldownMessage && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex items-start gap-3 shadow-sm">
-          <span className="material-symbols-outlined text-amber-600 text-2xl mt-0.5">timer</span>
+          <span className="material-symbols-outlined text-amber-600 text-2xl mt-0.5">lock_clock</span>
           <div className="space-y-0.5">
-            <h4 className="font-bold text-xs text-amber-900 uppercase tracking-wide">
-              30-Day Request Cooldown Active
-            </h4>
-            <p className="text-xs font-medium text-amber-800 leading-relaxed">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 text-[10px] font-extrabold uppercase tracking-wide">
+                🔒 30-Day Restriction Active
+              </span>
+            </div>
+            <p className="text-xs font-medium text-amber-800 leading-relaxed pt-1">
               {cooldownInfo.cooldownMessage}
             </p>
           </div>
         </div>
       )}
 
-      {/* Active Pending Request Banner */}
-      {pendingRequestExists && (
-        <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-900 flex items-start gap-3 shadow-sm">
-          <span className="material-symbols-outlined text-blue-600 text-2xl mt-0.5">hourglass_top</span>
-          <div className="space-y-0.5">
-            <h4 className="font-bold text-xs text-blue-900 uppercase tracking-wide">
-              Pending Request Under Review
-            </h4>
-            <p className="text-xs font-medium text-blue-800 leading-relaxed">
-              You currently have a profile change request pending Admin approval. You will be able to submit another request after your pending request is processed and 30 days have elapsed.
-            </p>
+      {/* Active Pending Request Banner (Modifiable anytime before approval) */}
+      {!isCooldownActive && pendingRequestExists && (
+        <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-900 flex items-start justify-between gap-3 shadow-sm flex-wrap sm:flex-nowrap">
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-blue-600 text-2xl mt-0.5">hourglass_top</span>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-blue-200/80 text-blue-900 text-[10px] font-extrabold uppercase tracking-wide">
+                  🟡 Pending Admin Approval
+                </span>
+              </div>
+              <p className="text-xs font-medium text-blue-800 leading-relaxed pt-0.5">
+                You have an active profile change request under review. You can modify or correct your requested changes anytime before Admin review.
+              </p>
+            </div>
           </div>
+
+          <button
+            onClick={() => handleOpenRequestForm(pendingRequest)}
+            className="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shrink-0 transition-all cursor-pointer shadow-sm self-center sm:self-auto"
+          >
+            Edit Request
+          </button>
         </div>
       )}
 
@@ -448,22 +494,47 @@ export default function FacultyProfile() {
                         </p>
                       </div>
 
-                      {/* Request Status Badge */}
-                      <span
-                        className={`px-3 py-1 rounded-full font-extrabold text-xs flex items-center gap-1.5 w-fit ${
-                          req.status === 'Approved'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      {/* Request Status Badge & Edit Button for Pending */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {req.status === 'Pending' && (
+                          <button
+                            onClick={() => handleOpenRequestForm(req)}
+                            className="px-3 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 font-bold text-[11px] flex items-center gap-1 border border-amber-400 transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-xs">edit</span>
+                            Edit Request
+                          </button>
+                        )}
+
+                        <span
+                          className={`px-3 py-1 rounded-full font-extrabold text-xs flex items-center gap-1.5 w-fit ${
+                            req.status === 'Approved'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : req.status === 'Rejected'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            {req.status === 'Approved' ? 'check_circle' : req.status === 'Rejected' ? 'cancel' : 'schedule'}
+                          </span>
+                          {req.status === 'Approved'
+                            ? '🟢 Approved'
                             : req.status === 'Rejected'
-                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                            : 'bg-amber-100 text-amber-800 border border-amber-300'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-sm">
-                          {req.status === 'Approved' ? 'check_circle' : req.status === 'Rejected' ? 'cancel' : 'schedule'}
+                            ? '🔴 Rejected'
+                            : '🟡 Pending Admin Approval'}
                         </span>
-                        {req.status === 'Pending' ? 'Pending Admin Approval' : req.status}
-                      </span>
+                      </div>
                     </div>
+
+                    {req.status === 'Approved' && (req.approvedAt || req.reviewedDate) && (
+                      <div className="mt-2.5 p-2.5 rounded-lg bg-emerald-100/60 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm text-emerald-700">lock</span>
+                        <span>
+                          Approved on <strong>{formatDate(req.approvedAt || req.reviewedDate)}</strong>. Next eligible request date: <strong>{formatDate(req.nextEligibleDate || new Date(new Date(req.approvedAt || req.reviewedDate).getTime() + 30 * 24 * 60 * 60 * 1000))}</strong>
+                        </span>
+                      </div>
+                    )}
 
                     {/* Reason for Change */}
                     <div className="mt-3 text-xs space-y-1">

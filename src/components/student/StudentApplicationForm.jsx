@@ -29,16 +29,46 @@ const initialFormData = {
   message: '',
 };
 
-export default function StudentApplicationForm({ centerName = 'Saumyaa Studies', onSuccess }) {
+export default function StudentApplicationForm({ centerName = 'Saumyaa Studies', onSuccess, editingApp = null, onCancelEdit }) {
   const { addToast } = useToast();
   const [formData, setFormData] = useState(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [submittedApp, setSubmittedApp] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [errors, setErrors] = useState({});
+  const [lockInfo, setLockInfo] = useState({ isLocked: false });
 
-  // Auto load draft from LocalStorage
+  // Load editingApp if provided, otherwise load draft
   useEffect(() => {
+    if (editingApp) {
+      let stage = editingApp.academicStage || '';
+      let currClass = editingApp.currentClass || '';
+      if (!stage && editingApp.targetClass) {
+        stage = getStageForClass(editingApp.targetClass);
+        if (!currClass && editingApp.targetClass !== stage) {
+          currClass = editingApp.targetClass;
+        }
+      }
+
+      setFormData({
+        applicationId: editingApp.applicationId || '',
+        fullName: editingApp.fullName || '',
+        email: editingApp.email || '',
+        contactNumber: editingApp.contactNumber || editingApp.phone || '',
+        dob: editingApp.dob || '',
+        academicStage: stage || 'S2',
+        currentClass: currClass || '10th',
+        targetClass: currClass || stage || '10th',
+        branch: editingApp.branch || 'Main Center (Bagru)',
+        subjects: Array.isArray(editingApp.subjects) ? editingApp.subjects : [editingApp.subjects || 'Mathematics'],
+        previousSchool: editingApp.previousSchool || '',
+        parentName: editingApp.parentName || '',
+        parentContact: editingApp.parentContact || '',
+        message: editingApp.message || '',
+      });
+      return;
+    }
+
     try {
       const saved = localStorage.getItem('saumyaa_student_app_draft');
       if (saved) {
@@ -68,7 +98,21 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     } catch (e) {
       console.warn('Could not load student draft:', e);
     }
-  }, []);
+  }, [editingApp]);
+
+  // Check 30-day approval lock on email or phone change
+  useEffect(() => {
+    if (editingApp) {
+      setLockInfo({ isLocked: false });
+      return;
+    }
+    if (formData.email || formData.contactNumber) {
+      const eligibility = studentApplicationService.checkEligibility(formData.email, formData.contactNumber);
+      setLockInfo(eligibility);
+    } else {
+      setLockInfo({ isLocked: false });
+    }
+  }, [formData.email, formData.contactNumber, editingApp]);
 
   const handleSaveDraft = () => {
     try {
@@ -172,12 +216,23 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       return;
     }
 
+    if (lockInfo.isLocked) {
+      addToast(lockInfo.message, 'error');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const res = await studentApplicationService.submitApplication(formData);
+      let res;
+      if (editingApp && (editingApp._id || editingApp.id)) {
+        res = await studentApplicationService.updateApplication(editingApp._id || editingApp.id, formData);
+      } else {
+        res = await studentApplicationService.submitApplication(formData);
+      }
+
       if (res.success) {
         localStorage.removeItem('saumyaa_student_app_draft');
-        setSubmittedApp(res.application || { applicationId: res.applicationId, ...formData });
+        setSubmittedApp(res.application || { applicationId: res.applicationId || editingApp?.applicationId, ...formData });
         addToast(res.message || 'Student application submitted successfully!', 'success');
         if (onSuccess) onSuccess(res.application);
       } else {
@@ -185,7 +240,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       }
     } catch (err) {
       console.error(err);
-      addToast('An error occurred during submission.', 'error');
+      addToast(err.message || 'An error occurred during submission.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -261,45 +316,75 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       <div className="bg-gradient-to-r from-primary via-primary-container to-secondary text-white rounded-3xl p-6 sm:p-8 shadow-xl mb-8 relative overflow-hidden">
         <div className="relative z-10">
           <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-headings font-bold uppercase tracking-wider mb-3">
-            Online Student Admissions 2026-2027
+            {editingApp ? 'Modify Pending Application' : 'Online Student Admissions 2026-2027'}
           </span>
           <h1 className="font-headings font-extrabold text-2xl sm:text-3xl tracking-tight mb-2">
-            Apply as a Student
+            {editingApp ? `Edit Application (${editingApp.applicationId})` : 'Apply as a Student'}
           </h1>
           <p className="text-xs sm:text-sm text-white/80 max-w-xl leading-relaxed">
-            Join {centerName} for top-quality academic coaching, interactive learning, and guidance from expert faculty.
+            {editingApp
+              ? 'Update and correct your application details. Your pending application will be refreshed for Admin review.'
+              : `Join ${centerName} for top-quality academic coaching, interactive learning, and guidance from expert faculty.`}
           </p>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-2 pt-4 border-t border-white/15 relative z-10">
-          <button
-            type="button"
-            onClick={handleAutoFillDemo}
-            className="px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
-          >
-            <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-            Auto-Fill Demo
-          </button>
-          {draftSaved && (
+          {editingApp ? (
             <button
               type="button"
-              onClick={handleClearDraft}
-              className="px-3.5 py-1.5 rounded-full bg-rose-500/30 hover:bg-rose-500/40 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
+              onClick={onCancelEdit}
+              className="px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
             >
-              <span className="material-symbols-outlined text-[16px]">delete</span>
-              Clear Draft
+              <span className="material-symbols-outlined text-[16px]">close</span>
+              Cancel Edit
             </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleAutoFillDemo}
+                className="px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                Auto-Fill Demo
+              </button>
+              {draftSaved && (
+                <button
+                  type="button"
+                  onClick={handleClearDraft}
+                  className="px-3.5 py-1.5 rounded-full bg-rose-500/30 hover:bg-rose-500/40 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                  Clear Draft
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="ml-auto px-3.5 py-1.5 rounded-full bg-white text-secondary hover:bg-surface-container font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[16px] text-primary">save</span>
+                Save Draft
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="ml-auto px-3.5 py-1.5 rounded-full bg-white text-secondary hover:bg-surface-container font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[16px] text-primary">save</span>
-            Save Draft
-          </button>
         </div>
       </div>
+
+      {/* 30-Day Restriction Lock Banner */}
+      {lockInfo.isLocked && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex items-start gap-3 shadow-sm animate-fade-in font-body">
+          <span className="material-symbols-outlined text-amber-600 text-2xl mt-0.5">lock_clock</span>
+          <div className="space-y-1">
+            <h4 className="font-bold text-xs text-amber-900 uppercase tracking-wide">
+              🔒 30-Day Application Lock Active
+            </h4>
+            <p className="text-xs font-medium text-amber-800 leading-relaxed">
+              {lockInfo.message}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
@@ -551,28 +636,38 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
         {/* Form Actions */}
         <div className="pt-4 border-t border-outline-variant/15 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleClearDraft}
-            className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-rose-600 transition-colors"
-          >
-            Reset Form
-          </button>
+          {editingApp ? (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-secondary transition-colors"
+            >
+              Cancel Edit
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-rose-600 transition-colors"
+            >
+              Reset Form
+            </button>
+          )}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || lockInfo.isLocked}
             className="px-8 py-3 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-lg shadow-primary/25 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
           >
             {submitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                <span>Submitting Application...</span>
+                <span>{editingApp ? 'Updating Application...' : 'Submitting Application...'}</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">send</span>
-                <span>Submit Student Application</span>
+                <span className="material-symbols-outlined text-[18px]">{editingApp ? 'save' : 'send'}</span>
+                <span>{editingApp ? 'Update Application' : 'Submit Student Application'}</span>
               </>
             )}
           </button>
