@@ -1873,7 +1873,7 @@ export default function FacultyManagement() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
+          <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-outline-variant/15 flex justify-end gap-3 z-20 shadow-md">
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}

@@ -3309,10 +3309,10 @@ export const getStoredFaculty = () => {
       if (!f) return;
       const fId = String(f._id || f.id || '');
       const fEmail = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : '').trim();
+      const k = String(f._id || f.id || f.email || '').trim().toLowerCase();
       if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
         return; // Exclude deleted faculty
       }
-      const k = fEmail || fId;
       if (k) map.set(k, f);
     });
 
@@ -3322,7 +3322,7 @@ export const getStoredFaculty = () => {
       if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
         return; // Do NOT re-add default faculty if deleted
       }
-      const k = fEmail || fId;
+      const k = String(defaultFac._id || defaultFac.id || defaultFac.email || '').trim().toLowerCase();
       if (k && !map.has(k)) {
         map.set(k, defaultFac);
       }
@@ -3372,11 +3372,11 @@ export const facultyService = {
     if (remote && remote.success && Array.isArray(remote.faculty)) {
       const combined = new Map();
       remote.faculty.forEach((r) => {
-        const k = (r.email && typeof r.email === 'string' ? r.email.toLowerCase() : String(r._id || r.id || '')).trim();
+        const k = String(r._id || r.id || r.email || '').trim().toLowerCase();
         if (k) combined.set(k, r);
       });
       localStored.forEach((l) => {
-        const k = (l.email && typeof l.email === 'string' ? l.email.toLowerCase() : String(l._id || l.id || '')).trim();
+        const k = String(l._id || l.id || l.email || '').trim().toLowerCase();
         if (k) {
           const existing = combined.get(k) || {};
           combined.set(k, { ...existing, ...l });
@@ -3389,14 +3389,14 @@ export const facultyService = {
 
     const fsFaculty = await syncFirestoreCollection('faculty', initialMockFaculty);
     
-    // Deduplicate strictly by email / ID and prioritize localStored edits over Firestore initial defaults
+    // Deduplicate strictly by ID and prioritize localStored edits over Firestore initial defaults
     const combinedMap = new Map();
     (fsFaculty || []).forEach((f) => {
-      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      const k = String(f._id || f.id || f.email || '').trim().toLowerCase();
       if (k) combinedMap.set(k, f);
     });
     localStored.forEach((f) => {
-      const k = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : String(f._id || f.id || '')).trim();
+      const k = String(f._id || f.id || f.email || '').trim().toLowerCase();
       if (k) {
         const existing = combinedMap.get(k) || {};
         combinedMap.set(k, { ...existing, ...f });
@@ -3518,9 +3518,12 @@ export const facultyService = {
     );
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
-      setStoredFaculty(list);
+    } else {
+      list.push({ _id: id, id, ...data });
+    }
+    setStoredFaculty(list);
 
-      // If this faculty member is currently logged in, update saumyaa_user as well!
+    // If this faculty member is currently logged in, update saumyaa_user as well!
       try {
         const currentUserStr = localStorage.getItem('saumyaa_user');
         if (currentUserStr) {
@@ -3534,7 +3537,6 @@ export const facultyService = {
           }
         }
       } catch (e) {}
-    }
     notifyDataUpdate();
     return { success: true, faculty: idx !== -1 ? list[idx] : data, message: 'Faculty credentials & details updated successfully!' };
   },
