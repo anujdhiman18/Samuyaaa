@@ -165,22 +165,28 @@ export default function FacultyAttendance() {
 
       if (selectedSubject && selectedSubject !== 'All') {
         const targetSub = selectedSubject.trim().toLowerCase();
-        studentList = studentList.filter((st) => {
+        const subFiltered = studentList.filter((st) => {
           if (Array.isArray(st.subjects) && st.subjects.length > 0) {
-            return st.subjects.some(
-              (sub) => String(sub).trim().toLowerCase() === targetSub
-            );
+            return st.subjects.some((sub) => {
+              const sName = String(sub).trim().toLowerCase();
+              return sName === targetSub || sName.includes(targetSub) || targetSub.includes(sName);
+            });
           }
           if (st.subject) {
-            return String(st.subject).trim().toLowerCase() === targetSub;
+            const sName = String(st.subject).trim().toLowerCase();
+            return sName === targetSub || sName.includes(targetSub) || targetSub.includes(sName);
           }
           return true;
         });
+
+        if (subFiltered.length > 0) {
+          studentList = subFiltered;
+        }
       }
 
       setStudents(studentList);
 
-      const existingRecords = attendanceRes?.records || [];
+      const existingRecords = attendanceRes?.records || attendanceRes?.attendance || [];
       const recordMap = {};
       existingRecords.forEach((r) => {
         const stId = String(r.student?._id || r.student?.id || r.student);
@@ -377,7 +383,10 @@ export default function FacultyAttendance() {
               <tbody className="divide-y divide-outline-variant/10">
                 {students.map((st) => {
                   const stId = String(st._id || st.id);
-                  const currentStatus = attendanceMap[stId]?.status || 'Present';
+                  const currentStatus =
+                    (typeof attendanceMap[stId] === 'object'
+                      ? attendanceMap[stId]?.status
+                      : attendanceMap[stId]) || 'Present';
 
                   return (
                     <tr key={stId} className="hover:bg-surface-container-lowest transition-colors">

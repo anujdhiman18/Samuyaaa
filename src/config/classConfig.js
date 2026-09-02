@@ -133,9 +133,13 @@ export const isExactClassMatch = (studentClass, queryClass) => {
 
   if (sClass === qClass) return true;
 
+  const sClean = sClass.replace(/^class\s+/, '');
+  const qClean = qClass.replace(/^class\s+/, '');
+  if (sClean === qClean) return true;
+
   // Handle +1 and +2 aliases
-  if ((sClass === '11th (+1)' || sClass === '11th') && (qClass === '11th (+1)' || qClass === '11th')) return true;
-  if ((sClass === '12th (+2)' || sClass === '12th') && (qClass === '12th (+2)' || qClass === '12th')) return true;
+  if ((sClean === '11th (+1)' || sClean === '11th') && (qClean === '11th (+1)' || qClean === '11th')) return true;
+  if ((sClean === '12th (+2)' || sClean === '12th') && (qClean === '12th (+2)' || qClean === '12th')) return true;
 
   return false;
 };

@@ -2518,7 +2518,16 @@ export const attendanceService = {
       );
     }
 
-    return { success: true, attendance: list };
+    return { success: true, attendance: list, records: list };
+  },
+
+  getAttendanceRecords: async (params = {}) => {
+    const res = await attendanceService.getAllAttendance(params);
+    return {
+      success: res?.success ?? true,
+      records: res?.records || res?.attendance || [],
+      attendance: res?.attendance || res?.records || [],
+    };
   },
 
   saveBatchAttendance: async ({ date, subject, className, records, markedBy = 'Faculty Member' }) => {
@@ -5552,15 +5561,22 @@ export const facultyPanelService = {
 
     if (params.subject && params.subject !== 'All') {
       const targetSub = params.subject.trim().toLowerCase();
-      filtered = filtered.filter((s) => {
+      const subFiltered = filtered.filter((s) => {
         if (Array.isArray(s.subjects) && s.subjects.length > 0) {
-          return s.subjects.some((sub) => String(sub).trim().toLowerCase() === targetSub);
+          return s.subjects.some((sub) => {
+            const sName = String(sub).trim().toLowerCase();
+            return sName === targetSub || sName.includes(targetSub) || targetSub.includes(sName);
+          });
         }
         if (s.subject) {
-          return String(s.subject).trim().toLowerCase() === targetSub;
+          const sName = String(s.subject).trim().toLowerCase();
+          return sName === targetSub || sName.includes(targetSub) || targetSub.includes(sName);
         }
         return true;
       });
+      if (subFiltered.length > 0) {
+        filtered = subFiltered;
+      }
     }
 
     if (params.search) {
