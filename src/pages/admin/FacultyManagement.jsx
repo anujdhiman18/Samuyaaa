@@ -786,6 +786,14 @@ export default function FacultyManagement() {
             </span>
           )}
         </button>
+
+        <a
+          href="/admin/profile-requests"
+          className="pb-3 text-xs font-headings font-bold flex items-center gap-2 relative text-primary hover:underline shrink-0"
+        >
+          <span className="material-symbols-outlined text-[18px]">edit_attributes</span>
+          Profile Change Requests
+        </a>
       </div>
 
       {/* TAB 1: ACTIVE FACULTY DIRECTORY */}

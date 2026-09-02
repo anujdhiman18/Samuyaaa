@@ -9,6 +9,7 @@ const mainNavItems = [
   { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/faculty?tab=leaves', label: 'Faculty Leaves', icon: 'event_busy' },
+  { path: '/admin/profile-requests', label: 'Profile Change Requests', icon: 'edit_attributes' },
   { path: '/admin/roles', label: 'Role Management (RBAC)', icon: 'admin_panel_settings' },
   { path: '/admin/permissions', label: 'Permission Matrix', icon: 'fact_check' },
   { path: '/admin/activity-logs', label: 'Activity Audit Logs', icon: 'history_toggle_off' },

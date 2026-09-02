@@ -34,6 +34,7 @@ import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminSMSLogs from './pages/admin/AdminSMSLogs';
+import ProfileChangeRequests from './pages/admin/ProfileChangeRequests';
 
 // Student Portal Pages
 import StudentLayout from './layouts/StudentLayout';
@@ -220,6 +221,7 @@ export default function App() {
                   <Route path="marks" element={<FacultyMarks />} />
                   <Route path="subjects" element={<SubjectManagement />} />
                   <Route path="faculty" element={<FacultyManagement />} />
+                  <Route path="profile-requests" element={<ProfileChangeRequests />} />
                   <Route path="roles" element={<RoleManagement />} />
                   <Route path="permissions" element={<PermissionManagement />} />
                   <Route path="activity-logs" element={<ActivityLogs />} />

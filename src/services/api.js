@@ -4324,6 +4324,296 @@ export const credentialRequestService = {
   },
 };
 
+// Faculty Profile Change Request Service (Admin Approval Workflow & 30-Day Cooldown)
+export const facultyProfileRequestService = {
+  getMyRequests: async (facultyId, facultyEmail) => {
+    const backendRes = await apiCall('/faculty-panel/profile-change-requests');
+    if (backendRes && backendRes.success) {
+      return backendRes;
+    }
+
+    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let list = fsReqs || [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    const myReqs = list.filter(
+      (r) =>
+        (facultyId && (String(r.facultyId) === String(facultyId) || String(r.facultyId) === 'f_jitender')) ||
+        (facultyEmail && r.facultyEmail && r.facultyEmail.toLowerCase() === String(facultyEmail).toLowerCase()) ||
+        (!facultyId && !facultyEmail)
+    );
+
+    myReqs.sort((a, b) => new Date(b.requestDate || b.requestedAt || 0) - new Date(a.requestDate || a.requestedAt || 0));
+
+    let isCooldownActive = false;
+    let lastSubmittedDate = null;
+    let nextAllowedDate = null;
+    let formattedLastDate = '';
+    let formattedNextDate = '';
+    let cooldownMessage = '';
+
+    const latest = myReqs[0];
+    if (latest && (latest.requestDate || latest.requestedAt)) {
+      lastSubmittedDate = new Date(latest.requestDate || latest.requestedAt);
+      nextAllowedDate = new Date(lastSubmittedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (new Date() < nextAllowedDate) {
+        isCooldownActive = true;
+      }
+      const formatDateFormatted = (d) => {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      };
+      formattedLastDate = formatDateFormatted(lastSubmittedDate);
+      formattedNextDate = formatDateFormatted(nextAllowedDate);
+      cooldownMessage = `Your last profile change request was submitted on ${formattedLastDate}. You can submit your next request on ${formattedNextDate}.`;
+    }
+
+    const hasPending = myReqs.some((r) => r.status === 'Pending');
+
+    return {
+      success: true,
+      requests: myReqs,
+      hasPending,
+      cooldownInfo: {
+        isCooldownActive,
+        lastSubmittedDate,
+        nextAllowedDate,
+        formattedLastDate,
+        formattedNextDate,
+        cooldownMessage,
+      },
+    };
+  },
+
+  submitRequest: async (requestData) => {
+    const baseUrl = getApiBaseUrl();
+    if (baseUrl) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(`${baseUrl}/faculty-panel/profile-change-requests`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(requestData),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Request failed');
+        }
+        return data;
+      } catch (err) {
+        if (err.message && (err.message.includes('submitted on') || err.message.includes('pending') || err.message.includes('required') || err.message.includes('changes'))) {
+          throw err;
+        }
+      }
+    }
+
+    let list = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    const facultyId = requestData.facultyId || 'f_jitender';
+    const facultyEmail = (requestData.facultyEmail || '').toLowerCase();
+
+    const hasPending = list.some(
+      (r) =>
+        r.status === 'Pending' &&
+        (String(r.facultyId) === String(facultyId) || (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail))
+    );
+
+    if (hasPending) {
+      throw new Error('You already have a pending profile change request under review by Administrator.');
+    }
+
+    const myPrev = list.filter(
+      (r) =>
+        String(r.facultyId) === String(facultyId) ||
+        (r.facultyEmail && r.facultyEmail.toLowerCase() === facultyEmail)
+    ).sort((a, b) => new Date(b.requestDate || 0) - new Date(a.requestDate || 0));
+
+    if (myPrev.length > 0 && myPrev[0].requestDate) {
+      const lastDate = new Date(myPrev[0].requestDate);
+      const nextDate = new Date(lastDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (new Date() < nextDate) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const lastFormatted = `${lastDate.getDate()} ${months[lastDate.getMonth()]} ${lastDate.getFullYear()}`;
+        const nextFormatted = `${nextDate.getDate()} ${months[nextDate.getMonth()]} ${nextDate.getFullYear()}`;
+        throw new Error(`Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`);
+      }
+    }
+
+    const id = 'freq_' + Date.now();
+    const newReq = {
+      _id: id,
+      id,
+      facultyId,
+      facultyName: requestData.facultyName || 'Prof. Jitender Sharma',
+      facultyEmail: requestData.facultyEmail || 'jitender.sharma@saumyaa.edu.in',
+      currentValues: requestData.currentValues || {},
+      requestedValues: requestData.requestedValues || {},
+      reason: (requestData.reason || '').trim(),
+      status: 'Pending',
+      requestDate: new Date().toISOString(),
+      adminComments: '',
+      reviewedDate: null,
+      reviewedBy: null,
+    };
+
+    try {
+      await setDoc(doc(db, 'faculty_profile_requests', id), newReq);
+    } catch (fsErr) {
+      console.warn('Firestore setDoc profile request warning:', fsErr.message);
+    }
+
+    list = [newReq, ...list];
+    localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const reqDateObj = new Date();
+    const nextDateObj = new Date(reqDateObj.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const lastFormatted = `${reqDateObj.getDate()} ${months[reqDateObj.getMonth()]} ${reqDateObj.getFullYear()}`;
+    const nextFormatted = `${nextDateObj.getDate()} ${months[nextDateObj.getMonth()]} ${nextDateObj.getFullYear()}`;
+
+    return {
+      success: true,
+      request: newReq,
+      message: 'Profile change request submitted successfully to Admin for approval.',
+      cooldownInfo: {
+        lastSubmittedDate: reqDateObj,
+        nextAllowedDate: nextDateObj,
+        formattedLastDate: lastFormatted,
+        formattedNextDate: nextFormatted,
+        cooldownMessage: `Your last profile change request was submitted on ${lastFormatted}. You can submit your next request on ${nextFormatted}.`,
+      },
+    };
+  },
+
+  getAllRequests: async (statusFilter) => {
+    const backendRes = await apiCall(`/admin/profile-change-requests${statusFilter ? `?status=${statusFilter}` : ''}`);
+    if (backendRes && backendRes.success) {
+      return backendRes;
+    }
+
+    const fsReqs = await syncFirestoreCollection('faculty_profile_requests', []);
+    let list = fsReqs || [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    if (statusFilter && statusFilter !== 'All') {
+      list = list.filter((r) => r.status === statusFilter);
+    }
+    list.sort((a, b) => new Date(b.requestDate || 0) - new Date(a.requestDate || 0));
+
+    return { success: true, count: list.length, requests: list };
+  },
+
+  approveRequest: async (requestId, adminComments = '') => {
+    const backendRes = await apiCall(`/admin/profile-change-requests/${requestId}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify({ adminComments }),
+    });
+    if (backendRes && backendRes.success) {
+      return backendRes;
+    }
+
+    let list = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
+    if (idx !== -1) {
+      list[idx].status = 'Approved';
+      list[idx].adminComments = adminComments || 'Approved by System Admin';
+      list[idx].reviewedDate = new Date().toISOString();
+      list[idx].reviewedByName = 'System Admin';
+
+      try {
+        await setDoc(doc(db, 'faculty_profile_requests', String(requestId)), list[idx], { merge: true });
+      } catch (fsErr) {}
+
+      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+
+      const reqItem = list[idx];
+      const facultyId = reqItem.facultyId;
+      const updates = reqItem.requestedValues || {};
+
+      try {
+        const storedFac = localStorage.getItem('mock_faculty');
+        if (storedFac) {
+          const facList = JSON.parse(storedFac);
+          const fIdx = facList.findIndex((f) => String(f._id || f.id) === String(facultyId));
+          if (fIdx !== -1) {
+            Object.assign(facList[fIdx], updates);
+            localStorage.setItem('mock_faculty', JSON.stringify(facList));
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const currUserStr = localStorage.getItem('saumyaa_user');
+        if (currUserStr) {
+          const currUser = JSON.parse(currUserStr);
+          if (String(currUser._id || currUser.id) === String(facultyId)) {
+            Object.assign(currUser, updates);
+            localStorage.setItem('saumyaa_user', JSON.stringify(currUser));
+          }
+        }
+      } catch (e) {}
+    }
+
+    return { success: true, message: 'Faculty profile change request approved and faculty profile updated successfully!' };
+  },
+
+  rejectRequest: async (requestId, adminComments) => {
+    if (!adminComments || !adminComments.trim()) {
+      throw new Error('Rejection reason / admin comment is required when rejecting a request.');
+    }
+
+    const backendRes = await apiCall(`/admin/profile-change-requests/${requestId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ adminComments }),
+    });
+    if (backendRes && backendRes.success) {
+      return backendRes;
+    }
+
+    let list = [];
+    try {
+      const stored = localStorage.getItem('saumyaa_faculty_profile_requests');
+      if (stored) list = JSON.parse(stored);
+    } catch (e) {}
+
+    const idx = list.findIndex((r) => String(r._id) === String(requestId) || String(r.id) === String(requestId));
+    if (idx !== -1) {
+      list[idx].status = 'Rejected';
+      list[idx].adminComments = adminComments.trim();
+      list[idx].reviewedDate = new Date().toISOString();
+      list[idx].reviewedByName = 'System Admin';
+
+      try {
+        await setDoc(doc(db, 'faculty_profile_requests', String(requestId)), list[idx], { merge: true });
+      } catch (fsErr) {}
+
+      localStorage.setItem('saumyaa_faculty_profile_requests', JSON.stringify(list));
+    }
+
+    return { success: true, message: 'Faculty profile change request rejected.' };
+  },
+};
+
 const initialMockAlumni = [
   {
     _id: 'alum_1',

@@ -11,6 +11,10 @@ import {
   getFacultyLeaves,
   applyFacultyLeave,
 } from '../controllers/facultyPanelController.js';
+import {
+  createProfileChangeRequest,
+  getMyProfileChangeRequests,
+} from '../controllers/facultyProfileRequestController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -29,5 +33,9 @@ router.post('/assignments/:id/grade', gradeSubmission);
 
 router.route('/materials').get(getStudyMaterials).post(uploadStudyMaterial);
 router.route('/leaves').get(getFacultyLeaves).post(applyFacultyLeave);
+
+router.route('/profile-change-requests')
+  .get(getMyProfileChangeRequests)
+  .post(createProfileChangeRequest);
 
 export default router;

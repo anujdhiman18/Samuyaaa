@@ -7,6 +7,11 @@ import alumniRoutes from '../alumniRoutes.js';
 import dashboardRoutes from '../dashboardRoutes.js';
 import { getAllFacultyLeaves, updateFacultyLeaveStatus } from '../../controllers/facultyController.js';
 import { getAllStudentLeaves, updateStudentLeaveStatus } from '../../controllers/studentController.js';
+import {
+  getAllProfileChangeRequests,
+  approveProfileChangeRequest,
+  rejectProfileChangeRequest,
+} from '../../controllers/facultyProfileRequestController.js';
 
 const router = express.Router();
 
@@ -19,6 +24,9 @@ router.get('/faculty-leaves', getAllFacultyLeaves);
 router.put('/faculty-leaves/:id/status', updateFacultyLeaveStatus);
 router.get('/student-leaves', getAllStudentLeaves);
 router.put('/student-leaves/:id/status', updateStudentLeaveStatus);
+router.get('/profile-change-requests', getAllProfileChangeRequests);
+router.put('/profile-change-requests/:id/approve', approveProfileChangeRequest);
+router.put('/profile-change-requests/:id/reject', rejectProfileChangeRequest);
 router.use('/alumni', alumniRoutes);
 router.use('/dashboard', dashboardRoutes);
 
