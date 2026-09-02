@@ -27,6 +27,7 @@ export default function FacultyProfile() {
   // Request History & Cooldown State
   const [requests, setRequests] = useState([]);
   const [cooldownInfo, setCooldownInfo] = useState(null);
+  const [editingPendingReq, setEditingPendingReq] = useState(null);
 
   // Credential Request State (for Username/Password updates)
   const [newUsername, setNewUsername] = useState('');
@@ -105,20 +106,21 @@ export default function FacultyProfile() {
   };
 
   const handleOpenRequestForm = (existingPendingReq = null) => {
-    const targetPending = existingPendingReq || requests.find((r) => r.status === 'Pending');
+    const targetPending = existingPendingReq !== null ? existingPendingReq : (requests.find((r) => r.status === 'Pending') || null);
+    setEditingPendingReq(targetPending);
 
     if (targetPending && targetPending.requestedValues) {
       // Pre-fill with currently pending requested values so user can edit their pending request
       const reqVals = targetPending.requestedValues || {};
-      setReqName(reqVals.name || user?.name || '');
-      setReqPhone(reqVals.phone || user?.phone || '');
-      setReqDesignation(reqVals.designation || user?.designation || '');
-      setReqDepartment(reqVals.department || user?.department || '');
-      const photoVal = reqVals.photo_url || user?.photo_url || user?.photo || user?.avatar || '';
+      setReqName(reqVals.name !== undefined ? reqVals.name : (user?.name || ''));
+      setReqPhone(reqVals.phone !== undefined ? reqVals.phone : (user?.phone || ''));
+      setReqDesignation(reqVals.designation !== undefined ? reqVals.designation : (user?.designation || ''));
+      setReqDepartment(reqVals.department !== undefined ? reqVals.department : (user?.department || ''));
+      const photoVal = reqVals.photo_url || reqVals.photo || user?.photo_url || user?.photo || user?.avatar || '';
       setReqPhotoUrl(photoVal);
       setPhotoPreview(photoVal);
-      setReqQualification(reqVals.qualification || user?.qualification || 'Master’s Degree');
-      setReqExperience(reqVals.experience || user?.experience || '5+ Years Experience');
+      setReqQualification(reqVals.qualification !== undefined ? reqVals.qualification : (user?.qualification || 'Master’s Degree'));
+      setReqExperience(reqVals.experience !== undefined ? reqVals.experience : (user?.experience || '5+ Years Experience'));
       setReason(targetPending.reason || '');
     } else {
       // Populate form with current values
@@ -145,7 +147,7 @@ export default function FacultyProfile() {
       return;
     }
 
-    // Build requested values map
+    // Build requested values map compared to user profile
     const requestedValues = {};
     if (reqName.trim() && reqName.trim() !== (user?.name || '')) requestedValues.name = reqName.trim();
     if (reqPhone.trim() && reqPhone.trim() !== (user?.phone || '')) requestedValues.phone = reqPhone.trim();
@@ -155,8 +157,18 @@ export default function FacultyProfile() {
     if (reqQualification.trim() && reqQualification.trim() !== (user?.qualification || 'Master’s Degree')) requestedValues.qualification = reqQualification.trim();
     if (reqExperience.trim() && reqExperience.trim() !== (user?.experience || '5+ Years Experience')) requestedValues.experience = reqExperience.trim();
 
-    if (Object.keys(requestedValues).length === 0) {
+    if (Object.keys(requestedValues).length === 0 && !editingPendingReq) {
       addToast('No changes detected. Please modify at least one field to request changes.', 'info');
+      return;
+    }
+
+    // If editing pending request and values are same as before, keep the pending requested values
+    const finalRequestedValues = Object.keys(requestedValues).length > 0
+      ? requestedValues
+      : (editingPendingReq?.requestedValues || {});
+
+    if (Object.keys(finalRequestedValues).length === 0) {
+      addToast('Please modify at least one field to submit a request.', 'info');
       return;
     }
 
@@ -180,13 +192,19 @@ export default function FacultyProfile() {
         facultyName: user?.name || 'Prof. Jitender Sharma',
         facultyEmail: facEmail,
         currentValues,
-        requestedValues,
+        requestedValues: finalRequestedValues,
         reason: reason.trim(),
       });
 
       if (res && res.success) {
-        addToast('Profile change request submitted successfully to Admin for approval!', 'success');
+        addToast(
+          res.isUpdate
+            ? 'Pending profile change request updated successfully!'
+            : 'Profile change request submitted successfully to Admin for approval!',
+          'success'
+        );
         setShowRequestForm(false);
+        setEditingPendingReq(null);
         fetchProfileRequests();
       }
     } catch (err) {
@@ -721,11 +739,13 @@ export default function FacultyProfile() {
             <div className="flex items-center justify-between border-b border-outline-variant/15 pb-4">
               <div>
                 <h3 className="font-headings font-extrabold text-xl text-secondary flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">edit_note</span>
-                  Request Faculty Profile Change
+                  <span className="material-symbols-outlined text-primary">{editingPendingReq ? 'edit' : 'edit_note'}</span>
+                  {editingPendingReq ? 'Modify Pending Profile Request' : 'Request Faculty Profile Change'}
                 </h3>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  Modifications require Administrator approval and are subject to a 30-day request limit.
+                  {editingPendingReq
+                    ? 'Update your requested changes. Your pending request will be refreshed for Admin review.'
+                    : 'Modifications require Administrator approval and are subject to a 30-day request limit.'}
                 </p>
               </div>
 
@@ -737,17 +757,28 @@ export default function FacultyProfile() {
               </button>
             </div>
 
-            {/* Warning if 30-day Cooldown is active or Pending request exists */}
-            {(isCooldownActive || pendingRequestExists) && (
+            {/* Warning if 30-day Cooldown is active */}
+            {isCooldownActive && (
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 space-y-1">
                 <div className="flex items-center gap-2 font-bold text-xs text-amber-900">
-                  <span className="material-symbols-outlined text-base">warning</span>
-                  Submission Restricted
+                  <span className="material-symbols-outlined text-base">lock_clock</span>
+                  🔒 30-Day Cooldown Active
                 </div>
                 <p className="text-xs font-medium leading-relaxed">
-                  {pendingRequestExists
-                    ? 'You have a pending profile change request under review by Administrator.'
-                    : cooldownInfo?.cooldownMessage}
+                  {cooldownInfo?.cooldownMessage}
+                </p>
+              </div>
+            )}
+
+            {/* Info if Modifying Active Pending Request */}
+            {!isCooldownActive && editingPendingReq && (
+              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-900 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-xs text-blue-900">
+                  <span className="material-symbols-outlined text-base">hourglass_top</span>
+                  🟡 Modifying Active Pending Request
+                </div>
+                <p className="text-xs font-medium leading-relaxed text-blue-800">
+                  You are editing your pending request. Submitting this form will update your existing pending request for Administrator review.
                 </p>
               </div>
             )}
@@ -894,10 +925,20 @@ export default function FacultyProfile() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || isCooldownActive || pendingRequestExists}
-                  className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50 transition-all cursor-pointer shadow-tactile-btn"
+                  disabled={submitting || isCooldownActive}
+                  className="bg-primary text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-premium hover:bg-primary-container disabled:opacity-50 transition-all cursor-pointer shadow-tactile-btn flex items-center gap-1.5"
                 >
-                  {submitting ? 'Submitting Request...' : 'Submit Profile Change Request'}
+                  {submitting ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span>Saving Request...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm">{editingPendingReq ? 'save' : 'send'}</span>
+                      <span>{editingPendingReq ? 'Update Pending Request' : 'Submit Profile Change Request'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
