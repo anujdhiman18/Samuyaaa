@@ -342,11 +342,11 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
               </div>
             )}
 
-            {/* Pending Modifiable Banner & Action */}
-            {(resultApp.status === 'Pending' || resultApp.status === 'Under Review') && (
+            {/* Pending / In-Progress Modifiable Banner & Action (Available until Admin Approval) */}
+            {resultApp.status !== 'Approved' && resultApp.status !== 'Rejected' && (
               <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-900 text-xs flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                 <div className="space-y-0.5">
-                  <span className="font-bold block">Application is Under Screening</span>
+                  <span className="font-bold block">Application Active ({resultApp.status})</span>
                   <p className="text-[11px] text-blue-800">
                     You can edit and correct your application details anytime before final Admin approval.
                   </p>
@@ -354,8 +354,9 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
                 {onEditApplication && (
                   <button
                     onClick={() => onEditApplication(resultApp)}
-                    className="px-4 py-1.5 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 transition-all cursor-pointer shadow-sm"
+                    className="px-4 py-1.5 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
                   >
+                    <span className="material-symbols-outlined text-[15px]">edit</span>
                     Edit Application
                   </button>
                 )}

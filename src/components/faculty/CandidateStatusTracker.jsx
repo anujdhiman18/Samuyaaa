@@ -9,7 +9,7 @@ const FACULTY_STAGES = [
   { id: 'onboarded', label: 'Admission / Joining', icon: 'how_to_reg' },
 ];
 
-export default function CandidateStatusTracker({ onClose }) {
+export default function CandidateStatusTracker({ onClose, onEditApplication }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [resultApp, setResultApp] = useState(null);
@@ -312,6 +312,25 @@ export default function CandidateStatusTracker({ onClose }) {
               <div className={`p-3.5 rounded-2xl border ${getStatusBadge(resultApp.status)} leading-relaxed text-xs font-medium`}>
                 {getStatusMessage(resultApp.status)}
               </div>
+
+              {/* Edit Application Bar (Available before final Admin approval) */}
+              {resultApp.status !== 'Approved' && resultApp.status !== 'Selected' && onEditApplication && (
+                <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-950 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="space-y-0.5">
+                    <span className="font-bold block text-xs">Need to update your details?</span>
+                    <p className="text-[11px] text-blue-800">
+                      You can edit and correct your credentials anytime before final Admin approval.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onEditApplication(resultApp)}
+                    className="px-4 py-2 rounded-full bg-primary hover:bg-primary-container text-white text-xs font-headings font-bold shrink-0 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">edit</span>
+                    Edit Application
+                  </button>
+                </div>
+              )}
 
               {/* Notification History Log */}
               {resultApp.notificationHistory && resultApp.notificationHistory.length > 0 && (

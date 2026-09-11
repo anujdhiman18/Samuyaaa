@@ -7,6 +7,16 @@ import CandidateStatusTracker from '../components/faculty/CandidateStatusTracker
 
 export default function FacultyApplicationPage() {
   const [activeView, setActiveView] = useState('apply'); // 'apply' | 'track'
+  const [editingApp, setEditingApp] = useState(null);
+
+  const handleEditFromTracker = (app) => {
+    setEditingApp(app);
+    setActiveView('apply');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingApp(null);
+  };
 
   return (
     <div className="min-h-screen bg-background font-body text-on-surface flex flex-col justify-between">
@@ -28,7 +38,10 @@ export default function FacultyApplicationPage() {
             {/* View Switcher */}
             <div className="bg-surface-container p-1 rounded-full border border-outline-variant/20 flex items-center gap-1">
               <button
-                onClick={() => setActiveView('apply')}
+                onClick={() => {
+                  setEditingApp(null);
+                  setActiveView('apply');
+                }}
                 className={`px-3 py-1 rounded-full text-xs font-headings font-bold transition-all cursor-pointer ${
                   activeView === 'apply'
                     ? 'bg-primary text-white shadow-sm'
@@ -70,10 +83,15 @@ export default function FacultyApplicationPage() {
       {/* Main Content Area */}
       <main className="flex-1 py-8 px-gutter">
         {activeView === 'apply' ? (
-          <FacultyApplicationForm centerName="Saumyaa Studies" />
+          <FacultyApplicationForm
+            centerName="Saumyaa Studies"
+            editingApp={editingApp}
+            onCancelEdit={handleCancelEdit}
+            onSuccess={() => setEditingApp(null)}
+          />
         ) : (
           <div className="py-6">
-            <CandidateStatusTracker />
+            <CandidateStatusTracker onEditApplication={handleEditFromTracker} />
           </div>
         )}
       </main>

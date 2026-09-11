@@ -99,18 +99,76 @@ const TIME_SLOT_OPTIONS = [
   'Part-time (Flexible / Hourly)'
 ];
 
-export default function FacultyApplicationForm({ centerName = "Saumyaa Studies", onSuccess }) {
+export default function FacultyApplicationForm({
+  centerName = "Saumyaa Studies",
+  onSuccess,
+  editingApp = null,
+  onCancelEdit,
+}) {
   const { addToast } = useToast();
   const [formData, setFormData] = useState(initialFormData);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSinglePageMode, setIsSinglePageMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedApp, setSubmittedApp] = useState(null);
+  const [isSelfEditing, setIsSelfEditing] = useState(false);
+  const [lastSubmittedSnapshot, setLastSubmittedSnapshot] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Auto load saved draft from LocalStorage on mount
+  const isEditing = Boolean(editingApp) || isSelfEditing || Boolean(formData.applicationId);
+  const activeAppId = formData.applicationId || editingApp?.applicationId || submittedApp?.applicationId;
+
+  const populateFormDataFromApp = (app) => {
+    setFormData({
+      _id: app._id || app.id || '',
+      id: app._id || app.id || '',
+      applicationId: app.applicationId || '',
+      fullName: app.fullName || '',
+      dob: app.dob || '',
+      gender: app.gender || 'Male',
+      photoUrl: app.photoUrl || app.photo || '',
+      photoFileName: app.photoFileName || '',
+      contactNumber: app.contactNumber || app.phone || '',
+      email: app.email || '',
+      currentAddress: app.currentAddress || '',
+      permanentAddress: app.permanentAddress || '',
+      sameAsCurrentAddress: app.sameAsCurrentAddress || false,
+      highestDegree: app.highestDegree || "Master's Degree (M.Sc / M.Tech / M.A / M.Ed)",
+      universityName: app.universityName || '',
+      graduationYear: app.graduationYear || '2022',
+      specialization: app.specialization || '',
+      certifications: app.certifications || '',
+      totalExperience: app.totalExperience || '3 - 5 Years',
+      previousInstitutions: app.previousInstitutions || '',
+      subjectsTaught: app.subjectsTaught || '',
+      currentStatus: app.currentStatus || 'Currently Employed',
+      positionApplied: app.positionApplied || 'Subject Teacher',
+      subjectsExpertise: Array.isArray(app.subjectsExpertise) ? app.subjectsExpertise : [app.subjectsExpertise || 'Mathematics'],
+      preferredTimeSlot: app.preferredTimeSlot || 'Full-time (Morning Shift)',
+      expectedJoiningDate: app.expectedJoiningDate || '',
+      whyJoinReason: app.whyJoinReason || '',
+      skillsAchievements: app.skillsAchievements || '',
+      references: Array.isArray(app.references) && app.references.length > 0 ? app.references : [{ name: '', contact: '', relationship: '' }],
+      resumeFile: null,
+      resumeFileName: app.resumeFileName || '',
+      idProofFile: null,
+      idProofFileName: app.idProofFileName || '',
+      certificatesFile: null,
+      certificatesFileName: app.certificatesFileName || '',
+      acceptedDeclaration: true,
+      status: app.status || 'Pending',
+    });
+  };
+
+  // Auto load saved draft or editingApp on mount
   useEffect(() => {
+    if (editingApp) {
+      populateFormDataFromApp(editingApp);
+      setIsSelfEditing(true);
+      return;
+    }
+
     try {
       const saved = localStorage.getItem(`saumyaa_faculty_app_draft`);
       if (saved) {
@@ -121,7 +179,30 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
     } catch (e) {
       console.warn('Could not load faculty draft:', e);
     }
-  }, []);
+  }, [editingApp]);
+
+  const handleEditSubmittedApp = () => {
+    if (!submittedApp) return;
+    const appData = submittedApp.application || submittedApp;
+    setLastSubmittedSnapshot(submittedApp);
+    populateFormDataFromApp(appData);
+    setIsSelfEditing(true);
+    setSubmittedApp(null);
+    window.scrollTo({ top: 120, behavior: 'smooth' });
+    addToast('Editing mode active. You can modify any details and update your application.', 'info');
+  };
+
+  const handleCancelSelfEdit = () => {
+    if (lastSubmittedSnapshot) {
+      setSubmittedApp(lastSubmittedSnapshot);
+      setIsSelfEditing(false);
+    } else if (onCancelEdit) {
+      onCancelEdit();
+    } else {
+      setIsSelfEditing(false);
+      setFormData(initialFormData);
+    }
+  };
 
   // Save draft helper
   const handleSaveDraft = () => {
@@ -417,14 +498,23 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
         fileAttachments,
       };
 
-      const result = await facultyApplicationService.submitApplication(payload);
+      let result;
+      const targetAppId = formData._id || formData.id || editingApp?._id || editingApp?.id || formData.applicationId;
+      if (isEditing && targetAppId) {
+        result = await facultyApplicationService.updateApplication(targetAppId, payload);
+      } else {
+        result = await facultyApplicationService.submitApplication(payload);
+      }
+
       if (result.success) {
         localStorage.removeItem('saumyaa_faculty_app_draft');
         setSubmittedApp(result);
+        setLastSubmittedSnapshot(result);
+        setIsSelfEditing(false);
         if (result.emailSent) {
           addToast('Application submitted & emailed to anujdhiman1706@gmail.com & jitender0585@gmail.com!', 'success');
         } else {
-          addToast(`Application saved! Warning: Email service error (${result.emailWarning || 'Check EMAIL_PASS in server/.env'}).`, 'warning');
+          addToast(result.message || (isEditing ? 'Faculty application updated successfully!' : 'Faculty application submitted successfully!'), 'success');
         }
         if (onSuccess) onSuccess(result);
       }
@@ -441,6 +531,8 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
 
   // If application is successfully submitted, render the success receipt view
   if (submittedApp) {
+    const isApproved = submittedApp.application?.status === 'Approved' || submittedApp.application?.status === 'Selected';
+
     return (
       <div className="max-w-4xl mx-auto py-10 px-4 font-body">
         <div className="bg-white rounded-3xl p-8 md:p-12 shadow-premium border border-outline-variant/20 space-y-8 text-center print:shadow-none print:border-none print:p-0">
@@ -450,7 +542,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
 
           <div className="space-y-2">
             <span className="px-3 py-1 bg-primary/10 text-primary font-headings font-extrabold text-xs uppercase tracking-widest rounded-full">
-              Application Submitted
+              {isEditing || (submittedApp.application?.status && submittedApp.application?.status !== 'Pending') ? 'Application Updated' : 'Application Submitted'}
             </span>
             <h1 className="font-headings font-extrabold text-3xl md:text-4xl text-secondary">
               Welcome to the {centerName} Talent Pool!
@@ -470,7 +562,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
               <div className="sm:text-right">
                 <span className="text-xs text-on-surface-variant uppercase font-semibold">Submission Date</span>
                 <p className="text-sm font-semibold text-secondary">
-                  {new Date(submittedApp.application.appliedAt).toLocaleDateString('en-US', {
+                  {new Date(submittedApp.application?.appliedAt || Date.now()).toLocaleDateString('en-US', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
@@ -494,36 +586,45 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <span className="text-on-surface-variant font-medium">Applicant Name:</span>
-                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.fullName}</p>
+                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application?.fullName}</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant font-medium">Position Applied:</span>
-                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.positionApplied}</p>
+                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application?.positionApplied}</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant font-medium">Contact Email:</span>
-                  <p className="font-semibold text-on-surface">{submittedApp.application.email}</p>
+                  <p className="font-semibold text-on-surface">{submittedApp.application?.email}</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant font-medium">Phone Number:</span>
-                  <p className="font-semibold text-on-surface">{submittedApp.application.contactNumber}</p>
+                  <p className="font-semibold text-on-surface">{submittedApp.application?.contactNumber}</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant font-medium">Highest Qualification:</span>
-                  <p className="font-semibold text-on-surface">{submittedApp.application.highestDegree} ({submittedApp.application.specialization})</p>
+                  <p className="font-semibold text-on-surface">{submittedApp.application?.highestDegree} ({submittedApp.application?.specialization})</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant font-medium">Teaching Experience:</span>
-                  <p className="font-semibold text-on-surface">{submittedApp.application.totalExperience}</p>
+                  <p className="font-semibold text-on-surface">{submittedApp.application?.totalExperience}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 flex flex-wrap gap-4 justify-center print:hidden">
+          <div className="pt-4 flex flex-wrap gap-3 justify-center print:hidden items-center">
+            {!isApproved && (
+              <button
+                onClick={handleEditSubmittedApp}
+                className="bg-secondary text-white font-headings font-bold text-xs px-6 py-3 rounded-full shadow-premium hover:bg-secondary-container transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Edit / Modify Application Details
+              </button>
+            )}
             <button
               onClick={handlePrintReceipt}
-              className="bg-secondary text-white font-headings font-bold text-xs px-6 py-3 rounded-full shadow-premium hover:bg-secondary-container hover:text-on-secondary-container transition-all flex items-center gap-2"
+              className="border border-outline-variant/30 text-on-surface-variant font-headings font-bold text-xs px-6 py-3 rounded-full hover:bg-surface-container transition-all flex items-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">print</span>
               Print / Save PDF Receipt
@@ -531,14 +632,21 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
             <button
               onClick={() => {
                 setSubmittedApp(null);
+                setIsSelfEditing(false);
                 setFormData(initialFormData);
                 setCurrentStep(1);
               }}
-              className="border border-outline-variant/30 text-on-surface-variant font-headings font-bold text-xs px-6 py-3 rounded-full hover:bg-surface-container transition-colors"
+              className="bg-primary text-white font-headings font-bold text-xs px-6 py-3 rounded-full hover:bg-primary-container shadow-md transition-colors cursor-pointer"
             >
               Submit Another Application
             </button>
           </div>
+
+          {!isApproved && (
+            <p className="text-[11px] text-on-surface-variant/70 italic">
+              ✏️ You can edit and update your application details anytime until final Admin approval.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -562,54 +670,69 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-headings font-extrabold uppercase tracking-wider text-white border border-white/20">
-                Academic Recruitment Portal
+                {isEditing ? 'Modify Faculty Application' : 'Academic Recruitment Portal'}
               </span>
-              {draftSaved && (
+              {draftSaved && !isEditing && (
                 <span className="bg-emerald-500/30 text-emerald-100 text-[11px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-400/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Draft Auto-Saved
                 </span>
               )}
             </div>
             <h1 className="font-headings font-extrabold text-2xl md:text-4xl text-white tracking-tight">
-              Faculty Application &amp; Joining Form
+              {isEditing && activeAppId ? `Edit Application (${activeAppId})` : 'Faculty Application & Joining Form'}
             </h1>
             <p className="text-xs md:text-sm text-white/80 max-w-2xl leading-relaxed font-light">
-              Join the academic team at <strong className="font-semibold text-white">{centerName}</strong>. We are actively seeking passionate educators, subject matter experts, and research scholars.
+              {isEditing
+                ? 'Update and correct your faculty application credentials. Changes will be updated for Admin review.'
+                : `Join the academic team at ${centerName}. We are actively seeking passionate educators, subject matter experts, and research scholars.`}
             </p>
           </div>
 
           {/* Quick Utility Actions */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleAutoFillDemo}
-              className="bg-white/15 hover:bg-white/25 text-white border border-white/20 font-headings font-bold text-[11px] px-3.5 py-2 rounded-full backdrop-blur-md transition-all flex items-center gap-1.5 shadow-sm"
-              title="Auto fill sample data for quick preview"
-            >
-              <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-              Auto-Fill Demo
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsSinglePageMode(!isSinglePageMode)}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-headings font-bold text-[11px] px-3 py-2 rounded-full transition-all flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[16px]">
-                {isSinglePageMode ? 'view_carousel' : 'format_list_bulleted'}
-              </span>
-              {isSinglePageMode ? 'Step Wizard' : 'All-in-One Scroll'}
-            </button>
-
-            {draftSaved && (
+            {isEditing ? (
               <button
                 type="button"
-                onClick={handleClearDraft}
-                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 border border-rose-400/30 text-[11px] font-bold px-3 py-2 rounded-full transition-colors"
-                title="Reset all fields"
+                onClick={handleCancelSelfEdit}
+                className="bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs px-4 py-2 rounded-full backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                Clear Form
+                <span className="material-symbols-outlined text-[16px]">close</span>
+                Cancel Edit
               </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleAutoFillDemo}
+                  className="bg-white/15 hover:bg-white/25 text-white border border-white/20 font-headings font-bold text-[11px] px-3.5 py-2 rounded-full backdrop-blur-md transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Auto fill sample data for quick preview"
+                >
+                  <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                  Auto-Fill Demo
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSinglePageMode(!isSinglePageMode)}
+                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-headings font-bold text-[11px] px-3 py-2 rounded-full transition-all flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    {isSinglePageMode ? 'view_carousel' : 'format_list_bulleted'}
+                  </span>
+                  {isSinglePageMode ? 'Step Wizard' : 'All-in-One Scroll'}
+                </button>
+
+                {draftSaved && (
+                  <button
+                    type="button"
+                    onClick={handleClearDraft}
+                    className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 border border-rose-400/30 text-[11px] font-bold px-3 py-2 rounded-full transition-colors"
+                    title="Reset all fields"
+                  >
+                    Clear Form
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1459,17 +1582,17 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs px-8 py-3 rounded-full shadow-premium hover:shadow-xl transition-all flex items-center gap-2"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs px-8 py-3 rounded-full shadow-premium hover:shadow-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Submitting Application...
+                      {isEditing ? 'Updating Application...' : 'Submitting Application...'}
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-[18px]">send</span>
-                      Submit Faculty Application
+                      <span className="material-symbols-outlined text-[18px]">{isEditing ? 'save' : 'send'}</span>
+                      {isEditing ? 'Update Faculty Application' : 'Submit Faculty Application'}
                     </>
                   )}
                 </button>
@@ -1479,17 +1602,17 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs px-8 py-3 rounded-full shadow-premium hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs px-8 py-3 rounded-full shadow-premium hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Submitting Application...
+                  {isEditing ? 'Updating Application...' : 'Submitting Application...'}
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[18px]">send</span>
-                  Submit Faculty Application
+                  <span className="material-symbols-outlined text-[18px]">{isEditing ? 'save' : 'send'}</span>
+                  {isEditing ? 'Update Faculty Application' : 'Submit Faculty Application'}
                 </>
               )}
             </button>

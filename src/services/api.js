@@ -4049,6 +4049,43 @@ export const facultyApplicationService = {
     };
   },
 
+  updateApplication: async (id, formData) => {
+    const list = getStoredFacultyApplications();
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
+
+    if (idx === -1) {
+      throw new Error('Faculty application not found');
+    }
+
+    if (list[idx].status === 'Approved' || list[idx].status === 'Selected') {
+      throw new Error('Approved faculty applications are locked and cannot be modified.');
+    }
+
+    const updatedApp = {
+      ...list[idx],
+      ...formData,
+      status: list[idx].status === 'Rejected' ? 'Pending' : (list[idx].status || 'Pending'),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await setDoc(doc(db, 'faculty_applications', String(list[idx]._id || list[idx].id)), updatedApp, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore update faculty application error:', fsErr.message);
+    }
+
+    list[idx] = updatedApp;
+    setStoredFacultyApplications([...list]);
+    notifyDataUpdate();
+
+    return {
+      success: true,
+      application: updatedApp,
+      applicationId: updatedApp.applicationId,
+      message: 'Faculty application updated successfully!',
+    };
+  },
+
   updateApplicationStatus: async (id, status, notes = '', examInterviewSchedule = null) => {
     const list = getStoredFacultyApplications();
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));

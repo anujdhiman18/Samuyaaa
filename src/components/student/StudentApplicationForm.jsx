@@ -37,40 +37,53 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
   const [formData, setFormData] = useState(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [submittedApp, setSubmittedApp] = useState(null);
+  const [isSelfEditing, setIsSelfEditing] = useState(false);
+  const [lastSubmittedSnapshot, setLastSubmittedSnapshot] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [errors, setErrors] = useState({});
   const [lockInfo, setLockInfo] = useState({ isLocked: false });
 
+  const isEditing = Boolean(editingApp) || isSelfEditing || Boolean(formData.applicationId);
+  const activeAppId = formData.applicationId || editingApp?.applicationId || submittedApp?.applicationId;
+
+  const populateFormDataFromApp = (app) => {
+    let stage = app.academicStage || '';
+    let currClass = app.currentClass || '';
+    if (!stage && app.targetClass) {
+      stage = getStageForClass(app.targetClass);
+      if (!currClass && app.targetClass !== stage) {
+        currClass = app.targetClass;
+      }
+    }
+
+    setFormData({
+      _id: app._id || app.id || '',
+      id: app._id || app.id || '',
+      applicationId: app.applicationId || '',
+      fullName: app.fullName || '',
+      email: app.email || '',
+      contactNumber: app.contactNumber || app.phone || '',
+      dob: app.dob || '',
+      photoUrl: app.photoUrl || app.photo || '',
+      photoFileName: app.photoFileName || '',
+      academicStage: stage || 'S2',
+      currentClass: currClass || '10th',
+      targetClass: currClass || stage || '10th',
+      branch: app.branch || 'Main Center (Bagru)',
+      subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'Mathematics'],
+      previousSchool: app.previousSchool || '',
+      parentName: app.parentName || '',
+      parentContact: app.parentContact || '',
+      message: app.message || '',
+      status: app.status || 'Pending',
+    });
+  };
+
   // Load editingApp if provided, otherwise load draft
   useEffect(() => {
     if (editingApp) {
-      let stage = editingApp.academicStage || '';
-      let currClass = editingApp.currentClass || '';
-      if (!stage && editingApp.targetClass) {
-        stage = getStageForClass(editingApp.targetClass);
-        if (!currClass && editingApp.targetClass !== stage) {
-          currClass = editingApp.targetClass;
-        }
-      }
-
-      setFormData({
-        applicationId: editingApp.applicationId || '',
-        fullName: editingApp.fullName || '',
-        email: editingApp.email || '',
-        contactNumber: editingApp.contactNumber || editingApp.phone || '',
-        dob: editingApp.dob || '',
-        photoUrl: editingApp.photoUrl || editingApp.photo || '',
-        photoFileName: editingApp.photoFileName || '',
-        academicStage: stage || 'S2',
-        currentClass: currClass || '10th',
-        targetClass: currClass || stage || '10th',
-        branch: editingApp.branch || 'Main Center (Bagru)',
-        subjects: Array.isArray(editingApp.subjects) ? editingApp.subjects : [editingApp.subjects || 'Mathematics'],
-        previousSchool: editingApp.previousSchool || '',
-        parentName: editingApp.parentName || '',
-        parentContact: editingApp.parentContact || '',
-        message: editingApp.message || '',
-      });
+      populateFormDataFromApp(editingApp);
+      setIsSelfEditing(true);
       return;
     }
 
@@ -107,7 +120,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
   // Check 30-day approval lock on email or phone change
   useEffect(() => {
-    if (editingApp) {
+    if (isEditing) {
       setLockInfo({ isLocked: false });
       return;
     }
@@ -117,7 +130,29 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     } else {
       setLockInfo({ isLocked: false });
     }
-  }, [formData.email, formData.contactNumber, editingApp]);
+  }, [formData.email, formData.contactNumber, isEditing]);
+
+  const handleEditSubmittedApp = () => {
+    if (!submittedApp) return;
+    setLastSubmittedSnapshot(submittedApp);
+    populateFormDataFromApp(submittedApp);
+    setIsSelfEditing(true);
+    setSubmittedApp(null);
+    window.scrollTo({ top: 120, behavior: 'smooth' });
+    addToast('Editing mode active. You can modify any details and update your application.', 'info');
+  };
+
+  const handleCancelSelfEdit = () => {
+    if (lastSubmittedSnapshot) {
+      setSubmittedApp(lastSubmittedSnapshot);
+      setIsSelfEditing(false);
+    } else if (onCancelEdit) {
+      onCancelEdit();
+    } else {
+      setIsSelfEditing(false);
+      setFormData(initialFormData);
+    }
+  };
 
   const handleSaveDraft = () => {
     try {
@@ -227,7 +262,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       return;
     }
 
-    if (lockInfo.isLocked) {
+    if (!isEditing && lockInfo.isLocked) {
       addToast(lockInfo.message, 'error');
       return;
     }
@@ -235,17 +270,24 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     setSubmitting(true);
     try {
       let res;
-      if (editingApp && (editingApp._id || editingApp.id)) {
-        res = await studentApplicationService.updateApplication(editingApp._id || editingApp.id, formData);
+      const targetAppId = formData._id || formData.id || editingApp?._id || editingApp?.id || formData.applicationId;
+      if (isEditing && targetAppId) {
+        res = await studentApplicationService.updateApplication(targetAppId, formData);
       } else {
         res = await studentApplicationService.submitApplication(formData);
       }
 
       if (res.success) {
         localStorage.removeItem('saumyaa_student_app_draft');
-        setSubmittedApp(res.application || { applicationId: res.applicationId || editingApp?.applicationId, ...formData });
-        addToast(res.message || 'Student application submitted successfully!', 'success');
-        if (onSuccess) onSuccess(res.application);
+        const updatedOrNewApp = res.application || {
+          applicationId: res.applicationId || formData.applicationId || editingApp?.applicationId,
+          ...formData,
+        };
+        setSubmittedApp(updatedOrNewApp);
+        setLastSubmittedSnapshot(updatedOrNewApp);
+        setIsSelfEditing(false);
+        addToast(res.message || (isEditing ? 'Application updated successfully!' : 'Student application submitted successfully!'), 'success');
+        if (onSuccess) onSuccess(updatedOrNewApp);
       } else {
         addToast(res.message || 'Failed to submit application', 'error');
       }
@@ -258,18 +300,21 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
   };
 
   if (submittedApp) {
+    const isApproved = submittedApp.status === 'Approved';
+
     return (
       <div className="max-w-2xl mx-auto bg-surface-container-lowest border border-emerald-500/20 rounded-3xl p-8 shadow-xl text-center font-body animate-fade-in my-8">
         <div className="w-16 h-16 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="material-symbols-outlined text-[36px]">check_circle</span>
         </div>
         <h2 className="font-headings font-extrabold text-2xl text-secondary mb-2">
-          Application Submitted Successfully!
+          {submittedApp.status && submittedApp.status !== 'Pending' ? 'Application Updated Successfully!' : 'Application Submitted Successfully!'}
         </h2>
         <p className="text-sm text-on-surface-variant max-w-md mx-auto mb-6">
           Thank you for applying to study at <span className="font-bold text-primary">{centerName}</span>. Your application is now under review by our academic admissions team.
         </p>
 
+        {/* Application Summary Card */}
         <div className="bg-surface-container/60 border border-outline-variant/20 rounded-2xl p-4 text-left max-w-md mx-auto mb-6 space-y-2">
           <div className="flex justify-between items-center text-xs border-b border-outline-variant/15 pb-2">
             <span className="text-on-surface-variant font-medium">Application ID:</span>
@@ -304,6 +349,14 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             <span className="text-on-surface-variant">Parent/Guardian:</span>
             <span className="font-bold text-secondary">{submittedApp.parentName} ({submittedApp.parentContact})</span>
           </div>
+          {submittedApp.status && (
+            <div className="flex justify-between items-center text-xs pt-1 border-t border-outline-variant/15">
+              <span className="text-on-surface-variant">Current Status:</span>
+              <span className="font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-full text-[11px]">
+                {submittedApp.status}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Next Steps Reminder */}
@@ -317,17 +370,36 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-center gap-3">
+        {/* Action Buttons: Edit / Modify Option + Submit Another */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+          {!isApproved && (
+            <button
+              onClick={handleEditSubmittedApp}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-secondary hover:bg-secondary-container text-white font-headings font-bold text-xs shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit</span>
+              Edit / Modify Application Details
+            </button>
+          )}
+
           <button
             onClick={() => {
               setSubmittedApp(null);
+              setIsSelfEditing(false);
               setFormData(initialFormData);
             }}
-            className="px-6 py-2.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-md transition-all cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
+            <span className="material-symbols-outlined text-[16px]">add_circle</span>
             Submit Another Application
           </button>
         </div>
+
+        {!isApproved && (
+          <p className="text-[11px] text-on-surface-variant/70 mt-3 italic">
+            ✏️ You can edit and update your application details anytime until final Admin approval.
+          </p>
+        )}
       </div>
     );
   }
@@ -338,23 +410,23 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       <div className="bg-gradient-to-r from-primary via-primary-container to-secondary text-white rounded-3xl p-6 sm:p-8 shadow-xl mb-6 relative overflow-hidden">
         <div className="relative z-10">
           <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-headings font-bold uppercase tracking-wider mb-3">
-            {editingApp ? 'Modify Pending Application' : 'Online Student Admissions 2026-2027'}
+            {isEditing ? 'Modify Pending Application' : 'Online Student Admissions 2026-2027'}
           </span>
           <h1 className="font-headings font-extrabold text-2xl sm:text-3xl tracking-tight mb-2">
-            {editingApp ? `Edit Application (${editingApp.applicationId})` : 'Apply as a Student'}
+            {isEditing && activeAppId ? `Edit Application (${activeAppId})` : 'Apply as a Student'}
           </h1>
           <p className="text-xs sm:text-sm text-white/80 max-w-xl leading-relaxed">
-            {editingApp
+            {isEditing
               ? 'Update and correct your application details. Your pending application will be refreshed for Admin review.'
               : `Join ${centerName} for top-quality academic coaching, interactive learning, and guidance from expert faculty.`}
           </p>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-2 pt-4 border-t border-white/15 relative z-10">
-          {editingApp ? (
+          {isEditing ? (
             <button
               type="button"
-              onClick={onCancelEdit}
+              onClick={handleCancelSelfEdit}
               className="px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
             >
               <span className="material-symbols-outlined text-[16px]">close</span>
@@ -430,7 +502,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       </div>
 
       {/* 30-Day Restriction Lock Banner */}
-      {lockInfo.isLocked && (
+      {!isEditing && lockInfo.isLocked && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex items-start gap-3 shadow-sm animate-fade-in font-body">
           <span className="material-symbols-outlined text-amber-600 text-2xl mt-0.5">lock_clock</span>
           <div className="space-y-1">
@@ -720,11 +792,11 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
         {/* Form Actions */}
         <div className="pt-4 border-t border-outline-variant/15 flex items-center justify-between">
-          {editingApp ? (
+          {isEditing ? (
             <button
               type="button"
-              onClick={onCancelEdit}
-              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-secondary transition-colors"
+              onClick={handleCancelSelfEdit}
+              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-secondary transition-colors cursor-pointer"
             >
               Cancel Edit
             </button>
@@ -732,7 +804,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             <button
               type="button"
               onClick={handleClearDraft}
-              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-rose-600 transition-colors"
+              className="px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant hover:text-rose-600 transition-colors cursor-pointer"
             >
               Reset Form
             </button>
@@ -740,18 +812,18 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
           <button
             type="submit"
-            disabled={submitting || lockInfo.isLocked}
+            disabled={submitting || (!isEditing && lockInfo.isLocked)}
             className="px-8 py-3 rounded-full bg-primary text-white font-headings font-bold text-xs hover:bg-primary-container shadow-lg shadow-primary/25 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
           >
             {submitting ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                <span>{editingApp ? 'Updating Application...' : 'Submitting Application...'}</span>
+                <span>{isEditing ? 'Updating Application...' : 'Submitting Application...'}</span>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">{editingApp ? 'save' : 'send'}</span>
-                <span>{editingApp ? 'Update Application' : 'Submit Student Application'}</span>
+                <span className="material-symbols-outlined text-[18px]">{isEditing ? 'save' : 'send'}</span>
+                <span>{isEditing ? 'Update Application' : 'Submit Student Application'}</span>
               </>
             )}
           </button>
