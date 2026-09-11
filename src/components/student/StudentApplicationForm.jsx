@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
+import PassportPhotoUpload from '../common/PassportPhotoUpload';
 
 const SUBJECT_OPTIONS = [
   'Mathematics',
@@ -18,6 +19,8 @@ const initialFormData = {
   email: '',
   contactNumber: '',
   dob: '',
+  photoUrl: '',
+  photoFileName: '',
   academicStage: '',
   currentClass: '',
   targetClass: '',
@@ -56,6 +59,8 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
         email: editingApp.email || '',
         contactNumber: editingApp.contactNumber || editingApp.phone || '',
         dob: editingApp.dob || '',
+        photoUrl: editingApp.photoUrl || editingApp.photo || '',
+        photoFileName: editingApp.photoFileName || '',
         academicStage: stage || 'S2',
         currentClass: currClass || '10th',
         targetClass: currClass || stage || '10th',
@@ -133,15 +138,20 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
   };
 
   const handleAutoFillDemo = () => {
+    // Generate sample SVG passport photo data url for instant testing
+    const demoPhotoSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23e0e7ff"/><circle cx="150" cy="140" r="60" fill="%234f46e5"/><path d="M60,340 C60,240 240,240 240,340 Z" fill="%233730a3"/><text x="150" y="380" font-family="sans-serif" font-size="16" font-weight="bold" fill="%231e1b4b" text-anchor="middle">PASSPORT PHOTO</text></svg>`;
+
     setFormData({
       fullName: 'Aarav Sharma',
       email: 'aarav.sharma@gmail.com',
       contactNumber: '9816512345',
       dob: '2010-05-14',
+      photoUrl: demoPhotoSvg,
+      photoFileName: 'aarav_sharma_passport_photo.jpg',
       academicStage: 'S2',
       currentClass: '10th',
       targetClass: '10th',
-      branch: 'Main Center',
+      branch: 'Main Center (Bagru)',
       subjects: ['Mathematics', 'Physics', 'Chemistry'],
       previousSchool: 'DAV Public Senior Secondary School',
       parentName: 'Sanjay Sharma',
@@ -149,7 +159,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       message: 'Looking for top-tier coaching for Board Exams and Olympiad competitive preparation.',
     });
     setErrors({});
-    addToast('Demo student details auto-filled!', 'success');
+    addToast('Demo student details & passport photo auto-filled!', 'success');
   };
 
   const handleStageChange = (stageCode) => {
@@ -194,6 +204,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
   const validate = () => {
     const errs = {};
+    if (!formData.photoUrl) errs.photoUrl = 'Passport size photograph is mandatory. Please upload your photo.';
     if (!formData.fullName.trim()) errs.fullName = 'Full name is required';
     if (!formData.email.trim() || !formData.email.includes('@')) errs.email = 'Valid email is required';
     if (!formData.contactNumber.trim() || formData.contactNumber.length < 10)
@@ -295,6 +306,17 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           </div>
         </div>
 
+        {/* Next Steps Reminder */}
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left max-w-md mx-auto mb-6 space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-amber-900">
+            <span className="material-symbols-outlined text-sm text-amber-700">info</span>
+            <span>Next Step: Entrance Exam cum Interview</span>
+          </div>
+          <p className="text-[11px] text-amber-800 leading-relaxed">
+            Your application is now under review as a shortlisted candidate. The Admin/Management will assign your specific <strong>Day, Date, Time, and Venue/Mode</strong> for the Entrance Exam cum Interview. You can track this anytime using your Application ID in the <strong>Track Status</strong> tab.
+          </p>
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <button
             onClick={() => {
@@ -313,7 +335,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
   return (
     <div className="max-w-3xl mx-auto font-body">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-primary via-primary-container to-secondary text-white rounded-3xl p-6 sm:p-8 shadow-xl mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-primary via-primary-container to-secondary text-white rounded-3xl p-6 sm:p-8 shadow-xl mb-6 relative overflow-hidden">
         <div className="relative z-10">
           <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-headings font-bold uppercase tracking-wider mb-3">
             {editingApp ? 'Modify Pending Application' : 'Online Student Admissions 2026-2027'}
@@ -371,6 +393,42 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
         </div>
       </div>
 
+      {/* PROMINENT MANDATORY ADMISSIONS NOTICE BANNER */}
+      <div className="mb-6 p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 shadow-md animate-fade-in font-body">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+            <span className="material-symbols-outlined text-[24px]">gavel</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-amber-500 text-white font-headings font-extrabold text-[10px] uppercase tracking-wider">
+                Admissions Policy Notice
+              </span>
+              <span className="text-xs font-bold text-amber-900">
+                Evaluation &amp; Selection Procedure
+              </span>
+            </div>
+            <blockquote className="text-xs font-semibold text-amber-950 leading-relaxed italic border-l-2 border-amber-500 pl-2.5">
+              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Entrance Exam cum Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
+            </blockquote>
+            
+            {/* Status Flow Indicator */}
+            <div className="pt-2 flex items-center flex-wrap gap-1.5 text-[10px] text-amber-900/90 font-medium">
+              <span className="font-bold text-amber-950">Status Flow:</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">1. Application Submitted</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">2. Shortlisted</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Entrance Exam cum Interview</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">4. Final Selection</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-950 font-bold font-mono">5. Admission/Joining</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 30-Day Restriction Lock Banner */}
       {lockInfo.isLocked && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex items-start gap-3 shadow-sm animate-fade-in font-body">
@@ -395,6 +453,32 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             <span className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-extrabold">1</span>
             Student Personal Details
           </h2>
+
+          {/* Mandatory Passport Photo Upload */}
+          <div className="mb-6">
+            <PassportPhotoUpload
+              photoUrl={formData.photoUrl}
+              photoFileName={formData.photoFileName}
+              onPhotoChange={(base64Data, file, errorMsg) => {
+                if (errorMsg) {
+                  setErrors((prev) => ({ ...prev, photoUrl: errorMsg }));
+                } else {
+                  setFormData((prev) => ({
+                    ...prev,
+                    photoUrl: base64Data,
+                    photoFileName: file?.name || 'student_passport_photo.jpg',
+                  }));
+                  setErrors((prev) => ({ ...prev, photoUrl: null }));
+                }
+              }}
+              onPhotoRemove={() => {
+                setFormData((prev) => ({ ...prev, photoUrl: '', photoFileName: '' }));
+              }}
+              error={errors.photoUrl}
+              required={true}
+              id="student-passport-photo-upload"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

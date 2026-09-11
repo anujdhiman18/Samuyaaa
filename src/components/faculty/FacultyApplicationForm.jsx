@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { facultyApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import PassportPhotoUpload from '../common/PassportPhotoUpload';
 
 const initialFormData = {
   // Personal Details
   fullName: '',
   dob: '',
   gender: 'Male',
+  photoUrl: '',
+  photoFileName: '',
   contactNumber: '',
   email: '',
   currentAddress: '',
@@ -142,10 +145,14 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
 
   // Auto-fill sample application data for demonstration
   const handleAutoFillDemo = () => {
+    const demoPhotoSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23ecfdf5"/><circle cx="150" cy="140" r="60" fill="%23059669"/><path d="M60,340 C60,240 240,240 240,340 Z" fill="%23047857"/><text x="150" y="380" font-family="sans-serif" font-size="16" font-weight="bold" fill="%23064e3b" text-anchor="middle">FACULTY PHOTO</text></svg>`;
+
     setFormData({
       fullName: 'Prof. Ramesh Chander',
       dob: '1988-06-18',
       gender: 'Male',
+      photoUrl: demoPhotoSvg,
+      photoFileName: 'prof_ramesh_chander_passport_photo.jpg',
       contactNumber: '9816543210',
       email: 'ramesh.chander@gmail.com',
       currentAddress: 'Villa #12, Rose Colony, Main Highway, Palampur, HP',
@@ -185,7 +192,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
       acceptedDeclaration: true,
     });
     setErrors({});
-    addToast('Demo data auto-filled into application form!', 'success');
+    addToast('Demo faculty details & passport photo auto-filled!', 'success');
   };
 
   const handleInputChange = (e) => {
@@ -272,6 +279,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
   const validateStep = (stepNumber) => {
     const errs = {};
     if (stepNumber === 1 || isSinglePageMode) {
+      if (!formData.photoUrl) errs.photoUrl = 'Passport size photograph is mandatory. Please upload your photo.';
       if (!formData.fullName.trim()) errs.fullName = 'Full Name is required.';
       if (!formData.dob) errs.dob = 'Date of Birth is required.';
       if (!formData.contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
@@ -308,6 +316,9 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
     }
 
     if (stepNumber === 6 || isSinglePageMode) {
+      if (!formData.photoUrl) {
+        errs.photoUrl = 'Passport size photograph is mandatory. Please upload your photo in Section 1.';
+      }
       if (!formData.acceptedDeclaration) {
         errs.acceptedDeclaration = 'You must accept the declaration to submit.';
       }
@@ -348,7 +359,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(6)) {
-      addToast('Please complete all mandatory fields and accept the declaration.', 'error');
+      addToast('Please complete all mandatory fields, upload your passport photo, and accept the declaration.', 'error');
       return;
     }
 
@@ -373,6 +384,8 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
         fullName: formData.fullName,
         dob: formData.dob,
         gender: formData.gender,
+        photoUrl: formData.photoUrl,
+        photoFileName: formData.photoFileName,
         contactNumber: formData.contactNumber,
         email: formData.email,
         currentAddress: formData.currentAddress,
@@ -468,30 +481,41 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-on-surface-variant font-medium">Applicant Name:</span>
-                <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.fullName}</p>
-              </div>
-              <div>
-                <span className="text-on-surface-variant font-medium">Position Applied:</span>
-                <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.positionApplied}</p>
-              </div>
-              <div>
-                <span className="text-on-surface-variant font-medium">Contact Email:</span>
-                <p className="font-semibold text-on-surface">{submittedApp.application.email}</p>
-              </div>
-              <div>
-                <span className="text-on-surface-variant font-medium">Phone Number:</span>
-                <p className="font-semibold text-on-surface">{submittedApp.application.contactNumber}</p>
-              </div>
-              <div>
-                <span className="text-on-surface-variant font-medium">Highest Qualification:</span>
-                <p className="font-semibold text-on-surface">{submittedApp.application.highestDegree} ({submittedApp.application.specialization})</p>
-              </div>
-              <div>
-                <span className="text-on-surface-variant font-medium">Teaching Experience:</span>
-                <p className="font-semibold text-on-surface">{submittedApp.application.totalExperience}</p>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              {submittedApp.application?.photoUrl && (
+                <div className="w-20 h-24 rounded-xl overflow-hidden border-2 border-primary/30 shrink-0 shadow-sm bg-white">
+                  <img
+                    src={submittedApp.application.photoUrl}
+                    alt={submittedApp.application.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="text-on-surface-variant font-medium">Applicant Name:</span>
+                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.fullName}</p>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant font-medium">Position Applied:</span>
+                  <p className="font-headings font-bold text-sm text-secondary">{submittedApp.application.positionApplied}</p>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant font-medium">Contact Email:</span>
+                  <p className="font-semibold text-on-surface">{submittedApp.application.email}</p>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant font-medium">Phone Number:</span>
+                  <p className="font-semibold text-on-surface">{submittedApp.application.contactNumber}</p>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant font-medium">Highest Qualification:</span>
+                  <p className="font-semibold text-on-surface">{submittedApp.application.highestDegree} ({submittedApp.application.specialization})</p>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant font-medium">Teaching Experience:</span>
+                  <p className="font-semibold text-on-surface">{submittedApp.application.totalExperience}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -532,7 +556,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 font-body text-on-surface">
       {/* Header Banner */}
-      <div className="bg-gradient-to-br from-secondary/90 via-secondary to-primary/90 text-white rounded-3xl p-6 md:p-10 shadow-premium mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-secondary/90 via-secondary to-primary/90 text-white rounded-3xl p-6 md:p-10 shadow-premium mb-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl -z-0 pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -547,7 +571,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
               )}
             </div>
             <h1 className="font-headings font-extrabold text-2xl md:text-4xl text-white tracking-tight">
-              Faculty Application & Joining Form
+              Faculty Application &amp; Joining Form
             </h1>
             <p className="text-xs md:text-sm text-white/80 max-w-2xl leading-relaxed font-light">
               Join the academic team at <strong className="font-semibold text-white">{centerName}</strong>. We are actively seeking passionate educators, subject matter experts, and research scholars.
@@ -587,6 +611,42 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
                 Clear Form
               </button>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* PROMINENT MANDATORY FACULTY RECRUITMENT NOTICE BANNER */}
+      <div className="mb-6 p-5 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 shadow-md animate-fade-in font-body">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+            <span className="material-symbols-outlined text-[24px]">gavel</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-amber-500 text-white font-headings font-extrabold text-[10px] uppercase tracking-wider">
+                Recruitment Policy Notice
+              </span>
+              <span className="text-xs font-bold text-amber-900">
+                Evaluation &amp; Selection Procedure
+              </span>
+            </div>
+            <blockquote className="text-xs font-semibold text-amber-950 leading-relaxed italic border-l-2 border-amber-500 pl-2.5">
+              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Entrance Exam cum Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
+            </blockquote>
+            
+            {/* Status Flow Indicator */}
+            <div className="pt-2 flex items-center flex-wrap gap-1.5 text-[10px] text-amber-900/90 font-medium">
+              <span className="font-bold text-amber-950">Status Flow:</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">1. Application Submitted</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">2. Shortlisted</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Entrance Exam cum Interview</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">4. Final Selection</span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-950 font-bold font-mono">5. Admission/Joining</span>
+            </div>
           </div>
         </div>
       </div>
@@ -666,6 +726,32 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
                 <h2 className="font-headings font-extrabold text-lg text-secondary">1. Personal Details</h2>
                 <p className="text-xs text-on-surface-variant">Full legal name, contact information, and residence details.</p>
               </div>
+            </div>
+
+            {/* Mandatory Passport Photo Upload */}
+            <div className="mb-6">
+              <PassportPhotoUpload
+                photoUrl={formData.photoUrl}
+                photoFileName={formData.photoFileName}
+                onPhotoChange={(base64Data, file, errorMsg) => {
+                  if (errorMsg) {
+                    setErrors((prev) => ({ ...prev, photoUrl: errorMsg }));
+                  } else {
+                    setFormData((prev) => ({
+                      ...prev,
+                      photoUrl: base64Data,
+                      photoFileName: file?.name || 'faculty_passport_photo.jpg',
+                    }));
+                    setErrors((prev) => ({ ...prev, photoUrl: null }));
+                  }
+                }}
+                onPhotoRemove={() => {
+                  setFormData((prev) => ({ ...prev, photoUrl: '', photoFileName: '' }));
+                }}
+                error={errors.photoUrl}
+                required={true}
+                id="faculty-passport-photo-upload"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1326,7 +1412,7 @@ export default function FacultyApplicationForm({ centerName = "Saumyaa Studies",
                   className="mt-0.5 w-4 h-4 rounded accent-primary shrink-0"
                 />
                 <span className="text-xs text-on-surface leading-relaxed">
-                  I hereby declare that all information provided in this application form is true, accurate, and complete to the best of my knowledge. I understand that any false statement or omission may invalidate my application or subject me to termination if selected.
+                  I hereby declare that all information provided in this application form is true, accurate, and complete. I clearly understand that submission of this application does not guarantee direct joining; I will be treated as a shortlisted candidate and will be called for an Entrance Exam / Demo Lecture cum Interview on a particular day, date, and time scheduled by the Admin/Management. Final joining is subject to successful completion of the selection process.
                 </span>
               </label>
               {errors.acceptedDeclaration && (

@@ -8,6 +8,7 @@ import FacultySection from './FacultySection';
 import AlumniSection from './AlumniSection';
 import Results from './Results';
 import Testimonials from './Testimonials';
+import AdmissionProcessSection from './AdmissionProcessSection';
 import Faq from './Faq';
 import CtaHub from './CtaHub';
 import Content from './Content';
@@ -72,6 +73,7 @@ export default function PublicWebsite() {
 
         <About onOpenBooking={openBooking} />
         <Course onOpenBooking={openBooking} />
+        <AdmissionProcessSection />
         <FacultySection />
         <AlumniSection />
         <Results />

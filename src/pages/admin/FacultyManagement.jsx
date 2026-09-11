@@ -54,6 +54,13 @@ export default function FacultyManagement() {
   const [appFilterStatus, setAppFilterStatus] = useState('All');
   const [adminNotes, setAdminNotes] = useState('');
   const [updatingApp, setUpdatingApp] = useState(false);
+  const [examSchedule, setExamSchedule] = useState({
+    day: 'Saturday',
+    date: '',
+    time: '11:00 AM - 01:00 PM',
+    venueMode: 'Main Campus (Bagru) - Conference Room / Online',
+    instructions: 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+  });
 
   // Faculty Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -627,23 +634,46 @@ export default function FacultyManagement() {
   const handleOpenAppDetails = (app) => {
     setSelectedApp(app);
     setAdminNotes(app.notes || '');
+    if (app.examInterviewSchedule) {
+      setExamSchedule({
+        day: app.examInterviewSchedule.day || 'Saturday',
+        date: app.examInterviewSchedule.date || '',
+        time: app.examInterviewSchedule.time || '11:00 AM - 01:00 PM',
+        venueMode: app.examInterviewSchedule.venueMode || 'Main Campus (Bagru) - Conference Room / Online',
+        instructions: app.examInterviewSchedule.instructions || 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+      });
+    } else {
+      setExamSchedule({
+        day: 'Saturday',
+        date: '',
+        time: '11:00 AM - 01:00 PM',
+        venueMode: 'Main Campus (Bagru) - Conference Room / Online',
+        instructions: 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+      });
+    }
   };
 
-  const handleUpdateAppStatus = async (status, targetApp = selectedApp) => {
+  const handleUpdateAppStatus = async (status, targetApp = selectedApp, scheduleData = null) => {
     if (!targetApp) return;
     setUpdatingApp(true);
     try {
       const res = await facultyApplicationService.updateApplicationStatus(
         targetApp._id || targetApp.id,
         status,
-        adminNotes
+        adminNotes,
+        scheduleData
       );
       addToast(
         res.message || `Application status set to "${status}" & candidate (${targetApp.email}) notified via email!`,
         'success'
       );
       if (selectedApp && (selectedApp._id === targetApp._id || selectedApp.id === targetApp.id)) {
-        setSelectedApp(null);
+        setSelectedApp((prev) => (prev ? {
+          ...prev,
+          status,
+          notes: adminNotes,
+          ...(scheduleData ? { examInterviewSchedule: scheduleData } : {}),
+        } : null));
       }
       fetchApplications();
     } catch (err) {
@@ -651,6 +681,16 @@ export default function FacultyManagement() {
     } finally {
       setUpdatingApp(false);
     }
+  };
+
+  const handleSaveExamSchedule = async () => {
+    if (!selectedApp) return;
+    if (!examSchedule.date) {
+      addToast('Please select a date for the Entrance Exam cum Interview / Demo Class', 'warning');
+      return;
+    }
+    await handleUpdateAppStatus('Entrance Exam cum Interview', selectedApp, examSchedule);
+    addToast(`Interview & Demo scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
   };
 
   const handleApproveAndOnboard = async () => {
@@ -689,10 +729,14 @@ export default function FacultyManagement() {
     switch (status) {
       case 'Approved':
         return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
+      case 'Final Selection':
+        return 'bg-teal-500/10 text-teal-700 border-teal-500/20';
+      case 'Entrance Exam cum Interview':
+        return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
       case 'Shortlisted':
         return 'bg-blue-500/10 text-blue-700 border-blue-500/20';
       case 'Under Review':
-        return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+        return 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20';
       case 'Rejected':
         return 'bg-rose-500/10 text-rose-700 border-rose-500/20';
       default:
@@ -958,7 +1002,7 @@ export default function FacultyManagement() {
           {/* Applications Status Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-outline-variant/15 shadow-sm max-w-full">
             <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar pb-1 max-w-full">
-              {['All', 'Pending', 'Under Review', 'Shortlisted', 'Approved', 'Rejected'].map((st) => (
+              {['All', 'Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setAppFilterStatus(st)}
@@ -1013,13 +1057,32 @@ export default function FacultyManagement() {
                           {app.applicationId || app.id}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div>
-                            <p className="font-headings font-bold text-secondary text-sm">{app.fullName}</p>
-                            <p className="text-[11px] text-on-surface-variant">{app.email} &bull; {app.contactNumber}</p>
+                          <div className="flex items-center gap-3">
+                            {app.photoUrl || app.photo ? (
+                              <img
+                                src={app.photoUrl || app.photo}
+                                alt={app.fullName}
+                                className="w-8 h-10 rounded-lg object-cover border border-outline-variant/30 shadow-xs shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs shrink-0">
+                                {app.fullName ? app.fullName.charAt(0).toUpperCase() : 'F'}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-headings font-bold text-secondary text-sm">{app.fullName}</p>
+                              <p className="text-[11px] text-on-surface-variant">{app.email} &bull; {app.contactNumber}</p>
+                            </div>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 font-medium text-on-surface">
-                          {app.positionApplied}
+                          <div>{app.positionApplied}</div>
+                          {app.examInterviewSchedule?.date && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full mt-1 border border-amber-500/20">
+                              <span className="material-symbols-outlined text-[12px]">event</span>
+                              Exam/Interview: {app.examInterviewSchedule.date}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 font-medium text-on-surface-variant">
                           {app.totalExperience}
@@ -1035,8 +1098,9 @@ export default function FacultyManagement() {
                             className={`text-[10px] font-headings font-bold py-1 px-2.5 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(app.status)}`}
                           >
                             <option value="Pending">Pending</option>
-                            <option value="Under Review">Under Review</option>
                             <option value="Shortlisted">Shortlisted</option>
+                            <option value="Entrance Exam cum Interview">Entrance Exam cum Interview</option>
+                            <option value="Final Selection">Final Selection</option>
                             <option value="Approved">Approved / Selected</option>
                             <option value="Rejected">Rejected</option>
                           </select>
@@ -1467,12 +1531,28 @@ export default function FacultyManagement() {
         >
           <div className="space-y-6 font-body text-xs text-on-surface">
             {/* Header info */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface-container-low p-4 rounded-2xl gap-3">
-              <div>
-                <h3 className="font-headings font-extrabold text-lg text-secondary">{selectedApp.fullName}</h3>
-                <p className="text-xs text-on-surface-variant">{selectedApp.email} &bull; {selectedApp.contactNumber}</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface-container-low p-4 rounded-2xl gap-4">
+              <div className="flex items-center gap-3.5">
+                {selectedApp.photoUrl || selectedApp.photo ? (
+                  <div className="w-16 h-20 rounded-xl overflow-hidden border-2 border-primary/30 shadow-md bg-white shrink-0">
+                    <img
+                      src={selectedApp.photoUrl || selectedApp.photo}
+                      alt={selectedApp.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center font-headings font-extrabold text-xl shrink-0">
+                    {selectedApp.fullName ? selectedApp.fullName.charAt(0).toUpperCase() : 'F'}
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-headings font-extrabold text-lg text-secondary">{selectedApp.fullName}</h3>
+                  <p className="text-xs text-on-surface-variant">{selectedApp.email} &bull; {selectedApp.contactNumber}</p>
+                  <span className="text-[10px] font-mono text-primary font-bold">{selectedApp.applicationId || selectedApp.id}</span>
+                </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-headings font-bold border ${getStatusBadge(selectedApp.status)}`}>
+              <span className={`px-3 py-1 rounded-full text-xs font-headings font-bold border shrink-0 ${getStatusBadge(selectedApp.status)}`}>
                 Status: {selectedApp.status}
               </span>
             </div>
@@ -1582,6 +1662,98 @@ export default function FacultyManagement() {
               </div>
             )}
 
+            {/* Entrance Exam / Interview & Demo Lecture Scheduling Suite */}
+            <div className="p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-amber-600 text-[18px]">calendar_month</span>
+                  Schedule Entrance Exam / Interview &amp; Demo Lecture
+                </h4>
+                {selectedApp.examInterviewSchedule?.date && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Currently Scheduled
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-on-surface-variant">
+                Set the official Day, Date, Time, Venue/Mode, and Demo lecture guidelines. This will be updated live on the applicant's status tracking slip.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Day of Week *</label>
+                  <select
+                    value={examSchedule.day}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, day: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  >
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Date *</label>
+                  <input
+                    type="date"
+                    value={examSchedule.date}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, date: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Time Slot *</label>
+                  <input
+                    type="text"
+                    value={examSchedule.time}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, time: e.target.value })}
+                    placeholder="e.g. 11:00 AM - 01:00 PM"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Venue / Mode *</label>
+                  <input
+                    type="text"
+                    value={examSchedule.venueMode}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, venueMode: e.target.value })}
+                    placeholder="e.g. Main Campus (Bagru) - Conference Room / Online (Google Meet)"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-secondary mb-1">Demo Lecture Topic / Instructions for Candidate</label>
+                  <textarea
+                    rows={2}
+                    value={examSchedule.instructions}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, instructions: e.target.value })}
+                    placeholder="e.g. Prepare a 15-minute presentation on Data Structures or Thermodynamics. Bring original marksheets."
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  disabled={updatingApp}
+                  onClick={handleSaveExamSchedule}
+                  className="px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-headings font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">send</span>
+                  Save Schedule &amp; Update Status
+                </button>
+              </div>
+            </div>
+
             {/* Admin Review Notes */}
             <div className="space-y-1">
               <label className="font-headings font-bold text-secondary block">Admin Internal Notes</label>
@@ -1598,42 +1770,45 @@ export default function FacultyManagement() {
             <div className="pt-4 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-3">
               <button
                 onClick={() => handleDeleteApp(selectedApp._id || selectedApp.id)}
-                className="text-rose-600 hover:text-rose-800 text-xs font-bold flex items-center gap-1"
+                className="text-rose-600 hover:text-rose-800 text-xs font-bold flex items-center gap-1 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">delete</span>
                 Delete Application
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  disabled={updatingApp}
-                  onClick={() => handleUpdateAppStatus('Under Review')}
-                  className="px-3.5 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 font-bold text-xs"
-                >
-                  Mark Under Review
-                </button>
+                <span className="font-bold text-on-surface-variant mr-1">Move To:</span>
                 <button
                   disabled={updatingApp}
                   onClick={() => handleUpdateAppStatus('Shortlisted')}
-                  className="px-3.5 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 font-bold text-xs"
+                  className="px-3.5 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 font-bold text-xs cursor-pointer"
                 >
-                  Shortlist
+                  Shortlisted
+                </button>
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleUpdateAppStatus('Final Selection')}
+                  className="px-3.5 py-1.5 rounded-full bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 font-bold text-xs cursor-pointer"
+                >
+                  Final Selection
                 </button>
                 <button
                   disabled={updatingApp}
                   onClick={() => handleUpdateAppStatus('Rejected')}
-                  className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 font-bold text-xs"
+                  className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 font-bold text-xs cursor-pointer"
                 >
                   Reject
                 </button>
-                <button
-                  disabled={updatingApp}
-                  onClick={handleApproveAndOnboard}
-                  className="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs shadow-md flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  Approve & Onboard to Faculty
-                </button>
+                {selectedApp?.status !== 'Approved' && (
+                  <button
+                    disabled={updatingApp}
+                    onClick={handleApproveAndOnboard}
+                    className="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-headings font-bold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                    Approve &amp; Onboard to Faculty
+                  </button>
+                )}
               </div>
             </div>
           </div>

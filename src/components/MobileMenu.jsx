@@ -5,6 +5,7 @@ const links = [
   { href: '#', label: 'Home' },
   { href: '#about', label: 'About Founder' },
   { href: '#courses', label: 'Academic Programs' },
+  { href: '#admission-process', label: 'Admission / Joining Process' },
   { href: '#faculty', label: 'Faculty Roster' },
   { href: '#alumni', label: 'Proud Alumni' },
   { href: '#results', label: 'Wall of Excellence' },

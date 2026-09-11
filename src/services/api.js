@@ -4049,9 +4049,9 @@ export const facultyApplicationService = {
     };
   },
 
-  updateApplicationStatus: async (id, status, notes = '') => {
+  updateApplicationStatus: async (id, status, notes = '', examInterviewSchedule = null) => {
     const list = getStoredFacultyApplications();
-    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
     let notificationResult = null;
     let targetEmail = '';
 
@@ -4061,20 +4061,34 @@ export const facultyApplicationService = {
       list[idx].updatedAt = new Date().toISOString();
       targetEmail = list[idx].email || '';
 
+      if (examInterviewSchedule) {
+        list[idx].examInterviewSchedule = {
+          ...(list[idx].examInterviewSchedule || {}),
+          ...examInterviewSchedule,
+          scheduledAt: new Date().toISOString(),
+          scheduledBy: examInterviewSchedule.scheduledBy || 'Admin / Management',
+        };
+      }
+
+      const scheduleSummary = examInterviewSchedule && examInterviewSchedule.date
+        ? `Entrance Exam cum Interview scheduled for ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue/Mode: ${examInterviewSchedule.venueMode || 'Main Center'}.`
+        : '';
+
       const historyLog = {
         status,
         date: new Date().toISOString(),
-        notes: notes || '',
+        notes: notes || scheduleSummary || `Status updated to ${status}`,
         sentTo: targetEmail,
+        schedule: examInterviewSchedule || undefined,
       };
 
       list[idx].notificationHistory = [
         ...(list[idx].notificationHistory || []),
-        historyLog
+        historyLog,
       ];
 
       try {
-        await setDoc(doc(db, 'faculty_applications', String(id)), list[idx], { merge: true });
+        await setDoc(doc(db, 'faculty_applications', String(list[idx]._id || id)), list[idx], { merge: true });
       } catch (fsErr) {
         console.warn('Firestore update application status error:', fsErr.message);
       }
@@ -4083,14 +4097,19 @@ export const facultyApplicationService = {
 
       // Trigger status notification email directly to candidate
       if (targetEmail) {
-        notificationResult = await sendCandidateStatusNotification(list[idx], status, notes);
+        notificationResult = await sendCandidateStatusNotification(
+          list[idx],
+          status,
+          notes || scheduleSummary
+        );
       }
     }
 
     return {
       success: true,
       message: `Application status updated to ${status}${targetEmail ? ` & candidate notified (${targetEmail})` : ''}`,
-      notificationResult
+      notificationResult,
+      application: idx !== -1 ? list[idx] : null,
     };
   },
 
@@ -4380,15 +4399,24 @@ export const studentApplicationService = {
     };
   },
 
-  updateApplicationStatus: async (id, status, notes = '') => {
+  updateApplicationStatus: async (id, status, notes = '', examInterviewSchedule = null) => {
     const list = getStoredStudentApplications();
-    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id));
+    const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
 
     if (idx !== -1) {
       const now = new Date().toISOString();
       list[idx].status = status;
       if (notes !== undefined) list[idx].notes = notes;
       list[idx].updatedAt = now;
+
+      if (examInterviewSchedule) {
+        list[idx].examInterviewSchedule = {
+          ...(list[idx].examInterviewSchedule || {}),
+          ...examInterviewSchedule,
+          scheduledAt: now,
+          scheduledBy: examInterviewSchedule.scheduledBy || 'Admin / Admissions Committee',
+        };
+      }
 
       if (status === 'Approved') {
         list[idx].approvedAt = now;
@@ -4399,19 +4427,49 @@ export const studentApplicationService = {
         list[idx].nextEligibleDate = null;
       }
 
+      const scheduleSummary = examInterviewSchedule && examInterviewSchedule.date
+        ? `Entrance Exam cum Interview scheduled on ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue: ${examInterviewSchedule.venueMode || 'Main Center'}.`
+        : '';
+
+      const historyLog = {
+        status,
+        date: now,
+        notes: notes || scheduleSummary || `Status updated to ${status}`,
+        sentTo: list[idx].email,
+        schedule: examInterviewSchedule || undefined,
+      };
+
+      list[idx].notificationHistory = [
+        ...(list[idx].notificationHistory || []),
+        historyLog,
+      ];
+
       try {
-        await setDoc(doc(db, 'student_applications', String(id)), list[idx], { merge: true });
+        await setDoc(doc(db, 'student_applications', String(list[idx]._id || id)), list[idx], { merge: true });
       } catch (fsErr) {
         console.warn('Firestore update student application status error:', fsErr.message);
       }
 
       setStoredStudentApplications([...list]);
       notifyDataUpdate();
+
+      // Attempt to sync to backend API if available
+      try {
+        const baseUrl = getApiBaseUrl();
+        if (baseUrl) {
+          await fetch(`${baseUrl}/student-applications/${list[idx]._id || id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, notes, examInterviewSchedule }),
+          });
+        }
+      } catch (apiErr) {}
     }
 
     return {
       success: true,
       message: `Student application status updated to ${status}`,
+      application: idx !== -1 ? list[idx] : null,
     };
   },
 

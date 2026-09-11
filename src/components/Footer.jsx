@@ -65,6 +65,7 @@ export default function Footer() {
               { href: '#', label: 'Home Overview' },
               { href: '#about', label: 'About Founder' },
               { href: '#courses', label: 'Academic Courses' },
+              { href: '#admission-process', label: 'Admission / Joining Process' },
               { href: '#results', label: 'Wall of Excellence' },
               { href: '#testimonials', label: 'Testimonials' },
               { href: '#contact', label: 'Contact Us' },

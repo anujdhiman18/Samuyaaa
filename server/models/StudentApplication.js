@@ -28,6 +28,14 @@ const studentApplicationSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    photoUrl: {
+      type: String,
+      default: '',
+    },
+    photoFileName: {
+      type: String,
+      default: '',
+    },
     academicStage: {
       type: String,
       default: 'S2',
@@ -76,8 +84,17 @@ const studentApplicationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Under Review', 'Approved', 'Rejected'],
+      enum: ['Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Under Review', 'Final Selection', 'Approved', 'Rejected'],
       default: 'Pending',
+    },
+    examInterviewSchedule: {
+      day: { type: String, default: '' },
+      date: { type: String, default: '' },
+      time: { type: String, default: '' },
+      venueMode: { type: String, default: '' },
+      instructions: { type: String, default: '' },
+      scheduledAt: { type: Date, default: null },
+      scheduledBy: { type: String, default: 'Admin' },
     },
     appliedAt: {
       type: Date,

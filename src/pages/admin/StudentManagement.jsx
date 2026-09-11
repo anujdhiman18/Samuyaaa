@@ -61,6 +61,13 @@ export default function StudentManagement() {
   const [selectedApp, setSelectedApp] = useState(null);
   const [appFilterStatus, setAppFilterStatus] = useState('All');
   const [adminNotes, setAdminNotes] = useState('');
+  const [examSchedule, setExamSchedule] = useState({
+    day: 'Saturday',
+    date: '',
+    time: '10:30 AM - 12:30 PM',
+    venueMode: 'Main Center (Bagru) - Examination Hall 1',
+    instructions: 'Please arrive 15 minutes prior with original academic marksheets, ID proof, and basic stationery.',
+  });
   const [updatingApp, setUpdatingApp] = useState(false);
 
   // Search & Filter State
@@ -144,18 +151,45 @@ export default function StudentManagement() {
     }
   };
 
-  const handleUpdateAppStatus = async (appId, newStatus) => {
+  const handleOpenAppReview = (app) => {
+    setSelectedApp(app);
+    setAdminNotes(app.notes || '');
+    if (app.examInterviewSchedule) {
+      setExamSchedule({
+        day: app.examInterviewSchedule.day || 'Saturday',
+        date: app.examInterviewSchedule.date || '',
+        time: app.examInterviewSchedule.time || '10:30 AM - 12:30 PM',
+        venueMode: app.examInterviewSchedule.venueMode || (app.branch?.includes('Daroh') ? 'Branch (Daroh)' : 'Main Center (Bagru) - Examination Hall 1'),
+        instructions: app.examInterviewSchedule.instructions || 'Please arrive 15 minutes prior with original academic marksheets, ID proof, and basic stationery.',
+      });
+    } else {
+      setExamSchedule({
+        day: 'Saturday',
+        date: '',
+        time: '10:30 AM - 12:30 PM',
+        venueMode: app.branch?.includes('Daroh') ? 'Branch (Daroh)' : 'Main Center (Bagru) - Examination Hall 1',
+        instructions: 'Please arrive 15 minutes prior with original academic marksheets, ID proof, and basic stationery.',
+      });
+    }
+  };
+
+  const handleUpdateAppStatus = async (appId, newStatus, scheduleData = null) => {
     if (newStatus === 'Rejected') {
       const appToReject = applications.find((a) => String(a._id || a.id) === String(appId)) || selectedApp || { id: appId };
       return handleRejectApplication(appToReject);
     }
     setUpdatingApp(true);
     try {
-      const res = await studentApplicationService.updateApplicationStatus(appId, newStatus, adminNotes);
+      const res = await studentApplicationService.updateApplicationStatus(appId, newStatus, adminNotes, scheduleData);
       if (res.success) {
         addToast(`Application status updated to "${newStatus}"`, 'success');
         if (selectedApp) {
-          setSelectedApp((prev) => (prev ? { ...prev, status: newStatus, notes: adminNotes } : null));
+          setSelectedApp((prev) => (prev ? {
+            ...prev,
+            status: newStatus,
+            notes: adminNotes,
+            ...(scheduleData ? { examInterviewSchedule: scheduleData } : {}),
+          } : null));
         }
         await fetchApplications();
       } else {
@@ -166,6 +200,16 @@ export default function StudentManagement() {
     } finally {
       setUpdatingApp(false);
     }
+  };
+
+  const handleSaveExamSchedule = async () => {
+    if (!selectedApp) return;
+    if (!examSchedule.date) {
+      addToast('Please select a date for the Entrance Exam cum Interview', 'warning');
+      return;
+    }
+    await handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Entrance Exam cum Interview', examSchedule);
+    addToast(`Entrance Exam cum Interview scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
   };
 
   const handleRejectApplication = async (app) => {
@@ -588,20 +632,20 @@ export default function StudentManagement() {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-              <span className="text-xs font-bold text-on-surface-variant">Status Filter:</span>
-              <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full border border-outline-variant/20">
-                {['All', 'Pending', 'Under Review', 'Approved', 'Rejected'].map((st) => (
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end overflow-x-auto pb-1 md:pb-0">
+              <span className="text-xs font-bold text-on-surface-variant shrink-0">Status Filter:</span>
+              <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full border border-outline-variant/20 shrink-0">
+                {['All', 'Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setAppFilterStatus(st)}
-                    className={`px-3 py-1 rounded-full text-xs font-headings font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-full text-xs font-headings font-bold transition-all cursor-pointer whitespace-nowrap ${
                       appFilterStatus === st
                         ? 'bg-primary text-white shadow-xs'
                         : 'text-on-surface-variant hover:text-secondary'
                     }`}
                   >
-                    {st}
+                    {st === 'Entrance Exam cum Interview' ? 'Exam / Interview' : st}
                   </button>
                 ))}
               </div>
@@ -643,8 +687,23 @@ export default function StudentManagement() {
                       <tr key={app._id || app.id} className="hover:bg-surface-container-lowest transition-colors">
                         <td className="p-4 font-mono font-bold text-primary">{app.applicationId || app.id}</td>
                         <td className="p-4">
-                          <span className="font-bold text-secondary block">{app.fullName}</span>
-                          <span className="text-[11px] text-on-surface-variant">{app.email}</span>
+                          <div className="flex items-center gap-3">
+                            {app.photoUrl || app.photo ? (
+                              <img
+                                src={app.photoUrl || app.photo}
+                                alt={app.fullName}
+                                className="w-8 h-10 rounded-lg object-cover border border-outline-variant/30 shadow-xs shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                                {app.fullName ? app.fullName.charAt(0).toUpperCase() : 'S'}
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-bold text-secondary block">{app.fullName}</span>
+                              <span className="text-[11px] text-on-surface-variant">{app.email}</span>
+                            </div>
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-secondary">{formatClassLabel(app.targetClass)}</td>
                         <td className="p-4">
@@ -663,32 +722,38 @@ export default function StudentManagement() {
                                 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                                 : app.status === 'Rejected'
                                 ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                                : app.status === 'Under Review'
-                                ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                                : app.status === 'Entrance Exam cum Interview'
+                                ? 'bg-amber-500/15 text-amber-900 border border-amber-500/30 font-bold'
+                                : app.status === 'Shortlisted'
+                                ? 'bg-indigo-500/10 text-indigo-700 border border-indigo-500/20'
+                                : app.status === 'Final Selection'
+                                ? 'bg-teal-500/10 text-teal-700 border border-teal-500/20'
                                 : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                             }`}
                           >
-                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : app.status}
+                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : app.status === 'Entrance Exam cum Interview' ? '🟠 Exam Scheduled' : app.status}
                           </span>
                         </td>
-                        <td className="p-4 text-on-surface-variant text-[11px]">
+                        <td className="p-4 text-on-surface-variant">
                           <div>Submitted: {app.submittedAt || app.appliedAt ? new Date(app.submittedAt || app.appliedAt).toLocaleDateString() : 'Recent'}</div>
                           {app.status === 'Approved' && (app.approvedAt || app.updatedAt) && (
                             <div className="text-[10px] text-emerald-700 font-bold mt-0.5">
                               Approved: {new Date(app.approvedAt || app.updatedAt).toLocaleDateString()}
                             </div>
                           )}
+                          {app.examInterviewSchedule?.date && (
+                            <div className="text-[10px] text-amber-800 font-bold mt-0.5">
+                              Exam: {app.examInterviewSchedule.date} ({app.examInterviewSchedule.time})
+                            </div>
+                          )}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => {
-                                setSelectedApp(app);
-                                setAdminNotes(app.notes || '');
-                              }}
+                              onClick={() => handleOpenAppReview(app)}
                               className="px-3 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white font-bold text-xs transition-all cursor-pointer"
                             >
-                              Review Details
+                              Review &amp; Schedule
                             </button>
                             <button
                               onClick={() => setDeleteTargetApp(app)}
@@ -729,46 +794,32 @@ export default function StudentManagement() {
               <div>
                 <label className="block font-bold text-secondary mb-1">Academic Stage *</label>
                 <select
-                  required
                   value={form.academicStage || ''}
                   onChange={(e) => {
-                    const stage = e.target.value;
-                    const validClasses = STAGE_CLASSES[stage] || [];
-                    const newClass = validClasses.includes(form.currentClass) ? form.currentClass : '';
-                    setForm({ ...form, academicStage: stage, currentClass: newClass, className: newClass || stage });
+                    const stg = e.target.value;
+                    const firstClass = (STAGE_CLASSES[stg] || [])[0] || '10th';
+                    setForm({ ...form, academicStage: stg, currentClass: firstClass, className: firstClass });
                   }}
-                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary font-bold"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 >
-                  <option value="" disabled>Select academic stage</option>
-                  {CLASS_CATEGORIES.map((cat) => (
-                    <option key={cat.code} value={cat.code}>
-                      {cat.label}
-                    </option>
+                  <option value="" disabled>Select stage</option>
+                  {CLASS_CATEGORIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.label}</option>
                   ))}
                 </select>
               </div>
 
-              {form.academicStage ? (
-                <div>
-                  <label className="block font-bold text-secondary mb-1">Current Class / Grade *</label>
-                  <select
-                    required
-                    value={form.currentClass || ''}
-                    onChange={(e) => {
-                      const cls = e.target.value;
-                      setForm({ ...form, currentClass: cls, className: cls || form.academicStage });
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary font-bold"
-                  >
-                    <option value="" disabled>Select current class / grade</option>
-                    {(STAGE_CLASSES[form.academicStage] || []).map((cls) => (
-                      <option key={cls} value={cls}>
-                        {cls}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
+              <div>
+                <label className="block font-bold text-secondary mb-1">Center / Branch *</label>
+                <select
+                  value={form.branch}
+                  onChange={(e) => setForm({ ...form, branch: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
+                >
+                  <option value="Main Center (Bagru)">Main Center (Bagru)</option>
+                  <option value="Branch (Daroh)">Branch (Daroh)</option>
+                </select>
+              </div>
 
               <div>
                 <label className="block font-bold text-secondary mb-1">Roll Number</label>
@@ -776,7 +827,8 @@ export default function StudentManagement() {
                   type="text"
                   value={form.rollNumber}
                   onChange={(e) => setForm({ ...form, rollNumber: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary font-mono"
+                  placeholder="Auto-generated if blank"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>
 
@@ -791,7 +843,7 @@ export default function StudentManagement() {
               </div>
 
               <div>
-                <label className="block font-bold text-secondary mb-1">Father's Name</label>
+                <label className="block font-bold text-secondary mb-1">Parent Name</label>
                 <input
                   type="text"
                   value={form.fatherName}
@@ -853,24 +905,45 @@ export default function StudentManagement() {
         </Modal>
       )}
 
-      {/* MODAL 2: Review Student Application Details */}
+      {/* MODAL 2: Review Student Application Details & Schedule Entrance Exam */}
       {selectedApp && (
         <Modal title={`Student Application: ${selectedApp.applicationId || selectedApp.id}`} onClose={() => setSelectedApp(null)}>
-          <div className="space-y-4 text-xs font-body">
-            <div className="bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/15 space-y-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-headings font-bold text-base text-secondary">{selectedApp.fullName}</h3>
-                  <p className="text-on-surface-variant">{selectedApp.email} &bull; {selectedApp.contactNumber}</p>
+          <div className="space-y-5 text-xs font-body max-h-[80vh] overflow-y-auto pr-1">
+            {/* Applicant Summary */}
+            <div className="bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/15 space-y-3">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-center gap-3.5">
+                  {selectedApp.photoUrl || selectedApp.photo ? (
+                    <div className="w-16 h-20 rounded-xl overflow-hidden border-2 border-primary/30 shadow-md bg-white shrink-0">
+                      <img
+                        src={selectedApp.photoUrl || selectedApp.photo}
+                        alt={selectedApp.fullName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-headings font-extrabold text-xl shrink-0">
+                      {selectedApp.fullName ? selectedApp.fullName.charAt(0).toUpperCase() : 'S'}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-headings font-bold text-base text-secondary">{selectedApp.fullName}</h3>
+                    <p className="text-on-surface-variant">{selectedApp.email} &bull; {selectedApp.contactNumber}</p>
+                    <span className="text-[10px] font-mono text-primary font-bold">{selectedApp.applicationId || selectedApp.id}</span>
+                  </div>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-extrabold ${
+                  className={`px-3 py-1 rounded-full text-xs font-extrabold shrink-0 ${
                     selectedApp.status === 'Approved'
                       ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                       : selectedApp.status === 'Rejected'
                       ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                      : selectedApp.status === 'Under Review'
-                      ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                      : selectedApp.status === 'Entrance Exam cum Interview'
+                      ? 'bg-amber-500/15 text-amber-900 border border-amber-500/30'
+                      : selectedApp.status === 'Shortlisted'
+                      ? 'bg-indigo-500/10 text-indigo-700 border border-indigo-500/20'
+                      : selectedApp.status === 'Final Selection'
+                      ? 'bg-teal-500/10 text-teal-700 border border-teal-500/20'
                       : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                   }`}
                 >
@@ -913,6 +986,95 @@ export default function StudentManagement() {
               )}
             </div>
 
+            {/* ENTRANCE EXAM CUM INTERVIEW SCHEDULING PANEL */}
+            <div className="bg-amber-500/10 border-2 border-amber-500/30 p-4 sm:p-5 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-700 text-lg">event_available</span>
+                  <h4 className="font-headings font-bold text-sm text-secondary">
+                    Schedule Entrance Exam cum Interview
+                  </h4>
+                </div>
+                <span className="text-[10px] text-amber-900 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full">
+                  Admin / Management Slot
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-900/90 leading-relaxed">
+                Set the specific <strong>Day, Date, Time, and Venue/Mode</strong> for the candidate's diagnostic entrance test and parent interview session.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Day of Week *</label>
+                  <select
+                    value={examSchedule.day}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, day: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  >
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Exam Date *</label>
+                  <input
+                    type="date"
+                    value={examSchedule.date}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, date: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Time Slot *</label>
+                  <input
+                    type="text"
+                    value={examSchedule.time}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, time: e.target.value })}
+                    placeholder="e.g. 10:30 AM - 12:30 PM"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-secondary mb-1">Venue / Mode *</label>
+                  <input
+                    type="text"
+                    value={examSchedule.venueMode}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, venueMode: e.target.value })}
+                    placeholder="e.g. Main Center (Bagru) - Hall 1 or Online (Google Meet)"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-secondary mb-1">Guidelines / Syllabus Notes for Applicant</label>
+                  <textarea
+                    rows={2}
+                    value={examSchedule.instructions}
+                    onChange={(e) => setExamSchedule({ ...examSchedule, instructions: e.target.value })}
+                    placeholder="e.g. Bring original marksheets, pencil box, and reach 15 minutes early."
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-white text-secondary focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  disabled={updatingApp}
+                  onClick={handleSaveExamSchedule}
+                  className="px-5 py-2 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-headings font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">send</span>
+                  Save Schedule &amp; Update Status
+                </button>
+              </div>
+            </div>
+
             {/* Admin Notes */}
             <div>
               <label className="block font-bold text-secondary mb-1">Admin Internal Remarks / Notes</label>
@@ -925,24 +1087,36 @@ export default function StudentManagement() {
               />
             </div>
 
-            {/* Action Buttons */}
+            {/* Status Flow Action Buttons */}
             <div className="pt-3 border-t border-outline-variant/15 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-on-surface-variant mr-1">Set Status:</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-bold text-on-surface-variant mr-1">Move To:</span>
+                
                 <button
                   disabled={updatingApp}
-                  onClick={() => handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Under Review')}
-                  className="px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 hover:bg-amber-500 hover:text-white font-bold text-xs transition-all cursor-pointer"
+                  onClick={() => handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Shortlisted')}
+                  className="px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500 hover:text-white font-bold text-xs transition-all cursor-pointer"
+                  title="Mark as shortlisted candidate"
                 >
-                  Under Review
+                  Shortlisted
                 </button>
+
+                <button
+                  disabled={updatingApp}
+                  onClick={() => handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Final Selection')}
+                  className="px-3 py-1.5 rounded-full bg-teal-500/10 text-teal-700 hover:bg-teal-500 hover:text-white font-bold text-xs transition-all cursor-pointer"
+                  title="Move to final selection review"
+                >
+                  Final Selection
+                </button>
+
                 <button
                   disabled={updatingApp}
                   onClick={() => handleRejectApplication(selectedApp)}
                   className="px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 hover:bg-rose-500 hover:text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[15px]">close</span>
-                  Reject Application
+                  Reject
                 </button>
               </div>
 
@@ -953,7 +1127,7 @@ export default function StudentManagement() {
                   className="px-5 py-2 rounded-full bg-emerald-600 text-white font-headings font-bold text-xs hover:bg-emerald-700 shadow-md transition-all cursor-pointer flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-                  Approve & Enroll as Student
+                  Final Admission &amp; Enroll
                 </button>
               )}
             </div>

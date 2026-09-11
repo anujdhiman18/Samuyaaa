@@ -29,6 +29,8 @@ export const submitStudentApplication = async (req, res) => {
       email,
       contactNumber,
       dob,
+      photoUrl,
+      photoFileName,
       academicStage: rawStage,
       currentClass: rawCurrentClass,
       targetClass: rawClass,
@@ -68,28 +70,25 @@ export const submitStudentApplication = async (req, res) => {
       if (now < nextAllowedDate) {
         const approvedFormatted = formatDateFormatted(approvedDate);
         const nextFormatted = formatDateFormatted(nextAllowedDate);
-        const cooldownMessage = `This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`;
-
-        return res.status(400).json({
+        return res.status(403).json({
           success: false,
-          cooldownActive: true,
-          message: cooldownMessage,
+          isLocked: true,
           approvedAt: approvedDate,
           nextEligibleDate: nextAllowedDate,
           formattedApprovedDate: approvedFormatted,
           formattedNextDate: nextFormatted,
+          message: `This request was approved on ${approvedFormatted}. You can make another request after ${nextFormatted}.`,
         });
       }
     }
 
-    // 2. Check for active Pending request - allow user to update/modify pending application
+    // 2. CHECK FOR EXISTING PENDING APPLICATION - IF EXISTS, ALLOW UPDATE/MODIFY
     const existingPending = await StudentApplication.findOne({
       $or: [
         ...(existingAppId ? [{ applicationId: existingAppId }] : []),
         { email: emailClean, status: 'Pending' },
         { contactNumber: contactClean, status: 'Pending' },
       ],
-      status: 'Pending',
     });
 
     if (existingPending) {
@@ -97,6 +96,8 @@ export const submitStudentApplication = async (req, res) => {
       existingPending.email = emailClean;
       existingPending.contactNumber = contactClean;
       existingPending.dob = dob || '';
+      if (photoUrl) existingPending.photoUrl = photoUrl;
+      if (photoFileName) existingPending.photoFileName = photoFileName;
       existingPending.academicStage = academicStage;
       existingPending.currentClass = currentClass;
       existingPending.targetClass = targetClass;
@@ -130,6 +131,8 @@ export const submitStudentApplication = async (req, res) => {
       email: emailClean,
       contactNumber: contactClean,
       dob: dob || '',
+      photoUrl: photoUrl || '',
+      photoFileName: photoFileName || '',
       academicStage,
       currentClass,
       targetClass,
@@ -181,7 +184,7 @@ export const updatePendingStudentApplication = async (req, res) => {
     }
 
     const updates = req.body;
-    const allowedKeys = ['fullName', 'email', 'contactNumber', 'dob', 'academicStage', 'currentClass', 'targetClass', 'branch', 'subjects', 'previousSchool', 'parentName', 'parentContact', 'message'];
+    const allowedKeys = ['fullName', 'email', 'contactNumber', 'dob', 'photoUrl', 'photoFileName', 'academicStage', 'currentClass', 'targetClass', 'branch', 'subjects', 'previousSchool', 'parentName', 'parentContact', 'message'];
 
     allowedKeys.forEach((key) => {
       if (updates[key] !== undefined) {
@@ -255,7 +258,7 @@ export const getStudentApplications = async (req, res) => {
 export const updateStudentApplicationStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, examInterviewSchedule } = req.body;
 
     const application = await StudentApplication.findById(id);
     if (!application) {
@@ -278,12 +281,20 @@ export const updateStudentApplicationStatus = async (req, res) => {
       }
     }
 
+    if (examInterviewSchedule !== undefined) {
+      application.examInterviewSchedule = {
+        ...application.examInterviewSchedule?.toObject?.() || {},
+        ...examInterviewSchedule,
+        scheduledAt: new Date(),
+      };
+    }
+
     if (notes !== undefined) application.notes = notes;
 
     const historyEntry = {
       status: status || application.status,
       date: now,
-      notes: notes || '',
+      notes: notes || (examInterviewSchedule ? `Entrance Exam & Interview scheduled on ${examInterviewSchedule.day}, ${examInterviewSchedule.date} at ${examInterviewSchedule.time}` : ''),
       sentTo: application.email,
     };
     application.notificationHistory.push(historyEntry);
