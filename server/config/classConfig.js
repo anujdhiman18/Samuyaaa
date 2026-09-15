@@ -15,6 +15,48 @@ export const STAGE_CLASSES = {
   S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Other'],
 };
 
+export const STAGE_SUBJECTS = {
+  S1: [
+    'Foundational Mathematics & Mental Math',
+    'English Phonics, Reading & Communication',
+    'Environmental Studies (EVS) & Young Science',
+    'Hindi & Regional Language Literacy',
+    'Creative Thinking & Junior Coding Basics',
+    'Art, Craft & Activity Skills',
+  ],
+  S2: [
+    'Mathematics Foundation',
+    'Mathematics Olympiad & NTSE',
+    'Science (Physics, Chemistry & Biology)',
+    'Social Science & Civics',
+    'English Language & Literature',
+    'Computer Science & Python Coding',
+  ],
+  S3: [
+    'Mathematics (IIT-JEE & Board)',
+    'Physics (IIT-JEE & NEET Prep)',
+    'Chemistry (Organic, Inorganic & Physical)',
+    'Biology (NEET Medical Entrance & Zoology)',
+    'Computer Science (Python & SQL)',
+    'English Core & Academic Communication',
+  ],
+  S4: [
+    'Higher Engineering Mathematics',
+    'Applied Physics & Mechanics',
+    'Advanced Chemical Sciences',
+    'Data Science, Python & AI Foundations',
+    'Competitive Exam Aptitude & Logical Reasoning',
+    'UGC / CSIR / Target Entrance Prep',
+  ],
+};
+
+export const getSubjectsForStage = (stageCode) => {
+  if (!stageCode) return STAGE_SUBJECTS.S2;
+  const code = normalizeClassCode(stageCode);
+  return STAGE_SUBJECTS[code] || STAGE_SUBJECTS.S2;
+};
+
+
 export const getStageForClass = (val) => {
   if (!val) return '';
   const trimmed = String(val).trim();

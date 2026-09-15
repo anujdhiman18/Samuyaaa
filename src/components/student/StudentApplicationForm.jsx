@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
+import {
+  CLASS_CATEGORIES,
+  STAGE_CLASSES,
+  STAGE_SUBJECTS,
+  getSubjectsForStage,
+  getStageForClass,
+  formatClassLabel,
+} from '../../config/classConfig';
 import PassportPhotoUpload from '../common/PassportPhotoUpload';
 
-const SUBJECT_OPTIONS = [
-  'Mathematics',
-  'Physics',
-  'Chemistry',
-  'Biology / Life Sciences',
-  'English & Communication',
-  'Computer Science / Coding',
-  'Social Studies & General Awareness',
-];
 
 const initialFormData = {
   fullName: '',
@@ -197,17 +195,26 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     addToast('Demo student details & passport photo auto-filled!', 'success');
   };
 
+  // Get subjects dynamically tailored to selected academic stage (S1, S2, S3, S4)
+  const currentStageSubjects = useMemo(() => {
+    return getSubjectsForStage(formData.academicStage || 'S2');
+  }, [formData.academicStage]);
+
   const handleStageChange = (stageCode) => {
-    setFormData((prev) => {
-      const validClasses = STAGE_CLASSES[stageCode] || [];
-      const newClass = validClasses.includes(prev.currentClass) ? prev.currentClass : '';
-      return {
-        ...prev,
-        academicStage: stageCode,
-        currentClass: newClass,
-        targetClass: newClass || stageCode,
-      };
-    });
+    const validClasses = STAGE_CLASSES[stageCode] || [];
+    const newClass = validClasses.includes(formData.currentClass) ? formData.currentClass : '';
+    const newStageSubjects = getSubjectsForStage(stageCode);
+    const prevSubjects = formData.subjects || [];
+    const retained = prevSubjects.filter((s) => newStageSubjects.includes(s));
+    const nextSubjects = retained.length > 0 ? retained : [newStageSubjects[0], newStageSubjects[1]].filter(Boolean);
+
+    setFormData((prev) => ({
+      ...prev,
+      academicStage: stageCode,
+      currentClass: newClass,
+      targetClass: newClass || stageCode,
+      subjects: nextSubjects,
+    }));
     if (errors.academicStage || errors.currentClass) {
       setErrors((prev) => ({ ...prev, academicStage: null, currentClass: null }));
     }
@@ -236,6 +243,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       }
     });
   };
+
 
   const validate = () => {
     const errs = {};
@@ -744,28 +752,39 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-secondary mb-2">
-              Subjects of Interest
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-secondary">
+                Subjects of Interest
+              </label>
+              {formData.academicStage && (
+                <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                  Tailored for Category {formData.academicStage}
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
-              {SUBJECT_OPTIONS.map((subj) => {
+              {currentStageSubjects.map((subj) => {
                 const isSelected = (formData.subjects || []).includes(subj);
                 return (
                   <button
                     type="button"
                     key={subj}
                     onClick={() => handleSubjectToggle(subj)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                    className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
                       isSelected
-                        ? 'bg-primary text-white border-primary shadow-sm'
-                        : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30 hover:border-primary/50'
+                        ? 'bg-primary text-white border-primary shadow-sm scale-[1.02]'
+                        : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30 hover:border-primary/50 hover:bg-white'
                     }`}
                   >
-                    {subj} {isSelected && '✓'}
+                    <span>{subj}</span>
+                    {isSelected && <span className="material-symbols-outlined text-[14px]">check</span>}
                   </button>
                 );
               })}
             </div>
+            <p className="text-[11px] text-on-surface-variant/70 mt-2">
+              Select one or more subjects you wish to focus on for this academic category.
+            </p>
           </div>
         </div>
 
