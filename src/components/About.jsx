@@ -21,7 +21,7 @@ export default function About({ onOpenBooking }) {
 
         <div className="md:col-span-7 flex flex-col justify-center">
           <span className="text-primary font-headings font-bold text-xs tracking-widest uppercase mb-2">
-            The Visionary Behind Saumyaa
+            The Visionary Behind Saumyaa Studies
           </span>
           <h1 className="font-headings font-extrabold text-4xl md:text-5xl leading-tight text-secondary mb-6">
             Meet Jitender Sharma
