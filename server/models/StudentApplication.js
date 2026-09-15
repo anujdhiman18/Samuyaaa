@@ -84,7 +84,7 @@ const studentApplicationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Under Review', 'Final Selection', 'Approved', 'Rejected'],
+      enum: ['Pending', 'Shortlisted', 'Interview', 'Entrance Exam cum Interview', 'Under Review', 'Final Selection', 'Approved', 'Rejected'],
       default: 'Pending',
     },
     examInterviewSchedule: {

@@ -754,7 +754,7 @@ export default function FacultyApplicationForm({
               </span>
             </div>
             <blockquote className="text-xs font-semibold text-amber-950 leading-relaxed italic border-l-2 border-amber-500 pl-2.5">
-              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Entrance Exam cum Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
+              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
             </blockquote>
             
             {/* Status Flow Indicator */}
@@ -764,7 +764,7 @@ export default function FacultyApplicationForm({
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">2. Shortlisted</span>
               <span>&rarr;</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Entrance Exam cum Interview</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Interview</span>
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">4. Final Selection</span>
               <span>&rarr;</span>
@@ -1535,7 +1535,7 @@ export default function FacultyApplicationForm({
                   className="mt-0.5 w-4 h-4 rounded accent-primary shrink-0"
                 />
                 <span className="text-xs text-on-surface leading-relaxed">
-                  I hereby declare that all information provided in this application form is true, accurate, and complete. I clearly understand that submission of this application does not guarantee direct joining; I will be treated as a shortlisted candidate and will be called for an Entrance Exam / Demo Lecture cum Interview on a particular day, date, and time scheduled by the Admin/Management. Final joining is subject to successful completion of the selection process.
+                  I hereby declare that all information provided in this application form is true, accurate, and complete. I clearly understand that submission of this application does not guarantee direct joining; I will be treated as a shortlisted candidate and will be called for an Interview on a particular day, date, and time scheduled by the Admin/Management. Final joining is subject to successful completion of the selection process.
                 </span>
               </label>
               {errors.acceptedDeclaration && (

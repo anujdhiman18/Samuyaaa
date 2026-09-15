@@ -4108,7 +4108,7 @@ export const facultyApplicationService = {
       }
 
       const scheduleSummary = examInterviewSchedule && examInterviewSchedule.date
-        ? `Entrance Exam cum Interview scheduled for ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue/Mode: ${examInterviewSchedule.venueMode || 'Main Center'}.`
+        ? `Interview scheduled for ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue/Mode: ${examInterviewSchedule.venueMode || 'Main Center'}.`
         : '';
 
       const historyLog = {
@@ -4465,7 +4465,7 @@ export const studentApplicationService = {
       }
 
       const scheduleSummary = examInterviewSchedule && examInterviewSchedule.date
-        ? `Entrance Exam cum Interview scheduled on ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue: ${examInterviewSchedule.venueMode || 'Main Center'}.`
+        ? `Interview scheduled on ${examInterviewSchedule.day ? examInterviewSchedule.day + ', ' : ''}${examInterviewSchedule.date} at ${examInterviewSchedule.time || 'designated slot'}. Venue: ${examInterviewSchedule.venueMode || 'Main Center'}.`
         : '';
 
       const historyLog = {

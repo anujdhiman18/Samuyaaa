@@ -4,7 +4,7 @@ import { facultyApplicationService } from '../../services/api';
 const FACULTY_STAGES = [
   { id: 'submitted', label: 'Application Submitted', icon: 'assignment' },
   { id: 'shortlisted', label: 'Shortlisted', icon: 'fact_check' },
-  { id: 'exam_interview', label: 'Exam / Demo cum Interview', icon: 'co_present' },
+  { id: 'interview', label: 'Interview', icon: 'co_present' },
   { id: 'final_selection', label: 'Final Selection', icon: 'verified' },
   { id: 'onboarded', label: 'Admission / Joining', icon: 'how_to_reg' },
 ];
@@ -50,6 +50,8 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
         return 4; // Step 5
       case 'Final Selection':
         return 3; // Step 4
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
       case 'Exam Scheduled':
         return 2; // Step 3
@@ -70,7 +72,10 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
         return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
       case 'Final Selection':
         return 'bg-teal-500/10 text-teal-700 border-teal-500/20';
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
+      case 'Exam Scheduled':
         return 'bg-amber-500/15 text-amber-900 border-amber-500/30';
       case 'Shortlisted':
         return 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20';
@@ -86,9 +91,12 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
   const getStatusMessage = (status) => {
     switch (status) {
       case 'Shortlisted':
-        return '🎉 Congratulations! Your application has been Shortlisted. The Admin/Management is scheduling your Entrance Exam cum Interview slot.';
+        return '🎉 Congratulations! Your application has been Shortlisted. The Admin/Management is scheduling your Interview slot.';
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
-        return '📅 Your Entrance Exam / Demo Lecture cum Interview has been scheduled by Admin/Management! Please review the allocated date, time, and venue below.';
+      case 'Exam Scheduled':
+        return '📅 Your Interview has been scheduled by Admin/Management! Please review the allocated date, time, and venue below.';
       case 'Final Selection':
         return '🌟 You have cleared the evaluation rounds! Your dossier is in Final Selection review with the Board of Directors.';
       case 'Approved':
@@ -203,7 +211,7 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
               <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl text-[11px] text-amber-950 font-medium flex items-start gap-2">
                 <span className="material-symbols-outlined text-amber-700 text-sm mt-0.5 shrink-0">gavel</span>
                 <p>
-                  <strong>Recruitment Policy:</strong> Submitting an application does not guarantee joining. Shortlisted candidates must complete the Entrance Assessment and Live Demonstration cum Interview.
+                  <strong>Recruitment Policy:</strong> Submitting an application does not guarantee joining. Shortlisted candidates must complete the Interview.
                 </p>
               </div>
 
@@ -248,14 +256,14 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
                 </div>
               )}
 
-              {/* SCHEDULED INTERVIEW & DEMO SLIP */}
+              {/* SCHEDULED INTERVIEW SLIP */}
               {schedule && (schedule.date || schedule.day || schedule.time) && (
                 <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between gap-2 pb-2 border-b border-amber-500/20">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-amber-700 text-lg">event</span>
                       <h5 className="font-headings font-bold text-xs text-secondary">
-                        Entrance Exam / Demo Class cum Interview Schedule
+                        Interview Schedule
                       </h5>
                     </div>
                     <span className="px-2 py-0.5 rounded bg-amber-500 text-white font-headings font-bold text-[9px] uppercase">

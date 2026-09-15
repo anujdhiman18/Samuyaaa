@@ -5,7 +5,7 @@ import { formatClassLabel } from '../../config/classConfig';
 const STAGES = [
   { id: 'submitted', label: 'Application Submitted', icon: 'assignment' },
   { id: 'shortlisted', label: 'Shortlisted', icon: 'fact_check' },
-  { id: 'exam_interview', label: 'Entrance Exam cum Interview', icon: 'school' },
+  { id: 'interview', label: 'Interview', icon: 'groups' },
   { id: 'final_selection', label: 'Final Selection', icon: 'verified' },
   { id: 'enrolled', label: 'Admission / Joining', icon: 'how_to_reg' },
 ];
@@ -65,6 +65,8 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
         return 4; // Step 5
       case 'Final Selection':
         return 3; // Step 4
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
       case 'Exam Scheduled':
         return 2; // Step 3
@@ -95,11 +97,14 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
             🔵 Final Selection Review
           </span>
         );
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
+      case 'Exam Scheduled':
         return (
           <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-900 font-extrabold text-xs flex items-center gap-1 border border-amber-500/30">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            🟠 Exam cum Interview Scheduled
+            🟠 Interview Scheduled
           </span>
         );
       case 'Shortlisted':
@@ -219,7 +224,7 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
             <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-950 text-xs flex items-start gap-2.5">
               <span className="material-symbols-outlined text-amber-600 text-lg mt-0.5 shrink-0">gavel</span>
               <p className="text-[11px] leading-relaxed text-amber-900 font-medium">
-                <strong>Selection Policy:</strong> Submitting an application does not guarantee admission. Applicants are initially treated as shortlisted candidates and are evaluated through the Entrance Exam cum Interview scheduled by Admin/Management.
+                <strong>Selection Policy:</strong> Submitting an application does not guarantee admission. Applicants are initially treated as shortlisted candidates and are evaluated through the Interview scheduled by Admin/Management.
               </p>
             </div>
 
@@ -264,7 +269,7 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
               </div>
             )}
 
-            {/* SCHEDULED ENTRANCE EXAM CUM INTERVIEW ADMIT CARD / SLIP */}
+            {/* SCHEDULED INTERVIEW ADMIT CARD / SLIP */}
             {schedule && (schedule.date || schedule.day || schedule.time) && (
               <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-5 shadow-md space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-amber-500/20">
@@ -274,7 +279,7 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
                     </div>
                     <div>
                       <h4 className="font-headings font-extrabold text-sm text-secondary">
-                        Entrance Exam cum Interview Admit Details
+                        Interview Admit Details
                       </h4>
                       <p className="text-[10px] text-amber-800 font-medium">Official slot allocated by Admin/Management</p>
                     </div>

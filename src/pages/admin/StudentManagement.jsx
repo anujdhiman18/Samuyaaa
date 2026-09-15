@@ -205,11 +205,11 @@ export default function StudentManagement() {
   const handleSaveExamSchedule = async () => {
     if (!selectedApp) return;
     if (!examSchedule.date) {
-      addToast('Please select a date for the Entrance Exam cum Interview', 'warning');
+      addToast('Please select a date for the Interview', 'warning');
       return;
     }
-    await handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Entrance Exam cum Interview', examSchedule);
-    addToast(`Entrance Exam cum Interview scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
+    await handleUpdateAppStatus(selectedApp._id || selectedApp.id, 'Interview', examSchedule);
+    addToast(`Interview scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
   };
 
   const handleRejectApplication = async (app) => {
@@ -635,7 +635,7 @@ export default function StudentManagement() {
             <div className="flex items-center gap-2 w-full md:w-auto justify-end overflow-x-auto pb-1 md:pb-0">
               <span className="text-xs font-bold text-on-surface-variant shrink-0">Status Filter:</span>
               <div className="flex items-center gap-1 bg-surface-container p-1 rounded-full border border-outline-variant/20 shrink-0">
-                {['All', 'Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
+                {['All', 'Pending', 'Shortlisted', 'Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setAppFilterStatus(st)}
@@ -645,7 +645,7 @@ export default function StudentManagement() {
                         : 'text-on-surface-variant hover:text-secondary'
                     }`}
                   >
-                    {st === 'Entrance Exam cum Interview' ? 'Exam / Interview' : st}
+                    {st}
                   </button>
                 ))}
               </div>
@@ -722,7 +722,7 @@ export default function StudentManagement() {
                                 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                                 : app.status === 'Rejected'
                                 ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                                : app.status === 'Entrance Exam cum Interview'
+                                : app.status === 'Interview' || app.status === 'Entrance Exam cum Interview'
                                 ? 'bg-amber-500/15 text-amber-900 border border-amber-500/30 font-bold'
                                 : app.status === 'Shortlisted'
                                 ? 'bg-indigo-500/10 text-indigo-700 border border-indigo-500/20'
@@ -731,7 +731,7 @@ export default function StudentManagement() {
                                 : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                             }`}
                           >
-                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : app.status === 'Entrance Exam cum Interview' ? '🟠 Exam Scheduled' : app.status}
+                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : (app.status === 'Interview' || app.status === 'Entrance Exam cum Interview') ? '🟠 Interview Scheduled' : app.status}
                           </span>
                         </td>
                         <td className="p-4 text-on-surface-variant">
@@ -938,7 +938,7 @@ export default function StudentManagement() {
                       ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                       : selectedApp.status === 'Rejected'
                       ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                      : selectedApp.status === 'Entrance Exam cum Interview'
+                      : selectedApp.status === 'Interview' || selectedApp.status === 'Entrance Exam cum Interview'
                       ? 'bg-amber-500/15 text-amber-900 border border-amber-500/30'
                       : selectedApp.status === 'Shortlisted'
                       ? 'bg-indigo-500/10 text-indigo-700 border border-indigo-500/20'
@@ -986,13 +986,13 @@ export default function StudentManagement() {
               )}
             </div>
 
-            {/* ENTRANCE EXAM CUM INTERVIEW SCHEDULING PANEL */}
+            {/* INTERVIEW SCHEDULING PANEL */}
             <div className="bg-amber-500/10 border-2 border-amber-500/30 p-4 sm:p-5 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-700 text-lg">event_available</span>
                   <h4 className="font-headings font-bold text-sm text-secondary">
-                    Schedule Entrance Exam cum Interview
+                    Schedule Interview
                   </h4>
                 </div>
                 <span className="text-[10px] text-amber-900 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full">
@@ -1000,7 +1000,7 @@ export default function StudentManagement() {
                 </span>
               </div>
               <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                Set the specific <strong>Day, Date, Time, and Venue/Mode</strong> for the candidate's diagnostic entrance test and parent interview session.
+                Set the specific <strong>Day, Date, Time, and Venue/Mode</strong> for the candidate's interview session.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

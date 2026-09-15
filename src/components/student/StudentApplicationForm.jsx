@@ -363,10 +363,10 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
         <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left max-w-md mx-auto mb-6 space-y-1 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-amber-900">
             <span className="material-symbols-outlined text-sm text-amber-700">info</span>
-            <span>Next Step: Entrance Exam cum Interview</span>
+            <span>Next Step: Interview</span>
           </div>
           <p className="text-[11px] text-amber-800 leading-relaxed">
-            Your application is now under review as a shortlisted candidate. The Admin/Management will assign your specific <strong>Day, Date, Time, and Venue/Mode</strong> for the Entrance Exam cum Interview. You can track this anytime using your Application ID in the <strong>Track Status</strong> tab.
+            Your application is now under review as a shortlisted candidate. The Admin/Management will assign your specific <strong>Day, Date, Time, and Venue/Mode</strong> for the Interview. You can track this anytime using your Application ID in the <strong>Track Status</strong> tab.
           </p>
         </div>
 
@@ -481,7 +481,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
               </span>
             </div>
             <blockquote className="text-xs font-semibold text-amber-950 leading-relaxed italic border-l-2 border-amber-500 pl-2.5">
-              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Entrance Exam cum Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
+              “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
             </blockquote>
             
             {/* Status Flow Indicator */}
@@ -491,7 +491,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">2. Shortlisted</span>
               <span>&rarr;</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Entrance Exam cum Interview</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold font-mono">3. Interview</span>
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-amber-100 font-mono">4. Final Selection</span>
               <span>&rarr;</span>

@@ -686,11 +686,11 @@ export default function FacultyManagement() {
   const handleSaveExamSchedule = async () => {
     if (!selectedApp) return;
     if (!examSchedule.date) {
-      addToast('Please select a date for the Entrance Exam cum Interview / Demo Class', 'warning');
+      addToast('Please select a date for the Interview', 'warning');
       return;
     }
-    await handleUpdateAppStatus('Entrance Exam cum Interview', selectedApp, examSchedule);
-    addToast(`Interview & Demo scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
+    await handleUpdateAppStatus('Interview', selectedApp, examSchedule);
+    addToast(`Interview scheduled for ${examSchedule.day}, ${examSchedule.date} at ${examSchedule.time}!`, 'success');
   };
 
   const handleApproveAndOnboard = async () => {
@@ -731,7 +731,10 @@ export default function FacultyManagement() {
         return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
       case 'Final Selection':
         return 'bg-teal-500/10 text-teal-700 border-teal-500/20';
+      case 'Interview':
+      case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
+      case 'Exam Scheduled':
         return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
       case 'Shortlisted':
         return 'bg-blue-500/10 text-blue-700 border-blue-500/20';
@@ -1002,7 +1005,7 @@ export default function FacultyManagement() {
           {/* Applications Status Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-outline-variant/15 shadow-sm max-w-full">
             <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar pb-1 max-w-full">
-              {['All', 'Pending', 'Shortlisted', 'Entrance Exam cum Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
+              {['All', 'Pending', 'Shortlisted', 'Interview', 'Final Selection', 'Approved', 'Rejected'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setAppFilterStatus(st)}
@@ -1080,7 +1083,7 @@ export default function FacultyManagement() {
                           {app.examInterviewSchedule?.date && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full mt-1 border border-amber-500/20">
                               <span className="material-symbols-outlined text-[12px]">event</span>
-                              Exam/Interview: {app.examInterviewSchedule.date}
+                              Interview: {app.examInterviewSchedule.date}
                             </span>
                           )}
                         </td>
@@ -1099,7 +1102,7 @@ export default function FacultyManagement() {
                           >
                             <option value="Pending">Pending</option>
                             <option value="Shortlisted">Shortlisted</option>
-                            <option value="Entrance Exam cum Interview">Entrance Exam cum Interview</option>
+                            <option value="Interview">Interview</option>
                             <option value="Final Selection">Final Selection</option>
                             <option value="Approved">Approved / Selected</option>
                             <option value="Rejected">Rejected</option>
@@ -1662,12 +1665,12 @@ export default function FacultyManagement() {
               </div>
             )}
 
-            {/* Entrance Exam / Interview & Demo Lecture Scheduling Suite */}
+            {/* Interview & Demo Lecture Scheduling Suite */}
             <div className="p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-amber-600 text-[18px]">calendar_month</span>
-                  Schedule Entrance Exam / Interview &amp; Demo Lecture
+                  Schedule Interview &amp; Demo Lecture
                 </h4>
                 {selectedApp.examInterviewSchedule?.date && (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">

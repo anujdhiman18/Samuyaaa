@@ -294,7 +294,7 @@ export const updateStudentApplicationStatus = async (req, res) => {
     const historyEntry = {
       status: status || application.status,
       date: now,
-      notes: notes || (examInterviewSchedule ? `Entrance Exam & Interview scheduled on ${examInterviewSchedule.day}, ${examInterviewSchedule.date} at ${examInterviewSchedule.time}` : ''),
+      notes: notes || (examInterviewSchedule ? `Interview scheduled on ${examInterviewSchedule.day}, ${examInterviewSchedule.date} at ${examInterviewSchedule.time}` : ''),
       sentTo: application.email,
     };
     application.notificationHistory.push(historyEntry);

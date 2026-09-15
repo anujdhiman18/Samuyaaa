@@ -24,9 +24,9 @@ const FLOW_STEPS = [
   },
   {
     step: 3,
-    title: 'Entrance Exam cum Interview',
+    title: 'Interview',
     shortDesc: 'Day, Date, Time & Venue provided by Admin',
-    detail: 'Admin/Management allocates specific day, date, time slot, and venue/mode (physical/online). Candidate attends written exam and personal interview.',
+    detail: 'Admin/Management allocates specific day, date, time slot, and venue/mode (physical/online). Candidate attends the interview & interaction session.',
     icon: 'school',
     badge: 'Step 3 • Core Evaluation',
     color: 'from-amber-600 to-orange-600',
@@ -102,7 +102,7 @@ export default function AdmissionProcessSection() {
                 </div>
 
                 <blockquote className="text-xs sm:text-sm font-medium text-amber-950/90 leading-relaxed italic border-l-4 border-amber-500 pl-3 my-1">
-                  “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Entrance Exam cum Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
+                  “Students or faculty applying through this website will not be given direct admission or joining. Applicants will first be treated as shortlisted candidates and will therefore be called for an Interview on a particular day, date, and time as provided by the Admin/Management. Final admission or joining will be subject to successful completion of the selection process.”
                 </blockquote>
 
                 <p className="text-[11px] text-amber-900/80 flex items-center gap-1.5 pt-1">
@@ -185,7 +185,7 @@ export default function AdmissionProcessSection() {
             <span>&rarr;</span>
             <span className="px-2 py-0.5 rounded-md bg-surface-container font-mono text-[11px]">Shortlisted</span>
             <span>&rarr;</span>
-            <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold font-mono text-[11px]">Entrance Exam cum Interview</span>
+            <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold font-mono text-[11px]">Interview</span>
             <span>&rarr;</span>
             <span className="px-2 py-0.5 rounded-md bg-surface-container font-mono text-[11px]">Final Selection</span>
             <span>&rarr;</span>
