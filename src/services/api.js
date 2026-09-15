@@ -148,6 +148,111 @@ export const initialMockStudents = [
 ];
 
 const initialMockSubjects = [
+  // --- Category S1: Primary Wing (Nursery to 5th) ---
+  {
+    _id: 'sub_s1_1',
+    name: 'Foundational Mathematics & Mental Math',
+    category: 'Foundation',
+    className: 'Class S1',
+    description: 'Basic number sense, rapid mental arithmetic, pattern recognition, and geometric shapes.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '4:00 PM – 5:15 PM',
+    totalEnrolled: 16,
+  },
+  {
+    _id: 'sub_s1_2',
+    name: 'English Phonics, Reading & Communication',
+    category: 'Early Learner',
+    className: 'Class S1',
+    description: 'Phonetics, vocabulary building, interactive storytelling, and handwriting confidence.',
+    teacherName: 'Mrs. Sunita Sharma',
+    batchTime: '3:00 PM – 4:15 PM',
+    totalEnrolled: 15,
+  },
+  {
+    _id: 'sub_s1_3',
+    name: 'Environmental Studies (EVS) & Young Science',
+    category: 'Foundation',
+    className: 'Class S1',
+    description: 'Nature exploration, human body, ecosystem awareness, and hands-on mini experiments.',
+    teacherName: 'Dr. Ramesh Verma',
+    batchTime: '5:15 PM – 6:30 PM',
+    totalEnrolled: 14,
+  },
+  {
+    _id: 'sub_s1_4',
+    name: 'Creative Thinking & Junior Coding Basics',
+    category: 'Skill Track',
+    className: 'Class S1',
+    description: 'Visual block-based logic, puzzle solving, creative design, and digital literacy.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '5:30 PM – 6:45 PM',
+    totalEnrolled: 10,
+  },
+
+  // --- Category S2: Middle & High School (6th to 10th) ---
+  {
+    _id: 'sub1_b3',
+    name: 'Mathematics',
+    category: 'Foundation',
+    className: 'Class S2',
+    description: 'High school mathematics foundation focusing on core principles and problem solving.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '4:00 PM – 5:30 PM',
+    totalEnrolled: 20,
+  },
+  {
+    _id: 'sub1_b5',
+    name: 'Mathematics',
+    category: 'Olympiad',
+    className: 'Class S2',
+    description: 'Mathematical Olympiad training, logic, and speed challenge problems.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '3:00 PM – 4:30 PM',
+    totalEnrolled: 10,
+  },
+  {
+    _id: 'sub2_b2',
+    name: 'Physics',
+    category: 'Foundation',
+    className: 'Class S2',
+    description: 'Conceptual secondary grade physics and physical phenomena experimentation.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '4:30 PM – 6:00 PM',
+    totalEnrolled: 12,
+  },
+  {
+    _id: 'sub3_b2',
+    name: 'Chemistry',
+    category: 'Foundation',
+    className: 'Class S2',
+    description: 'Chemical formulations, atomic structure, and periodic table fundamentals.',
+    teacherName: 'Dr. Ramesh Verma',
+    batchTime: '3:30 PM – 5:00 PM',
+    totalEnrolled: 18,
+  },
+  {
+    _id: 'sub4',
+    name: 'Biology',
+    category: 'Foundation',
+    className: 'Class S2',
+    description: 'Botany, Zoology & Life Science fundamentals for school students.',
+    teacherName: 'Dr. Ramesh Verma',
+    batchTime: '2:00 PM – 3:30 PM',
+    totalEnrolled: 12,
+  },
+  {
+    _id: 'sub5_b2',
+    name: 'English & Communication',
+    category: 'Advanced',
+    className: 'Class S2',
+    description: 'Public speaking, creative writing, advanced literature, and communication skills.',
+    teacherName: 'Mrs. Sunita Sharma',
+    batchTime: '4:00 PM – 5:00 PM',
+    totalEnrolled: 17,
+  },
+
+  // --- Category S3: Senior Secondary & Entrance (11th to 12th) ---
   {
     _id: 'sub1',
     name: 'Mathematics',
@@ -169,16 +274,6 @@ const initialMockSubjects = [
     totalEnrolled: 15,
   },
   {
-    _id: 'sub1_b3',
-    name: 'Mathematics',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'High school mathematics foundation focusing on core principles and problem solving.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '4:00 PM – 5:30 PM',
-    totalEnrolled: 20,
-  },
-  {
     _id: 'sub1_b4',
     name: 'Mathematics',
     category: 'JEE',
@@ -189,16 +284,6 @@ const initialMockSubjects = [
     totalEnrolled: 14,
   },
   {
-    _id: 'sub1_b5',
-    name: 'Mathematics',
-    category: 'Olympiad',
-    className: 'Class S2',
-    description: 'Mathematical Olympiad training, logic, and speed challenge problems.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '3:00 PM – 4:30 PM',
-    totalEnrolled: 10,
-  },
-  {
     _id: 'sub2',
     name: 'Physics',
     category: 'JEE Prep',
@@ -207,16 +292,6 @@ const initialMockSubjects = [
     teacherName: 'Jitender Sharma',
     batchTime: '6:30 PM – 8:00 PM',
     totalEnrolled: 15,
-  },
-  {
-    _id: 'sub2_b2',
-    name: 'Physics',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Conceptual secondary grade physics and physical phenomena experimentation.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '4:30 PM – 6:00 PM',
-    totalEnrolled: 12,
   },
   {
     _id: 'sub2_b3',
@@ -239,16 +314,6 @@ const initialMockSubjects = [
     totalEnrolled: 14,
   },
   {
-    _id: 'sub3_b2',
-    name: 'Chemistry',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Chemical formulations, atomic structure, and periodic table fundamentals.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '3:30 PM – 5:00 PM',
-    totalEnrolled: 18,
-  },
-  {
     _id: 'sub3_b3',
     name: 'Chemistry',
     category: 'NEET',
@@ -257,16 +322,6 @@ const initialMockSubjects = [
     teacherName: 'Dr. Ramesh Verma',
     batchTime: '5:30 PM – 7:00 PM',
     totalEnrolled: 13,
-  },
-  {
-    _id: 'sub4',
-    name: 'Biology',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Botany, Zoology & Life Science fundamentals for school students.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '2:00 PM – 3:30 PM',
-    totalEnrolled: 12,
   },
   {
     _id: 'sub4_b2',
@@ -278,25 +333,37 @@ const initialMockSubjects = [
     batchTime: '3:30 PM – 5:00 PM',
     totalEnrolled: 16,
   },
+
+  // --- Category S4: Higher Education ---
   {
-    _id: 'sub5',
-    name: 'English & Communication',
-    category: 'Foundation',
-    className: 'Class S1',
-    description: 'Foundational English grammar, vocabulary building, and reading comprehension.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '3:00 PM – 4:00 PM',
-    totalEnrolled: 15,
+    _id: 'sub_s4_1',
+    name: 'Higher Engineering Mathematics',
+    category: 'Undergraduate',
+    className: 'Class S4',
+    description: 'Differential equations, linear algebra, Laplace transforms, and complex variables.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '7:00 PM – 8:30 PM',
+    totalEnrolled: 14,
   },
   {
-    _id: 'sub5_b2',
-    name: 'English & Communication',
-    category: 'Advanced',
-    className: 'Class S2',
-    description: 'Public speaking, creative writing, advanced literature, and communication skills.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '4:00 PM – 5:00 PM',
-    totalEnrolled: 17,
+    _id: 'sub_s4_2',
+    name: 'Data Science, Python & AI Foundations',
+    category: 'Skill & Tech',
+    className: 'Class S4',
+    description: 'Machine learning algorithms, Pandas, NumPy, model evaluation, and practical AI applications.',
+    teacherName: 'Jitender Sharma',
+    batchTime: '6:30 PM – 8:00 PM',
+    totalEnrolled: 22,
+  },
+  {
+    _id: 'sub_s4_3',
+    name: 'Competitive Exam Aptitude & Reasoning',
+    category: 'Entrance / Target',
+    className: 'Class S4',
+    description: 'Quantitative aptitude, data interpretation, verbal reasoning, and competitive test speed strategy.',
+    teacherName: 'Dr. Ramesh Verma',
+    batchTime: '5:00 PM – 6:30 PM',
+    totalEnrolled: 11,
   },
 ];
 
@@ -546,12 +613,30 @@ export const setStoredStudents = (s, skipNotify = false) => {
 };
 
 export const getStoredSubjects = () => {
-  const list = JSON.parse(localStorage.getItem('mock_subjects') || JSON.stringify(initialMockSubjects));
-  return list.map((sub) => ({
-    ...sub,
-    category: sub.category || 'Foundation',
-    className: sub.className || 'Class S2',
-  }));
+  try {
+    const raw = localStorage.getItem('mock_subjects');
+    let list = raw ? JSON.parse(raw) : initialMockSubjects;
+    if (!Array.isArray(list) || list.length === 0) {
+      list = initialMockSubjects;
+    } else {
+      // Auto-supplement missing categories from initialMockSubjects if needed
+      const hasS1 = list.some((s) => s.className?.includes('S1') || s.category === 'S1');
+      const hasS4 = list.some((s) => s.className?.includes('S4') || s.category === 'S4');
+      if (!hasS1 || !hasS4) {
+        const existingIds = new Set(list.map((s) => s._id || s.id));
+        const missing = initialMockSubjects.filter((s) => !existingIds.has(s._id));
+        list = [...list, ...missing];
+        localStorage.setItem('mock_subjects', JSON.stringify(list));
+      }
+    }
+    return list.map((sub) => ({
+      ...sub,
+      category: sub.category || 'Foundation',
+      className: sub.className || 'Class S2',
+    }));
+  } catch (e) {
+    return initialMockSubjects;
+  }
 };
 export const setStoredSubjects = (s, skipNotify = false) => {
   localStorage.setItem('mock_subjects', JSON.stringify(s));

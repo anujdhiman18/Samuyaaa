@@ -29,9 +29,16 @@ export const getStageForClass = (val) => {
 
 export const normalizeClassCode = (val) => {
   if (!val) return 'S2';
-  if (CLASS_CODES.includes(val)) return val;
+  const raw = String(val).trim();
+  if (CLASS_CODES.includes(raw.toUpperCase())) return raw.toUpperCase();
 
-  const str = String(val).trim().toLowerCase();
+  const str = raw.toLowerCase();
+
+  // Explicit S1-S4 checks
+  if (str === 's1' || str === 'class s1' || str.startsWith('class s1') || str.includes('s1')) return 'S1';
+  if (str === 's2' || str === 'class s2' || str.startsWith('class s2') || str.includes('s2')) return 'S2';
+  if (str === 's3' || str === 'class s3' || str.startsWith('class s3') || str.includes('s3')) return 'S3';
+  if (str === 's4' || str === 'class s4' || str.startsWith('class s4') || str.includes('s4')) return 'S4';
 
   if (
     str.includes('nursery') ||
@@ -82,4 +89,5 @@ export const normalizeClassCode = (val) => {
 
   return 'S2';
 };
+
 
