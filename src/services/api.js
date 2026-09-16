@@ -1,9 +1,15 @@
-import { auth, db, uploadFirebaseFile, deleteFirebaseFile } from '../firebase';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { uploadFirebaseFile, deleteFirebaseFile } from '../firebase';
+const auth = null;
+const db = null;
+const doc = () => null;
+const setDoc = async () => {};
+const getDoc = async () => ({ exists: () => false, data: () => null });
+const collection = () => null;
+const getDocs = async () => ({ empty: true, forEach: () => {} });
+const deleteDoc = async () => {};
+const onSnapshot = () => () => {};
+const signInWithEmailAndPassword = async () => { throw new Error('Firebase Auth is disabled; use MongoDB authentication.'); };
+const createUserWithEmailAndPassword = async () => { throw new Error('Firebase Auth is disabled; use MongoDB registration.'); };
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
 import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, isExactClassMatch, CLASS_CATEGORIES, CLASS_CODES, DEFAULT_CENTER_CONFIGS } from '../config/classConfig';

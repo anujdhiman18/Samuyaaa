@@ -1,5 +1,3 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
@@ -23,6 +21,7 @@ import Alumni from './models/Alumni.js';
 import Admin from './models/Admin.js';
 import Role from './models/Role.js';
 import { SYSTEM_DEFAULT_ROLES } from './controllers/rbacController.js';
+import { seedData } from './seed.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -45,16 +44,23 @@ const firebaseConfig = {
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/saumyaa_db';
 
 export const migrateFirebaseToMongo = async () => {
-  console.log('🚀 Starting Firebase Firestore to MongoDB Atlas Data Migration...');
+  console.log('🚀 Checking Firebase to MongoDB Migration Status...');
 
-  // 1. Initialize Firebase
-  let fbDb;
+  // 1. Try dynamic Firebase connection if SDK installed
+  let fbDb = null;
+  let collectionFn = null;
+  let getDocsFn = null;
   try {
+    const { initializeApp } = await import('firebase/app');
+    const { getFirestore, collection, getDocs } = await import('firebase/firestore');
     const fbApp = initializeApp(firebaseConfig, 'migration_app_' + Date.now());
     fbDb = getFirestore(fbApp);
+    collectionFn = collection;
+    getDocsFn = getDocs;
     console.log('✓ Initialized Firebase client connection.');
   } catch (err) {
-    console.error('❌ Failed to initialize Firebase client:', err.message);
+    console.log('ℹ️ Firebase SDK has been uninstalled. Migrating/ensuring database using MongoDB Mongoose...');
+    await seedData();
     return;
   }
 
