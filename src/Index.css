@@ -91,6 +91,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -210,6 +211,7 @@ h6 {
 
 /* ---------- Founder "15+ Years" badge ---------- */
 @keyframes bounceSlow {
+
   0%,
   100% {
     transform: translateY(0);

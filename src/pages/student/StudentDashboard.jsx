@@ -90,8 +90,8 @@ export default function StudentDashboard() {
           <span className="px-3.5 py-1 rounded-full bg-white/20 text-xs font-headings font-bold uppercase tracking-wider mb-2 inline-block">
             Student Learning Hub
           </span>
-          <h1 className="font-headings font-extrabold text-2xl md:text-3xl mt-1">
-            Welcome back, {user?.name || 'Rahul Gupta'}! 👋
+          <h1 className="font-headings font-extrabold text-2xl md:text-3xl mt-1 tracking-tight">
+            Welcome back, {user?.name || 'Student'}
           </h1>
           <p className="font-body text-xs md:text-sm text-teal-100 mt-2 max-w-xl">
             You are enrolled in <strong className="text-white">Class {user?.className || '10th'}</strong> (Roll: {user?.rollNumber || 'SAU-10-001'}). Check your test scores, attendance, and latest institute announcements below.
@@ -160,8 +160,8 @@ export default function StudentDashboard() {
             <h3 className={`font-headings font-extrabold text-2xl mt-1 ${stats.pendingFee > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
               ₹{stats.pendingFee.toLocaleString()}
             </h3>
-            <p className={`text-[10px] font-semibold mt-1 ${stats.pendingFee > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-              {stats.pendingFee > 0 ? 'Payment Due' : 'Fee Cleared ✓'}
+            <p className={`text-[10px] font-medium mt-1 ${stats.pendingFee > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+              {stats.pendingFee > 0 ? 'Payment Due' : 'All Dues Cleared'}
             </p>
           </div>
           <span className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${stats.pendingFee > 0 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-700'}`}>

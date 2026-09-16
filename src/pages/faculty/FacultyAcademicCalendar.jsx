@@ -36,11 +36,26 @@ export default function FacultyAcademicCalendar() {
   const getCategoryBadge = (cat) => {
     switch (cat) {
       case 'EXAM':
-        return <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">📝 Exam Schedule</span>;
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-medium text-[10px]">
+            <span className="material-symbols-outlined text-[12px] mr-1">description</span>
+            Exam Schedule
+          </span>
+        );
       case 'HOLIDAY':
-        return <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">🌴 Holiday</span>;
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[10px]">
+            <span className="material-symbols-outlined text-[12px] mr-1">beach_access</span>
+            Holiday
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">📅 Academic Event</span>;
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-medium text-[10px]">
+            <span className="material-symbols-outlined text-[12px] mr-1">event</span>
+            Academic Event
+          </span>
+        );
     }
   };
 
@@ -49,8 +64,8 @@ export default function FacultyAcademicCalendar() {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-headings font-bold text-[10px] uppercase tracking-wider border border-amber-200">
-            ⚡ Academic Coordinator / HOD Power
+          <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary font-headings font-medium text-[10px] uppercase tracking-wider border border-secondary/20">
+            Academic Coordinator Workspace
           </span>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary mt-2 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">calendar_month</span>
@@ -79,7 +94,10 @@ export default function FacultyAcademicCalendar() {
               <span className="font-mono text-xs text-on-surface-variant font-bold">{ev.scope}</span>
             </div>
             <h3 className="font-headings font-extrabold text-base text-secondary">{ev.title}</h3>
-            <p className="font-mono text-xs text-primary font-bold">📆 Date(s): {ev.date}</p>
+            <p className="font-mono text-xs text-primary font-medium flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+              {ev.date}
+            </p>
           </div>
         ))}
       </div>

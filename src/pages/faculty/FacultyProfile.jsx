@@ -348,8 +348,9 @@ export default function FacultyProfile() {
           <span className="material-symbols-outlined text-amber-600 text-2xl mt-0.5">lock_clock</span>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 text-[10px] font-extrabold uppercase tracking-wide">
-                🔒 30-Day Restriction Active
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-medium tracking-normal border border-amber-200">
+                <span className="material-symbols-outlined text-[12px]">lock</span>
+                30-Day Policy Active
               </span>
             </div>
             <p className="text-xs font-medium text-amber-800 leading-relaxed pt-1">
@@ -366,8 +367,9 @@ export default function FacultyProfile() {
             <span className="material-symbols-outlined text-blue-600 text-2xl mt-0.5">hourglass_top</span>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-blue-200/80 text-blue-900 text-[10px] font-extrabold uppercase tracking-wide">
-                  🟡 Pending Admin Approval
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-medium uppercase tracking-wide inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  Pending Admin Approval
                 </span>
               </div>
               <p className="text-xs font-medium text-blue-800 leading-relaxed pt-0.5">
@@ -557,10 +559,10 @@ export default function FacultyProfile() {
                             {req.status === 'Approved' ? 'check_circle' : req.status === 'Rejected' ? 'cancel' : 'schedule'}
                           </span>
                           {req.status === 'Approved'
-                            ? '🟢 Approved'
+                            ? 'Approved'
                             : req.status === 'Rejected'
-                            ? '🔴 Rejected'
-                            : '🟡 Pending Admin Approval'}
+                            ? 'Rejected'
+                            : 'Pending Admin Approval'}
                         </span>
                       </div>
                     </div>
@@ -740,7 +742,7 @@ export default function FacultyProfile() {
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
-                        {r.status === 'Pending' ? '🟡 Pending' : r.status}
+                        {r.status === 'Pending' ? 'Pending' : r.status}
                       </span>
                     </div>
                     <p className="font-mono text-on-surface-variant text-[10px]">Requested: {r.newValue}</p>
@@ -780,9 +782,9 @@ export default function FacultyProfile() {
             {/* Warning if 30-day Cooldown is active */}
             {isCooldownActive && (
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 space-y-1">
-                <div className="flex items-center gap-2 font-bold text-xs text-amber-900">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900">
                   <span className="material-symbols-outlined text-base">lock_clock</span>
-                  🔒 30-Day Cooldown Active
+                  30-Day Policy Interval Active
                 </div>
                 <p className="text-xs font-medium leading-relaxed">
                   {cooldownInfo?.cooldownMessage}
@@ -793,9 +795,9 @@ export default function FacultyProfile() {
             {/* Info if Modifying Active Pending Request */}
             {!isCooldownActive && editingPendingReq && (
               <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-900 space-y-1">
-                <div className="flex items-center gap-2 font-bold text-xs text-blue-900">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-blue-900">
                   <span className="material-symbols-outlined text-base">hourglass_top</span>
-                  🟡 Modifying Active Pending Request
+                  Modifying Pending Request
                 </div>
                 <p className="text-xs font-medium leading-relaxed text-blue-800">
                   You are editing your pending request. Submitting this form will update your existing pending request for Administrator review.

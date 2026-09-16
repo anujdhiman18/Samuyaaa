@@ -58,11 +58,26 @@ export default function FacultyLessonPlans() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Approved':
-        return <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">🟢 Approved</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium text-[10px] inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            Approved
+          </span>
+        );
       case 'Revision Requested':
-        return <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">🟡 Revision Needed</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[10px] inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+            Revision Needed
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px]">⏳ Pending Review</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 font-medium text-[10px] inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+            Pending Review
+          </span>
+        );
     }
   };
 
@@ -71,8 +86,9 @@ export default function FacultyLessonPlans() {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-headings font-bold text-[10px] uppercase tracking-wider border border-purple-200">
-            ⭐ Senior Faculty / HOD Capability
+          <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-800 font-headings font-bold text-[10px] uppercase tracking-wider border border-purple-200 inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px] text-purple-700">verified</span>
+            Senior Faculty / HOD Capability
           </span>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary mt-2 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">approval</span>
@@ -104,8 +120,9 @@ export default function FacultyLessonPlans() {
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <span className="font-mono text-[11px] text-primary underline font-bold cursor-pointer">
-                📄 {plan.materialsUrl}
+              <span className="font-mono text-[11px] text-primary underline font-medium cursor-pointer inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px]">description</span>
+                {plan.materialsUrl}
               </span>
 
               <button

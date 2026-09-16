@@ -121,8 +121,8 @@ export default function AdminSMSLogs() {
             <h3 className="font-headings font-extrabold text-2xl text-secondary mt-1">{totalLogs}</h3>
             <p className="text-[10px] text-on-surface-variant mt-0.5">Automated SMS notifications</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
-            📲
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">textsms</span>
           </div>
         </div>
 
@@ -132,8 +132,8 @@ export default function AdminSMSLogs() {
             <h3 className="font-headings font-extrabold text-2xl text-emerald-700 mt-1">{sentCount}</h3>
             <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">Verified by SMS gateway</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-            ✅
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">check_circle</span>
           </div>
         </div>
 
@@ -143,8 +143,8 @@ export default function AdminSMSLogs() {
             <h3 className="font-headings font-extrabold text-2xl text-rose-700 mt-1">{failedCount}</h3>
             <p className="text-[10px] text-rose-700 font-semibold mt-0.5">Requires retry or fix</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center font-bold">
-            ⚠️
+          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">sms_failed</span>
           </div>
         </div>
 
@@ -154,8 +154,8 @@ export default function AdminSMSLogs() {
             <h3 className="font-headings font-extrabold text-2xl text-amber-700 mt-1">{pendingCount}</h3>
             <p className="text-[10px] text-amber-700 font-semibold mt-0.5">Queued in dispatch buffer</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-            ⏳
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">schedule</span>
           </div>
         </div>
       </div>
@@ -198,9 +198,9 @@ export default function AdminSMSLogs() {
               className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none focus:border-primary"
             >
               <option value="All">All Delivery Statuses</option>
-              <option value="sent">🟢 Sent Successfully</option>
-              <option value="failed">🔴 Failed / Undelivered</option>
-              <option value="pending">🟡 Pending / Queued</option>
+              <option value="sent">Sent Successfully</option>
+              <option value="failed">Failed / Undelivered</option>
+              <option value="pending">Pending / Queued</option>
             </select>
           </div>
         </div>
@@ -301,18 +301,21 @@ export default function AdminSMSLogs() {
 
                       <td className="py-3.5 px-4">
                         {log.status === 'sent' && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[10px]">
-                            ✓ SENT
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium text-[10px] inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            Sent
                           </span>
                         )}
                         {log.status === 'failed' && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 font-extrabold text-[10px]">
-                            ✕ FAILED
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 font-medium text-[10px] inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                            Failed
                           </span>
                         )}
                         {log.status === 'pending' && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px]">
-                            ⏳ PENDING
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[10px] inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                            Pending
                           </span>
                         )}
                       </td>

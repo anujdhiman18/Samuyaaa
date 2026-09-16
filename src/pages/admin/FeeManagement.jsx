@@ -296,8 +296,9 @@ export default function FeeManagement() {
                     <td className="py-3.5 px-4">
                       {p.paymentMode?.includes('Razorpay') ? (
                         <div className="flex flex-col">
-                          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px] border border-blue-200 inline-block w-max">
-                            ⚡ Razorpay Online
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 font-medium text-[10px] border border-blue-200 inline-flex items-center gap-1 w-max">
+                            <span className="material-symbols-outlined text-[12px] text-blue-600">bolt</span>
+                            Razorpay Online
                           </span>
                           {p.transactionId && (
                             <span className="text-[9px] font-mono text-on-surface-variant/70 mt-0.5">
@@ -395,7 +396,7 @@ export default function FeeManagement() {
                 onChange={(e) => setPaymentMode(e.target.value)}
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs"
               >
-                <option value="Razorpay (Online)">⚡ Razorpay Gateway (Test Mode)</option>
+                <option value="Razorpay (Online)">Razorpay Gateway (Test Mode)</option>
                 <option value="UPI">UPI / GPay / PhonePe</option>
                 <option value="Cash">Cash Deposit</option>
                 <option value="Net Banking">Net Banking</option>

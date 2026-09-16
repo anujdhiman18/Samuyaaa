@@ -70,14 +70,34 @@ export default function ActivityLogs() {
     switch (status) {
       case 'SUCCESS':
       case 'Success':
-        return <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200">🟢 Success</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-medium text-[10px] border border-emerald-200 inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            Success
+          </span>
+        );
       case 'DENIED':
       case 'Blocked':
-        return <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px] border border-rose-200">⛔ Access Denied</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 font-medium text-[10px] border border-rose-200 inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            Access Denied
+          </span>
+        );
       case 'WARNING':
-        return <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] border border-amber-200">🟡 Warning</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 font-medium text-[10px] border border-amber-200 inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+            Warning
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 rounded-full bg-surface-container font-bold text-[10px]">Information</span>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[10px] border border-slate-200 inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+            Information
+          </span>
+        );
     }
   };
 
@@ -98,19 +118,21 @@ export default function ActivityLogs() {
         <div className="flex items-center gap-2 bg-surface-container-low p-1 rounded-xl border border-outline-variant/20">
           <button
             onClick={() => setActiveTab('audit')}
-            className={`px-4 py-2 rounded-lg font-headings font-bold text-xs transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-lg font-headings font-bold text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === 'audit' ? 'bg-white text-secondary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            📋 System Audit Logs
+            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+            System Audit Logs
           </button>
           <button
             onClick={() => setActiveTab('login')}
-            className={`px-4 py-2 rounded-lg font-headings font-bold text-xs transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-lg font-headings font-bold text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === 'login' ? 'bg-white text-secondary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            🔑 Login History
+            <span className="material-symbols-outlined text-[16px]">key</span>
+            Login History
           </button>
         </div>
       </div>

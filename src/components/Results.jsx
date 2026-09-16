@@ -140,8 +140,9 @@ export default function Results() {
             />
           </div>
           <div className="flex-grow text-center md:text-left">
-            <span className="inline-block bg-amber-600 text-white px-3 py-1 rounded-md text-[10px] font-headings font-bold uppercase tracking-wider mb-2">
-              🏆 TOPPER STUDENTS (MANAGED LIVE VIA ADMIN PANEL)
+            <span className="inline-flex items-center gap-1 bg-amber-700/90 text-white px-3 py-1 rounded-md text-[10px] font-headings font-semibold uppercase tracking-wider mb-2">
+              <span className="material-symbols-outlined text-[13px]">emoji_events</span>
+              Academic Achievers
             </span>
             <div className="font-headings font-bold text-sm text-on-surface mb-2 space-y-1">
               {toppers.slice(0, 4).map((t) => (

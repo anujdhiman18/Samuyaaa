@@ -40,7 +40,7 @@ export default function FeeToggleSwitch({
         title={checked ? `Paid on ${formattedDate || 'current date'}` : 'Unpaid for current month'}
       >
         <span
-          className={`transform rounded-full bg-white transition-transform duration-300 flex items-center justify-center font-extrabold text-[10px] shadow-md ${
+          className={`transform rounded-full bg-white transition-transform duration-300 flex items-center justify-center text-[10px] shadow-sm ${
             isSmall ? 'w-5 h-5' : 'w-5.5 h-5.5'
           } ${
             checked
@@ -50,20 +50,21 @@ export default function FeeToggleSwitch({
               : 'translate-x-0 text-rose-600'
           }`}
         >
-          {checked ? '✓' : '×'}
+          <span className="material-symbols-outlined text-[13px]">{checked ? 'check' : 'close'}</span>
         </span>
       </button>
 
       {showLabel && (
         <div className="flex flex-col text-left whitespace-nowrap">
           <span
-            className={`font-headings font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${
+            className={`font-medium text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1 whitespace-nowrap ${
               checked
-                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/40'
-                : 'bg-rose-100 text-rose-800 border border-rose-300/40'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border border-rose-200'
             }`}
           >
-            {checked ? 'PAID ✓' : 'UNPAID !'}
+            <span className={`w-1.5 h-1.5 rounded-full ${checked ? 'bg-emerald-600' : 'bg-rose-500'}`}></span>
+            {checked ? 'Paid' : 'Unpaid'}
           </span>
           {checked && formattedDate && (
             <span className="text-[9px] text-on-surface-variant/70 mt-0.5 font-medium whitespace-nowrap">

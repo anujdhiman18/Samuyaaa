@@ -85,16 +85,16 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
       case 'Approved':
       case 'Enrolled':
         return (
-          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 font-extrabold text-xs flex items-center gap-1 border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            🟢 Admission Confirmed &amp; Enrolled
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-medium text-xs flex items-center gap-1.5 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            Admission Confirmed &amp; Enrolled
           </span>
         );
       case 'Final Selection':
         return (
-          <span className="px-3 py-1 rounded-full bg-teal-500/10 text-teal-700 font-extrabold text-xs flex items-center gap-1 border border-teal-500/20">
-            <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-            🔵 Final Selection Review
+          <span className="px-3 py-1 rounded-full bg-teal-50 text-teal-800 font-medium text-xs flex items-center gap-1.5 border border-teal-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+            Final Selection Review
           </span>
         );
       case 'Interview':
@@ -102,37 +102,37 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
       case 'Entrance Exam cum Interview':
       case 'Exam Scheduled':
         return (
-          <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-900 font-extrabold text-xs flex items-center gap-1 border border-amber-500/30">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            🟠 Interview Scheduled
+          <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 font-medium text-xs flex items-center gap-1.5 border border-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+            Interview Scheduled
           </span>
         );
       case 'Shortlisted':
         return (
-          <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-700 font-extrabold text-xs flex items-center gap-1 border border-indigo-500/20">
-            <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-            🟣 Candidate Shortlisted
+          <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-800 font-medium text-xs flex items-center gap-1.5 border border-indigo-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+            Candidate Shortlisted
           </span>
         );
       case 'Rejected':
         return (
-          <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 font-extrabold text-xs flex items-center gap-1 border border-rose-500/20">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            🔴 Not Selected / Rejected
+          <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-800 font-medium text-xs flex items-center gap-1.5 border border-rose-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            Not Selected / Rejected
           </span>
         );
       case 'Under Review':
         return (
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 font-extrabold text-xs flex items-center gap-1 border border-amber-500/20">
-            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            🟡 Under Review
+          <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 font-medium text-xs flex items-center gap-1.5 border border-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+            Under Review
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-700 font-extrabold text-xs flex items-center gap-1 border border-blue-500/20">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            🔵 Application Submitted (Pending Screening)
+          <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-800 font-medium text-xs flex items-center gap-1.5 border border-slate-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+            Application Submitted (Pending Screening)
           </span>
         );
     }
@@ -339,7 +339,7 @@ export default function StudentCandidateStatusTracker({ onEditApplication }) {
               <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs space-y-1">
                 <div className="flex items-center gap-1.5 font-bold">
                   <span className="material-symbols-outlined text-sm text-emerald-700">lock</span>
-                  <span>🔒 30-Day Application Lock Active</span>
+                  <span>30-Day Application Lock Active</span>
                 </div>
                 <p className="text-emerald-800 text-[11px] leading-relaxed">
                   This request was approved on <strong>{formatDateFormatted(resultApp.approvedAt || resultApp.updatedAt)}</strong>. You can make another request after <strong>{formatDateFormatted(resultApp.nextEligibleDate || new Date(new Date(resultApp.approvedAt || resultApp.updatedAt).getTime() + 30 * 24 * 60 * 60 * 1000))}</strong>.

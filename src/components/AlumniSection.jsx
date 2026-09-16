@@ -373,9 +373,10 @@ export default function AlumniSection() {
 
                   {/* Short Achievement */}
                   {a.achievement && (
-                    <p className="text-[11px] font-semibold text-on-surface line-clamp-2 bg-amber-50 text-amber-900 p-2 rounded-lg border border-amber-100">
-                      🏆 {a.achievement}
-                    </p>
+                    <div className="text-[11px] font-medium text-amber-950 bg-amber-50/80 p-2.5 rounded-lg border border-amber-200/60 flex items-start gap-1.5 leading-relaxed">
+                      <span className="material-symbols-outlined text-[14px] text-amber-700 shrink-0 mt-0.5">workspace_premium</span>
+                      <span className="line-clamp-2">{a.achievement}</span>
+                    </div>
                   )}
 
                   {/* Short Testimonial Quote */}

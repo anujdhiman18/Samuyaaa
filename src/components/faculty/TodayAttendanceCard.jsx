@@ -173,12 +173,14 @@ export default function TodayAttendanceCard() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 text-[11px] font-bold text-emerald-800">
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-1">
-                ✓ Attendance Verified
+            <div className="flex flex-col sm:flex-row gap-2 text-[11px] font-medium text-emerald-800">
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px] text-emerald-700">check_circle</span>
+                Attendance Verified
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-1">
-                ✓ Location Verified ({todayRecord.distanceMeters ?? 0}m away)
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px] text-emerald-700">location_on</span>
+                Location Verified ({todayRecord.distanceMeters ?? 0}m away)
               </span>
             </div>
           </div>
@@ -219,9 +221,10 @@ export default function TodayAttendanceCard() {
                 type="button"
                 onClick={() => handleAutoCheckIn(centerConfig.latitude, centerConfig.longitude)}
                 disabled={verifying}
-                className="bg-surface-container-low text-secondary border border-outline-variant/30 font-headings font-bold px-4 py-2.5 rounded-full text-xs hover:bg-surface-container transition-colors cursor-pointer"
+                className="bg-surface-container-low text-secondary border border-outline-variant/30 font-headings font-medium px-4 py-2.5 rounded-full text-xs hover:bg-surface-container transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                ⚡ Auto Check-in at {assignedCenter} (GPS Verified)
+                <span className="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
+                Check-in at {assignedCenter} (GPS Verified)
               </button>
             )}
           </div>

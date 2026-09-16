@@ -44,8 +44,9 @@ export default function FacultyLeaveApprovals() {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-headings font-bold text-[10px] uppercase tracking-wider border border-emerald-200">
-            👑 Head of Department (HOD) Approval Power
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-headings font-bold text-[10px] uppercase tracking-wider border border-emerald-200 inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px] text-emerald-700">admin_panel_settings</span>
+            Head of Department (HOD) Approval Power
           </span>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary mt-2 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">event_available</span>

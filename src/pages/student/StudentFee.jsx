@@ -186,7 +186,7 @@ export default function StudentFee() {
             Current Status
           </p>
           <h3 className={`font-headings font-extrabold text-2xl mt-2 ${isFullyPaid ? 'text-emerald-700' : 'text-amber-700'}`}>
-            {isFullyPaid ? 'Fully Paid ✓' : `Due: ${currentDueMonth}`}
+            {isFullyPaid ? 'Fully Paid' : `Due: ${currentDueMonth}`}
           </h3>
           <p className="text-[10px] text-on-surface-variant font-semibold mt-1">
             {isFullyPaid ? 'Zero Balance Outstanding' : 'Payable Online'}
@@ -229,8 +229,9 @@ export default function StudentFee() {
                       {p.receiptNumber}
                     </span>
                     {p.paymentMode?.includes('Razorpay') && (
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800 font-bold border border-blue-200">
-                        ⚡ Razorpay Online
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-blue-50 text-blue-800 font-medium border border-blue-200 inline-flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px] text-blue-600">bolt</span>
+                        Razorpay Online
                       </span>
                     )}
                   </div>
@@ -246,8 +247,9 @@ export default function StudentFee() {
                     </p>
                   )}
                 </div>
-                <span className="px-3.5 py-1 bg-emerald-100 text-emerald-800 font-headings font-bold text-xs rounded-full self-start sm:self-auto">
-                  Verified Paid ✓
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium text-xs rounded-full self-start sm:self-auto inline-flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px] text-emerald-700">check_circle</span>
+                  Verified Paid
                 </span>
               </div>
             ))}

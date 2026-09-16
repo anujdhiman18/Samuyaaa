@@ -731,7 +731,7 @@ export default function StudentManagement() {
                                 : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                             }`}
                           >
-                            {app.status === 'Approved' ? '🟢 Approved' : app.status === 'Rejected' ? '🔴 Rejected' : (app.status === 'Interview' || app.status === 'Entrance Exam cum Interview') ? '🟠 Interview Scheduled' : app.status}
+                            {app.status === 'Approved' ? 'Approved' : app.status === 'Rejected' ? 'Rejected' : (app.status === 'Interview' || app.status === 'Entrance Exam cum Interview') ? 'Interview Scheduled' : app.status}
                           </span>
                         </td>
                         <td className="p-4 text-on-surface-variant">

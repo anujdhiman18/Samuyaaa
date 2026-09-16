@@ -643,8 +643,9 @@ export default function FacultyApplicationForm({
           </div>
 
           {!isApproved && (
-            <p className="text-[11px] text-on-surface-variant/70 italic">
-              ✏️ You can edit and update your application details anytime until final Admin approval.
+            <p className="text-[11px] text-on-surface-variant/70 flex items-center justify-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px]">edit_note</span>
+              Application details may be modified prior to final administrative approval.
             </p>
           )}
         </div>

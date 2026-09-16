@@ -9,7 +9,7 @@ export default function Footer() {
     event.preventDefault();
     setMessage('Adding to mailing list...');
     setTimeout(() => {
-      setMessage('✓ Successfully joined Saumyaa Newsletter!');
+      setMessage('Thank you for subscribing to Saumyaa updates.');
       setEmail('');
       setTimeout(() => setMessage(''), 3000);
     }, 1000);

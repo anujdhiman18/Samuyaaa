@@ -256,10 +256,10 @@ export default function ProfileChangeRequests() {
                       {req.status === 'Approved' ? 'check_circle' : req.status === 'Rejected' ? 'cancel' : 'schedule'}
                     </span>
                     {req.status === 'Approved'
-                      ? '🟢 Approved'
+                      ? 'Approved'
                       : req.status === 'Rejected'
-                      ? '🔴 Rejected'
-                      : '🟡 Pending Approval'}
+                      ? 'Rejected'
+                      : 'Pending Approval'}
                   </span>
 
                   {/* Actions for Pending Requests */}

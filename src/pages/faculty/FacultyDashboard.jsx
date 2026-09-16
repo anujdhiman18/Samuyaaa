@@ -123,8 +123,8 @@ export default function FacultyDashboard() {
               to="/faculty/assignments"
               className="p-5 bg-white rounded-2xl shadow-premium border border-outline-variant/15 hover:shadow-xl transition-all space-y-2 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                🎓
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-[20px]">assignment</span>
               </div>
               <h4 className="font-headings font-bold text-sm text-secondary group-hover:text-primary transition-colors">
                 Assignments &amp; Quizzes
@@ -138,8 +138,8 @@ export default function FacultyDashboard() {
               to="/faculty/lesson-plans"
               className="p-5 bg-white rounded-2xl shadow-premium border border-outline-variant/15 hover:shadow-xl transition-all space-y-2 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                ⭐
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-[20px]">verified</span>
               </div>
               <h4 className="font-headings font-bold text-sm text-secondary group-hover:text-primary transition-colors">
                 Lesson Plan Approvals
@@ -153,8 +153,8 @@ export default function FacultyDashboard() {
               to="/faculty/department-analytics"
               className="p-5 bg-white rounded-2xl shadow-premium border border-outline-variant/15 hover:shadow-xl transition-all space-y-2 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                👑
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-[20px]">monitoring</span>
               </div>
               <h4 className="font-headings font-bold text-sm text-secondary group-hover:text-primary transition-colors">
                 Department Analytics
@@ -168,8 +168,8 @@ export default function FacultyDashboard() {
               to="/faculty/academic-calendar"
               className="p-5 bg-white rounded-2xl shadow-premium border border-outline-variant/15 hover:shadow-xl transition-all space-y-2 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-                ⚡
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-[20px]">event_note</span>
               </div>
               <h4 className="font-headings font-bold text-sm text-secondary group-hover:text-primary transition-colors">
                 Academic Calendar

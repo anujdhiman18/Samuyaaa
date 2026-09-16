@@ -21,11 +21,12 @@ export default function FacultyTopbar({ onToggleMobile }) {
         >
           <span className="material-symbols-outlined text-[22px]">menu</span>
         </button>
-        <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-secondary">
+        <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-secondary">
           <span>Academic Year 2026-2027</span>
           <span>&bull;</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${isChildBranch ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
-            🏢 {branchLabel}
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium border bg-slate-50 text-secondary border-slate-200 inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px] text-on-surface-variant">domain</span>
+            {branchLabel}
           </span>
         </div>
       </div>
@@ -67,8 +68,9 @@ export default function FacultyTopbar({ onToggleMobile }) {
                   <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold">
                     {user?.designation || 'Faculty Member'}
                   </span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${isChildBranch ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
-                    🏢 {branchLabel}
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-slate-50 text-secondary border-slate-200 inline-flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px] text-on-surface-variant">domain</span>
+                    {branchLabel}
                   </span>
                 </div>
               </div>

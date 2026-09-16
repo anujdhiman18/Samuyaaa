@@ -187,10 +187,10 @@ export default function Testimonials() {
                 <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col justify-between h-80 hover:shadow-premium-hover hover:-translate-y-1 transition-all duration-300">
                   <div>
                     {/* Fixed Star Rating Display */}
-                    <div className="flex text-amber-500 gap-1 mb-4 text-base">
+                    <div className="flex text-amber-500 gap-0.5 mb-4">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <span key={i} className={i < (t.stars || 5) ? 'text-amber-500 font-bold' : 'text-slate-300'}>
-                          ★
+                        <span key={i} className={`material-symbols-outlined text-[16px] ${i < (t.stars || 5) ? 'text-amber-500 fill-current' : 'text-slate-200'}`}>
+                          star
                         </span>
                       ))}
                     </div>
@@ -300,11 +300,11 @@ export default function Testimonials() {
                       key={starVal}
                       type="button"
                       onClick={() => setStars(starVal)}
-                      className={`text-2xl transition-transform ${
-                        starVal <= stars ? 'text-amber-500 scale-110' : 'text-slate-300'
+                      className={`p-0.5 transition-transform ${
+                        starVal <= stars ? 'text-amber-500 scale-105' : 'text-slate-300 hover:text-amber-300'
                       }`}
                     >
-                      ★
+                      <span className="material-symbols-outlined text-[22px]">star</span>
                     </button>
                   ))}
                   <span className="text-xs font-bold text-secondary ml-2">

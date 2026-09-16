@@ -219,8 +219,9 @@ export default function FacultyStudents() {
               </div>
             </div>
 
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 font-medium">
-              ℹ️ Faculty RBAC Notice: Admission updates and student record deletions are restricted to Admin level permissions.
+            <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/60 text-[11px] text-amber-900 font-normal flex items-start gap-1.5">
+              <span className="material-symbols-outlined text-[15px] text-amber-700 flex-shrink-0 mt-0.5">info</span>
+              <span>Faculty Access Notice: Admission updates and student record modifications are managed through administrative controls.</span>
             </div>
 
             <div className="pt-2 flex justify-end">

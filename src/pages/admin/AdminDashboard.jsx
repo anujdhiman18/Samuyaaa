@@ -265,8 +265,8 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
-                    ✓
+                  <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-xs">
+                    <span className="material-symbols-outlined text-[16px]">check</span>
                   </span>
                   <div>
                     <p className="text-xs font-bold text-on-surface">Paid Fees</p>
@@ -278,8 +278,8 @@ export default function AdminDashboard() {
 
               <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/15 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-bold text-xs">
-                    !
+                  <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center font-bold text-xs">
+                    <span className="material-symbols-outlined text-[16px]">priority_high</span>
                   </span>
                   <div>
                     <p className="text-xs font-bold text-on-surface">Overdue / Pending</p>

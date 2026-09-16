@@ -91,23 +91,23 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
   const getStatusMessage = (status) => {
     switch (status) {
       case 'Shortlisted':
-        return '🎉 Congratulations! Your application has been Shortlisted. The Admin/Management is scheduling your Interview slot.';
+        return 'Your application has been shortlisted. The admissions and faculty committee is currently scheduling your interview session.';
       case 'Interview':
       case 'Interview Scheduled':
       case 'Entrance Exam cum Interview':
       case 'Exam Scheduled':
-        return '📅 Your Interview has been scheduled by Admin/Management! Please review the allocated date, time, and venue below.';
+        return 'Your interview schedule has been finalized. Please review the confirmed date, time, and venue details below.';
       case 'Final Selection':
-        return '🌟 You have cleared the evaluation rounds! Your dossier is in Final Selection review with the Board of Directors.';
+        return 'Evaluation rounds completed. Your dossier is under final review with the Board of Directors.';
       case 'Approved':
       case 'Selected':
-        return '🌟 Congratulations! Your application has been Approved & Selected. Welcome to the Saumyaa Studies faculty team! Check your email for onboarding details.';
+        return 'Your faculty application has been approved and selected. Onboarding details will be communicated via your registered email address.';
       case 'Rejected':
         return 'Thank you for your interest in joining Saumyaa Studies. After review, we are unable to proceed with your application at this time. We wish you success in your future endeavors.';
       case 'Under Review':
-        return '⏳ Your application is currently under initial screening by our academic head and evaluation committee.';
+        return 'Your application is currently under review by our academic evaluation committee.';
       default:
-        return '📋 Your application has been received and is pending initial screening.';
+        return 'Your application has been received and is queued for initial screening.';
     }
   };
 

@@ -219,12 +219,14 @@ export default function RoleManagement() {
                   </span>
 
                   {role.isSystem ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container font-mono font-bold text-[10px] text-on-surface-variant">
-                      🔒 System Default
+                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container font-medium text-[10px] text-on-surface-variant inline-flex items-center gap-1 border border-outline-variant/20">
+                      <span className="material-symbols-outlined text-[12px]">lock</span>
+                      System Default
                     </span>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-mono font-bold text-[10px] border border-emerald-200">
-                      ⚡ Custom Role
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-medium text-[10px] border border-emerald-200 inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px] text-emerald-600">tune</span>
+                      Custom Role
                     </span>
                   )}
                 </div>

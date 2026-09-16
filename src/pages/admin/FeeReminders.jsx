@@ -258,7 +258,7 @@ function FeeRemindersContent() {
   const handleSendWhatsAppAPI = async (student) => {
     const cleanPhone = String(student.phone).replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 10) {
-      addToast(`❌ Cannot send WhatsApp: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits!`, 'error');
+      addToast(`Cannot send WhatsApp: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits.`, 'error');
       return;
     }
 
@@ -285,7 +285,7 @@ function FeeRemindersContent() {
   const handleSendSMSAPI = async (student) => {
     const cleanPhone = String(student.phone).replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 10) {
-      addToast(`❌ Cannot send SMS: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits!`, 'error');
+      addToast(`Cannot send SMS: Phone number "${student.phone}" for ${student.fullName} must have at least 10 digits.`, 'error');
       return;
     }
 
@@ -355,7 +355,7 @@ function FeeRemindersContent() {
     setReminderLogs(reminderService.getLogs());
 
     if (failCount === 0) {
-      addToast(`🚀 Bulk WhatsApp reminders complete! Sent: ${successCount}, Failed: 0`, 'success', 6000);
+      addToast(`Bulk WhatsApp reminders complete. Sent: ${successCount}, Failed: 0`, 'success', 6000);
     } else {
       addToast(
         `Bulk Reminders Summary — Sent: ${successCount}, Failed: ${failCount} [${failures.join(', ')}]`,
@@ -595,11 +595,11 @@ function FeeRemindersContent() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              <option value="pending">⚠️ Pending Dues Only ({stats.unpaidCount})</option>
+              <option value="pending">Pending Dues Only ({stats.unpaidCount})</option>
               <option value="all">All Students ({stats.totalStudents})</option>
-              <option value="unpaid">🔴 Unpaid Only ({stats.unpaidCount - stats.partiallyPaidCount})</option>
-              <option value="partially_paid">🟡 Partially Paid Only ({stats.partiallyPaidCount})</option>
-              <option value="paid">🟢 Paid Only ({stats.paidCount})</option>
+              <option value="unpaid">Unpaid Only ({stats.unpaidCount - stats.partiallyPaidCount})</option>
+              <option value="partially_paid">Partially Paid Only ({stats.partiallyPaidCount})</option>
+              <option value="paid">Paid Only ({stats.paidCount})</option>
             </select>
           </div>
 
@@ -628,9 +628,9 @@ function FeeRemindersContent() {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none"
             >
-              <option value="due_desc">Highest Dues First ⬇</option>
-              <option value="due_date_asc">Earliest Due Date 📅</option>
-              <option value="name_asc">Student Name A-Z 🔤</option>
+              <option value="due_desc">Highest Dues First</option>
+              <option value="due_date_asc">Earliest Due Date</option>
+              <option value="name_asc">Student Name (A-Z)</option>
             </select>
           </div>
         </div>
@@ -726,18 +726,21 @@ function FeeRemindersContent() {
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isPaid && (
-                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1 shadow-xs">
-                            🟢 Paid
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            Paid
                           </span>
                         )}
                         {isPartial && (
-                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1 shadow-xs">
-                            🟡 Partially Paid
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                            Partially Paid
                           </span>
                         )}
                         {!isPaid && !isPartial && (
-                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1 shadow-xs">
-                            🔴 Unpaid
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                            Unpaid
                           </span>
                         )}
                       </td>

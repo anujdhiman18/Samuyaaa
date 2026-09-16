@@ -917,8 +917,9 @@ export default function FacultyManagement() {
                                   </span>
                                 );
                               })}
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${normalizeBranchId(member.branchId || member.branch) === 'BRANCH' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-100 text-blue-900 border-blue-300'}`}>
-                                🏢 {getBranchLabel(member.branchId || member.branch)}
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-medium border inline-flex items-center gap-1 ${normalizeBranchId(member.branchId || member.branch) === 'BRANCH' ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-blue-50 text-blue-900 border-blue-200'}`}>
+                                <span className="material-symbols-outlined text-[11px]">domain</span>
+                                {getBranchLabel(member.branchId || member.branch)}
                               </span>
                             </div>
                           </div>
@@ -1344,8 +1345,9 @@ export default function FacultyManagement() {
                               <span className="block font-medium text-secondary text-[11px]">
                                 {l.department || 'Science & Mathematics'}
                               </span>
-                              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-md font-bold text-[10px] ${(l.branch || 'Main Center') === 'Branch' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-blue-100 text-blue-900 border border-blue-300'}`}>
-                                🏢 {l.branch || 'Main Center'}
+                              <span className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md font-medium text-[10px] ${(l.branch || 'Main Center') === 'Branch' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-blue-50 text-blue-900 border border-blue-200'}`}>
+                                <span className="material-symbols-outlined text-[11px]">domain</span>
+                                {l.branch || 'Main Center'}
                               </span>
                             </div>
                           </td>
@@ -1363,8 +1365,8 @@ export default function FacultyManagement() {
                             </span>
                           </td>
                           <td className="py-3 px-4 max-w-xs">
-                            <div className="p-2 rounded-xl bg-amber-50/80 border border-amber-200/60 text-secondary font-medium text-xs truncate">
-                              💬 "{l.reason || l.message || 'No reason specified'}"
+                            <div className="p-2 rounded-xl bg-surface-container-low border border-outline-variant/15 text-secondary font-medium text-xs truncate">
+                              "{l.reason || l.message || 'No reason specified'}"
                             </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
@@ -1384,11 +1386,20 @@ export default function FacultyManagement() {
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
                             {l.status === 'Approved' ? (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">🟢 Approved</span>
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                Approved
+                              </span>
                             ) : l.status === 'Rejected' ? (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">🔴 Rejected</span>
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200 inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                Rejected
+                              </span>
                             ) : (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">🟡 Pending Approval</span>
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                Pending Approval
+                              </span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -1431,7 +1442,10 @@ export default function FacultyManagement() {
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Department & Location</span>
                 <span className="font-bold text-secondary">{selectedLeaveApp.department || 'Science & Mathematics'}</span>
-                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Main Center'}</span>
+                <span className="flex items-center gap-1 text-[11px] font-medium text-secondary mt-0.5">
+                  <span className="material-symbols-outlined text-[12px]">domain</span>
+                  {selectedLeaveApp.branch || 'Main Center'}
+                </span>
               </div>
             </div>
 
@@ -2226,12 +2240,13 @@ export default function FacultyManagement() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsBulkMode(true)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                      onClick={() => setIsBulkMode((prev) => !prev)}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1 ${
                         isBulkMode ? 'bg-primary text-white shadow-sm' : 'bg-surface-container text-on-surface-variant'
                       }`}
                     >
-                      ⚡ Bulk Multi-Class Mode
+                      <span className="material-symbols-outlined text-[14px]">library_add</span>
+                      Bulk Multi-Class Mode
                     </button>
                   </div>
                 </div>
@@ -2519,8 +2534,9 @@ export default function FacultyManagement() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
-                      🏢 Main Center (Bagru)
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-900 border border-blue-200 inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">domain</span>
+                      Main Center (Bagru)
                     </span>
                     <input
                       type="radio"
@@ -2542,8 +2558,9 @@ export default function FacultyManagement() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      🏢 Branch (Daroh)
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-900 border border-amber-200 inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">domain</span>
+                      Branch (Daroh)
                     </span>
                     <input
                       type="radio"

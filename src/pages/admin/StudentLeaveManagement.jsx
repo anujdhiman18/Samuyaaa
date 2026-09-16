@@ -163,9 +163,9 @@ export default function StudentLeaveManagement() {
                 className="w-full px-3 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-bold text-secondary focus:outline-none cursor-pointer"
               >
                 <option value="All">All Statuses</option>
-                <option value="Pending">🟡 Pending</option>
-                <option value="Approved">🟢 Approved</option>
-                <option value="Rejected">🔴 Rejected</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
               </select>
             </div>
 
@@ -251,7 +251,10 @@ export default function StudentLeaveManagement() {
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="font-bold text-secondary block">{formatClassLabel(l.className)}</span>
-                      <span className="text-[11px] font-semibold text-on-surface-variant">🏢 {l.branch || 'Main Center'}</span>
+                      <span className="text-[11px] font-medium text-on-surface-variant flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">domain</span>
+                        {l.branch || 'Main Center'}
+                      </span>
                     </td>
                     <td className="py-3 px-4 font-bold text-purple-800 whitespace-nowrap">{l.leaveType || 'Sick Leave'}</td>
                     <td className="py-3 px-4 whitespace-nowrap">
@@ -278,13 +281,22 @@ export default function StudentLeaveManagement() {
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {l.status === 'Approved' && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 Approved</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                          Approved
+                        </span>
                       )}
                       {l.status === 'Pending' && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">🟡 Pending</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                          Pending
+                        </span>
                       )}
                       {l.status === 'Rejected' && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">🔴 Rejected</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200 inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                          Rejected
+                        </span>
                       )}
                     </td>
                     <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -324,7 +336,10 @@ export default function StudentLeaveManagement() {
               <div>
                 <span className="text-[11px] text-on-surface-variant block">Class &amp; Location</span>
                 <span className="font-bold text-secondary">{formatClassLabel(selectedLeaveApp.className)}</span>
-                <span className="block text-[11px] font-semibold text-secondary">🏢 {selectedLeaveApp.branch || 'Main Center'}</span>
+                <span className="flex items-center gap-1 text-[11px] font-medium text-secondary mt-0.5">
+                  <span className="material-symbols-outlined text-[13px]">domain</span>
+                  {selectedLeaveApp.branch || 'Main Center'}
+                </span>
               </div>
             </div>
 

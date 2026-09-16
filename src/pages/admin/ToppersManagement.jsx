@@ -247,8 +247,9 @@ export default function ToppersManagement() {
                       <p className="font-semibold text-on-surface">{t.exam_name}</p>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-headings font-extrabold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full text-[11px] border border-amber-200">
-                        🏆 {t.score}
+                      <span className="font-headings font-medium text-amber-900 bg-amber-50 px-2.5 py-1 rounded-full text-[11px] border border-amber-200/80 inline-flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-amber-700">workspace_premium</span>
+                        {t.score}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 max-w-xs">

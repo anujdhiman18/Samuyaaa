@@ -87,10 +87,11 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
             </div>
 
             {/* Assigned Branch Badge */}
-            <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border self-start shadow-xs">
-              <span className={`w-1.5 h-1.5 rounded-full ${isChildBranch ? 'bg-amber-500' : 'bg-blue-500'}`} />
-              <span className={isChildBranch ? 'text-amber-900 font-bold' : 'text-blue-900 font-bold'}>
-                🏢 {branchLabel}
+            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium border self-start shadow-xs bg-slate-50 border-slate-200">
+              <span className={`w-1.5 h-1.5 rounded-full ${isChildBranch ? 'bg-amber-500' : 'bg-primary'}`} />
+              <span className="text-secondary flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px] text-on-surface-variant">domain</span>
+                {branchLabel}
               </span>
             </div>
           </div>

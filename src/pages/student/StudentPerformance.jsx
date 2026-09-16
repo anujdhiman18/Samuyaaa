@@ -21,7 +21,11 @@ export default function StudentPerformance() {
               Overall Academic Rating
             </span>
             <h2 className="font-headings font-extrabold text-5xl mt-4">4.9 / 5.0</h2>
-            <div className="flex text-amber-300 text-lg mt-2">★★★★★</div>
+            <div className="flex text-amber-300 gap-0.5 mt-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} className="material-symbols-outlined text-[18px]">star</span>
+              ))}
+            </div>
             <p className="text-xs text-orange-100 mt-4 leading-relaxed font-body">
               Consistently exceptional performance across Mathematics &amp; Sciences with strong analytical problem-solving skills.
             </p>

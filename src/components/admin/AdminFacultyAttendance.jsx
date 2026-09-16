@@ -214,8 +214,8 @@ export default function AdminFacultyAttendance() {
             <h3 className="font-headings font-extrabold text-2xl text-secondary mt-1">{totalCheckedIn} Checked In</h3>
             <p className="text-[10px] text-on-surface-variant mt-0.5">GPS verified auto check-ins</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
-            👥
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">groups</span>
           </div>
         </div>
 
@@ -225,8 +225,8 @@ export default function AdminFacultyAttendance() {
             <h3 className="font-headings font-extrabold text-2xl text-emerald-700 mt-1">{earlyCount} Faculty</h3>
             <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">Arrived before reporting time</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-            🌅
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">wb_twilight</span>
           </div>
         </div>
 
@@ -236,8 +236,8 @@ export default function AdminFacultyAttendance() {
             <h3 className="font-headings font-extrabold text-2xl text-blue-700 mt-1">{onTimeCount} Faculty</h3>
             <p className="text-[10px] text-blue-700 font-semibold mt-0.5">Within grace period</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
-            ⏰
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">schedule</span>
           </div>
         </div>
 
@@ -247,8 +247,8 @@ export default function AdminFacultyAttendance() {
             <h3 className="font-headings font-extrabold text-2xl text-amber-700 mt-1">{lateCount} Faculty</h3>
             <p className="text-[10px] text-amber-700 font-semibold mt-0.5">Exceeded grace period</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-            ⚠️
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">warning</span>
           </div>
         </div>
       </div>
@@ -402,9 +402,9 @@ export default function AdminFacultyAttendance() {
               className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary"
             >
               <option value="All">All Statuses</option>
-              <option value="EARLY">🟢 EARLY</option>
-              <option value="ON_TIME">🔵 ON TIME</option>
-              <option value="LATE">🟡 LATE</option>
+              <option value="EARLY">Early</option>
+              <option value="ON_TIME">On Time</option>
+              <option value="LATE">Late</option>
             </select>
           </div>
 
@@ -462,18 +462,21 @@ export default function AdminFacultyAttendance() {
                     </td>
                     <td className="py-3 px-4">
                       {r.status === 'EARLY' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[11px]">
-                          ● EARLY
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium text-[11px] inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                          Early
                         </span>
                       )}
                       {r.status === 'ON_TIME' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 font-extrabold text-[11px]">
-                          ● ON TIME
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-medium text-[11px] inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                          On Time
                         </span>
                       )}
                       {r.status === 'LATE' && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[11px]">
-                          ● LATE
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[11px] inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                          Late
                         </span>
                       )}
                     </td>
@@ -481,7 +484,7 @@ export default function AdminFacultyAttendance() {
                       {r.lateByMinutes > 0 ? `${r.lateByMinutes} mins` : '-'}
                     </td>
                     <td className="py-3 px-4 font-mono text-emerald-800">
-                      {r.distanceMeters ?? 0}m (Verified ✓)
+                      {r.distanceMeters ?? 0}m (Verified)
                     </td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold text-[10px]">
@@ -618,9 +621,9 @@ export default function AdminFacultyAttendance() {
                   onChange={(e) => setCorrectionForm({ ...correctionForm, status: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold"
                 >
-                  <option value="EARLY">🟢 EARLY</option>
-                  <option value="ON_TIME">🔵 ON TIME</option>
-                  <option value="LATE">🟡 LATE</option>
+                  <option value="EARLY">Early</option>
+                  <option value="ON_TIME">On Time</option>
+                  <option value="LATE">Late</option>
                 </select>
               </div>
 

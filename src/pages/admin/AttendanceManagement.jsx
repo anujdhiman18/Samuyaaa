@@ -303,33 +303,36 @@ export default function AttendanceManagement() {
         <div className="flex flex-wrap items-center bg-surface-container-low p-1.5 rounded-full border border-outline-variant/15 self-start md:self-auto gap-1">
           <button
             onClick={() => setActiveTab('register')}
-            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all inline-flex items-center gap-1.5 ${
               activeTab === 'register'
                 ? 'bg-primary text-white shadow-premium'
                 : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            📋 Student Register
+            <span className="material-symbols-outlined text-[16px]">checklist</span>
+            Student Register
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all inline-flex items-center gap-1.5 ${
               activeTab === 'logs'
                 ? 'bg-primary text-white shadow-premium'
                 : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            📜 Student Logs ({existingRecords.length})
+            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+            Student Logs ({existingRecords.length})
           </button>
           <button
             onClick={() => setActiveTab('faculty_gps')}
-            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all ${
+            className={`px-4 py-2 rounded-full font-headings font-bold text-xs transition-all inline-flex items-center gap-1.5 ${
               activeTab === 'faculty_gps'
                 ? 'bg-primary text-white shadow-premium'
                 : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            📍 Faculty GPS &amp; Geofencing
+            <span className="material-symbols-outlined text-[16px]">location_on</span>
+            Faculty GPS &amp; Geofencing
           </button>
         </div>
       </div>
@@ -388,13 +391,13 @@ export default function AttendanceManagement() {
               </span>
               <span className="text-[10px] text-on-surface-variant">
                 {isSavedForSelectedDate ? (
-                  <span className="text-emerald-700 font-bold flex items-center gap-1 justify-end">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                    Attendance Saved ✓
+                  <span className="text-emerald-700 font-medium flex items-center gap-1.5 justify-end">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block"></span>
+                    Attendance Saved
                   </span>
                 ) : (
-                  <span className="text-amber-700 font-bold flex items-center gap-1 justify-end">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                  <span className="text-amber-700 font-medium flex items-center gap-1.5 justify-end">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block"></span>
                     Unsaved / Draft Sheet
                   </span>
                 )}
