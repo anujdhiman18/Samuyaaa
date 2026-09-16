@@ -147,327 +147,7 @@ export const initialMockStudents = [
   },
 ];
 
-const initialMockSubjects = [
-  // --- Category S1: Primary Wing (Nursery to 5th) ---
-  {
-    _id: 'sub_s1_1',
-    name: 'Foundational Mathematics & Mental Math',
-    category: 'Foundation',
-    className: 'Class S1',
-    description: 'Basic number sense, rapid mental arithmetic, pattern recognition, and geometric shapes.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '4:00 PM – 5:15 PM',
-    totalEnrolled: 16,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s1_2',
-    name: 'English Phonics, Reading & Communication',
-    category: 'Early Learner',
-    className: 'Class S1',
-    description: 'Phonetics, vocabulary building, interactive storytelling, and handwriting confidence.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '3:00 PM – 4:15 PM',
-    totalEnrolled: 15,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s1_3',
-    name: 'Environmental Studies (EVS) & Young Science',
-    category: 'Foundation',
-    className: 'Class S1',
-    description: 'Nature exploration, human body, ecosystem awareness, and hands-on mini experiments.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '5:15 PM – 6:30 PM',
-    totalEnrolled: 14,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s1_4',
-    name: 'Hindi & Regional Language Literacy',
-    category: 'Foundation',
-    className: 'Class S1',
-    description: 'Varnamala, matra practice, conversational fluency, and creative writing basics.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '2:00 PM – 3:15 PM',
-    totalEnrolled: 12,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s1_5',
-    name: 'Creative Thinking & Junior Coding Basics',
-    category: 'Skill Track',
-    className: 'Class S1',
-    description: 'Visual block-based logic, puzzle solving, creative design, and digital literacy.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '5:30 PM – 6:45 PM',
-    totalEnrolled: 10,
-    maxCapacity: 20,
-    isActive: true,
-  },
-
-  // --- Category S2: Middle & High School (6th to 10th) ---
-  {
-    _id: 'sub_s2_1',
-    name: 'Mathematics Foundation',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Core algebra, geometry, trigonometry, and arithmetic with step-by-step problem-solving.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '4:00 PM – 5:30 PM',
-    totalEnrolled: 20,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_2',
-    name: 'Mathematics Olympiad & Advanced',
-    category: 'Olympiad',
-    className: 'Class S2',
-    description: 'Mathematical Olympiad training, NTSE prep, logic puzzles, and high-speed problem solving.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '3:00 PM – 4:30 PM',
-    totalEnrolled: 10,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_3',
-    name: 'Physics Foundation & Experimentation',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Mechanics, light, electricity, motion, and physical phenomena experimentation for middle school.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '4:30 PM – 6:00 PM',
-    totalEnrolled: 12,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_4',
-    name: 'Chemistry Fundamentals & Reactions',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Atomic structure, periodic table, chemical bonding, and practical lab formulas.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '3:30 PM – 5:00 PM',
-    totalEnrolled: 18,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_5',
-    name: 'Biology & Life Science Principles',
-    category: 'Foundation',
-    className: 'Class S2',
-    description: 'Cell biology, human physiology, genetics, and plant life processes.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '2:00 PM – 3:30 PM',
-    totalEnrolled: 12,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_6',
-    name: 'English Language & Literary Analysis',
-    category: 'Board Prep',
-    className: 'Class S2',
-    description: 'Advanced grammar, comprehension, debate, essay composition, and classic literature.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '4:00 PM – 5:00 PM',
-    totalEnrolled: 17,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_7',
-    name: 'Social Science & Civics',
-    category: 'Board Prep',
-    className: 'Class S2',
-    description: 'Comprehensive historical analysis, geography, democratic politics, and board exam mastery.',
-    teacherName: 'Mrs. Sunita Sharma',
-    batchTime: '5:00 PM – 6:30 PM',
-    totalEnrolled: 15,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s2_8',
-    name: 'Computer Science & Python Coding',
-    category: 'Advanced',
-    className: 'Class S2',
-    description: 'Algorithmic thinking, Python programming, web essentials, and database basics.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:00 PM – 7:15 PM',
-    totalEnrolled: 14,
-    maxCapacity: 20,
-    isActive: true,
-  },
-
-  // --- Category S3: Senior Secondary & Entrance (11th to 12th) ---
-  {
-    _id: 'sub_s3_1',
-    name: 'Mathematics (Calculus & Vectors)',
-    category: 'Advanced',
-    className: 'Class S3',
-    description: 'Calculus, Algebra, and Geometry with problem-solving speed, numerical confidence, and conceptual depth.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '5:00 PM – 6:30 PM',
-    totalEnrolled: 18,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_2',
-    name: 'Mathematics IIT-JEE Entrance',
-    category: 'JEE',
-    className: 'Class S3',
-    description: 'Advanced engineering entrance preparation, coordinate geometry, and analytical problem sets.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:00 PM – 7:30 PM',
-    totalEnrolled: 14,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_3',
-    name: 'Physics IIT-JEE Prep',
-    category: 'JEE Prep',
-    className: 'Class S3',
-    description: 'Mechanics, Electromagnetism, and Modern Physics with step-by-step numerical analytics.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:30 PM – 8:00 PM',
-    totalEnrolled: 15,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_4',
-    name: 'Physics for NEET Medical',
-    category: 'NEET',
-    className: 'Class S3',
-    description: 'Targeted physics numericals, formula shortcuts, and conceptual clarity for medical aspirants.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '5:00 PM – 6:30 PM',
-    totalEnrolled: 16,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_5',
-    name: 'Chemistry for IIT-JEE',
-    category: 'JEE',
-    className: 'Class S3',
-    description: 'Organic reaction mechanisms, chemical kinetics, thermodynamics, and inorganic coordination.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '4:00 PM – 5:30 PM',
-    totalEnrolled: 14,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_6',
-    name: 'Chemistry for NEET Medical',
-    category: 'NEET',
-    className: 'Class S3',
-    description: 'Organic & Inorganic Chemistry high-yield question patterns for NEET medical entrance examinations.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '5:30 PM – 7:00 PM',
-    totalEnrolled: 13,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_7',
-    name: 'Biology for NEET Medical',
-    category: 'NEET',
-    className: 'Class S3',
-    description: 'Higher level Botany, Zoology, Human Anatomy, genetics, and NCERT-focused NEET biology prep.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '3:30 PM – 5:00 PM',
-    totalEnrolled: 16,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s3_8',
-    name: 'Computer Science (Python & SQL)',
-    category: 'Advanced',
-    className: 'Class S3',
-    description: 'Data structures, object-oriented programming, MySQL queries, and computer networking.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:00 PM – 7:30 PM',
-    totalEnrolled: 12,
-    maxCapacity: 20,
-    isActive: true,
-  },
-
-  // --- Category S4: Higher Education ---
-  {
-    _id: 'sub_s4_1',
-    name: 'Higher Engineering Mathematics',
-    category: 'Undergraduate',
-    className: 'Class S4',
-    description: 'Differential equations, linear algebra, Laplace transforms, and complex variables.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '7:00 PM – 8:30 PM',
-    totalEnrolled: 14,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s4_2',
-    name: 'Applied Physics & Mechanics',
-    category: 'Undergraduate',
-    className: 'Class S4',
-    description: 'Quantum mechanics, solid state physics, electromagnetic theory, and mathematical physics.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:00 PM – 7:30 PM',
-    totalEnrolled: 12,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s4_3',
-    name: 'Advanced Chemical Sciences',
-    category: 'Undergraduate',
-    className: 'Class S4',
-    description: 'Spectroscopy, advanced organic synthesis, chemical kinetics, and physical chemistry research.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '4:30 PM – 6:00 PM',
-    totalEnrolled: 10,
-    maxCapacity: 20,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s4_4',
-    name: 'Data Science, Python & AI Foundations',
-    category: 'Skill & Tech',
-    className: 'Class S4',
-    description: 'Machine learning algorithms, Pandas, NumPy, model evaluation, and practical AI applications.',
-    teacherName: 'Jitender Sharma',
-    batchTime: '6:30 PM – 8:00 PM',
-    totalEnrolled: 22,
-    maxCapacity: 25,
-    isActive: true,
-  },
-  {
-    _id: 'sub_s4_5',
-    name: 'Competitive Exam Aptitude & Reasoning',
-    category: 'Entrance / Target',
-    className: 'Class S4',
-    description: 'Quantitative aptitude, data interpretation, verbal reasoning, and competitive test speed strategy.',
-    teacherName: 'Dr. Ramesh Verma',
-    batchTime: '5:00 PM – 6:30 PM',
-    totalEnrolled: 11,
-    maxCapacity: 20,
-    isActive: true,
-  },
-];
+export const initialMockSubjects = [];
 
 const initialMockPayments = [
   {
@@ -737,11 +417,10 @@ export const LEGACY_SUBJECT_RENAME_MAP = {
  * 1. Resolves duplicate entries with identical name + categoryCode + stream
  * 2. Renames legacy generic entries ('Mathematics', 'Physics', etc.) to distinctive titles
  * 3. Removes phantom duplicate legacy records (e.g. sub1_b2)
- * 4. Ensures all grade categories (S1, S2, S3, S4) have active subject offerings
  */
 export const deduplicateAndSanitizeSubjects = (rawList = []) => {
   if (!Array.isArray(rawList) || rawList.length === 0) {
-    return [...initialMockSubjects];
+    return [];
   }
 
   const seenKeys = new Set();
@@ -756,24 +435,11 @@ export const deduplicateAndSanitizeSubjects = (rawList = []) => {
 
     const catCode = normalizeClassCode(item.className || item.category || 'S2');
     let name = (item.name || '').trim();
+    if (!name) continue;
 
     // If item has a generic legacy name, upgrade it
     if (LEGACY_SUBJECT_RENAME_MAP[id] && ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English'].includes(name)) {
       name = LEGACY_SUBJECT_RENAME_MAP[id];
-    } else if (name === 'Mathematics' && (item.category === 'JEE' || item.category === 'JEE Prep')) {
-      name = 'Mathematics IIT-JEE Entrance';
-    } else if (name === 'Mathematics' && item.category === 'Advanced' && catCode === 'S3') {
-      name = 'Mathematics (Calculus & Vectors)';
-    } else if (name === 'Physics' && (item.category === 'JEE' || item.category === 'JEE Prep')) {
-      name = 'Physics IIT-JEE Prep';
-    } else if (name === 'Physics' && item.category === 'NEET') {
-      name = 'Physics for NEET Medical';
-    } else if (name === 'Chemistry' && (item.category === 'JEE' || item.category === 'JEE Prep')) {
-      name = 'Chemistry for IIT-JEE';
-    } else if (name === 'Chemistry' && item.category === 'NEET') {
-      name = 'Chemistry for NEET Medical';
-    } else if (name === 'Biology' && (item.category === 'NEET' || catCode === 'S3')) {
-      name = 'Biology for NEET Medical';
     }
 
     const category = item.category || 'Foundation';
@@ -781,7 +447,7 @@ export const deduplicateAndSanitizeSubjects = (rawList = []) => {
     const batchTime = item.batchTime || '5:00 PM – 6:30 PM';
 
     // Unique key based on normalized name + stage + stream + batchTime
-    const dedupeKey = `${name.toLowerCase()}__${catCode.toLowerCase()}__${category.toLowerCase()}`;
+    const dedupeKey = `${name.toLowerCase()}__${catCode.toLowerCase()}__${category.toLowerCase()}__${batchTime.toLowerCase()}`;
 
     if (seenKeys.has(dedupeKey)) {
       // Duplicate entry detected! Skip to prevent duplicate subjects in the catalog.
@@ -797,20 +463,10 @@ export const deduplicateAndSanitizeSubjects = (rawList = []) => {
       className,
       batchTime,
       teacherName: item.teacherName || 'Jitender Sharma',
-      description: item.description || 'Comprehensive conceptual coaching and board exam preparation.',
+      description: item.description || '',
       maxCapacity: Number(item.maxCapacity) || 20,
       isActive: item.isActive !== false,
     });
-  }
-
-  // Ensure all categories (S1, S2, S3, S4) have subject offerings
-  const existingCategories = new Set(result.map((s) => normalizeClassCode(s.className || s.category)));
-  for (const initSub of initialMockSubjects) {
-    const initCat = normalizeClassCode(initSub.className || initSub.category);
-    if (!existingCategories.has(initCat)) {
-      result.push({ ...initSub });
-      existingCategories.add(initCat);
-    }
   }
 
   return result;
@@ -822,7 +478,7 @@ export const deduplicateAndSanitizeSubjects = (rawList = []) => {
 export const calculateDynamicSubjectEnrollment = (subject, allStudents = null) => {
   if (!subject) return 0;
   const enrolledList = getEnrolledStudentsForSubject(subject, allStudents);
-  return enrolledList.length > 0 ? enrolledList.length : (Number(subject.totalEnrolled) || 12);
+  return enrolledList.length > 0 ? enrolledList.length : 0;
 };
 
 /**
@@ -883,31 +539,25 @@ export const getEnrolledStudentsForSubject = (subject, allStudents = null) => {
       }
     }
 
-    // If student has no specific subjects listed, count by stage default
-    return stSubjects.length === 0;
+    return false;
   });
 };
 
 export const getStoredSubjects = () => {
   try {
     const raw = localStorage.getItem('mock_subjects');
-    let list = raw ? JSON.parse(raw) : initialMockSubjects;
-    if (!Array.isArray(list) || list.length === 0) {
-      list = initialMockSubjects;
-    }
+    if (!raw) return [];
+    let list = JSON.parse(raw);
+    if (!Array.isArray(list)) return [];
     const sanitized = deduplicateAndSanitizeSubjects(list);
-    // If sanitized differs in length or content, persist back
-    if (!raw || sanitized.length !== list.length) {
-      localStorage.setItem('mock_subjects', JSON.stringify(sanitized));
-    }
     return sanitized;
   } catch (e) {
-    return initialMockSubjects;
+    return [];
   }
 };
 
 export const setStoredSubjects = (s, skipNotify = false) => {
-  const sanitized = deduplicateAndSanitizeSubjects(s);
+  const sanitized = deduplicateAndSanitizeSubjects(Array.isArray(s) ? s : []);
   localStorage.setItem('mock_subjects', JSON.stringify(sanitized));
   if (!skipNotify) notifyDataUpdate();
 };
@@ -2280,8 +1930,8 @@ export const subjectService = {
     const remote = await apiCall(`/subjects?${query}`);
     if (remote && remote.subjects) return remote;
 
-    const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
-    let rawList = fsSubjects || getStoredSubjects();
+    const fsSubjects = await syncFirestoreCollection('subjects', []);
+    let rawList = fsSubjects !== null && fsSubjects !== undefined ? fsSubjects : getStoredSubjects();
     let list = deduplicateAndSanitizeSubjects(rawList);
 
     if (params.includeInactive !== true && params.includeInactive !== 'true') {
@@ -2309,25 +1959,32 @@ export const subjectService = {
   },
 
   createSubject: async (data) => {
-    const newSubData = {
+    const id = 'sub_' + Date.now();
+    const newSubject = {
       ...data,
+      _id: id,
+      id,
       name: (data.name || '').trim(),
-      isActive: true,
+      category: data.category || 'Foundation',
+      className: data.className || `Class ${data.categoryCode || 'S2'}`,
+      teacherName: data.teacherName || 'Jitender Sharma',
+      batchTime: data.batchTime || '5:00 PM – 6:30 PM',
+      description: data.description || '',
       maxCapacity: Number(data.maxCapacity) || 20,
+      isActive: true,
+      createdAt: new Date().toISOString(),
     };
-    const remote = await apiCall('/subjects', { method: 'POST', body: JSON.stringify(newSubData) });
+
+    const remote = await apiCall('/subjects', { method: 'POST', body: JSON.stringify(newSubject) });
     if (remote && remote.success) {
       notifyDataUpdate();
       return remote;
     }
 
-    const id = 'sub_' + Date.now();
-    const newSubject = { ...newSubData, _id: id };
-
     try {
       await setDoc(doc(db, 'subjects', id), newSubject);
     } catch (fsErr) {
-      console.warn('Firestore setDoc subject error:', fsErr.message);
+      console.warn('Firestore setDoc subject warning:', fsErr.message);
     }
 
     const list = getStoredSubjects();
@@ -2346,7 +2003,7 @@ export const subjectService = {
     try {
       await setDoc(doc(db, 'subjects', String(id)), data, { merge: true });
     } catch (fsErr) {
-      console.warn('Firestore updateDoc subject error:', fsErr.message);
+      console.warn('Firestore updateDoc subject warning:', fsErr.message);
     }
 
     const list = getStoredSubjects();
@@ -2367,19 +2024,32 @@ export const subjectService = {
     }
 
     try {
-      await setDoc(doc(db, 'subjects', String(id)), { isActive: false }, { merge: true });
+      await deleteDoc(doc(db, 'subjects', String(id)));
     } catch (fsErr) {
-      console.warn('Firestore deleteDoc subject error:', fsErr.message);
+      console.warn('Firestore deleteDoc subject warning:', fsErr.message);
     }
 
-    const list = getStoredSubjects();
-    const idx = list.findIndex((s) => String(s._id || s.id) === String(id));
-    if (idx !== -1) {
-      list[idx].isActive = false;
-      setStoredSubjects(list);
-    }
+    const list = getStoredSubjects().filter((s) => String(s._id || s.id) !== String(id));
+    setStoredSubjects(list);
     notifyDataUpdate();
-    return { success: true, message: 'Subject deactivated successfully (soft-deleted)' };
+    return { success: true, message: 'Subject deleted from catalog' };
+  },
+
+  /**
+   * Clear all subjects from Firestore DB & local storage to start fresh
+   */
+  clearAllSubjects: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, 'subjects'));
+      const delPromises = snapshot.docs.map((d) => deleteDoc(d.ref));
+      await Promise.all(delPromises);
+    } catch (err) {
+      console.warn('Firestore clear all subjects warning:', err.message);
+    }
+
+    setStoredSubjects([]);
+    notifyDataUpdate();
+    return { success: true, message: 'All subject offerings cleared from catalog' };
   },
 
   /**
@@ -3407,7 +3077,7 @@ export const dashboardService = {
     const students = fsStudents || getStoredStudents();
     if (fsStudents) setStoredStudents(fsStudents, true);
 
-    const fsSubjects = await syncFirestoreCollection('subjects', initialMockSubjects);
+    const fsSubjects = await syncFirestoreCollection('subjects', []);
     const subjects = fsSubjects || getStoredSubjects();
 
     const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);

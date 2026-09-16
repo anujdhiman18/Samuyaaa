@@ -7,6 +7,7 @@ import {
   getStoredFaculty,
   calculateDynamicSubjectEnrollment,
   getEnrolledStudentsForSubject,
+  subscribeFirestoreCollection,
 } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -27,9 +28,22 @@ const initialSubjectForm = {
   className: 'Class S3',
   description: '',
   teacherName: 'Jitender Sharma',
-  batchTime: '6:00 PM – 7:30 PM',
+  batchTime: '5:00 PM – 6:30 PM',
   maxCapacity: 20,
 };
+
+const BATCH_TIME_PRESETS = [
+  '8:00 AM – 9:30 AM',
+  '10:00 AM – 11:30 AM',
+  '2:00 PM – 3:30 PM',
+  '3:30 PM – 5:00 PM',
+  '4:00 PM – 5:30 PM',
+  '5:00 PM – 6:30 PM',
+  '5:30 PM – 7:00 PM',
+  '6:00 PM – 7:30 PM',
+  '6:30 PM – 8:00 PM',
+  '7:00 PM – 8:30 PM',
+];
 
 export default function SubjectManagement() {
   const [subjects, setSubjects] = useState(() => {
@@ -55,7 +69,7 @@ export default function SubjectManagement() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [optimizing, setOptimizing] = useState(false);
+  const [customFacultyInput, setCustomFacultyInput] = useState(false);
 
   // Multi-Filter State
   const [selectedCategory, setSelectedCategory] = useState('All'); // 'All' | 'S1' | 'S2' | 'S3' | 'S4'
@@ -72,20 +86,44 @@ export default function SubjectManagement() {
   // Roster Modal State
   const [rosterSubject, setRosterSubject] = useState(null);
 
-  // Delete Confirm
+  // Delete Target Modal
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Clear All Modal
+  const [clearAllOpen, setClearAllOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const { addToast } = useToast();
 
   useEffect(() => {
     fetchData();
 
+    // Live Real-Time Subscriptions for Subjects, Students & Faculty
+    let unsubSubjects = null;
+    let unsubStudents = null;
+    let unsubFaculty = null;
+
+    try {
+      unsubSubjects = subscribeFirestoreCollection('subjects', [], (list) => {
+        if (Array.isArray(list)) setSubjects(list);
+      });
+      unsubStudents = subscribeFirestoreCollection('students', [], (list) => {
+        if (Array.isArray(list)) setStudents(list);
+      });
+      unsubFaculty = subscribeFirestoreCollection('faculty', [], (list) => {
+        if (Array.isArray(list)) setFacultyList(list);
+      });
+    } catch (e) {}
+
     const handleUpdate = () => fetchData(false);
     window.addEventListener('saumyaa_data_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
     return () => {
+      if (typeof unsubSubjects === 'function') unsubSubjects();
+      if (typeof unsubStudents === 'function') unsubStudents();
+      if (typeof unsubFaculty === 'function') unsubFaculty();
       window.removeEventListener('saumyaa_data_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
@@ -103,33 +141,28 @@ export default function SubjectManagement() {
       setStudents(getStoredStudents() || []);
       setFacultyList(getStoredFaculty() || []);
     } catch (err) {
-      addToast(err.message || 'Error fetching subjects', 'error');
       setSubjects(getStoredSubjects() || []);
     } finally {
       if (showLoader) setLoading(false);
     }
   };
 
-  // One-click deduplicate & optimize catalog
-  const handleDeduplicateCatalog = async () => {
-    setOptimizing(true);
+  // Clear All Subjects action to completely wipe existing mock data
+  const handleClearAllSubjects = async () => {
+    setClearing(true);
     try {
-      const res = await subjectService.deduplicateCatalog();
-      if (res && res.success) {
-        setSubjects(res.subjects);
-        addToast(`Catalog optimized! ${res.count} distinctive subject offerings verified and synchronized.`, 'success');
-      } else {
-        fetchData();
-        addToast('Subject catalog refreshed successfully.', 'info');
-      }
+      await subjectService.clearAllSubjects();
+      setSubjects([]);
+      setClearAllOpen(false);
+      addToast('All subjects cleared! You can now add your own real subject catalog.', 'success');
     } catch (err) {
-      addToast('Error optimizing catalog: ' + err.message, 'error');
+      addToast('Error clearing subjects: ' + err.message, 'error');
     } finally {
-      setOptimizing(false);
+      setClearing(false);
     }
   };
 
-  // Available unique streams across all current subjects
+  // Available unique streams across currently active subjects
   const availableStreamsList = useMemo(() => {
     const streams = new Set();
     subjects.forEach((s) => {
@@ -138,7 +171,7 @@ export default function SubjectManagement() {
     return Array.from(streams).sort();
   }, [subjects]);
 
-  // Available unique faculty names
+  // Available faculty list combining registered faculty & instructors
   const availableFacultyNames = useMemo(() => {
     const names = new Set();
     facultyList.forEach((f) => {
@@ -147,10 +180,15 @@ export default function SubjectManagement() {
     subjects.forEach((s) => {
       if (s.teacherName) names.add(s.teacherName.trim());
     });
+    if (names.size === 0) {
+      names.add('Jitender Sharma');
+      names.add('Dr. Ramesh Verma');
+      names.add('Mrs. Sunita Sharma');
+    }
     return Array.from(names).sort();
   }, [facultyList, subjects]);
 
-  // Category statistics counts
+  // Category statistics counts (calculated dynamically from real user subjects)
   const categoryCounts = useMemo(() => {
     const counts = { All: subjects.length, S1: 0, S2: 0, S3: 0, S4: 0 };
     subjects.forEach((sub) => {
@@ -162,7 +200,7 @@ export default function SubjectManagement() {
     return counts;
   }, [subjects]);
 
-  // Overall Catalog Summary Metrics
+  // Overall Dynamic Catalog Metrics
   const metrics = useMemo(() => {
     let totalEnrollments = 0;
     const uniqueTeachers = new Set();
@@ -217,17 +255,18 @@ export default function SubjectManagement() {
   const handleOpenAdd = (prefillCat = null) => {
     const targetCat = prefillCat || (selectedCategory !== 'All' ? selectedCategory : 'S3');
     const catConfig = getCategoryConfig(targetCat);
-    const defaultTemplate = catConfig.defaultSubjects?.[0] || null;
+    const defaultStream = catConfig.availableStreams?.[0] || 'Foundation';
 
     setEditingSubject(null);
+    setCustomFacultyInput(false);
     setForm({
-      name: defaultTemplate?.name || '',
+      name: '',
       categoryCode: targetCat,
-      category: defaultTemplate?.category || catConfig.availableStreams?.[0] || 'Foundation',
+      category: defaultStream,
       className: `Class ${targetCat}`,
-      description: defaultTemplate?.description || '',
-      teacherName: defaultTemplate?.teacherName || (facultyList[0]?.name || 'Jitender Sharma'),
-      batchTime: defaultTemplate?.batchTime || '5:00 PM – 6:30 PM',
+      description: '',
+      teacherName: availableFacultyNames[0] || 'Jitender Sharma',
+      batchTime: '5:00 PM – 6:30 PM',
       maxCapacity: 20,
     });
     setIsModalOpen(true);
@@ -236,6 +275,7 @@ export default function SubjectManagement() {
   const handleOpenEdit = (subject) => {
     const cat = getSubjectCategory(subject);
     setEditingSubject(subject);
+    setCustomFacultyInput(false);
     setForm({
       ...subject,
       categoryCode: cat,
@@ -252,60 +292,18 @@ export default function SubjectManagement() {
   // When category changes in the modal form
   const handleModalCategoryChange = (newCat) => {
     const catConfig = getCategoryConfig(newCat);
-    const defaultTemplate = catConfig.defaultSubjects?.[0] || null;
-
     setForm((prev) => ({
       ...prev,
       categoryCode: newCat,
       className: `Class ${newCat}`,
-      category: defaultTemplate?.category || catConfig.availableStreams?.[0] || 'Foundation',
-      name: defaultTemplate?.name || prev.name,
-      description: defaultTemplate?.description || prev.description,
-      batchTime: defaultTemplate?.batchTime || prev.batchTime,
-      teacherName: defaultTemplate?.teacherName || prev.teacherName,
+      category: catConfig.availableStreams?.[0] || 'Foundation',
     }));
-  };
-
-  // When picking a quick template in modal
-  const handleTemplatePick = (templateName) => {
-    if (!templateName) return;
-    const catConfig = getCategoryConfig(form.categoryCode);
-    const matched = catConfig.defaultSubjects?.find((s) => s.name === templateName);
-    if (matched) {
-      setForm((prev) => ({
-        ...prev,
-        name: matched.name,
-        category: matched.category || prev.category,
-        description: matched.description || prev.description,
-        batchTime: matched.batchTime || prev.batchTime,
-        teacherName: matched.teacherName || prev.teacherName,
-      }));
-    } else {
-      setForm((prev) => ({ ...prev, name: templateName }));
-    }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      addToast('Please enter a subject name', 'warning');
-      return;
-    }
-
-    // Check for duplicate subject in same category & stream
-    const isDuplicate = subjects.some((s) => {
-      const sId = String(s._id || s.id);
-      const curId = editingSubject ? String(editingSubject._id || editingSubject.id) : '';
-      if (curId && sId === curId) return false;
-      return (
-        s.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
-        getSubjectCategory(s) === form.categoryCode &&
-        (s.category || '').toLowerCase() === (form.category || '').toLowerCase()
-      );
-    });
-
-    if (isDuplicate) {
-      addToast(`A subject with the title "${form.name}" in Category ${form.categoryCode} (${form.category}) already exists.`, 'warning');
+      addToast('Please enter a subject title', 'warning');
       return;
     }
 
@@ -324,7 +322,7 @@ export default function SubjectManagement() {
         addToast('Subject updated successfully', 'success');
       } else {
         await subjectService.createSubject(payload);
-        addToast('New subject created successfully', 'success');
+        addToast('New subject added to academic catalog', 'success');
       }
       setIsModalOpen(false);
       fetchData(false);
@@ -340,7 +338,7 @@ export default function SubjectManagement() {
     setDeleting(true);
     try {
       await subjectService.deleteSubject(deleteTarget._id || deleteTarget.id);
-      addToast('Subject removed from catalog successfully', 'success');
+      addToast(`"${deleteTarget.name}" removed from catalog`, 'success');
       setDeleteTarget(null);
       fetchData(false);
     } catch (err) {
@@ -392,23 +390,21 @@ export default function SubjectManagement() {
             Subjects &amp; Batch Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Configure dynamic subject tracks, categories (S1, S2, S3, S4), real-time student rosters, faculty assignments, and batch timings.
+            Dynamic real-time subject catalog, class wings (S1, S2, S3, S4), batch capacity, live student rosters, and faculty assignments.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Deduplicate & Clean Action Button */}
-          <button
-            onClick={handleDeduplicateCatalog}
-            disabled={optimizing}
-            className="bg-surface-container-low hover:bg-surface-container text-secondary font-headings font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 border border-outline-variant/30 hover:border-secondary/30 shadow-sm transition-all"
-            title="Scan, clean, and deduplicate subject catalog entries"
-          >
-            <span className={`material-symbols-outlined text-[18px] text-primary ${optimizing ? 'animate-spin' : ''}`}>
-              auto_fix_high
-            </span>
-            <span>{optimizing ? 'Optimizing...' : 'Deduplicate Catalog'}</span>
-          </button>
+          {subjects.length > 0 && (
+            <button
+              onClick={() => setClearAllOpen(true)}
+              className="bg-surface-container-low hover:bg-rose-50 text-rose-700 font-headings font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 border border-rose-200 shadow-sm transition-all"
+              title="Remove all subjects and start fresh"
+            >
+              <span className="material-symbols-outlined text-[17px] text-rose-600">delete_sweep</span>
+              <span>Clear All Subjects</span>
+            </button>
+          )}
 
           <button
             onClick={() => handleOpenAdd(selectedCategory !== 'All' ? selectedCategory : null)}
@@ -471,7 +467,7 @@ export default function SubjectManagement() {
           <div>
             <label htmlFor="category-select" className="text-[11px] font-headings font-bold text-secondary mb-1 flex items-center gap-1">
               <span className="material-symbols-outlined text-[15px] text-primary">category</span>
-              Category:
+              Category Wing:
             </label>
             <div className="relative">
               <select
@@ -651,7 +647,7 @@ export default function SubjectManagement() {
             <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center">
               <button
                 onClick={() => handleOpenAdd(activeCategoryMeta.code)}
-                className="bg-amber-400 hover:bg-amber-300 text-secondary font-headings font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                className="bg-amber-400 hover:bg-amber-300 text-secondary font-headings font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">add_circle</span>
                 Add {activeCategoryMeta.code} Subject
@@ -665,33 +661,34 @@ export default function SubjectManagement() {
       {loading ? (
         <div className="p-12 text-center text-xs font-semibold text-on-surface-variant animate-pulse flex flex-col items-center gap-2">
           <span className="material-symbols-outlined text-3xl animate-spin text-primary">progress_activity</span>
-          <span>Loading dynamic subject offerings &amp; student rosters...</span>
+          <span>Loading dynamic subject catalog &amp; student rosters...</span>
         </div>
       ) : filteredSubjects.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-premium border border-outline-variant/15 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <span className="material-symbols-outlined text-[32px] text-primary">
-              menu_book
-            </span>
+        <div className="bg-white rounded-3xl p-12 text-center shadow-premium border border-outline-variant/15 flex flex-col items-center justify-center space-y-4">
+          <div className="w-18 h-18 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+            <span className="material-symbols-outlined text-[38px]">menu_book</span>
           </div>
-          <h4 className="font-headings font-bold text-base text-secondary">
-            {selectedCategory === 'All'
-              ? 'No Subjects Found'
-              : `No Subjects Configured for Category ${selectedCategory}`}
-          </h4>
-          <p className="text-xs text-on-surface-variant max-w-sm mt-1 mb-5">
-            {searchQuery
-              ? `No subjects match your search "${searchQuery}". Try a different search term or category.`
-              : `There are currently no active subject offerings under ${
-                  selectedCategory === 'All' ? 'these filters' : `Category ${selectedCategory}`
-                }.`}
-          </p>
+          <div className="max-w-md space-y-1.5">
+            <h3 className="font-headings font-extrabold text-xl text-secondary">
+              {subjects.length === 0
+                ? 'Academic Catalog is Ready for Your Subjects'
+                : selectedCategory === 'All'
+                ? 'No Matching Subjects Found'
+                : `No Subjects in Category ${selectedCategory}`}
+            </h3>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              {subjects.length === 0
+                ? 'There are currently no static or hardcoded subjects. Add your institute’s real subject offerings, faculty, batch timings, and capacities using the button below.'
+                : 'Try adjusting your search query, stream, or category filters to view other configured subjects.'}
+            </p>
+          </div>
+
           <button
             onClick={() => handleOpenAdd(selectedCategory !== 'All' ? selectedCategory : null)}
-            className="bg-primary text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-sm hover:shadow-glow-primary transition-all"
+            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-6 py-3 rounded-full text-xs flex items-center gap-2 shadow-tactile-btn shadow-premium hover:shadow-glow-primary transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            Add First Subject to {selectedCategory !== 'All' ? selectedCategory : 'Catalog'}
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span>Add First Subject Offering</span>
           </button>
         </div>
       ) : (
@@ -740,7 +737,7 @@ export default function SubjectManagement() {
                     {sub.name}
                   </h3>
                   <p className="text-xs text-on-surface-variant leading-relaxed mb-4 line-clamp-3">
-                    {sub.description || 'Comprehensive conceptual coaching and board exam preparation.'}
+                    {sub.description || 'Custom subject curriculum, concept drills, and exam preparation.'}
                   </p>
 
                   {/* Batch Capacity Bar */}
@@ -786,7 +783,7 @@ export default function SubjectManagement() {
                   <div className="flex justify-between items-center pt-2">
                     <button
                       onClick={() => setRosterSubject(sub)}
-                      className="text-[11px] font-headings font-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+                      className="text-[11px] font-headings font-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[15px]">badge</span>
                       <span>Student Roster</span>
@@ -795,7 +792,7 @@ export default function SubjectManagement() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(sub)}
-                        className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                        className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                         title="Edit Subject Offering"
                         aria-label={`Edit ${sub.name}`}
                       >
@@ -803,7 +800,7 @@ export default function SubjectManagement() {
                       </button>
                       <button
                         onClick={() => setDeleteTarget(sub)}
-                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Remove Subject"
                         aria-label={`Delete ${sub.name}`}
                       >
@@ -829,7 +826,7 @@ export default function SubjectManagement() {
           <div className="flex flex-col gap-1.5">
             <label className="font-headings font-bold text-secondary flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px] text-primary">category</span>
-              Subject Category Stage *
+              Category Stage *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {CLASS_CATEGORIES.map((cat) => {
@@ -858,48 +855,17 @@ export default function SubjectManagement() {
             </div>
           </div>
 
-          {/* Quick Subject Templates for Selected Category */}
-          {(() => {
-            const catConfig = getCategoryConfig(form.categoryCode);
-            const templates = catConfig.defaultSubjects || [];
-            if (templates.length === 0) return null;
-            return (
-              <div className="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/20 space-y-1.5">
-                <span className="text-[11px] font-headings font-bold text-secondary flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-amber-500">lightbulb</span>
-                  Distinct Standard Templates for Category {form.categoryCode}:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {templates.map((tpl) => (
-                    <button
-                      key={tpl.name}
-                      type="button"
-                      onClick={() => handleTemplatePick(tpl.name)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
-                        form.name === tpl.name
-                          ? 'bg-primary text-white border-primary shadow-xs'
-                          : 'bg-white hover:bg-primary/5 text-on-surface-variant border-outline-variant/30'
-                      }`}
-                    >
-                      {tpl.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
           {/* Subject Name */}
           <div className="flex flex-col gap-1">
             <label className="font-headings font-bold text-on-surface-variant">
-              Distinct Subject Title *
+              Subject Name *
             </label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Mathematics IIT-JEE Entrance / Physics for NEET Medical"
+              placeholder="e.g. Physics IIT-JEE / Advanced Chemistry / English Grammar"
               className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
             />
           </div>
@@ -908,7 +874,7 @@ export default function SubjectManagement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Stream / Track *
+                Stream / Curriculum Track *
               </label>
               <div className="relative">
                 <select
@@ -961,12 +927,31 @@ export default function SubjectManagement() {
             </div>
           </div>
 
-          {/* Dynamic Faculty Selection & Batch Timing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
+          {/* Dynamic Faculty Selection */}
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center">
               <label className="font-headings font-bold text-on-surface-variant">
                 Assigned Faculty *
               </label>
+              <button
+                type="button"
+                onClick={() => setCustomFacultyInput(!customFacultyInput)}
+                className="text-[10px] text-primary font-bold hover:underline"
+              >
+                {customFacultyInput ? 'Select from list' : '+ Enter custom name'}
+              </button>
+            </div>
+
+            {customFacultyInput ? (
+              <input
+                type="text"
+                required
+                value={form.teacherName}
+                onChange={(e) => setForm({ ...form, teacherName: e.target.value })}
+                placeholder="Enter Instructor / Faculty Name"
+                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:border-primary focus:outline-none"
+              />
+            ) : (
               <div className="relative">
                 <select
                   value={form.teacherName}
@@ -983,20 +968,38 @@ export default function SubjectManagement() {
                   expand_more
                 </span>
               </div>
-            </div>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Batch Timing *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.batchTime}
-                onChange={(e) => setForm({ ...form, batchTime: e.target.value })}
-                placeholder="e.g. 5:00 PM – 6:30 PM"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:border-primary focus:outline-none"
-              />
+          {/* Batch Timing with Quick Presets */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-headings font-bold text-on-surface-variant">
+              Batch Timing *
+            </label>
+            <input
+              type="text"
+              required
+              value={form.batchTime}
+              onChange={(e) => setForm({ ...form, batchTime: e.target.value })}
+              placeholder="e.g. 5:00 PM – 6:30 PM"
+              className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:border-primary focus:outline-none"
+            />
+            <div className="flex flex-wrap gap-1 pt-1">
+              <span className="text-[10px] text-on-surface-variant/70 font-semibold self-center mr-1">Presets:</span>
+              {BATCH_TIME_PRESETS.slice(3, 8).map((timePreset) => (
+                <button
+                  key={timePreset}
+                  type="button"
+                  onClick={() => setForm({ ...form, batchTime: timePreset })}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all ${
+                    form.batchTime === timePreset
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant border-outline-variant/20'
+                  }`}
+                >
+                  {timePreset}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -1034,16 +1037,16 @@ export default function SubjectManagement() {
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold hover:bg-surface-container-high transition-colors"
+              className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold hover:bg-surface-container-high transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-primary text-white px-5 py-2 rounded-full text-xs font-headings font-bold hover:bg-primary-container transition-colors shadow-tactile-btn shadow-premium"
+              className="bg-primary hover:bg-primary-container text-white px-5 py-2 rounded-full text-xs font-headings font-bold transition-colors shadow-tactile-btn shadow-premium cursor-pointer"
             >
-              {editingSubject ? 'Update Subject' : 'Save Subject'}
+              {editingSubject ? 'Update Subject' : 'Save Subject Offering'}
             </button>
           </div>
         </form>
@@ -1154,7 +1157,7 @@ export default function SubjectManagement() {
               <button
                 type="button"
                 onClick={() => setRosterSubject(null)}
-                className="px-5 py-2 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors"
+                className="px-5 py-2 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors cursor-pointer"
               >
                 Close Roster
               </button>
@@ -1170,7 +1173,17 @@ export default function SubjectManagement() {
         onConfirm={handleDeleteConfirm}
         loading={deleting}
         title={`Delete Subject ${deleteTarget?.name}?`}
-        message={`Are you sure you want to remove this ${getSubjectCategory(deleteTarget)} subject offering from the active academic catalog?`}
+        message={`Are you sure you want to permanently remove "${deleteTarget?.name}" from your active subject catalog?`}
+      />
+
+      {/* MODAL 4: Clear All Subjects Confirmation Modal */}
+      <ConfirmModal
+        isOpen={clearAllOpen}
+        onClose={() => setClearAllOpen(false)}
+        onConfirm={handleClearAllSubjects}
+        loading={clearing}
+        title="Clear All Subjects?"
+        message="Are you sure you want to remove all existing subjects from the catalog and start fresh? You can add all your real subjects dynamically one by one."
       />
     </div>
   );
