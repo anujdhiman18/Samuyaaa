@@ -999,46 +999,8 @@ export const adminProfileService = {
 };
 
 
-// Firestore Collection Helper for Real-time DB Persistence
+// Real-time Event-driven and Data Subscription Adapter for MongoDB
 export const syncFirestoreCollection = async (collectionName, defaultData = []) => {
-  try {
-    const syncTask = (async () => {
-      const colRef = collection(db, collectionName);
-      const snapshot = await getDocs(colRef);
-      const deletedIds = getDeletedIds(collectionName);
-
-      if (snapshot.empty && defaultData && defaultData.length > 0) {
-        const validDefaults = defaultData.filter((item) => {
-          const id = item._id || item.id;
-          return !deletedIds.includes(String(id));
-        });
-        const promises = validDefaults.map((item) => {
-          const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-          return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
-        });
-        await Promise.all(promises);
-        return validDefaults;
-      }
-
-      if (!snapshot.empty) {
-        const items = [];
-        snapshot.forEach((docSnap) => {
-          if (!deletedIds.includes(String(docSnap.id))) {
-            items.push({ ...docSnap.data(), _id: docSnap.id });
-          }
-        });
-        return items;
-      }
-      return null;
-    })();
-
-    const timeoutTask = new Promise((resolve) => setTimeout(() => resolve(null), 1500));
-    return await Promise.race([syncTask, timeoutTask]);
-  } catch (err) {
-    if (!err.message?.includes('insufficient permissions') && !err.message?.includes('permission-denied')) {
-      console.warn(`Firestore sync warning for ${collectionName}:`, err.message);
-    }
-  }
   return null;
 };
 
@@ -1072,9 +1034,7 @@ export const getStoredCollectionFallback = (collectionName, defaultData = []) =>
 };
 
 export const subscribeFirestoreCollection = (collectionName, defaultData = [], callback) => {
-  const colRef = collection(db, collectionName);
-
-  // Immediately return stored cached data synchronously if callback provided
+  // 1. Deliver initial local/cached data immediately
   if (callback) {
     try {
       const initialItems = getStoredCollectionFallback(collectionName, defaultData);
@@ -1084,46 +1044,28 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
     } catch (e) {}
   }
 
-  return onSnapshot(
-    colRef,
-    async (snapshot) => {
-      const deletedIds = getDeletedIds(collectionName);
-
-      if (snapshot.empty && defaultData && defaultData.length > 0) {
-        const validDefaults = defaultData.filter((item) => {
-          const id = item._id || item.id;
-          return !deletedIds.includes(String(id));
-        });
-        const promises = validDefaults.map((item) => {
-          const id = item._id || item.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-          return setDoc(doc(db, collectionName, String(id)), { ...item, _id: String(id) });
-        });
-        await Promise.all(promises);
-        if (callback) callback(validDefaults);
-        return;
-      }
-
-      const items = [];
-      snapshot.forEach((docSnap) => {
-        if (!deletedIds.includes(String(docSnap.id))) {
-          items.push({ ...docSnap.data(), _id: docSnap.id, id: docSnap.id });
-        }
-      });
-
-      if (callback) callback(items);
-    },
-    (err) => {
-      if (!err.message?.includes('insufficient permissions') && !err.message?.includes('permission-denied')) {
-        console.warn(`Firestore onSnapshot notice for ${collectionName}:`, err.message);
-      }
-      if (callback) {
-        try {
-          const fallback = getStoredCollectionFallback(collectionName, defaultData);
-          callback(fallback);
-        } catch (e) {}
-      }
+  // 2. Listen to saumyaa_data_updated event for reactive changes across the application
+  const handleUpdate = () => {
+    if (callback) {
+      try {
+        const items = getStoredCollectionFallback(collectionName, defaultData);
+        callback(items || []);
+      } catch (e) {}
     }
-  );
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('saumyaa_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+  }
+
+  // Return unsubscribe handler
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('saumyaa_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    }
+  };
 };
 
 const initialMockStudentLeaves = [];
