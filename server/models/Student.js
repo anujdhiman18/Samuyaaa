@@ -155,7 +155,6 @@ const studentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-studentSchema.index({ rollNumber: 1 });
 studentSchema.index({ phone: 1 });
 studentSchema.index({ parentPhone: 1 });
 studentSchema.index({ email: 1 });

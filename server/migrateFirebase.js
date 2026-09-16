@@ -24,6 +24,12 @@ import Admin from './models/Admin.js';
 import Role from './models/Role.js';
 import { SYSTEM_DEFAULT_ROLES } from './controllers/rbacController.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config();
 
 const firebaseConfig = {
