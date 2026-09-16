@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { subjectService } from '../services/api.js';
 
 export default function BookingModal({ open, prefilledProgram, onClose }) {
@@ -77,17 +77,24 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     };
   }, [open]);
 
-  // 1. Available Subjects from admin data
-  const availableSubjects = Array.from(
-    new Set([
-      ...liveSubjects.map((s) => s.name?.trim()).filter(Boolean),
-      'Mathematics',
-      'Physics',
-      'Chemistry',
-      'Biology',
-      'English & Communication',
-    ])
-  ).sort();
+  // 1. Available Subjects from dynamic admin dataset
+  const availableSubjects = useMemo(() => {
+    if (liveSubjects && liveSubjects.length > 0) {
+      return Array.from(new Set(liveSubjects.map((s) => s.name?.trim()).filter(Boolean))).sort();
+    }
+    return [
+      'Foundational Mathematics & Mental Math',
+      'Mathematics Foundation',
+      'Mathematics IIT-JEE Entrance',
+      'Physics IIT-JEE Prep',
+      'Physics for NEET Medical',
+      'Chemistry for IIT-JEE',
+      'Chemistry for NEET Medical',
+      'Biology for NEET Medical',
+      'English Language & Literary Analysis',
+      'Computer Science & Python Coding',
+    ].sort();
+  }, [liveSubjects]);
 
   // 2. Available Categories for selected Subject (with standard fallback)
   const standardCategories = ['Foundation', 'Advanced', 'JEE', 'NEET', 'Olympiad'];

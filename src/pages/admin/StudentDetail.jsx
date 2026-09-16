@@ -1,26 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { studentService, feeService, attendanceService, marksService, getFeeDueDateStatus, smsNotificationService } from '../../services/api';
+import { studentService, feeService, attendanceService, marksService, getFeeDueDateStatus, smsNotificationService, getStoredSubjects } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import FeeToggleSwitch from '../../components/admin/FeeToggleSwitch';
 import AdminLoginCredentialsCard from '../../components/admin/AdminLoginCredentialsCard';
-import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
+import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel, normalizeClassCode, getSubjectsForStage } from '../../config/classConfig';
 import { calculateGradeBreakdown, getGradeMeta } from '../../utils/gradeUtils';
 
-const COURSES = [
-  'Science (PCM)',
-  'Science (PCB)',
-  'Foundation',
-  'Mathematics Advanced',
-  'Physics IIT-JEE Prep',
-  'Chemistry Foundation',
-  'Integrated Science',
-  'English Literature',
-  'Accountancy & Business',
-];
-const SUBJECTS = COURSES;
 const BATCHES = ['2023-2025', '2024-2026', '2025-2026', 'Batch A', 'Batch B'];
 const CLASSES = CLASS_CATEGORIES.map((c) => c.code);
 
@@ -32,6 +20,17 @@ export default function StudentDetail() {
   const [attendanceList, setAttendanceList] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState({ presentDays: 0, absentDays: 0, attendancePercentage: 100 });
   const [loading, setLoading] = useState(true);
+
+  // Dynamic Subject list for this student's grade/stage
+  const dynamicSubjectList = useMemo(() => {
+    const list = getStoredSubjects() || [];
+    const stageCode = getStageForClass(student?.className || student?.currentClass || 'S2');
+    const stageSubs = list.filter((s) => s.isActive !== false && normalizeClassCode(s.className || s.category) === stageCode);
+    if (stageSubs.length > 0) {
+      return Array.from(new Set(stageSubs.map((s) => s.name).filter(Boolean)));
+    }
+    return Array.from(new Set(list.map((s) => s.name).filter(Boolean)));
+  }, [student]);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -773,11 +772,11 @@ export default function StudentDetail() {
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">Enrolled Subject / Stream</label>
               <select
-                value={editForm.subject || (Array.isArray(editForm.subjects) ? editForm.subjects[0] : '') || 'Mathematics Advanced'}
+                value={editForm.subject || (Array.isArray(editForm.subjects) ? editForm.subjects[0] : '') || dynamicSubjectList[0] || 'Mathematics Foundation'}
                 onChange={(e) => setEditForm({ ...editForm, subject: e.target.value, subjects: [e.target.value] })}
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-secondary focus:outline-none"
               >
-                {SUBJECTS.map((sub) => (
+                {dynamicSubjectList.map((sub) => (
                   <option key={sub} value={sub}>{sub}</option>
                 ))}
               </select>

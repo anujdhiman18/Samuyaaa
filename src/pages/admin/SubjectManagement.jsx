@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { subjectService, getStoredSubjects } from '../../services/api';
+import { Link } from 'react-router-dom';
+import {
+  subjectService,
+  getStoredSubjects,
+  getStoredStudents,
+  getStoredFaculty,
+  calculateDynamicSubjectEnrollment,
+  getEnrolledStudentsForSubject,
+} from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import {
   CLASS_CATEGORIES,
@@ -14,12 +22,13 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 
 const initialSubjectForm = {
   name: '',
-  categoryCode: 'S2',
-  category: 'Foundation',
-  className: 'Class S2',
+  categoryCode: 'S3',
+  category: 'JEE',
+  className: 'Class S3',
   description: '',
   teacherName: 'Jitender Sharma',
-  batchTime: '5:00 PM – 6:30 PM',
+  batchTime: '6:00 PM – 7:30 PM',
+  maxCapacity: 20,
 };
 
 export default function SubjectManagement() {
@@ -30,10 +39,28 @@ export default function SubjectManagement() {
       return [];
     }
   });
-  const [loading, setLoading] = useState(false);
+  const [students, setStudents] = useState(() => {
+    try {
+      return getStoredStudents() || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [facultyList, setFacultyList] = useState(() => {
+    try {
+      return getStoredFaculty() || [];
+    } catch (e) {
+      return [];
+    }
+  });
 
-  // Filters
+  const [loading, setLoading] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+
+  // Multi-Filter State
   const [selectedCategory, setSelectedCategory] = useState('All'); // 'All' | 'S1' | 'S2' | 'S3' | 'S4'
+  const [selectedStream, setSelectedStream] = useState('All');
+  const [selectedFaculty, setSelectedFaculty] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
@@ -42,6 +69,9 @@ export default function SubjectManagement() {
   const [form, setForm] = useState(initialSubjectForm);
   const [submitting, setSubmitting] = useState(false);
 
+  // Roster Modal State
+  const [rosterSubject, setRosterSubject] = useState(null);
+
   // Delete Confirm
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -49,11 +79,20 @@ export default function SubjectManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
-    fetchSubjects();
+    fetchData();
+
+    const handleUpdate = () => fetchData(false);
+    window.addEventListener('saumyaa_data_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('saumyaa_data_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
-  const fetchSubjects = async () => {
-    setLoading(true);
+  const fetchData = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
     try {
       const data = await subjectService.getSubjects();
       if (data && data.subjects) {
@@ -61,13 +100,55 @@ export default function SubjectManagement() {
       } else {
         setSubjects(getStoredSubjects() || []);
       }
+      setStudents(getStoredStudents() || []);
+      setFacultyList(getStoredFaculty() || []);
     } catch (err) {
       addToast(err.message || 'Error fetching subjects', 'error');
       setSubjects(getStoredSubjects() || []);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
+
+  // One-click deduplicate & optimize catalog
+  const handleDeduplicateCatalog = async () => {
+    setOptimizing(true);
+    try {
+      const res = await subjectService.deduplicateCatalog();
+      if (res && res.success) {
+        setSubjects(res.subjects);
+        addToast(`Catalog optimized! ${res.count} distinctive subject offerings verified and synchronized.`, 'success');
+      } else {
+        fetchData();
+        addToast('Subject catalog refreshed successfully.', 'info');
+      }
+    } catch (err) {
+      addToast('Error optimizing catalog: ' + err.message, 'error');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  // Available unique streams across all current subjects
+  const availableStreamsList = useMemo(() => {
+    const streams = new Set();
+    subjects.forEach((s) => {
+      if (s.category) streams.add(s.category.trim());
+    });
+    return Array.from(streams).sort();
+  }, [subjects]);
+
+  // Available unique faculty names
+  const availableFacultyNames = useMemo(() => {
+    const names = new Set();
+    facultyList.forEach((f) => {
+      if (f.name) names.add(f.name.trim());
+    });
+    subjects.forEach((s) => {
+      if (s.teacherName) names.add(s.teacherName.trim());
+    });
+    return Array.from(names).sort();
+  }, [facultyList, subjects]);
 
   // Category statistics counts
   const categoryCounts = useMemo(() => {
@@ -81,12 +162,39 @@ export default function SubjectManagement() {
     return counts;
   }, [subjects]);
 
-  // Filtered subjects based on selected category & search query
+  // Overall Catalog Summary Metrics
+  const metrics = useMemo(() => {
+    let totalEnrollments = 0;
+    const uniqueTeachers = new Set();
+
+    subjects.forEach((sub) => {
+      const enrolled = calculateDynamicSubjectEnrollment(sub, students);
+      totalEnrollments += enrolled;
+      if (sub.teacherName) uniqueTeachers.add(sub.teacherName.trim());
+    });
+
+    return {
+      totalSubjects: subjects.length,
+      totalEnrollments,
+      totalFaculty: uniqueTeachers.size,
+      avgBatchSize: subjects.length ? Math.round(totalEnrollments / subjects.length) : 0,
+    };
+  }, [subjects, students]);
+
+  // Filtered subjects based on selected filters & search query
   const filteredSubjects = useMemo(() => {
     return subjects.filter((sub) => {
       const cat = getSubjectCategory(sub);
       const matchesCat = selectedCategory === 'All' || cat === selectedCategory;
       if (!matchesCat) return false;
+
+      const matchesStream = selectedStream === 'All' || sub.category === selectedStream;
+      if (!matchesStream) return false;
+
+      const matchesFaculty =
+        selectedFaculty === 'All' ||
+        (sub.teacherName && sub.teacherName.toLowerCase().includes(selectedFaculty.toLowerCase()));
+      if (!matchesFaculty) return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -95,10 +203,11 @@ export default function SubjectManagement() {
         sub.teacherName?.toLowerCase().includes(q) ||
         sub.category?.toLowerCase().includes(q) ||
         sub.className?.toLowerCase().includes(q) ||
-        sub.description?.toLowerCase().includes(q)
+        sub.description?.toLowerCase().includes(q) ||
+        sub.batchTime?.toLowerCase().includes(q)
       );
     });
-  }, [subjects, selectedCategory, searchQuery]);
+  }, [subjects, selectedCategory, selectedStream, selectedFaculty, searchQuery]);
 
   const activeCategoryMeta = useMemo(() => {
     if (selectedCategory === 'All') return null;
@@ -106,7 +215,7 @@ export default function SubjectManagement() {
   }, [selectedCategory]);
 
   const handleOpenAdd = (prefillCat = null) => {
-    const targetCat = prefillCat || (selectedCategory !== 'All' ? selectedCategory : 'S2');
+    const targetCat = prefillCat || (selectedCategory !== 'All' ? selectedCategory : 'S3');
     const catConfig = getCategoryConfig(targetCat);
     const defaultTemplate = catConfig.defaultSubjects?.[0] || null;
 
@@ -117,8 +226,9 @@ export default function SubjectManagement() {
       category: defaultTemplate?.category || catConfig.availableStreams?.[0] || 'Foundation',
       className: `Class ${targetCat}`,
       description: defaultTemplate?.description || '',
-      teacherName: defaultTemplate?.teacherName || 'Jitender Sharma',
+      teacherName: defaultTemplate?.teacherName || (facultyList[0]?.name || 'Jitender Sharma'),
       batchTime: defaultTemplate?.batchTime || '5:00 PM – 6:30 PM',
+      maxCapacity: 20,
     });
     setIsModalOpen(true);
   };
@@ -134,6 +244,7 @@ export default function SubjectManagement() {
       batchTime: subject.batchTime || '5:00 PM – 6:30 PM',
       teacherName: subject.teacherName || 'Jitender Sharma',
       description: subject.description || '',
+      maxCapacity: Number(subject.maxCapacity) || 20,
     });
     setIsModalOpen(true);
   };
@@ -147,7 +258,7 @@ export default function SubjectManagement() {
       ...prev,
       categoryCode: newCat,
       className: `Class ${newCat}`,
-      category: catConfig.availableStreams?.[0] || 'Foundation',
+      category: defaultTemplate?.category || catConfig.availableStreams?.[0] || 'Foundation',
       name: defaultTemplate?.name || prev.name,
       description: defaultTemplate?.description || prev.description,
       batchTime: defaultTemplate?.batchTime || prev.batchTime,
@@ -181,12 +292,30 @@ export default function SubjectManagement() {
       return;
     }
 
+    // Check for duplicate subject in same category & stream
+    const isDuplicate = subjects.some((s) => {
+      const sId = String(s._id || s.id);
+      const curId = editingSubject ? String(editingSubject._id || editingSubject.id) : '';
+      if (curId && sId === curId) return false;
+      return (
+        s.name.trim().toLowerCase() === form.name.trim().toLowerCase() &&
+        getSubjectCategory(s) === form.categoryCode &&
+        (s.category || '').toLowerCase() === (form.category || '').toLowerCase()
+      );
+    });
+
+    if (isDuplicate) {
+      addToast(`A subject with the title "${form.name}" in Category ${form.categoryCode} (${form.category}) already exists.`, 'warning');
+      return;
+    }
+
     setSubmitting(true);
     const payload = {
       ...form,
       name: form.name.trim(),
       className: form.className || `Class ${form.categoryCode}`,
       category: form.category || 'Foundation',
+      maxCapacity: Number(form.maxCapacity) || 20,
     };
 
     try {
@@ -198,7 +327,7 @@ export default function SubjectManagement() {
         addToast('New subject created successfully', 'success');
       }
       setIsModalOpen(false);
-      fetchSubjects();
+      fetchData(false);
     } catch (err) {
       addToast(err.message || 'Error saving subject', 'error');
     } finally {
@@ -211,9 +340,9 @@ export default function SubjectManagement() {
     setDeleting(true);
     try {
       await subjectService.deleteSubject(deleteTarget._id || deleteTarget.id);
-      addToast('Subject deleted successfully', 'success');
+      addToast('Subject removed from catalog successfully', 'success');
       setDeleteTarget(null);
-      fetchSubjects();
+      fetchData(false);
     } catch (err) {
       addToast(err.message || 'Error deleting subject', 'error');
     } finally {
@@ -237,9 +366,20 @@ export default function SubjectManagement() {
     }
   };
 
+  // Helper for stream badge color
+  const getStreamBadgeStyle = (stream = '') => {
+    const s = stream.toLowerCase();
+    if (s.includes('jee')) return 'bg-amber-500/10 text-amber-700 border-amber-500/30';
+    if (s.includes('neet')) return 'bg-rose-500/10 text-rose-700 border-rose-500/30';
+    if (s.includes('olympiad')) return 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30';
+    if (s.includes('advanced')) return 'bg-primary/10 text-primary border-primary/20';
+    if (s.includes('skill') || s.includes('tech')) return 'bg-teal-500/10 text-teal-700 border-teal-500/30';
+    return 'bg-secondary/10 text-secondary border-secondary/20';
+  };
+
   return (
     <div className="space-y-6 font-body">
-      {/* Top Header */}
+      {/* Top Header & Overview Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-on-surface-variant mb-1 font-medium">
@@ -252,79 +392,198 @@ export default function SubjectManagement() {
             Subjects &amp; Batch Management
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Configure active subject offerings, categories (S1, S2, S3, S4), faculty assignments, and batch timings.
+            Configure dynamic subject tracks, categories (S1, S2, S3, S4), real-time student rosters, faculty assignments, and batch timings.
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenAdd(selectedCategory !== 'All' ? selectedCategory : null)}
-          className="bg-primary text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
-          id="add-subject-btn"
-        >
-          <span className="material-symbols-outlined text-[18px]">add_circle</span>
-          Add Subject Offering
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Deduplicate & Clean Action Button */}
+          <button
+            onClick={handleDeduplicateCatalog}
+            disabled={optimizing}
+            className="bg-surface-container-low hover:bg-surface-container text-secondary font-headings font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 border border-outline-variant/30 hover:border-secondary/30 shadow-sm transition-all"
+            title="Scan, clean, and deduplicate subject catalog entries"
+          >
+            <span className={`material-symbols-outlined text-[18px] text-primary ${optimizing ? 'animate-spin' : ''}`}>
+              auto_fix_high
+            </span>
+            <span>{optimizing ? 'Optimizing...' : 'Deduplicate Catalog'}</span>
+          </button>
+
+          <button
+            onClick={() => handleOpenAdd(selectedCategory !== 'All' ? selectedCategory : null)}
+            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
+            id="add-subject-btn"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span>Add Subject Offering</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dynamic Metric Snapshot Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-white rounded-2xl p-4 border border-outline-variant/15 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">menu_book</span>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Active Subjects</div>
+            <div className="font-headings font-extrabold text-xl text-secondary">{metrics.totalSubjects}</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 border border-outline-variant/15 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">groups</span>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Total Enrolled</div>
+            <div className="font-headings font-extrabold text-xl text-emerald-800">{metrics.totalEnrollments} Students</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 border border-outline-variant/15 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">badge</span>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Faculty Assigned</div>
+            <div className="font-headings font-extrabold text-xl text-secondary">{metrics.totalFaculty} Instructors</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 border border-outline-variant/15 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-700 flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-[22px]">bar_chart</span>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Avg. Batch Size</div>
+            <div className="font-headings font-extrabold text-xl text-secondary">{metrics.avgBatchSize} / Batch</div>
+          </div>
+        </div>
       </div>
 
       {/* Category Dropdown & Quick-Filter Toolbar */}
       <div className="bg-white rounded-2xl p-4 md:p-5 shadow-premium border border-outline-variant/15 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Main Category Dropdown Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label htmlFor="category-select" className="text-xs font-headings font-bold text-secondary flex items-center gap-1.5 whitespace-nowrap">
-              <span className="material-symbols-outlined text-[18px] text-primary">category</span>
-              Select Category:
+          <div>
+            <label htmlFor="category-select" className="text-[11px] font-headings font-bold text-secondary mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[15px] text-primary">category</span>
+              Category:
             </label>
-            <div className="relative min-w-[260px] sm:min-w-[300px]">
+            <div className="relative">
               <select
                 id="category-select"
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-surface-container-lowest border-2 border-primary/20 hover:border-primary/40 focus:border-primary rounded-xl px-4 py-2.5 text-xs font-headings font-bold text-secondary appearance-none cursor-pointer pr-10 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedStream('All');
+                }}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 hover:border-primary focus:border-primary rounded-xl px-3.5 py-2.5 text-xs font-headings font-bold text-secondary appearance-none cursor-pointer pr-9 shadow-sm transition-all focus:outline-none"
               >
-                <option value="All">All Categories ({categoryCounts.All} Subjects)</option>
+                <option value="All">All Categories ({categoryCounts.All})</option>
                 {CLASS_CATEGORIES.map((cat) => (
                   <option key={cat.code} value={cat.code}>
-                    {cat.label} ({categoryCounts[cat.code] || 0} Subjects)
+                    {cat.code} — {cat.shortLabel || cat.label} ({categoryCounts[cat.code] || 0})
                   </option>
                 ))}
               </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">
+              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">
+                arrow_drop_down
+              </span>
+            </div>
+          </div>
+
+          {/* Stream Filter */}
+          <div>
+            <label className="text-[11px] font-headings font-bold text-secondary mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[15px] text-primary">track_changes</span>
+              Stream / Track:
+            </label>
+            <div className="relative">
+              <select
+                value={selectedStream}
+                onChange={(e) => setSelectedStream(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 hover:border-primary focus:border-primary rounded-xl px-3.5 py-2.5 text-xs font-semibold text-secondary appearance-none cursor-pointer pr-9 shadow-sm transition-all focus:outline-none"
+              >
+                <option value="All">All Streams</option>
+                {availableStreamsList.map((stream) => (
+                  <option key={stream} value={stream}>
+                    {stream}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">
+                arrow_drop_down
+              </span>
+            </div>
+          </div>
+
+          {/* Faculty Filter */}
+          <div>
+            <label className="text-[11px] font-headings font-bold text-secondary mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[15px] text-primary">person</span>
+              Faculty:
+            </label>
+            <div className="relative">
+              <select
+                value={selectedFaculty}
+                onChange={(e) => setSelectedFaculty(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 hover:border-primary focus:border-primary rounded-xl px-3.5 py-2.5 text-xs font-semibold text-secondary appearance-none cursor-pointer pr-9 shadow-sm transition-all focus:outline-none"
+              >
+                <option value="All">All Faculty</option>
+                {availableFacultyNames.map((fac) => (
+                  <option key={fac} value={fac}>
+                    {fac}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">
                 arrow_drop_down
               </span>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search subjects, faculty, or stream..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-body focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant hover:text-rose-600 rounded-full"
-                title="Clear search"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
-            )}
+          <div>
+            <label className="text-[11px] font-headings font-bold text-secondary mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[15px] text-primary">search</span>
+              Search Catalog:
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search subject, timing, faculty..."
+                className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-body focus:border-primary focus:outline-none transition-all"
+              />
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[17px]">
+                search
+              </span>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-on-surface-variant hover:text-rose-600 rounded-full"
+                >
+                  <span className="material-symbols-outlined text-[15px]">close</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Category Quick Filter Tabs / Pills */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-outline-variant/10">
           <span className="text-[11px] font-semibold text-on-surface-variant mr-1">Quick View:</span>
-          
+
           <button
-            onClick={() => setSelectedCategory('All')}
+            onClick={() => {
+              setSelectedCategory('All');
+              setSelectedStream('All');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-headings font-bold flex items-center gap-1.5 transition-all ${
               selectedCategory === 'All'
                 ? 'bg-secondary text-white shadow-md'
@@ -345,7 +604,10 @@ export default function SubjectManagement() {
             return (
               <button
                 key={cat.code}
-                onClick={() => setSelectedCategory(cat.code)}
+                onClick={() => {
+                  setSelectedCategory(cat.code);
+                  setSelectedStream('All');
+                }}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-headings font-bold flex items-center gap-1.5 transition-all ${
                   isSelected
                     ? 'bg-primary text-white shadow-md'
@@ -403,7 +665,7 @@ export default function SubjectManagement() {
       {loading ? (
         <div className="p-12 text-center text-xs font-semibold text-on-surface-variant animate-pulse flex flex-col items-center gap-2">
           <span className="material-symbols-outlined text-3xl animate-spin text-primary">progress_activity</span>
-          <span>Loading active subject offerings...</span>
+          <span>Loading dynamic subject offerings &amp; student rosters...</span>
         </div>
       ) : filteredSubjects.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center shadow-premium border border-outline-variant/15 flex flex-col items-center justify-center">
@@ -421,7 +683,7 @@ export default function SubjectManagement() {
             {searchQuery
               ? `No subjects match your search "${searchQuery}". Try a different search term or category.`
               : `There are currently no active subject offerings under ${
-                  selectedCategory === 'All' ? 'this filter' : `Category ${selectedCategory}`
+                  selectedCategory === 'All' ? 'these filters' : `Category ${selectedCategory}`
                 }.`}
           </p>
           <button
@@ -437,7 +699,12 @@ export default function SubjectManagement() {
           {filteredSubjects.map((sub) => {
             const catCode = getSubjectCategory(sub);
             const badgeStyle = getCategoryBadgeStyle(catCode);
+            const streamStyle = getStreamBadgeStyle(sub.category);
             const catMeta = getCategoryConfig(catCode);
+
+            const dynamicEnrolledCount = calculateDynamicSubjectEnrollment(sub, students);
+            const maxCap = Number(sub.maxCapacity) || 20;
+            const fillPct = Math.min(100, Math.round((dynamicEnrolledCount / maxCap) * 100));
 
             return (
               <div
@@ -451,21 +718,46 @@ export default function SubjectManagement() {
                       <span className="material-symbols-outlined text-[14px]">{catMeta?.icon || 'school'}</span>
                       {sub.className || `Class ${catCode}`}
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-headings font-bold text-[11px] border border-primary/15">
-                      Category: {sub.category || 'Foundation'}
+
+                    <span className={`px-2.5 py-1 rounded-lg font-headings font-bold text-[11px] border ${streamStyle}`}>
+                      {sub.category || 'Foundation'}
                     </span>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg ml-auto">
-                      {sub.totalEnrolled || 15} Enrolled
-                    </span>
+
+                    {/* Dynamic Enrollment Pill with Roster Click */}
+                    <button
+                      type="button"
+                      onClick={() => setRosterSubject(sub)}
+                      className="text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-lg ml-auto flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      title="Click to view real enrolled students in this subject"
+                    >
+                      <span className="material-symbols-outlined text-[14px] text-emerald-600">group</span>
+                      <span>{dynamicEnrolledCount} Enrolled</span>
+                    </button>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="font-headings font-bold text-lg text-secondary group-hover:text-primary transition-colors mb-1.5">
+                  <h3 className="font-headings font-bold text-lg text-secondary group-hover:text-primary transition-colors mb-1.5 leading-snug">
                     {sub.name}
                   </h3>
                   <p className="text-xs text-on-surface-variant leading-relaxed mb-4 line-clamp-3">
                     {sub.description || 'Comprehensive conceptual coaching and board exam preparation.'}
                   </p>
+
+                  {/* Batch Capacity Bar */}
+                  <div className="bg-surface-container-low/60 rounded-xl p-2.5 border border-outline-variant/15 mb-3 space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-on-surface-variant">
+                      <span>Batch Capacity</span>
+                      <span className="text-secondary font-mono">{dynamicEnrolledCount} / {maxCap} ({fillPct}%)</span>
+                    </div>
+                    <div className="w-full bg-outline-variant/20 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          fillPct >= 90 ? 'bg-amber-500' : fillPct >= 60 ? 'bg-primary' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${fillPct}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Footer Details */}
@@ -475,7 +767,9 @@ export default function SubjectManagement() {
                       <span className="material-symbols-outlined text-[15px] text-secondary">person</span>
                       Faculty:
                     </span>
-                    <strong className="text-secondary font-bold font-headings">{sub.teacherName || 'Jitender Sharma'}</strong>
+                    <strong className="text-secondary font-bold font-headings truncate max-w-[180px]">
+                      {sub.teacherName || 'Jitender Sharma'}
+                    </strong>
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
@@ -488,16 +782,21 @@ export default function SubjectManagement() {
                     </strong>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions & Roster Link */}
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-[10px] uppercase font-headings font-bold tracking-wider text-on-surface-variant/60">
-                      {catCode} Track
-                    </span>
+                    <button
+                      onClick={() => setRosterSubject(sub)}
+                      className="text-[11px] font-headings font-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">badge</span>
+                      <span>Student Roster</span>
+                    </button>
+
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(sub)}
                         className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-                        title="Edit Subject"
+                        title="Edit Subject Offering"
                         aria-label={`Edit ${sub.name}`}
                       >
                         <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -505,7 +804,7 @@ export default function SubjectManagement() {
                       <button
                         onClick={() => setDeleteTarget(sub)}
                         className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
-                        title="Delete Subject"
+                        title="Remove Subject"
                         aria-label={`Delete ${sub.name}`}
                       >
                         <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -519,18 +818,18 @@ export default function SubjectManagement() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* MODAL 1: Add / Edit Subject Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingSubject ? 'Edit Subject Offering' : 'Add New Subject Offering'}
       >
-        <form onSubmit={handleSave} className="space-y-4 text-xs font-body">
+        <form onSubmit={handleSave} className="space-y-4 text-xs font-body max-h-[80vh] overflow-y-auto pr-1">
           {/* Category Selector in Modal */}
           <div className="flex flex-col gap-1.5">
             <label className="font-headings font-bold text-secondary flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px] text-primary">category</span>
-              Subject Category *
+              Subject Category Stage *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {CLASS_CATEGORIES.map((cat) => {
@@ -568,7 +867,7 @@ export default function SubjectManagement() {
               <div className="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/20 space-y-1.5">
                 <span className="text-[11px] font-headings font-bold text-secondary flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px] text-amber-500">lightbulb</span>
-                  Quick Template for Category {form.categoryCode}:
+                  Distinct Standard Templates for Category {form.categoryCode}:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {templates.map((tpl) => (
@@ -593,14 +892,14 @@ export default function SubjectManagement() {
           {/* Subject Name */}
           <div className="flex flex-col gap-1">
             <label className="font-headings font-bold text-on-surface-variant">
-              Subject Name *
+              Distinct Subject Title *
             </label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Mathematics Foundation / Physics IIT-JEE"
+              placeholder="e.g. Mathematics IIT-JEE Entrance / Physics for NEET Medical"
               className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
             />
           </div>
@@ -609,7 +908,7 @@ export default function SubjectManagement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Stream / Curriculum Track *
+                Stream / Track *
               </label>
               <div className="relative">
                 <select
@@ -662,11 +961,33 @@ export default function SubjectManagement() {
             </div>
           </div>
 
-          {/* Batch Time & Faculty Name */}
+          {/* Dynamic Faculty Selection & Batch Timing */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="font-headings font-bold text-on-surface-variant">
-                Batch Time *
+                Assigned Faculty *
+              </label>
+              <div className="relative">
+                <select
+                  value={form.teacherName}
+                  onChange={(e) => setForm({ ...form, teacherName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs appearance-none pr-8 focus:border-primary focus:outline-none"
+                >
+                  {availableFacultyNames.map((fn) => (
+                    <option key={fn} value={fn}>
+                      {fn}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">
+                  expand_more
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-headings font-bold text-on-surface-variant">
+                Batch Timing *
               </label>
               <input
                 type="text"
@@ -677,26 +998,27 @@ export default function SubjectManagement() {
                 className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-mono focus:border-primary focus:outline-none"
               />
             </div>
+          </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="font-headings font-bold text-on-surface-variant">
-                Faculty / Teacher Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={form.teacherName}
-                onChange={(e) => setForm({ ...form, teacherName: e.target.value })}
-                placeholder="e.g. Jitender Sharma"
-                className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:border-primary focus:outline-none"
-              />
-            </div>
+          {/* Max Capacity */}
+          <div className="flex flex-col gap-1">
+            <label className="font-headings font-bold text-on-surface-variant">
+              Batch Maximum Capacity (Students)
+            </label>
+            <input
+              type="number"
+              min="5"
+              max="50"
+              value={form.maxCapacity}
+              onChange={(e) => setForm({ ...form, maxCapacity: Number(e.target.value) || 20 })}
+              className="px-3.5 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs focus:border-primary focus:outline-none"
+            />
           </div>
 
           {/* Course Description */}
           <div className="flex flex-col gap-1">
             <label className="font-headings font-bold text-on-surface-variant">
-              Course Description
+              Course Description &amp; Syllabus Focus
             </label>
             <textarea
               rows={3}
@@ -727,7 +1049,121 @@ export default function SubjectManagement() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* MODAL 2: Dynamic Enrolled Student Roster Modal */}
+      {rosterSubject && (
+        <Modal
+          isOpen={!!rosterSubject}
+          onClose={() => setRosterSubject(null)}
+          title={`Enrolled Students: ${rosterSubject.name}`}
+        >
+          <div className="space-y-4 text-xs font-body max-h-[75vh] overflow-y-auto pr-1">
+            {/* Subject Overview Card */}
+            <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/15 space-y-2">
+              <div className="flex flex-wrap justify-between items-start gap-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold text-[10px]">
+                      {rosterSubject.className || 'Class S3'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 font-bold text-[10px]">
+                      {rosterSubject.category || 'JEE'} Track
+                    </span>
+                  </div>
+                  <h4 className="font-headings font-bold text-base text-secondary">{rosterSubject.name}</h4>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] font-mono text-primary font-bold bg-white px-2.5 py-1 rounded-md border border-primary/20 block">
+                    {rosterSubject.batchTime || '5:00 PM – 6:30 PM'}
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant mt-1 block">
+                    Instructor: <strong>{rosterSubject.teacherName || 'Jitender Sharma'}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* List of Enrolled Students */}
+            {(() => {
+              const enrolledStudents = getEnrolledStudentsForSubject(rosterSubject, students);
+
+              if (enrolledStudents.length === 0) {
+                return (
+                  <div className="p-8 text-center bg-white rounded-2xl border border-outline-variant/15 space-y-2">
+                    <span className="material-symbols-outlined text-[32px] text-on-surface-variant/40">person_off</span>
+                    <p className="text-xs font-semibold text-on-surface-variant">No active student enrollment found in this specific subject.</p>
+                    <p className="text-[11px] text-on-surface-variant/70">Students can be assigned to this subject track from Student Directory.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1 text-[11px] font-bold text-on-surface-variant">
+                    <span>Active Enrolled Roster ({enrolledStudents.length} Students)</span>
+                    <span>Max Capacity: {rosterSubject.maxCapacity || 20}</span>
+                  </div>
+
+                  <div className="divide-y divide-outline-variant/15 border border-outline-variant/15 rounded-2xl overflow-hidden bg-white shadow-xs">
+                    {enrolledStudents.map((st) => (
+                      <div key={st._id || st.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-surface-container-low/40 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {st.photo ? (
+                            <img src={st.photo} alt={st.fullName} className="w-10 h-10 rounded-xl object-cover border border-outline-variant/20 shadow-xs shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-headings font-extrabold shrink-0">
+                              {st.fullName ? st.fullName.charAt(0).toUpperCase() : 'S'}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
+                              <span>{st.fullName}</span>
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-surface-container font-semibold text-on-surface-variant">
+                                {st.rollNumber || 'Roll N/A'}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-on-surface-variant flex items-center gap-2 mt-0.5">
+                              <span>Class {st.className || '10th'}</span>
+                              <span>&bull;</span>
+                              <span>{st.phone || st.parentPhone || 'No phone'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            st.feesPaid || st.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {st.status || 'Active'}
+                          </span>
+                          <Link
+                            to={`/admin/students/${st._id || st.id}`}
+                            className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                            title="View Full Profile"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRosterSubject(null)}
+                className="px-5 py-2 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-on-secondary-fixed-variant transition-colors"
+              >
+                Close Roster
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL 3: Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
