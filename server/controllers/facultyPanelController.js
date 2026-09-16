@@ -143,11 +143,11 @@ export const getFacultyDashboard = async (req, res) => {
     res.json({
       success: true,
       stats: {
-        todayClassesCount: todayTimetable.length || 3,
-        totalAssignedStudents: totalStudents || 45,
-        pendingAttendanceCount: 1,
+        todayClassesCount: todayTimetable.length,
+        totalAssignedStudents: totalStudents,
+        pendingAttendanceCount: 0,
         pendingGradingCount,
-        activeAnnouncementsCount: announcements.length || 4,
+        activeAnnouncementsCount: announcements.length,
       },
       timetable: todayTimetable,
       announcements,

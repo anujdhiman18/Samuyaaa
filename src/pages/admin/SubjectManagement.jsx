@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   subjectService,
+  studentService,
+  facultyService,
   getStoredSubjects,
   getStoredStudents,
   getStoredFaculty,
@@ -138,8 +140,26 @@ export default function SubjectManagement() {
       } else {
         setSubjects(getStoredSubjects() || []);
       }
-      setStudents(getStoredStudents() || []);
-      setFacultyList(getStoredFaculty() || []);
+      try {
+        const studentData = await studentService.getStudents();
+        if (studentData && studentData.students) {
+          setStudents(studentData.students);
+        } else {
+          setStudents(getStoredStudents() || []);
+        }
+      } catch (e) {
+        setStudents(getStoredStudents() || []);
+      }
+      try {
+        const facultyData = await facultyService.getFaculty();
+        if (facultyData && facultyData.faculty) {
+          setFacultyList(facultyData.faculty);
+        } else {
+          setFacultyList(getStoredFaculty() || []);
+        }
+      } catch (e) {
+        setFacultyList(getStoredFaculty() || []);
+      }
     } catch (err) {
       setSubjects(getStoredSubjects() || []);
     } finally {

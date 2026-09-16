@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { attendanceService, announcementService } from '../../services/api';
+import { attendanceService, announcementService, feeService, marksService } from '../../services/api';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
-    attendancePercentage: 92,
-    overallGrade: 'A+',
+    attendancePercentage: 100,
+    overallGrade: 'A',
     pendingFee: 0,
-    enrolledCount: 2,
+    enrolledCount: 0,
+    subjectsSummary: 'No subjects assigned',
   });
   const [latestAnnouncement, setLatestAnnouncement] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,20 +28,53 @@ export default function StudentDashboard() {
     setLoading(true);
     try {
       const studentId = user?._id || user?.id || user?.rollNumber || user?.email || 's1';
-      const attRes = await attendanceService.getStudentAttendance(studentId);
-      const annRes = await announcementService.getAnnouncements();
+      const [attRes, annRes, feeRes, marksRes] = await Promise.allSettled([
+        attendanceService.getStudentAttendance(studentId),
+        announcementService.getAnnouncements(),
+        feeService.getFeePayments({ studentId }),
+        marksService.getStudentMarks(studentId),
+      ]);
 
-      if (attRes && attRes.stats) {
-        setStats((prev) => ({
-          ...prev,
-          attendancePercentage:
-            attRes.stats.attendancePercentage !== undefined ? attRes.stats.attendancePercentage : 100,
-        }));
+      let attPct = 100;
+      if (attRes.status === 'fulfilled' && attRes.value?.stats?.attendancePercentage !== undefined) {
+        attPct = attRes.value.stats.attendancePercentage;
       }
 
-      if (annRes && annRes.announcements && annRes.announcements.length > 0) {
-        setLatestAnnouncement(annRes.announcements[0]);
+      if (annRes.status === 'fulfilled' && annRes.value?.announcements?.length > 0) {
+        setLatestAnnouncement(annRes.value.announcements[0]);
       }
+
+      // Calculate grade from marks
+      let calcGrade = 'A';
+      if (marksRes.status === 'fulfilled' && marksRes.value?.marks?.length > 0) {
+        const marksList = marksRes.value.marks;
+        const totalObtained = marksList.reduce((acc, m) => acc + (m.marksObtained || (m.midTermMarks || 0) + (m.finalExamMarks || 0)), 0);
+        const totalMax = marksList.reduce((acc, m) => acc + (m.totalMaxMarks || m.totalMax || 100), 0);
+        const pct = totalMax > 0 ? (totalObtained / totalMax) * 100 : 85;
+        if (pct >= 90) calcGrade = 'A+';
+        else if (pct >= 80) calcGrade = 'A';
+        else if (pct >= 70) calcGrade = 'B+';
+        else if (pct >= 60) calcGrade = 'B';
+        else if (pct >= 50) calcGrade = 'C';
+        else calcGrade = 'D';
+      }
+
+      // Calculate pending fee
+      const monthlyFee = Number(user?.monthlyFee) || 2500;
+      const isFeePaid = Boolean(user?.feesPaid);
+      const pendingFee = isFeePaid ? 0 : monthlyFee;
+
+      const userSubjects = Array.isArray(user?.subjects) ? user.subjects : [];
+      const enrolledCount = userSubjects.length || (user?.subject ? 1 : 0);
+      const subjectsSummary = userSubjects.length > 0 ? userSubjects.slice(0, 2).join(', ') + (userSubjects.length > 2 ? '...' : '') : 'Active Subjects';
+
+      setStats({
+        attendancePercentage: attPct,
+        overallGrade: calcGrade,
+        pendingFee,
+        enrolledCount,
+        subjectsSummary,
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -123,12 +157,14 @@ export default function StudentDashboard() {
             <p className="font-headings text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
               Pending Fees
             </p>
-            <h3 className="font-headings font-extrabold text-2xl text-emerald-700 mt-1">
-              ₹0
+            <h3 className={`font-headings font-extrabold text-2xl mt-1 ${stats.pendingFee > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+              ₹{stats.pendingFee.toLocaleString()}
             </h3>
-            <p className="text-[10px] text-emerald-700 font-semibold mt-1">Fee Cleared ✓</p>
+            <p className={`text-[10px] font-semibold mt-1 ${stats.pendingFee > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+              {stats.pendingFee > 0 ? 'Payment Due' : 'Fee Cleared ✓'}
+            </p>
           </div>
-          <span className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+          <span className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${stats.pendingFee > 0 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-700'}`}>
             <span className="material-symbols-outlined text-[24px]">payments</span>
           </span>
         </div>
@@ -140,9 +176,9 @@ export default function StudentDashboard() {
               Subjects
             </p>
             <h3 className="font-headings font-extrabold text-2xl text-secondary mt-1">
-              2 Active
+              {stats.enrolledCount} Active
             </h3>
-            <p className="text-[10px] text-on-surface-variant mt-1">Maths, Science</p>
+            <p className="text-[10px] text-on-surface-variant mt-1 truncate max-w-[120px]">{stats.subjectsSummary}</p>
           </div>
           <span className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold">
             <span className="material-symbols-outlined text-[24px]">menu_book</span>

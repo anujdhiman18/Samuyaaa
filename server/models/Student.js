@@ -116,12 +116,11 @@ const studentSchema = new mongoose.Schema(
     },
     branch: {
       type: String,
-      enum: ['Main Center (Bagru)', 'Branch (Daroh)', 'Main Center', 'Branch', 'Bagru', 'Daroh'],
       default: 'Main Center (Bagru)',
     },
     branchId: {
       type: String,
-      enum: ['MAIN_CENTER', 'BRANCH'],
+      enum: ['MAIN_CENTER', 'BRANCH', 'BRANCH_DAROH'],
       default: 'MAIN_CENTER',
     },
     paidTillMonth: {
@@ -155,6 +154,13 @@ const studentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+studentSchema.index({ rollNumber: 1 });
+studentSchema.index({ phone: 1 });
+studentSchema.index({ parentPhone: 1 });
+studentSchema.index({ email: 1 });
+studentSchema.index({ branch: 1, status: 1 });
+studentSchema.index({ className: 1, academicStage: 1 });
 
 const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
 export default Student;

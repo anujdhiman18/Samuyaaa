@@ -1,17 +1,26 @@
 import express from 'express';
 import {
   getSubjects,
+  getSubjectStats,
+  getSubjectById,
   createSubject,
   updateSubject,
   deleteSubject,
+  clearAllSubjects,
 } from '../controllers/subjectController.js';
-import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect); // All subject routes protected
+router.get('/stats', getSubjectStats);
+router.delete('/all', clearAllSubjects);
 
-router.route('/').get(getSubjects).post(createSubject);
-router.route('/:id').put(updateSubject).delete(deleteSubject);
+router.route('/')
+  .get(getSubjects)
+  .post(createSubject);
+
+router.route('/:id')
+  .get(getSubjectById)
+  .put(updateSubject)
+  .delete(deleteSubject);
 
 export default router;

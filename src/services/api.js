@@ -10,264 +10,13 @@ import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageM
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
 
-export const initialMockStudents = [
-  {
-    _id: 's_anuj',
-    fullName: 'Anuj Dhiman',
-    admissionNumber: 'ADM-2025-001',
-    fatherName: 'Sunil Dhiman',
-    motherName: 'Meena Dhiman',
-    phone: '9816001122',
-    parentPhone: '8894190175',
-    email: 'anuj1100.be24@chitkarauniversity.edu.in',
-    password: 'Student123',
-    address: 'Chitkara University Campus / Himachal Pradesh',
-    className: '12th (+2)',
-    course: 'Computer Science',
-    batch: '2024-2026',
-    semester: 'Semester 4',
-    rollNumber: 'SAU-12-005',
-    subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-    dateOfAdmission: '2025-04-01',
-    monthlyFee: 3000,
-    monthlyDueDay: 5,
-    branch: 'Main Center',
-    status: 'Active',
-    attendancePercentage: 96,
-    paidTillMonth: 'July 2026',
-    feesPaid: true,
-    dob: '2006-11-12',
-    bloodGroup: 'O+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-  },
-  {
-    _id: 's1',
-    fullName: 'Rahul Gupta',
-    admissionNumber: 'ADM-2025-002',
-    fatherName: 'Rajesh Gupta',
-    motherName: 'Sunita Gupta',
-    phone: '9816012345',
-    parentPhone: '8894190175',
-    email: 'rahul.g@gmail.com',
-    address: 'House #42, Main Market, Jamula, Palampur',
-    className: '10th',
-    course: 'Science',
-    batch: '2025-2026',
-    semester: 'S2 (6th - 10th)',
-    rollNumber: 'SAU-02-001',
-    subjects: ['Mathematics Advanced', 'Integrated Science'],
-    dateOfAdmission: '2025-04-10',
-    monthlyFee: 2500,
-    monthlyDueDay: 5,
-    status: 'Active',
-    attendancePercentage: 88,
-    paidTillMonth: 'June 2026',
-    feesPaid: false,
-    dob: '2009-08-15',
-    bloodGroup: 'B+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-  },
-  {
-    _id: 's2',
-    fullName: 'Damini Sharma',
-    admissionNumber: 'ADM-2025-003',
-    fatherName: 'Subhash Sharma',
-    motherName: 'Kamlesh Sharma',
-    phone: '9876543210',
-    parentPhone: '8894190175',
-    email: 'damini.s@gmail.com',
-    address: 'Main Center',
-    className: '10th',
-    course: 'Science',
-    batch: '2025-2026',
-    semester: 'S2 (6th - 10th)',
-    rollNumber: 'SAU-02-002',
-    subjects: ['Mathematics Advanced'],
-    dateOfAdmission: '2025-03-15',
-    monthlyFee: 2000,
-    monthlyDueDay: 5,
-    status: 'Active',
-    attendancePercentage: 94,
-    paidTillMonth: 'July 2026',
-    feesPaid: true,
-    dob: '2010-01-20',
-    bloodGroup: 'A+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-  },
-  {
-    _id: 's3',
-    fullName: 'Aryan Mehta',
-    admissionNumber: 'ADM-2025-005',
-    fatherName: 'Vikas Mehta',
-    motherName: 'Priya Mehta',
-    phone: '9816112233',
-    parentPhone: '8894190175',
-    email: 'aryan.m@gmail.com',
-    address: 'Ward No 4, Civil Lines, HP',
-    className: '11th (+1)',
-    course: 'Non-Medical (PCM)',
-    batch: '2024-2026',
-    semester: 'S3 (10th - 12th)',
-    rollNumber: 'SAU-03-003',
-    subjects: ['Physics IIT-JEE Prep', 'Chemistry Foundation'],
-    dateOfAdmission: '2025-05-01',
-    monthlyFee: 3000,
-    monthlyDueDay: 5,
-    status: 'Active',
-    attendancePercentage: 78,
-    paidTillMonth: 'June 2026',
-    feesPaid: false,
-    dob: '2008-11-05',
-    bloodGroup: 'O+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-  },
-  {
-    _id: 's4',
-    fullName: 'Sneha Reddy',
-    fatherName: 'K. V. Reddy',
-    motherName: 'Sujatha Reddy',
-    phone: '9816223344',
-    parentPhone: '8894190175',
-    subjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-    dateOfAdmission: '2025-06-01',
-    monthlyFee: 2500,
-    monthlyDueDay: 5,
-    status: 'Alumni',
-    attendancePercentage: 95,
-    paidTillMonth: 'June 2026',
-    feesPaid: true,
-    dob: '2009-02-14',
-    bloodGroup: 'AB+',
-    emergencyContact: '8894190175',
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-  },
-];
-
+export const initialMockStudents = [];
 export const initialMockSubjects = [];
-
-const initialMockPayments = [
-  {
-    _id: 'p1',
-    student: 's1',
-    studentName: 'Rahul Gupta',
-    rollNumber: 'SAU-10-001',
-    className: '10th',
-    amountPaid: 2500,
-    monthlyFee: 2500,
-    pendingAmount: 0,
-    paymentDate: '2026-07-05',
-    monthYear: 'July 2026',
-    paymentMode: 'UPI',
-    transactionId: 'UPI98726351',
-    receiptNumber: 'REC-2026-0001',
-    remarks: 'Monthly tuition fee',
-  },
-  {
-    _id: 'p2',
-    student: 's2',
-    studentName: 'Damini Sharma',
-    rollNumber: 'SAU-10-002',
-    className: '10th',
-    amountPaid: 2000,
-    monthlyFee: 2000,
-    pendingAmount: 0,
-    paymentDate: '2026-07-04',
-    monthYear: 'July 2026',
-    paymentMode: 'Cash',
-    receiptNumber: 'REC-2026-0002',
-    remarks: 'Monthly tuition fee',
-  },
-];
-
-const initialMockMarks = [
-  {
-    _id: 'm1',
-    student: 's1',
-    subject: 'Mathematics Advanced',
-    examName: 'Mid-Term Board Mock 2026',
-    maxMarks: 100,
-    obtainedMarks: 96,
-    grade: 'A+',
-    percentage: 96.0,
-    examDate: '2026-06-20',
-  },
-  {
-    _id: 'm2',
-    student: 's1',
-    subject: 'Integrated Science',
-    examName: 'Weekly Foundation Assessment',
-    maxMarks: 50,
-    obtainedMarks: 44,
-    grade: 'A',
-    percentage: 88.0,
-    examDate: '2026-07-01',
-  },
-  {
-    _id: 'm3',
-    student: 's2',
-    subject: 'Mathematics Advanced',
-    examName: 'Mid-Term Board Mock 2026',
-    maxMarks: 100,
-    obtainedMarks: 100,
-    grade: 'A+',
-    percentage: 100.0,
-    examDate: '2026-06-20',
-  },
-];
-
-const initialMockAttendance = [
-  { _id: 'a1', student: 's1', date: '2026-07-25', status: 'Present', subject: 'Mathematics' },
-  { _id: 'a2', student: 's1', date: '2026-07-24', status: 'Present', subject: 'Integrated Science' },
-  { _id: 'a3', student: 's1', date: '2026-07-23', status: 'Present', subject: 'Mathematics' },
-  { _id: 'a4', student: 's1', date: '2026-07-22', status: 'Absent', subject: 'Integrated Science' },
-  { _id: 'a5', student: 's1', date: '2026-07-21', status: 'Present', subject: 'Mathematics' },
-];
-
-const initialMockAnnouncements = [
-  {
-    _id: 'anc1',
-    title: 'Upcoming HPBOSE 10th Mock Test Series',
-    content: 'Full-length 3-hour practice mock test scheduled for Saturday at 9:00 AM. Attendance is mandatory for all Class 10 students.',
-    category: 'Exam',
-    targetClass: '10th',
-    authorName: 'Jitender Sharma (Director)',
-    publishedDate: '2026-07-26',
-  },
-  {
-    _id: 'anc2',
-    title: 'Independence Day Special Holiday Notice',
-    content: 'The institute will remain closed on 15th August. Special revision booklets will be distributed prior to the holiday.',
-    category: 'Holiday',
-    targetClass: 'All',
-    authorName: 'Administration',
-    publishedDate: '2026-07-24',
-  },
-];
-
-const initialMockNotifications = [
-  {
-    _id: 'n1',
-    student: 's1',
-    title: 'New Exam Marks Uploaded',
-    message: 'Your marks for Mid-Term Board Mock 2026 (Mathematics) have been published: 96/100 (Grade A+).',
-    type: 'Marks',
-    isRead: false,
-    createdAt: '2026-07-26T10:00:00Z',
-  },
-  {
-    _id: 'n2',
-    student: 's1',
-    title: 'Tuition Fee Receipt Issued',
-    message: 'Receipt REC-2026-0001 for July 2026 tuition fee (₹2,500) has been generated.',
-    type: 'Fee',
-    isRead: true,
-    createdAt: '2026-07-05T14:30:00Z',
-  },
-];
+export const initialMockPayments = [];
+export const initialMockMarks = [];
+export const initialMockAttendance = [];
+export const initialMockAnnouncements = [];
+export const initialMockNotifications = [];
 
 // Helpers
 const getAuthHeaders = () => {
@@ -280,33 +29,25 @@ const getAuthHeaders = () => {
 
 let lastBackendFailureTime = 0;
 
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (
-      (hostname.includes('vercel.app') || hostname.includes('netlify.app') || hostname.includes('render.com')) &&
-      (!import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL.includes('localhost'))
-    ) {
-      return null;
-    }
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `${window.location.protocol}//${hostname}:5000/api`;
     }
   }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  return 'http://localhost:5000/api';
 };
 
 export const apiCall = async (endpoint, options = {}) => {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) return null;
 
-  if (Date.now() - lastBackendFailureTime < 2000) {
-    return null;
-  }
-
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
@@ -626,11 +367,34 @@ const setStoredNotifications = (n, skipNotify = false) => {
 };
 
 // Auth Service with Firebase Auth & Firestore Integration
+// Auth Service with Express Backend & MongoDB Integration
 export const authService = {
   login: async (email, password) => {
     const cleanEmail = (email || '').trim().toLowerCase();
 
-    // 1. Check if login attempt is for Admin account
+    // 1. Primary Authentication: Express REST API (MongoDB + Bcrypt + JWT)
+    try {
+      const remote = await apiCall('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: cleanEmail, password }),
+      });
+      if (remote && remote.success && remote.token) {
+        const loggedUser = remote.user || remote.admin;
+        localStorage.setItem('saumyaa_token', remote.token);
+        localStorage.setItem('saumyaa_user', JSON.stringify(loggedUser));
+        if (loggedUser.role === 'SuperAdmin' || loggedUser.role === 'Admin') {
+          localStorage.setItem('saumyaa_admin', JSON.stringify(loggedUser));
+          localStorage.setItem('saumyaa_admin_profile', JSON.stringify(loggedUser));
+        }
+        return { success: true, user: loggedUser, admin: loggedUser, token: remote.token };
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError') && !err.message.includes('abort')) {
+        throw err;
+      }
+    }
+
+    // Fallback: Check local profile if offline
     let savedAdmin = null;
     try {
       const docSnap = await getDoc(doc(db, 'admin_profile', 'admin_main'));
@@ -674,7 +438,7 @@ export const authService = {
         localStorage.setItem('saumyaa_admin', JSON.stringify(loggedUser));
         localStorage.setItem('saumyaa_admin_profile', JSON.stringify(loggedUser));
 
-        return { success: true, user: loggedUser, token: 'mock_jwt_token_admin_2026' };
+        return { success: true, user: loggedUser, token: 'jwt_admin_' + Date.now() };
       } else {
         throw new Error('Invalid admin password. Please check your credentials.');
       }
@@ -1362,53 +1126,15 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
   );
 };
 
-const initialMockStudentLeaves = [
-  {
-    _id: 'slv_1',
-    studentId: 's_demo_1',
-    admissionNo: 'ADM-2025-089',
-    studentName: 'Varun Sharma',
-    parentPhone: '9816099999',
-    className: '10th',
-    section: 'Section A',
-    branch: 'Main Center',
-    leaveType: 'Sick Leave',
-    startDate: '2026-08-10',
-    endDate: '2026-08-12',
-    numberOfDays: 3,
-    reason: 'Severe viral fever and doctor advised 3 days complete bed rest',
-    supportingDocument: 'https://example.com/medical-fitness-cert.pdf',
-    status: 'Pending',
-    createdAt: '2026-08-04T10:00:00.000Z',
-  },
-  {
-    _id: 'slv_2',
-    studentId: 's_demo_2',
-    admissionNo: 'ADM-2025-092',
-    studentName: 'Ananya Gupta',
-    parentPhone: '9816088888',
-    className: '12th (+2)',
-    section: 'Medical',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-15',
-    endDate: '2026-08-16',
-    numberOfDays: 2,
-    reason: 'Attending family wedding ceremony in Shimla',
-    supportingDocument: '',
-    status: 'Approved',
-    adminRemarks: 'Approved by Class Teacher. Make up missed assignments.',
-    createdAt: '2026-08-03T09:00:00.000Z',
-  },
-];
+const initialMockStudentLeaves = [];
 
 const getStoredStudentLeaves = () => {
   try {
     const list = JSON.parse(localStorage.getItem('mock_student_leaves'));
-    if (Array.isArray(list) && list.length > 0) return list;
-    return initialMockStudentLeaves;
+    if (Array.isArray(list)) return list;
+    return [];
   } catch (e) {
-    return initialMockStudentLeaves;
+    return [];
   }
 };
 const setStoredStudentLeaves = (data) => localStorage.setItem('mock_student_leaves', JSON.stringify(data));
@@ -2782,16 +2508,40 @@ export const announcementService = {
   },
 };
 
+// Branch Service
+export const branchService = {
+  getBranches: async () => {
+    try {
+      const remote = await apiCall('/branches');
+      if (remote && remote.branches) return remote;
+    } catch (e) {}
+    return {
+      success: true,
+      branches: [
+        { name: 'Main Center (Bagru)', code: 'MAIN_CENTER', address: 'Bagru Campus, Main Road', city: 'Bagru' },
+        { name: 'Branch (Daroh)', code: 'BRANCH_DAROH', address: 'Daroh Market Complex', city: 'Daroh' },
+      ],
+    };
+  },
+  createBranch: async (data) => {
+    return await apiCall('/branches', { method: 'POST', body: JSON.stringify(data) });
+  },
+};
+
 // Notification Service
 export const notificationService = {
   getNotifications: async (studentId) => {
-    const remote = await apiCall(`/notifications?studentId=${studentId}`);
+    const query = studentId ? `?studentId=${studentId}` : '';
+    const remote = await apiCall(`/notifications${query}`);
     if (remote) return remote;
 
     return { success: true, notifications: getStoredNotifications() };
   },
 
   markAsRead: async (id) => {
+    try {
+      await apiCall(`/notifications/${id}/read`, { method: 'PUT' });
+    } catch (e) {}
     const list = getStoredNotifications().map((n) => (n._id === id ? { ...n, isRead: true } : n));
     setStoredNotifications(list);
     return { success: true };
@@ -2823,7 +2573,6 @@ export const notificationService = {
       localStorage.setItem('saumyaa_sms_logs', JSON.stringify(logs.slice(0, 50)));
     } catch (e) {}
 
-    console.log(`💬 [Auto SMS Dispatched] to ${phone} (${studentName}): "${text}"`);
     return { success: true, message: `SMS notification dispatched to ${phone}` };
   },
 };
@@ -3187,63 +2936,15 @@ export const dashboardService = {
 };
 
 // Feedback / Review Service
-const initialMockFeedbacks = [
-  {
-    _id: 'fb1',
-    id: 'fb1',
-    name: 'Mr. Rajesh Gupta',
-    role: 'Parent of Rahul (Grade 10)',
-    quote: "Before joining Saumyaa Studies, my son Rahul struggled to sit through a Math paper. Jitender sir's patience changed everything. Not only did his marks improve from 62 to 89, but he's actually excited about Algebra now.",
-    initials: 'RG',
-    initialsBg: 'bg-secondary/15',
-    initialsColor: 'text-secondary',
-    stars: 5,
-  },
-  {
-    _id: 'fb2',
-    id: 'fb2',
-    name: 'Aryan Mehta',
-    role: 'Student (Class 10 CBSE 98.4%)',
-    quote: 'Jitender sir makes science feel alive. The practical formulas and conceptual clarity we developed in the classes helped me clear CBSE board physics and chemistry exams with top scores.',
-    initials: 'AM',
-    initialsBg: 'bg-primary/15',
-    initialsColor: 'text-primary',
-    stars: 5,
-  },
-  {
-    _id: 'fb3',
-    id: 'fb3',
-    name: 'Sneha Reddy',
-    role: 'JEE Foundation Student',
-    quote: 'The class size is limited to 15. This meant I could stop the lesson at any second and clear my doubts. That individual accountability is completely missing in larger institutes.',
-    initials: 'SR',
-    initialsBg: 'bg-tertiary/15',
-    initialsColor: 'text-tertiary',
-    stars: 5,
-  },
-  {
-    _id: 'fb4',
-    id: 'fb4',
-    name: 'Karan Dhillon',
-    role: 'Student (Class 12 Boards)',
-    quote: 'English literature class and grammatical deep-dives here helped me secure 96 in class 12 Boards. The answer writing strategies they teach are gold.',
-    initials: 'KD',
-    initialsBg: 'bg-secondary/15',
-    initialsColor: 'text-secondary',
-    stars: 4,
-  },
-];
+// Feedback / Review Service
+const initialMockFeedbacks = [];
 
 export const getStoredFeedbacks = () => {
   try {
     const saved = localStorage.getItem('saumyaa_feedbacks');
-    if (!saved) {
-      localStorage.setItem('saumyaa_feedbacks', JSON.stringify(initialMockFeedbacks));
-      return initialMockFeedbacks;
-    }
-    return saved ? JSON.parse(saved) : initialMockFeedbacks;
+    return saved ? JSON.parse(saved) : [];
   } catch (e) {
-    return initialMockFeedbacks;
+    return [];
   }
 };
 
@@ -3254,7 +2955,7 @@ const setStoredFeedbacks = (list) => {
 
 export const feedbackService = {
   getFeedbacks: async () => {
-    const fsFeedbacks = await syncFirestoreCollection('feedbacks', initialMockFeedbacks);
+    const fsFeedbacks = await syncFirestoreCollection('feedbacks', []);
     let list = fsFeedbacks || getStoredFeedbacks();
     return { success: true, feedbacks: list };
   },
@@ -3294,97 +2995,14 @@ export const feedbackService = {
   },
 };
 
-export const initialMockFaculty = [
-  {
-    _id: 'fac_1',
-    id: 'fac_1',
-    name: 'Dr. Jitender Sharma',
-    email: 'jitender.sharma@saumyaa.edu.in',
-    password: 'faculty123',
-    phone: '9816099999',
-    designation: 'Founder & Managing Director | Senior Physics HOD',
-    department: 'Executive Board & Science',
-    subject: 'Physics & Mechanics (IIT-JEE)',
-    qualification: 'Ph.D. Physics (IIT Delhi)',
-    experience: '15+ Years Teaching & Leadership',
-    assignedClasses: ['10th', '11th (+1)', '12th (+2)'],
-    assignedSubjects: ['Mathematics Advanced', 'Physics IIT-JEE Prep'],
-    photo_url: '/Unknown.jpg',
-    display_order: 1,
-    is_active: true,
-    role: 'HEAD_OF_DEPARTMENT',
-    roles: ['HEAD_OF_DEPARTMENT'],
-  },
-  {
-    _id: 'fac_2',
-    id: 'fac_2',
-    name: 'Prof. Saumyaa Sharma',
-    email: 'saumyaa.sharma@saumyaa.edu.in',
-    password: 'faculty123',
-    phone: '9816088888',
-    designation: 'Mathematics Department Head',
-    department: 'Science & Mathematics',
-    subject: 'Advanced Mathematics',
-    qualification: 'M.Sc. Mathematics (Gold Medalist)',
-    experience: '12+ Years Teaching',
-    assignedClasses: ['10th', '12th (+2)'],
-    assignedSubjects: ['Mathematics Advanced'],
-    photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
-    display_order: 2,
-    is_active: true,
-    role: 'HEAD_OF_DEPARTMENT',
-    roles: ['HEAD_OF_DEPARTMENT'],
-  },
-  {
-    _id: 'fac_3',
-    id: 'fac_3',
-    name: 'Dr. Rajesh Verma',
-    email: 'rajesh.verma@saumyaa.edu.in',
-    password: 'faculty123',
-    phone: '9816077777',
-    designation: 'Senior Chemistry Mentor',
-    department: 'Science & Mathematics',
-    subject: 'Organic & Physical Chemistry',
-    qualification: 'Ph.D. Organic Chemistry',
-    experience: '10+ Years Teaching',
-    assignedClasses: ['11th (+1)', '12th (+2)'],
-    assignedSubjects: ['Chemistry Board Prep'],
-    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    display_order: 3,
-    is_active: true,
-    role: 'SENIOR_FACULTY',
-    roles: ['SENIOR_FACULTY'],
-  },
-  {
-    _id: 'fac_4',
-    id: 'fac_4',
-    name: 'Er. Ananya Patel',
-    email: 'ananya.patel@saumyaa.edu.in',
-    password: 'faculty123',
-    phone: '9816066666',
-    designation: 'Biology & Olympiad Specialist',
-    department: 'Biology & Life Sciences',
-    subject: 'Biology & Life Sciences',
-    qualification: 'M.Tech Biotechnology',
-    experience: '8+ Years Teaching',
-    assignedClasses: ['10th', '11th (+1)'],
-    assignedSubjects: ['Biology NEET Prep'],
-    photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',
-    display_order: 4,
-    is_active: true,
-    role: 'SUBJECT_TEACHER',
-    roles: ['SUBJECT_TEACHER'],
-  },
-];
+export const initialMockFaculty = [];
 
 export const getStoredFaculty = () => {
   try {
     const deleted = getDeletedIds('faculty');
     const data = localStorage.getItem('saumyaa_faculty');
-    let list = data ? JSON.parse(data) : null;
-    if (!list || !Array.isArray(list)) {
-      list = initialMockFaculty;
-    }
+    let list = data ? JSON.parse(data) : [];
+    if (!list || !Array.isArray(list)) return [];
 
     const map = new Map();
     list.forEach((f) => {
@@ -3393,21 +3011,9 @@ export const getStoredFaculty = () => {
       const fEmail = (f.email && typeof f.email === 'string' ? f.email.toLowerCase() : '').trim();
       const k = String(f._id || f.id || f.email || '').trim().toLowerCase();
       if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
-        return; // Exclude deleted faculty
+        return;
       }
       if (k) map.set(k, f);
-    });
-
-    initialMockFaculty.forEach((defaultFac) => {
-      const fId = String(defaultFac._id || defaultFac.id || '');
-      const fEmail = (defaultFac.email && typeof defaultFac.email === 'string' ? defaultFac.email.toLowerCase() : '').trim();
-      if (deleted.includes(fId) || (fEmail && deleted.includes(fEmail))) {
-        return; // Do NOT re-add default faculty if deleted
-      }
-      const k = String(defaultFac._id || defaultFac.id || defaultFac.email || '').trim().toLowerCase();
-      if (k && !map.has(k)) {
-        map.set(k, defaultFac);
-      }
     });
 
     let mergedList = Array.from(map.values()).map((f) => {
@@ -3934,96 +3540,16 @@ export const facultyService = {
   },
 };
 
-const initialMockFacultyApplications = [
-  {
-    _id: 'app_1001',
-    id: 'app_1001',
-    applicationId: 'SAU-FAC-2026-1001',
-    fullName: 'Dr. Ananya Sharma',
-    dob: '1990-05-14',
-    gender: 'Female',
-    contactNumber: '9816011223',
-    email: 'ananya.sharma@example.com',
-    currentAddress: 'House 45, Sector 4, Kangra Valley, HP 176001',
-    permanentAddress: 'House 45, Sector 4, Kangra Valley, HP 176001',
-    highestDegree: "Ph.D. / Doctorate",
-    universityName: 'IIT Delhi - Indian Institute of Technology',
-    graduationYear: '2016',
-    specialization: 'Quantum Mechanics & Applied Physics',
-    certifications: 'CSIR-NET JRF Qualified, NPTEL Advanced Physics Certification',
-    totalExperience: '8+ Years',
-    previousInstitutions: 'Allen Career Institute, Resonance Kota, DAV Public School',
-    subjectsTaught: 'Physics (Class 11-12), JEE Advanced Physics, Olympiad Physics',
-    currentStatus: 'Serving Notice Period',
-    positionApplied: 'Head of Department (HOD)',
-    subjectsExpertise: ['Physics & Mechanics', 'JEE/NEET Advanced Prep'],
-    preferredTimeSlot: 'Full-time (Morning Shift)',
-    expectedJoiningDate: '2026-08-15',
-    whyJoinReason: 'I am passionate about empowering students in tier-2 cities with top-tier competitive physics training. Saumyaa Studies has an exemplary record in conceptual clarity.',
-    skillsAchievements: 'Mentored top 50 AIR ranks in JEE Advanced 2024. Authored 2 physics problem workbooks.',
-    references: [
-      { name: 'Dr. Rajesh Khanna', contact: '9876543210', relationship: 'Former HOD at Allen' },
-      { name: 'Prof. V. K. Malhotra', contact: '9812345678', relationship: 'PhD Supervisor at IIT Delhi' }
-    ],
-    resumeFileName: 'Dr_Ananya_Sharma_Resume.pdf',
-    resumeUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    idProofFileName: 'Aadhaar_Ananya_Sharma.pdf',
-    idProofUrl: '',
-    certificatesFileName: 'PhD_Degree_Certificate.pdf',
-    certificatesUrl: '',
-    status: 'Under Review',
-    appliedAt: '2026-07-28T10:30:00.000Z',
-    notes: 'Strong candidate with IIT background and 8 years JEE experience.',
-  },
-  {
-    _id: 'app_1002',
-    id: 'app_1002',
-    applicationId: 'SAU-FAC-2026-1002',
-    fullName: 'Vikramaditya Verma',
-    dob: '1994-11-22',
-    gender: 'Male',
-    contactNumber: '9876512340',
-    email: 'vikram.verma@example.com',
-    currentAddress: 'Main Street, Palampur, HP 176061',
-    permanentAddress: 'Main Street, Palampur, HP 176061',
-    highestDegree: "Master's Degree (M.Sc / M.Tech / M.A)",
-    universityName: 'Panjab University, Chandigarh',
-    graduationYear: '2018',
-    specialization: 'Pure Mathematics & Calculus',
-    certifications: 'B.Ed in Mathematics, GATE Qualified (Maths)',
-    totalExperience: '5+ Years',
-    previousInstitutions: 'Mount Carmel School, Scholars Academy',
-    subjectsTaught: 'Class 9th to 12th Mathematics, Vedic Maths',
-    currentStatus: 'Currently Employed',
-    positionApplied: 'Subject Teacher',
-    subjectsExpertise: ['Mathematics', 'Logical Reasoning'],
-    preferredTimeSlot: 'Full-time (Evening Shift)',
-    expectedJoiningDate: '2026-09-01',
-    whyJoinReason: 'Saumyaa Studies provides a great academic ecosystem for student-centric teaching and innovative pedagogy.',
-    skillsAchievements: 'Conducted Vedic Math workshops for over 1000 students. 100% pass record in Class 10 Board exams.',
-    references: [
-      { name: 'Sunil Dutt', contact: '9816000000', relationship: 'Principal, Scholars Academy' }
-    ],
-    resumeFileName: 'Vikram_Verma_CV.pdf',
-    resumeUrl: '',
-    idProofFileName: 'PAN_Card.pdf',
-    idProofUrl: '',
-    certificatesFileName: 'MSc_Maths_Marksheet.pdf',
-    certificatesUrl: '',
-    status: 'Pending',
-    appliedAt: '2026-07-30T14:15:00.000Z',
-    notes: 'Good local applicant for senior maths classes.',
-  }
-];
+const initialMockFacultyApplications = [];
 
 export const getStoredFacultyApplications = () => {
   const deleted = getDeletedIds('faculty_applications');
   try {
     const data = localStorage.getItem('saumyaa_faculty_applications');
-    const list = data ? JSON.parse(data) : initialMockFacultyApplications;
-    return list.filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)));
+    const list = data ? JSON.parse(data) : [];
+    return (list || []).filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)));
   } catch (e) {
-    return initialMockFacultyApplications.filter((a) => a && !deleted.includes(String(a._id)) && !deleted.includes(String(a.id)));
+    return [];
   }
 };
 
@@ -4037,7 +3563,7 @@ export const setStoredFacultyApplications = (list) => {
 
 export const facultyApplicationService = {
   getApplications: async () => {
-    const fsApps = await syncFirestoreCollection('faculty_applications', initialMockFacultyApplications);
+    const fsApps = await syncFirestoreCollection('faculty_applications', []);
     let list = fsApps || getStoredFacultyApplications();
     list.sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0));
     return { success: true, applications: list };
@@ -4259,44 +3785,7 @@ export const facultyApplicationService = {
 // ==========================================
 // STUDENT APPLICATIONS SERVICE & MOCK DATA
 // ==========================================
-export const initialMockStudentApplications = [
-  {
-    _id: 'app_stu_1',
-    id: 'app_stu_1',
-    applicationId: 'SAU-STU-2026-1001',
-    fullName: 'Aarav Sharma',
-    email: 'aarav.sharma@gmail.com',
-    contactNumber: '9816512345',
-    dob: '2010-05-14',
-    targetClass: '10th',
-    subjects: ['Mathematics', 'Science (PCM)'],
-    previousSchool: 'DAV Public School',
-    parentName: 'Sanjay Sharma',
-    parentContact: '9816598765',
-    message: 'Seeking admission for board exam preparation and advanced coaching.',
-    status: 'Pending',
-    appliedAt: '2026-08-01T10:30:00.000Z',
-    notes: 'Interested in morning batch at Main Center.',
-  },
-  {
-    _id: 'app_stu_2',
-    id: 'app_stu_2',
-    applicationId: 'SAU-STU-2026-1002',
-    fullName: 'Priya Verma',
-    email: 'priya.verma@gmail.com',
-    contactNumber: '9816488888',
-    dob: '2009-08-22',
-    targetClass: '11th (+1)',
-    subjects: ['Physics', 'Chemistry', 'Mathematics'],
-    previousSchool: 'St. Xavier Convent School',
-    parentName: 'Rajesh Verma',
-    parentContact: '9816477777',
-    message: 'Preparing for JEE entrance along with +1 CBSE curriculum.',
-    status: 'Approved',
-    appliedAt: '2026-07-25T14:15:00.000Z',
-    notes: 'Counselled and approved for +1 Medical/Non-Medical batch.',
-  }
-];
+export const initialMockStudentApplications = [];
 
 export const getStoredStudentApplications = () => {
   const deleted = getDeletedIds('student_applications');
@@ -5281,91 +4770,14 @@ export const facultyProfileRequestService = {
   },
 };
 
-const initialMockAlumni = [
-  {
-    _id: 'alum_1',
-    id: 'alum_1',
-    full_name: 'Ananya Sharma',
-    graduation_year: 2022,
-    course: 'JEE Advanced Foundation (Physics & Math)',
-    current_company: 'Google',
-    current_position: 'Software Development Engineer II',
-    package_ctc: '32 LPA',
-    location: 'Bengaluru, India',
-    achievement: 'AIR 342 in JEE Advanced | Gold Medalist IIT Bombay',
-    testimonial: 'Saumyaa Studies gave me the conceptual clarity and problem-solving speed required to crack JEE Advanced with AIR 342. Jitender Sir’s guidance in Physics was unmatched!',
-    linkedin_url: 'https://linkedin.com/in/ananyasharma',
-    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    display_order: 1,
-    is_featured: true,
-    is_active: true,
-  },
-  {
-    _id: 'alum_2',
-    id: 'alum_2',
-    full_name: 'Vikas Sen',
-    graduation_year: 2020,
-    course: 'IIT-JEE Super 30 Batch',
-    current_company: 'Apple',
-    current_position: 'Hardware Systems Engineer',
-    package_ctc: '45 LPA',
-    location: 'Cupertino, USA / Hyderabad',
-    achievement: 'Published 3 IEEE Patents | B.Tech IIT Delhi',
-    testimonial: 'The deep numerical practice and daily test series at Saumyaa Studies built the foundation for my IIT Delhi admission and global engineering career.',
-    linkedin_url: 'https://linkedin.com/in/vikassen',
-    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    display_order: 2,
-    is_featured: true,
-    is_active: true,
-  },
-  {
-    _id: 'alum_3',
-    id: 'alum_3',
-    full_name: 'Priya Thakur',
-    graduation_year: 2023,
-    course: 'Mathematics Advanced & Physics (12th Board)',
-    current_company: 'Microsoft',
-    current_position: 'Senior Data Scientist',
-    package_ctc: '28 LPA',
-    location: 'Noida, India',
-    achievement: '98.6% Board Topper | B.Tech BITS Pilani',
-    testimonial: 'Scoring 98.6% in 12th Boards and getting into BITS Pilani was only possible because of the personal attention and rigorous mock exams at Saumyaa Studies.',
-    linkedin_url: 'https://linkedin.com/in/priyathakur',
-    photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
-    display_order: 3,
-    is_featured: true,
-    is_active: true,
-  },
-  {
-    _id: 'alum_4',
-    id: 'alum_4',
-    full_name: 'Dr. Karan Verma',
-    graduation_year: 2021,
-    course: 'NEET Foundation & Integrated Biology',
-    current_company: 'AIIMS New Delhi',
-    current_position: 'Resident Physician (Internal Medicine)',
-    package_ctc: '18 LPA',
-    location: 'New Delhi, India',
-    achievement: 'AIR 128 NEET-UG | MD Scholar',
-    testimonial: 'The faculty’s commitment to clarifying every single doubt, no matter how small, made all the difference during my NEET preparation.',
-    linkedin_url: 'https://linkedin.com/in/karanverma',
-    photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-    display_order: 4,
-    is_featured: false,
-    is_active: true,
-  },
-];
+const initialMockAlumni = [];
 
 export const getStoredAlumni = () => {
   try {
     const data = localStorage.getItem('saumyaa_alumni');
-    if (!data) {
-      localStorage.setItem('saumyaa_alumni', JSON.stringify(initialMockAlumni));
-      return initialMockAlumni;
-    }
-    return data ? JSON.parse(data) : initialMockAlumni;
+    return data ? JSON.parse(data) : [];
   } catch (e) {
-    return initialMockAlumni;
+    return [];
   }
 };
 
@@ -5376,7 +4788,7 @@ const setStoredAlumni = (list) => {
 
 export const alumniService = {
   getAlumni: async (params = {}) => {
-    const fsAlumni = await syncFirestoreCollection('alumni', initialMockAlumni);
+    const fsAlumni = await syncFirestoreCollection('alumni', []);
     let list = fsAlumni || getStoredAlumni();
 
     if (params.activeOnly) {
@@ -5422,11 +4834,11 @@ export const alumniService = {
     return {
       success: true,
       stats: {
-        totalAlumni: list.length || 120,
-        studentsPlaced: Math.round((list.length || 120) * 0.95),
-        topRecruiters: companies.size || 28,
-        averagePackage: '28.5 LPA',
-        highestPackage: highestNum ? `${highestNum} LPA` : '45 LPA',
+        totalAlumni: list.length,
+        studentsPlaced: Math.round(list.length * 0.95),
+        topRecruiters: companies.size,
+        averagePackage: list.length > 0 ? '28.5 LPA' : '0 LPA',
+        highestPackage: highestNum ? `${highestNum} LPA` : (list.length > 0 ? '45 LPA' : '0 LPA'),
       },
     };
   },
@@ -5518,63 +4930,14 @@ export const alumniService = {
   },
 };
 
-export const initialMockToppers = [
-  {
-    _id: 'top_1',
-    id: 'top_1',
-    student_name: 'Damini Sharma',
-    exam_name: 'Class 10th HPBOSE Board',
-    score: '98.6% (100/100 Math)',
-    quote: "Jitender sir's focus on logic instead of memorization made Organic Chemistry and Math feel like logical puzzles. My score shot up to 98.6%!",
-    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    display_order: 1,
-    is_active: true,
-  },
-  {
-    _id: 'top_2',
-    id: 'top_2',
-    student_name: 'Rahul Gupta',
-    exam_name: 'Class 10th Board Exam',
-    score: '97.2% (Physics 98/100)',
-    quote: 'The daily practice tests and personalized attention at Saumyaa Studies helped me secure top rank in Board Exams.',
-    photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
-    display_order: 2,
-    is_active: true,
-  },
-  {
-    _id: 'top_3',
-    id: 'top_3',
-    student_name: 'Aryan Mehta',
-    exam_name: 'Class 11th IIT-JEE Foundation',
-    score: '96.0% (Chemistry 96/100)',
-    quote: 'Solving complex numerical problems became second nature thanks to the guidance of the faculty.',
-    photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    display_order: 3,
-    is_active: true,
-  },
-  {
-    _id: 'top_4',
-    id: 'top_4',
-    student_name: 'Aditya Sharma',
-    exam_name: 'HPBOSE Class 10 Board Record',
-    score: '95.4% (Center Topper)',
-    quote: 'Scoring 95.4% and 100 in Mathematics gave me the confidence to aim for top engineering institutes.',
-    photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-    display_order: 4,
-    is_active: true,
-  },
-];
+export const initialMockToppers = [];
 
 export const getStoredToppers = () => {
   try {
     const data = localStorage.getItem('saumyaa_toppers');
-    if (!data) {
-      localStorage.setItem('saumyaa_toppers', JSON.stringify(initialMockToppers));
-      return initialMockToppers;
-    }
-    return data ? JSON.parse(data) : initialMockToppers;
+    return data ? JSON.parse(data) : [];
   } catch (e) {
-    return initialMockToppers;
+    return [];
   }
 };
 
@@ -5585,7 +4948,7 @@ const setStoredToppers = (list) => {
 
 export const topperService = {
   getToppers: async ({ activeOnly = false } = {}) => {
-    const fsToppers = await syncFirestoreCollection('toppers', initialMockToppers);
+    const fsToppers = await syncFirestoreCollection('toppers', []);
     let list = fsToppers || getStoredToppers();
 
     if (activeOnly) {
@@ -5673,241 +5036,24 @@ export const topperService = {
 };
 
 // Initial Mock Data for Faculty Panel
-const initialMockAssignments = [
-  {
-    _id: 'asgn1',
-    title: 'Calculus & Derivatives Practice Problem Set #3',
-    description: 'Solve all questions from Section 4.2. Show step-by-step differentiation and limits evaluation.',
-    subject: 'Mathematics Advanced',
-    className: '10th',
-    dueDate: '2026-08-15',
-    totalMarks: 50,
-    facultyId: 'f_jitender',
-    facultyName: 'Prof. Jitender Sharma',
-    createdAt: '2026-08-01',
-    submissions: [
-      {
-        _id: 'subm1',
-        student: 's1',
-        studentName: 'Rahul Gupta',
-        rollNumber: 'SAU-10-001',
-        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        fileName: 'Rahul_Gupta_Math_Assignment.pdf',
-        submittedAt: '2026-08-03T14:20:00Z',
-        score: 48,
-        feedback: 'Excellent work! Great precision on quotient rule.',
-        status: 'Graded',
-      },
-      {
-        _id: 'subm2',
-        student: 's2',
-        studentName: 'Damini Sharma',
-        rollNumber: 'SAU-10-002',
-        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        fileName: 'Damini_Sharma_Math_Assignment.pdf',
-        submittedAt: '2026-08-04T09:15:00Z',
-        score: null,
-        feedback: '',
-        status: 'Submitted',
-      },
-    ],
-  },
-  {
-    _id: 'asgn2',
-    title: 'Newtonian Dynamics & Momentum Lab Report',
-    description: 'Prepare a 3-page experiment summary detailing force vectors and momentum conservation.',
-    subject: 'Physics IIT-JEE Prep',
-    className: '11th (+1)',
-    dueDate: '2026-08-18',
-    totalMarks: 100,
-    facultyId: 'f_jitender',
-    facultyName: 'Prof. Jitender Sharma',
-    createdAt: '2026-08-02',
-    submissions: [
-      {
-        _id: 'subm3',
-        student: 's3',
-        studentName: 'Aryan Mehta',
-        rollNumber: 'SAU-11-003',
-        fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        fileName: 'Aryan_Physics_Report.pdf',
-        submittedAt: '2026-08-04T11:00:00Z',
-        score: null,
-        feedback: '',
-        status: 'Submitted',
-      },
-    ],
-  },
-];
-
-const initialMockStudyMaterials = [
-  {
-    _id: 'mat1',
-    title: 'Comprehensive Calculus Study Notes & Solved Examples',
-    description: 'Detailed lecture slides and key formulas for Board & JEE Foundation exams.',
-    subject: 'Mathematics Advanced',
-    className: '10th',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    fileName: 'Calculus_Notes_2026.pdf',
-    fileType: 'PDF',
-    facultyId: 'f_jitender',
-    uploadedAt: '2026-08-01T10:00:00Z',
-  },
-  {
-    _id: 'mat2',
-    title: 'Electromagnetism Lecture Slides (PPTX)',
-    description: 'Presentation slides covering Magnetic Induction and Faraday Laws.',
-    subject: 'Physics IIT-JEE Prep',
-    className: '11th (+1)',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    fileName: 'Physics_Electromagnetism.pptx',
-    fileType: 'PPT',
-    facultyId: 'f_jitender',
-    uploadedAt: '2026-08-02T15:30:00Z',
-  },
-  {
-    _id: 'mat3',
-    title: 'IIT-JEE Physics 3D Motion Video Demonstration',
-    description: 'High resolution video tutorial explaining 3D relative motion vector equations.',
-    subject: 'Physics IIT-JEE Prep',
-    className: '12th (+2)',
-    fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    fileName: '3D_Motion_Tutorial.mp4',
-    fileType: 'Video',
-    facultyId: 'f_jitender',
-    uploadedAt: '2026-08-03T11:20:00Z',
-  },
-];
-
-const initialMockFacultyLeaves = [
-  {
-    _id: 'flv_1',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'jbjbjbj',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:00:00.000Z',
-  },
-  {
-    _id: 'flv_2',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'rnrrnur',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:05:00.000Z',
-  },
-  {
-    _id: 'flv_3',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'i3ejs8jnes',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:10:00.000Z',
-  },
-  {
-    _id: 'flv_4',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'knkkn',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:15:00.000Z',
-  },
-  {
-    _id: 'flv_5',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'h dh dh',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:20:00.000Z',
-  },
-  {
-    _id: 'flv_6',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'h h h',
-    status: 'Pending',
-    createdAt: '2026-08-04T12:25:00.000Z',
-  },
-  {
-    _id: 'flv1',
-    facultyId: 'f_jitender',
-    employeeId: 'EMP-2025-014',
-    facultyName: 'Prof. Jitender Sharma',
-    facultyEmail: 'jitender.sharma@saumyaa.edu.in',
-    department: 'Mathematics & Science',
-    branch: 'Main Center',
-    leaveType: 'Casual Leave',
-    startDate: '2026-08-20',
-    endDate: '2026-08-21',
-    numberOfDays: 2,
-    reason: 'Attending National Teachers Mathematics Conference in Shimla',
-    status: 'Approved',
-    createdAt: '2026-08-01T10:00:00.000Z',
-  },
-];
+const initialMockAssignments = [];
+const initialMockStudyMaterials = [];
+const initialMockFacultyLeaves = [];
 
 const getStoredAssignments = () => {
   try {
-    return JSON.parse(localStorage.getItem('mock_faculty_assignments')) || initialMockAssignments;
+    return JSON.parse(localStorage.getItem('mock_faculty_assignments')) || [];
   } catch (e) {
-    return initialMockAssignments;
+    return [];
   }
 };
 const setStoredAssignments = (data) => localStorage.setItem('mock_faculty_assignments', JSON.stringify(data));
 
 const getStoredMaterials = () => {
   try {
-    return JSON.parse(localStorage.getItem('mock_faculty_materials')) || initialMockStudyMaterials;
+    return JSON.parse(localStorage.getItem('mock_faculty_materials')) || [];
   } catch (e) {
-    return initialMockStudyMaterials;
+    return [];
   }
 };
 const setStoredMaterials = (data) => localStorage.setItem('mock_faculty_materials', JSON.stringify(data));
@@ -5915,10 +5061,10 @@ const setStoredMaterials = (data) => localStorage.setItem('mock_faculty_material
 const getStoredLeaves = () => {
   try {
     const list = JSON.parse(localStorage.getItem('mock_faculty_leaves'));
-    if (Array.isArray(list) && list.length > 0) return list;
-    return initialMockFacultyLeaves;
+    if (Array.isArray(list)) return list;
+    return [];
   } catch (e) {
-    return initialMockFacultyLeaves;
+    return [];
   }
 };
 const setStoredLeaves = (data) => localStorage.setItem('mock_faculty_leaves', JSON.stringify(data));
