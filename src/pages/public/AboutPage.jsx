@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import About from '../../components/About';
+import Results from '../../components/Results';
 import CtaHub from '../../components/CtaHub';
 
 export default function AboutPage() {
@@ -42,6 +43,9 @@ export default function AboutPage() {
 
       {/* Main About Component */}
       <About onOpenBooking={openBooking} />
+
+      {/* Wall of Excellence & Proven Results */}
+      <Results />
 
       {/* Philosophy & Pillars */}
       <section className="py-14 bg-surface-container-lowest border-t border-outline-variant/15">

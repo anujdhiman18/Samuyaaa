@@ -27,10 +27,49 @@ function useCountUp(target, animate, { decimal = false, duration = 1500 } = {}) 
   return value;
 }
 
+const defaultToppersList = [
+  {
+    id: 'top-1',
+    student_name: 'Aditya Sharma',
+    exam_name: 'HPBOSE 10th Board',
+    score: '95.4% (100/100 Math)',
+    quote: 'Jitender Sir’s concept-driven pedagogy transformed physics and math from stressful topics into my highest scoring subjects.',
+    photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+  },
+  {
+    id: 'top-2',
+    student_name: 'Priyanka Thakur',
+    exam_name: 'CBSE 12th Board',
+    score: '96.2%',
+    photo_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+  },
+  {
+    id: 'top-3',
+    student_name: 'Rohit Verma',
+    exam_name: 'JEE Main Qualifier',
+    score: '99.1 Percentile',
+    photo_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+  },
+  {
+    id: 'top-4',
+    student_name: 'Ananya Rana',
+    exam_name: 'NEET Qualifier',
+    score: '645/720',
+    photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+  },
+];
+
 export default function Results() {
   const sectionRef = useRef(null);
   const [animate, setAnimate] = useState(false);
-  const [toppers, setToppers] = useState(initialMockToppers);
+  const [toppers, setToppers] = useState(() => {
+    try {
+      const list = initialMockToppers;
+      return list && list.length > 0 ? list : defaultToppersList;
+    } catch (e) {
+      return defaultToppersList;
+    }
+  });
   const [totalStudentsCount, setTotalStudentsCount] = useState(1);
 
   useEffect(() => {
@@ -39,7 +78,9 @@ export default function Results() {
       if (list && list.length > 0) {
         const active = list.filter((t) => t.is_active !== false);
         active.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
-        setToppers(active);
+        if (active.length > 0) {
+          setToppers(active);
+        }
       }
     });
 
@@ -76,7 +117,7 @@ export default function Results() {
   const improveStat = useCountUp(15, animate);
   const clearsStat = useCountUp(92, animate);
 
-  const featuredTopper = toppers[0] || initialMockToppers[0];
+  const featuredTopper = toppers[0] || defaultToppersList[0];
 
   return (
     <section id="results" ref={sectionRef} className="max-w-container-max mx-auto px-gutter py-16 md:py-24 font-body">
