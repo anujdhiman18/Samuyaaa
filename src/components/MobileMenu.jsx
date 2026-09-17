@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const links = [
-  { href: '#', label: 'Home' },
-  { href: '#about', label: 'About Founder' },
-  { href: '#courses', label: 'Academic Programs' },
-  { href: '#admission-process', label: 'Admission Process' },
-  { href: '#faculty', label: 'Faculty Roster' },
-  { href: '#alumni', label: 'Proud Alumni' },
-  { href: '#results', label: 'Wall of Excellence' },
-  { href: '#testimonials', label: 'Student Testimonials' },
-  { href: '#contact', label: 'Contact Us' },
+  { to: '/', label: 'Home Overview' },
+  { to: '/about', label: 'About Founder & Vision' },
+  { to: '/courses', label: 'Academic Programs (S1-S4)' },
+  { to: '/admissions', label: 'Admission Process' },
+  { to: '/faculty', label: 'Faculty Roster' },
+  { to: '/alumni', label: 'Proud Alumni' },
+  { to: '/results', label: 'Wall of Excellence' },
+  { to: '/testimonials', label: 'Student Testimonials' },
+  { to: '/faq', label: 'Frequently Asked Questions' },
+  { to: '/contact', label: 'Contact & Centers' },
 ];
 
 export default function MobileMenu({ open, onClose, onOpenBooking }) {
@@ -58,7 +59,7 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
           {/* Top Header inside Drawer */}
           <div>
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#90CAF9]/30">
-              <div className="flex items-center gap-2.5">
+              <Link to="/" onClick={onClose} className="flex items-center gap-2.5">
                 <img
                   src="/logo.jpg"
                   alt="Saumyaa Studies Logo"
@@ -67,7 +68,7 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
                 <span className="font-headings font-extrabold text-lg text-[#0D47A1] tracking-tight">
                   Saumyaa Studies
                 </span>
-              </div>
+              </Link>
               <button
                 onClick={onClose}
                 className="p-2 rounded-xl text-[#1976D2] hover:bg-[#BBDEFB]/20 transition-colors duration-200"
@@ -78,18 +79,41 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
             </div>
 
             {/* Navigation Links */}
-            <div className="flex flex-col space-y-1.5 font-headings text-sm font-semibold">
+            <div className="flex flex-col space-y-1 font-headings text-sm font-semibold">
               {links.map((link) => (
-                <a
+                <Link
                   key={link.label}
                   onClick={onClose}
-                  href={link.href}
-                  className="py-2.5 px-3.5 rounded-xl hover:bg-[#BBDEFB]/20 hover:text-[#0D47A1] transition-colors duration-200 text-[#0D1B2A] flex items-center justify-between"
+                  to={link.to}
+                  className="py-2 px-3 rounded-xl hover:bg-[#BBDEFB]/20 hover:text-[#0D47A1] transition-colors duration-200 text-[#0D1B2A] flex items-center justify-between"
                 >
                   <span>{link.label}</span>
                   <span className="material-symbols-outlined text-[16px] text-[#90CAF9]">chevron_right</span>
-                </a>
+                </Link>
               ))}
+            </div>
+
+            {/* Quick Applications Box */}
+            <div className="mt-4 p-3 bg-[#E3F2FD]/50 rounded-2xl border border-[#90CAF9]/30 space-y-2">
+              <span className="text-[10px] font-headings font-extrabold uppercase tracking-wider text-[#0D47A1] block">
+                Online Admissions &amp; Careers
+              </span>
+              <Link
+                to="/student-application"
+                onClick={onClose}
+                className="flex items-center gap-2 text-xs font-bold text-[#0D47A1] hover:text-[#1976D2] bg-white p-2 rounded-xl border border-[#90CAF9]/30 shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[16px] text-[#D97706]">school</span>
+                <span>Student Admission Form</span>
+              </Link>
+              <Link
+                to="/faculty-application"
+                onClick={onClose}
+                className="flex items-center gap-2 text-xs font-bold text-[#0D47A1] hover:text-[#1976D2] bg-white p-2 rounded-xl border border-[#90CAF9]/30 shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[16px] text-[#1976D2]">work</span>
+                <span>Join Faculty / Careers</span>
+              </Link>
             </div>
           </div>
 
@@ -100,49 +124,31 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
                 <Link
                   to={getDashboardPath()}
                   onClick={onClose}
-                  className="w-full bg-[#D97706] hover:bg-[#B45309] text-white text-center py-3 rounded-xl font-headings font-bold transition-all duration-300 text-xs flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 rounded-xl font-headings font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
-                  Go to {isAdmin ? 'Admin Portal' : isFaculty ? 'Faculty Panel' : 'Student Dashboard'}
+                  <span className="material-symbols-outlined text-[16px]">dashboard</span>
+                  <span>Portal Dashboard</span>
                 </Link>
                 <button
                   onClick={() => {
                     logout();
                     onClose();
                   }}
-                  className="w-full border border-red-200 text-red-600 hover:bg-red-50 text-center py-2.5 rounded-xl font-headings font-bold transition-colors duration-200 text-xs flex items-center justify-center gap-1.5"
+                  className="w-full border border-red-200 text-red-600 hover:bg-red-50 py-2 rounded-xl font-headings font-bold text-xs transition-colors flex items-center justify-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[16px]">logout</span>
-                  Sign Out
+                  <span>Sign Out</span>
                 </button>
               </>
             ) : (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    to="/student-application"
-                    onClick={onClose}
-                    className="bg-[#BBDEFB]/40 border border-[#90CAF9]/50 text-[#0D47A1] text-center py-2.5 rounded-xl font-headings font-bold hover:bg-[#BBDEFB]/60 transition-colors text-xs flex items-center justify-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-[15px] text-[#1976D2]">school</span> Apply
-                  </Link>
-                  <Link
-                    to="/faculty-application"
-                    onClick={onClose}
-                    className="border border-[#90CAF9]/50 text-[#1976D2] text-center py-2.5 rounded-xl font-headings font-bold hover:bg-[#BBDEFB]/20 transition-colors text-xs flex items-center justify-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-[15px] text-[#1976D2]">work</span> Faculty
-                  </Link>
-                </div>
-
-                <Link
-                  to="/login"
-                  onClick={onClose}
-                  className="w-full bg-[#0D47A1] text-white text-center py-2.5 rounded-xl font-headings font-extrabold hover:bg-[#1565C0] transition-colors duration-200 text-xs flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-[16px]">login</span> Login
-                </Link>
-              </>
+              <Link
+                to="/login"
+                onClick={onClose}
+                className="w-full bg-[#0D47A1] hover:bg-[#1565C0] text-white py-2.5 rounded-xl font-headings font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>Login to Portal</span>
+              </Link>
             )}
 
             <button
@@ -150,10 +156,10 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
                 onClose();
                 onOpenBooking();
               }}
-              className="w-full bg-[#0D47A1] text-white hover:bg-[#1565C0] text-center py-2.5 rounded-xl font-headings font-bold shadow-sm transition-colors duration-200 text-xs flex items-center justify-center gap-1 cursor-pointer"
+              className="w-full bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 rounded-xl font-headings font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px] text-white">event_available</span>
-              Book a Free Demo
+              <span className="material-symbols-outlined text-[16px]">play_circle</span>
+              <span>Book a Free Demo</span>
             </button>
           </div>
         </div>
@@ -161,4 +167,3 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
     </div>
   );
 }
-

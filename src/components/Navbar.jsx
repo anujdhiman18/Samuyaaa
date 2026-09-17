@@ -1,17 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const links = [
-  { href: '#', label: 'Home' },
-  { href: '#about', label: 'About' },
-  { href: '#courses', label: 'Courses' },
-  { href: '#admission-process', label: 'Admissions' },
-  { href: '#faculty', label: 'Faculty' },
-  { href: '#alumni', label: 'Alumni' },
-  { href: '#results', label: 'Results' },
-  { href: '#testimonials', label: 'Testimonials' },
-  { href: '#contact', label: 'Contact' },
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About' },
+  { to: '/courses', label: 'Courses' },
+  { to: '/admissions', label: 'Admissions' },
+  { to: '/faculty', label: 'Faculty' },
+  { to: '/alumni', label: 'Alumni' },
+  { to: '/results', label: 'Results' },
+  { to: '/testimonials', label: 'Testimonials' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/contact', label: 'Contact' },
 ];
 
 export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
@@ -54,7 +55,7 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
     >
       <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-2 lg:gap-4">
         {/* Brand Logo & Name */}
-        <a href="#" className="flex items-center gap-2 group shrink-0">
+        <Link to="/" className="flex items-center gap-2 group shrink-0">
           <img
             src="/logo.jpg"
             alt="Saumyaa Studies Logo"
@@ -63,31 +64,45 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
           <span className="font-headings font-extrabold text-sm sm:text-base xl:text-lg text-[#0D47A1] tracking-tight whitespace-nowrap">
             Saumyaa Studies
           </span>
-        </a>
+        </Link>
 
         {/* Center Nav Links (Visible on Large Screens) */}
-        <div className="hidden xl:flex items-center gap-3 2xl:gap-5 shrink">
+        <div className="hidden xl:flex items-center gap-2 2xl:gap-4 shrink">
           {links.map((link) => (
-            <a
+            <NavLink
               key={link.label}
-              href={link.href}
-              className="nav-link font-semibold text-[#1976D2] hover:text-[#0D47A1] transition-colors duration-200 text-xs 2xl:text-[13px] whitespace-nowrap px-1 py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#0D47A1] after:transition-all after:duration-300 hover:after:w-full"
+              to={link.to}
+              end={link.to === '/'}
+              className={({ isActive }) =>
+                `nav-link font-semibold transition-colors duration-200 text-xs 2xl:text-[13px] whitespace-nowrap px-2 py-1 rounded-lg relative ${
+                  isActive
+                    ? 'text-[#0D47A1] font-bold bg-[#E3F2FD]/60 after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-[#0D47A1]'
+                    : 'text-[#1976D2] hover:text-[#0D47A1] hover:bg-[#E3F2FD]/30'
+                }`
+              }
             >
               {link.label}
-            </a>
+            </NavLink>
           ))}
         </div>
 
         {/* Medium Screen Compact Nav Links (1024px - 1279px) */}
-        <div className="hidden lg:flex xl:hidden items-center gap-2 shrink">
-          {links.slice(0, 5).map((link) => (
-            <a
+        <div className="hidden lg:flex xl:hidden items-center gap-1 shrink">
+          {links.slice(0, 6).map((link) => (
+            <NavLink
               key={link.label}
-              href={link.href}
-              className="nav-link font-semibold text-[#1976D2] hover:text-[#0D47A1] transition-colors duration-200 text-xs whitespace-nowrap px-1 py-1"
+              to={link.to}
+              end={link.to === '/'}
+              className={({ isActive }) =>
+                `nav-link font-semibold transition-colors duration-200 text-xs whitespace-nowrap px-2 py-1 rounded-lg ${
+                  isActive
+                    ? 'text-[#0D47A1] font-bold bg-[#E3F2FD]/60'
+                    : 'text-[#1976D2] hover:text-[#0D47A1]'
+                }`
+              }
             >
               {link.label}
-            </a>
+            </NavLink>
           ))}
         </div>
 
@@ -101,7 +116,12 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
             >
               <span className="material-symbols-outlined text-[15px] text-[#1976D2]">description</span>
               <span>Apply</span>
-              <span className="material-symbols-outlined text-[14px] transition-transform duration-200" style={{ transform: applyMenuOpen ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              <span
+                className="material-symbols-outlined text-[14px] transition-transform duration-200"
+                style={{ transform: applyMenuOpen ? 'rotate(180deg)' : 'none' }}
+              >
+                expand_more
+              </span>
             </button>
 
             {applyMenuOpen && (
@@ -213,4 +233,3 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
 }
 
 export { links as navLinks };
-

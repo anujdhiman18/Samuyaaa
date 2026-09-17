@@ -10,11 +10,23 @@ import ForcePasswordChangeModal from './components/common/ForcePasswordChangeMod
 import { PERMISSIONS } from './config/rbacConfig';
 
 // Public & Auth Pages
-import PublicWebsite from './components/PublicWebsite';
+import PublicLayout from './layouts/PublicLayout';
+import HomePage from './pages/public/HomePage';
+import AboutPage from './pages/public/AboutPage';
+import CoursesPage from './pages/public/CoursesPage';
+import AdmissionsPage from './pages/public/AdmissionsPage';
+import FacultyPage from './pages/public/FacultyPage';
+import AlumniPage from './pages/public/AlumniPage';
+import ResultsPage from './pages/public/ResultsPage';
+import TestimonialsPage from './pages/public/TestimonialsPage';
+import FaqPage from './pages/public/FaqPage';
+import ContactPage from './pages/public/ContactPage';
+
 import FacultyApplicationPage from './pages/FacultyApplicationPage';
 import StudentApplicationPage from './pages/StudentApplicationPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Admin Portal Pages
 import AdminLayout from './layouts/AdminLayout';
@@ -125,9 +137,25 @@ export default function App() {
           <ToastProvider>
             <ForcePasswordChangeModal />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
-                {/* Public Website */}
-                <Route path="/" element={<PublicWebsite />} />
+                {/* Public Multi-Page Website Shell */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/courses" element={<CoursesPage />} />
+                  <Route path="/programs" element={<CoursesPage />} />
+                  <Route path="/admissions" element={<AdmissionsPage />} />
+                  <Route path="/admission-process" element={<AdmissionsPage />} />
+                  <Route path="/faculty" element={<FacultyPage />} />
+                  <Route path="/alumni" element={<AlumniPage />} />
+                  <Route path="/results" element={<ResultsPage />} />
+                  <Route path="/toppers" element={<ResultsPage />} />
+                  <Route path="/testimonials" element={<TestimonialsPage />} />
+                  <Route path="/faq" element={<FaqPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/contact-us" element={<ContactPage />} />
+                </Route>
 
                 {/* Faculty Online Job Application Form */}
                 <Route path="/faculty-application" element={<FacultyApplicationPage />} />

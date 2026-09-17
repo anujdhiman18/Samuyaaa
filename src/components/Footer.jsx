@@ -19,14 +19,14 @@ export default function Footer() {
     <footer className="bg-[#0A192F] text-[#E3F2FD] border-t border-[#90CAF9]/20 font-body">
       <div className="max-w-container-max mx-auto px-gutter py-12 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 flex flex-col justify-start">
-          <a href="#" className="flex items-center gap-2.5 mb-4">
+          <Link to="/" className="flex items-center gap-2.5 mb-4">
             <img
               src="/logo.jpg"
               alt="Saumyaa Studies Logo"
               className="w-10 h-10 object-contain rounded-xl shadow-premium bg-white p-0.5 border border-[#90CAF9]/30"
             />
             <span className="font-headings font-extrabold text-lg text-[#E3F2FD]">Saumyaa Studies</span>
-          </a>
+          </Link>
           <p className="text-xs text-[#90CAF9] leading-relaxed mb-6 font-medium">
             Nurturing grade-level academic achievements and competitive success through custom-planned logic
             blueprints and dedicated cognitive instruction since 2010.
@@ -60,32 +60,49 @@ export default function Footer() {
           <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
             Quick Navigation
           </h4>
-          <ul className="space-y-3 text-xs text-[#90CAF9] font-medium">
+          <ul className="space-y-2.5 text-xs text-[#90CAF9] font-medium">
             {[
-              { href: '#', label: 'Home Overview' },
-              { href: '#about', label: 'About Founder' },
-              { href: '#courses', label: 'Academic Courses' },
-              { href: '#admission-process', label: 'Admission / Joining Process' },
-              { href: '#results', label: 'Wall of Excellence' },
-              { href: '#testimonials', label: 'Testimonials' },
-              { href: '#contact', label: 'Contact Us' },
+              { to: '/', label: 'Home Overview' },
+              { to: '/about', label: 'About Founder & Vision' },
+              { to: '/courses', label: 'Academic Programs (S1-S4)' },
+              { to: '/admissions', label: 'Admission / Joining Process' },
+              { to: '/faculty', label: 'Faculty Directory' },
+              { to: '/alumni', label: 'Proud Alumni Network' },
+              { to: '/results', label: 'Wall of Excellence' },
+              { to: '/testimonials', label: 'Student Testimonials' },
+              { to: '/faq', label: 'Frequently Asked Questions' },
+              { to: '/contact', label: 'Contact Us & Centers' },
             ].map((link) => (
               <li key={link.label}>
-                <a className="hover:text-[#E3F2FD] transition-colors duration-200" href={link.href}>
+                <Link className="hover:text-[#E3F2FD] transition-colors duration-200" to={link.to}>
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
+            Online Applications
+          </h4>
+          <ul className="space-y-3 text-xs text-[#90CAF9] font-medium">
             <li>
-              <Link to="/student-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1 transition-colors duration-200">
-                <span className="material-symbols-outlined text-[14px] text-[#42A5F5]">school</span>
-                Student Admission Application
+              <Link to="/student-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1.5 transition-colors duration-200 bg-white/5 p-2 rounded-xl border border-white/10 hover:border-white/20">
+                <span className="material-symbols-outlined text-[16px] text-[#D97706]">school</span>
+                <span>Student Admission Application</span>
               </Link>
             </li>
             <li>
-              <Link to="/faculty-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1 transition-colors duration-200">
-                <span className="material-symbols-outlined text-[14px] text-[#42A5F5]">work</span>
-                Careers / Faculty Application
+              <Link to="/faculty-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1.5 transition-colors duration-200 bg-white/5 p-2 rounded-xl border border-white/10 hover:border-white/20">
+                <span className="material-symbols-outlined text-[16px] text-[#42A5F5]">work</span>
+                <span>Careers / Faculty Application</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/login" className="hover:text-[#E3F2FD] flex items-center gap-1.5 pt-2">
+                <span className="material-symbols-outlined text-[14px] text-[#90CAF9]">lock</span>
+                <span>Portal Login (Students &amp; Faculty)</span>
               </Link>
             </li>
           </ul>
@@ -120,35 +137,10 @@ export default function Footer() {
             </p>
           </div>
         </div>
-
-        <div>
-          <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
-            Follow Student Updates
-          </h4>
-          <p className="text-xs text-[#90CAF9] font-medium mb-4 leading-relaxed">
-            Follow our social channels for standard revision blueprints, syllabus notifications, and student
-            toppers highlights.
-          </p>
-          <div className="flex gap-3">
-            {['groups', 'video_library', 'map', 'admin_panel_settings'].map((icon) => (
-              <a
-                key={icon}
-                className="w-9 h-9 bg-[#0D1B2A] border border-[#90CAF9]/20 rounded-full flex items-center justify-center text-[#90CAF9] hover:bg-[#1976D2] hover:text-white hover:-translate-y-1 transition-all duration-200"
-                href="#"
-                aria-label={icon}
-              >
-                <span className="material-symbols-outlined text-[18px]">{icon}</span>
-              </a>
-            ))}
-          </div>
-        </div>
       </div>
 
-      <div className="border-t border-[#90CAF9]/20 py-6 text-center bg-[#0A192F]">
-        <p className="text-[11px] text-[#90CAF9] font-medium">
-          &copy; 2026 Saumyaa Studies. All rights reserved. &bull; Designed for Approaching Excellence. Designed By
-          Anuj Dhiman
-        </p>
+      <div className="border-t border-[#90CAF9]/15 py-6 text-center text-xs text-[#90CAF9]/80">
+        <p>&copy; {new Date().getFullYear()} Saumyaa Studies. All rights reserved. Transforming education in Himachal Pradesh.</p>
       </div>
     </footer>
   );
