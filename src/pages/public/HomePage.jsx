@@ -3,7 +3,6 @@ import { Link, useOutletContext } from 'react-router-dom';
 import CtaHub from '../../components/CtaHub';
 import Content from '../../components/Content';
 import founderImg from '../../imges/Unknown.jpg';
-import { CLASS_CATEGORIES } from '../../config/classConfig';
 
 export default function HomePage() {
   const context = useOutletContext() || {};
@@ -225,64 +224,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. FEATURED PROGRAMS QUICK PREVIEW */}
-      <section className="py-14 md:py-20 bg-surface border-t border-[#90CAF9]/20">
-        <div className="max-w-container-max mx-auto px-gutter">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-            <div>
-              <span className="text-[#D97706] font-headings font-bold text-xs uppercase tracking-widest block mb-1">
-                Curriculum Categories
-              </span>
-              <h2 className="font-headings font-extrabold text-2xl sm:text-3xl text-[#0D47A1]">
-                Targeted Academic Stages
-              </h2>
-            </div>
-            <Link
-              to="/courses"
-              className="text-xs sm:text-sm font-headings font-bold text-[#0D47A1] hover:text-[#1565C0] flex items-center gap-1.5"
-            >
-              <span>View All 4 Stages &amp; Batch Timings</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {CLASS_CATEGORIES.map((cat) => (
-              <div
-                key={cat.code}
-                className="bg-white rounded-3xl p-5 border border-[#90CAF9]/30 shadow-premium flex flex-col justify-between hover:border-[#0D47A1] transition-all duration-200"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-headings font-extrabold text-xs px-2.5 py-1 bg-primary/10 text-primary rounded-full">
-                      Stage {cat.code}
-                    </span>
-                    <span className="text-[11px] font-semibold text-on-surface-variant">{cat.classes}</span>
-                  </div>
-                  <h3 className="font-headings font-bold text-base text-[#0D47A1] mb-2">{cat.label}</h3>
-                  <p className="text-xs text-on-surface-variant leading-relaxed line-clamp-3 mb-4">
-                    {cat.description}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-outline-variant/15 flex items-center justify-between">
-                  <button
-                    onClick={() => openBooking(cat.label)}
-                    className="text-xs font-bold text-[#D97706] hover:text-[#B45309] cursor-pointer"
-                  >
-                    Book Demo
-                  </button>
-                  <Link to="/courses" className="text-xs font-bold text-[#0D47A1] hover:underline">
-                    Details &rarr;
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. FACULTY & ALUMNI TEASER BANNER */}
+      {/* 3. FACULTY & ALUMNI TEASER BANNER */}
       <section className="py-12 bg-gradient-to-r from-[#0D47A1] to-[#1565C0] text-white">
         <div className="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
