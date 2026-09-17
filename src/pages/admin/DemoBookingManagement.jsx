@@ -31,7 +31,7 @@ const initialNewBookingForm = {
   adminNotes: '',
 };
 
-export default function DemoBookingManagement() {
+export default function DemoBookingManagement({ isEmbedded = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialStatusFilter = searchParams.get('status') || 'All';
 

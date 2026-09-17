@@ -772,7 +772,10 @@ export default function FacultyManagement() {
       {/* Tab Selector */}
       <div className="flex border-b border-outline-variant/20 gap-4 overflow-x-auto whitespace-nowrap no-scrollbar pb-1 max-w-full">
         <button
-          onClick={() => setActiveTab('directory')}
+          onClick={() => {
+            setActiveTab('directory');
+            setSearchParams({ tab: 'directory' });
+          }}
           className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'directory'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
@@ -784,7 +787,10 @@ export default function FacultyManagement() {
         </button>
 
         <button
-          onClick={() => setActiveTab('applications')}
+          onClick={() => {
+            setActiveTab('applications');
+            setSearchParams({ tab: 'applications' });
+          }}
           className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'applications'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
@@ -801,7 +807,10 @@ export default function FacultyManagement() {
         </button>
 
         <button
-          onClick={() => setActiveTab('requests')}
+          onClick={() => {
+            setActiveTab('requests');
+            setSearchParams({ tab: 'requests' });
+          }}
           className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'requests'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'
@@ -818,7 +827,10 @@ export default function FacultyManagement() {
         </button>
 
         <button
-          onClick={() => setActiveTab('leaves')}
+          onClick={() => {
+            setActiveTab('leaves');
+            setSearchParams({ tab: 'leaves' });
+          }}
           className={`pb-3 text-xs font-headings font-bold flex items-center gap-2 relative transition-colors shrink-0 ${
             activeTab === 'leaves'
               ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary'

@@ -6,11 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const mainNavItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
-  { path: '/admin/demo-bookings', label: 'Demo Class Bookings', icon: 'event_available' },
-  { path: '/admin/students?tab=applications', label: 'Student Applications', icon: 'how_to_reg' },
-  { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
-  { path: '/admin/faculty?tab=leaves', label: 'Faculty Leaves', icon: 'event_busy' },
   { path: '/admin/profile-requests', label: 'Profile Change Requests', icon: 'edit_attributes' },
   { path: '/admin/roles', label: 'Role Management (RBAC)', icon: 'admin_panel_settings' },
   { path: '/admin/permissions', label: 'Permission Matrix', icon: 'fact_check' },
@@ -42,16 +38,19 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
     if (itemPath === '/admin') {
       return location.pathname === '/admin';
     }
-    if (itemPath.includes('?tab=')) {
-      const basePath = itemPath.split('?tab=')[0];
-      const tabParam = itemPath.split('?tab=')[1];
-      return location.pathname.startsWith(basePath) && location.search.includes(`tab=${tabParam}`);
-    }
     if (itemPath === '/admin/students') {
-      return location.pathname === '/admin/students' && (!location.search || (!location.search.includes('tab=leaves') && !location.search.includes('tab=applications')));
+      return (
+        location.pathname.startsWith('/admin/students') ||
+        location.pathname.startsWith('/admin/demo-bookings') ||
+        location.pathname.startsWith('/admin/demo-classes') ||
+        location.pathname.startsWith('/admin/student-leaves')
+      );
     }
     if (itemPath === '/admin/faculty') {
-      return location.pathname === '/admin/faculty' && (!location.search || !location.search.includes('tab=leaves'));
+      return (
+        location.pathname.startsWith('/admin/faculty') ||
+        location.pathname.startsWith('/admin/faculty-leaves')
+      );
     }
     return location.pathname.startsWith(itemPath);
   };

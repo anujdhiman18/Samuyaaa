@@ -1076,9 +1076,9 @@ export const subscribeFirestoreCollection = (collectionName, defaultData = [], c
   };
 };
 
-const initialMockStudentLeaves = [];
+export const initialMockStudentLeaves = [];
 
-const getStoredStudentLeaves = () => {
+export const getStoredStudentLeaves = () => {
   try {
     const list = JSON.parse(localStorage.getItem('mock_student_leaves'));
     if (Array.isArray(list)) return list;
@@ -1087,7 +1087,7 @@ const getStoredStudentLeaves = () => {
     return [];
   }
 };
-const setStoredStudentLeaves = (data) => localStorage.setItem('mock_student_leaves', JSON.stringify(data));
+export const setStoredStudentLeaves = (data) => localStorage.setItem('mock_student_leaves', JSON.stringify(data));
 
 // Student Service with Firebase Firestore DB Integration
 export const studentService = {

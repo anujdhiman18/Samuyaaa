@@ -3,18 +3,32 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   studentService,
   studentApplicationService,
+  demoBookingService,
   subscribeFirestoreCollection,
   initialMockStudents,
   getStoredStudents,
   initialMockStudentApplications,
+  initialMockDemoBookings,
+  getStoredDemoBookings,
+  initialMockStudentLeaves,
+  getStoredStudentLeaves,
 } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
+import DemoBookingManagement from './DemoBookingManagement';
+import StudentLeaveManagement from './StudentLeaveManagement';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
 const BRANCHES = ['All', 'Main Center (Bagru)', 'Branch (Daroh)'];
+
+const normalizeTabParam = (tab) => {
+  if (tab === 'applications') return 'applications';
+  if (tab === 'demo_bookings' || tab === 'demo-bookings' || tab === 'demos' || tab === 'demo_classes') return 'demo_bookings';
+  if (tab === 'leaves' || tab === 'student-leaves' || tab === 'student_leaves') return 'leaves';
+  return 'directory';
+};
 
 const initialStudentForm = {
   fullName: '',
@@ -42,8 +56,8 @@ const initialStudentForm = {
 export default function StudentManagement() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'directory';
-  const [activeTab, setActiveTab] = useState(initialTab); // 'directory' | 'applications'
+  const initialTab = normalizeTabParam(searchParams.get('tab'));
+  const [activeTab, setActiveTab] = useState(initialTab); // 'directory' | 'applications' | 'demo_bookings' | 'leaves'
 
   // Student Directory State
   const [students, setStudents] = useState(() => {
@@ -70,6 +84,24 @@ export default function StudentManagement() {
   });
   const [updatingApp, setUpdatingApp] = useState(false);
 
+  // Demo Bookings State (for badge count)
+  const [demoBookingsList, setDemoBookingsList] = useState(() => {
+    try {
+      return getStoredDemoBookings() || initialMockDemoBookings;
+    } catch (e) {
+      return initialMockDemoBookings;
+    }
+  });
+
+  // Student Leaves State (for badge count)
+  const [studentLeavesList, setStudentLeavesList] = useState(() => {
+    try {
+      return getStoredStudentLeaves() || initialMockStudentLeaves;
+    } catch (e) {
+      return initialMockStudentLeaves;
+    }
+  });
+
   // Search & Filter State
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [selectedClass, setSelectedClass] = useState('All');
@@ -87,10 +119,15 @@ export default function StudentManagement() {
 
   const { addToast } = useToast();
 
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && (tab === 'applications' || tab === 'directory')) {
-      setActiveTab(tab);
+    if (tab) {
+      setActiveTab(normalizeTabParam(tab));
     }
   }, [searchParams]);
 
@@ -113,12 +150,28 @@ export default function StudentManagement() {
       }
     );
 
+    const unsubscribeDemos = subscribeFirestoreCollection('demo_bookings', initialMockDemoBookings, (list) => {
+      if (list) {
+        setDemoBookingsList(list);
+      }
+    });
+
+    const unsubscribeLeaves = subscribeFirestoreCollection('student_leaves', initialMockStudentLeaves, (list) => {
+      if (list) {
+        setStudentLeavesList(list);
+      }
+    });
+
     fetchStudents();
     fetchApplications();
+    fetchDemoBookings();
+    fetchStudentLeaves();
 
     const handleDataRefresh = () => {
       fetchApplications();
       fetchStudents();
+      fetchDemoBookings();
+      fetchStudentLeaves();
     };
 
     window.addEventListener('saumyaa_data_updated', handleDataRefresh);
@@ -127,10 +180,30 @@ export default function StudentManagement() {
     return () => {
       unsubscribeStudents();
       unsubscribeApps();
+      unsubscribeDemos();
+      unsubscribeLeaves();
       window.removeEventListener('saumyaa_data_updated', handleDataRefresh);
       window.removeEventListener('focus', handleDataRefresh);
     };
   }, []);
+
+  const fetchDemoBookings = async () => {
+    try {
+      const res = await demoBookingService.getBookings();
+      if (res && res.bookings) {
+        setDemoBookingsList(res.bookings);
+      }
+    } catch (e) {}
+  };
+
+  const fetchStudentLeaves = async () => {
+    try {
+      const res = await studentService.getAllStudentLeaves();
+      if (res && res.leaves) {
+        setStudentLeavesList(res.leaves);
+      }
+    } catch (e) {}
+  };
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
@@ -393,63 +466,91 @@ export default function StudentManagement() {
     return (applications || []).filter((a) => a.status === 'Pending').length;
   }, [applications]);
 
+  const pendingDemosCount = useMemo(() => {
+    return (demoBookingsList || []).filter((b) => (b.status || 'Pending').toLowerCase() === 'pending').length;
+  }, [demoBookingsList]);
+
+  const pendingLeavesCount = useMemo(() => {
+    return (studentLeavesList || []).filter((l) => l && l.status === 'Pending').length;
+  }, [studentLeavesList]);
+
   return (
     <div className="space-y-6 font-body">
       {/* Top Header & Tab Navigation */}
-      <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary">
-            Student Management
+            Student Management Hub
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Manage enrolled students directory, online admissions, and candidate applications.
+            Unified center for student directory, admission applications, demo class bookings, and leave management.
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="bg-surface-container p-1 rounded-full border border-outline-variant/20 flex items-center gap-1">
+        {/* Unified Tab Switcher */}
+        <div className="bg-surface-container p-1 rounded-full border border-outline-variant/20 flex flex-wrap items-center gap-1">
           <button
-            onClick={() => {
-              setActiveTab('directory');
-              setSearchParams({ tab: 'directory' });
-            }}
-            className={`px-4 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            onClick={() => handleTabSwitch('directory')}
+            className={`px-3.5 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'directory'
                 ? 'bg-primary text-white shadow-sm'
-                : 'text-on-surface-variant hover:text-secondary'
+                : 'text-on-surface-variant hover:text-secondary hover:bg-surface-container-high'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">groups</span>
-            <span>Student Directory ({students.length})</span>
+            <span>Directory ({students.length})</span>
           </button>
 
           <button
-            onClick={() => {
-              setActiveTab('applications');
-              setSearchParams({ tab: 'applications' });
-            }}
-            className={`px-4 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            onClick={() => handleTabSwitch('applications')}
+            className={`px-3.5 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'applications'
                 ? 'bg-primary text-white shadow-sm'
-                : 'text-on-surface-variant hover:text-secondary'
+                : 'text-on-surface-variant hover:text-secondary hover:bg-surface-container-high'
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-            <span>Admissions Applications</span>
+            <span>Applications ({applications.length})</span>
             {pendingAppsCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">
                 {pendingAppsCount}
               </span>
             )}
           </button>
 
-          <Link
-            to="/admin/demo-bookings"
-            className="px-4 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-2 text-on-surface-variant hover:text-secondary hover:bg-surface-container-high"
+          <button
+            onClick={() => handleTabSwitch('demo_bookings')}
+            className={`px-3.5 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'demo_bookings'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-secondary hover:bg-surface-container-high'
+            }`}
           >
-            <span className="material-symbols-outlined text-[16px] text-blue-600">event_available</span>
-            <span>Demo Class Bookings</span>
-          </Link>
+            <span className="material-symbols-outlined text-[16px]">event_available</span>
+            <span>Demo Classes ({demoBookingsList.length})</span>
+            {pendingDemosCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px] font-extrabold">
+                {pendingDemosCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => handleTabSwitch('leaves')}
+            className={`px-3.5 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'leaves'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-secondary hover:bg-surface-container-high'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">event_busy</span>
+            <span>Leaves ({studentLeavesList.length})</span>
+            {pendingLeavesCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">
+                {pendingLeavesCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -797,6 +898,16 @@ export default function StudentManagement() {
             </div>
           )}
         </div>
+      )}
+
+      {/* TAB 3: DEMO CLASS BOOKINGS & INQUIRIES */}
+      {activeTab === 'demo_bookings' && (
+        <DemoBookingManagement isEmbedded={true} />
+      )}
+
+      {/* TAB 4: STUDENT LEAVE APPLICATIONS */}
+      {activeTab === 'leaves' && (
+        <StudentLeaveManagement isEmbedded={true} />
       )}
 
       {/* MODAL 1: Add New Student */}

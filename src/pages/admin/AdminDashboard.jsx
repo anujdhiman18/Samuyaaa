@@ -77,11 +77,11 @@ export default function AdminDashboard() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2.5">
           <Link
-            to="/admin/demo-bookings"
+            to="/admin/students?tab=demo_bookings"
             className="bg-blue-600 hover:bg-blue-700 text-white font-headings font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">event_available</span>
-            Demo Bookings
+            Demo Classes
           </Link>
           <Link
             to="/admin/students?action=add"
@@ -321,11 +321,11 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to="/admin/demo-bookings"
+              to="/admin/students?tab=demo_bookings"
               className="text-xs font-headings font-bold text-blue-700 hover:underline flex items-center gap-1 bg-blue-50 px-3.5 py-1.5 rounded-full transition-colors border border-blue-200"
             >
               <span className="material-symbols-outlined text-[16px] text-blue-600">event_available</span>
-              Demo Bookings
+              Demo Classes
             </Link>
             <Link
               to="/admin/students?tab=leaves"

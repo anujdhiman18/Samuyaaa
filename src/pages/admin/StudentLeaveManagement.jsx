@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { CLASS_CATEGORIES, formatClassLabel } from '../../config/classConfig';
 
-export default function StudentLeaveManagement() {
+export default function StudentLeaveManagement({ isEmbedded = false }) {
   const [studentLeaves, setStudentLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leaveSearch, setLeaveSearch] = useState('');
@@ -101,42 +101,46 @@ export default function StudentLeaveManagement() {
 
   return (
     <div className="space-y-6 font-body">
-      {/* Header Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-outline-variant/20 px-2">
-        <Link
-          to="/admin/students"
-          className="px-5 py-3 font-headings font-bold text-xs border-b-2 border-transparent text-on-surface-variant hover:text-secondary transition-all flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">group</span>
-          Student Directory
-        </Link>
+      {/* Header Navigation Tabs - only if not embedded */}
+      {!isEmbedded && (
+        <div className="flex items-center gap-2 border-b border-outline-variant/20 px-2">
+          <Link
+            to="/admin/students"
+            className="px-5 py-3 font-headings font-bold text-xs border-b-2 border-transparent text-on-surface-variant hover:text-secondary transition-all flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">group</span>
+            Student Directory
+          </Link>
 
-        <Link
-          to="/admin/student-leaves"
-          className="px-5 py-3 font-headings font-bold text-xs border-b-2 border-primary text-primary bg-primary/5 rounded-t-xl transition-all flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">event_busy</span>
-          Student Leaves ({studentLeaves.length})
-          {pendingCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-extrabold text-[10px]">
-              {pendingCount} Pending
-            </span>
-          )}
-        </Link>
-      </div>
-
-      {/* Header Title Card */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
-        <div>
-          <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-primary text-3xl">event_busy</span>
-            Student Leave Applications
-          </h1>
-          <p className="font-body text-xs text-on-surface-variant mt-1">
-            Review, filter, approve, or reject leave applications submitted by students.
-          </p>
+          <Link
+            to="/admin/students?tab=leaves"
+            className="px-5 py-3 font-headings font-bold text-xs border-b-2 border-primary text-primary bg-primary/5 rounded-t-xl transition-all flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">event_busy</span>
+            Student Leaves ({studentLeaves.length})
+            {pendingCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-extrabold text-[10px]">
+                {pendingCount} Pending
+              </span>
+            )}
+          </Link>
         </div>
-      </div>
+      )}
+
+      {/* Header Title Card - only if not embedded */}
+      {!isEmbedded && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
+          <div>
+            <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-primary text-3xl">event_busy</span>
+              Student Leave Applications
+            </h1>
+            <p className="font-body text-xs text-on-surface-variant mt-1">
+              Review, filter, approve, or reject leave applications submitted by students.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Multi-Filter & Search Toolbar */}
       <div className="bg-white p-5 rounded-2xl shadow-premium border border-outline-variant/15 space-y-4">
