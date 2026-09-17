@@ -26,6 +26,7 @@ import smsNotificationRoutes from './routes/smsNotificationRoutes.js';
 import branchRoutes from './routes/branchRoutes.js';
 import marksRoutes from './routes/marksRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import demoBookingRoutes from './routes/demoBookingRoutes.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 import { initSchedulers } from './jobs/feeScheduler.js';
@@ -83,6 +84,7 @@ app.use('/api/faculty-profile-requests', facultyProfileRequestRoutes);
 app.use('/api/rbac', rbacRoutes);
 app.use('/api/student-applications', studentApplicationRoutes);
 app.use('/api/sms-notifications', smsNotificationRoutes);
+app.use('/api/demo-bookings', demoBookingRoutes);
 
 // Direct Leave API Mounts
 app.post('/api/student-leaves', applyStudentLeave);

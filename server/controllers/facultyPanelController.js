@@ -326,6 +326,24 @@ export const applyFacultyLeave = async (req, res) => {
       status: 'Pending',
     });
 
+    // Alert Admin via Email + SMS + In-App
+    try {
+      const { notifyAdminCriticalEvent } = await import('../services/notificationService.js');
+      await notifyAdminCriticalEvent({
+        alertType: 'Faculty Leave Application',
+        title: `Faculty Leave Request: ${facultyName} (${leaveType})`,
+        details: {
+          'Faculty Name': facultyName,
+          'Email': facultyEmail,
+          'Leave Type': leaveType,
+          'Period': `${startDate} to ${endDate} (${numberOfDays} days)`,
+          'Reason': reason,
+        },
+        actionUrl: '/admin/faculty/leaves',
+        triggeredBy: facultyName,
+      });
+    } catch (e) {}
+
     res.status(201).json({ success: true, leave, message: 'Leave application submitted successfully' });
   } catch (error) {
     console.error('applyFacultyLeave Mongo Error:', error);

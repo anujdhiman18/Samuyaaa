@@ -909,6 +909,36 @@ export default function StudentDetail() {
                 className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Father's Name</label>
+              <input
+                type="text"
+                value={editForm.fatherName}
+                onChange={(e) => setEditForm({ ...editForm, fatherName: e.target.value })}
+                placeholder="Father's Full Name"
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Mother's Name</label>
+              <input
+                type="text"
+                value={editForm.motherName}
+                onChange={(e) => setEditForm({ ...editForm, motherName: e.target.value })}
+                placeholder="Mother's Full Name"
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-secondary mb-1">Email Address</label>
+              <input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="student@example.com"
+                className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/30 text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
           </div>
 
           {/* SMS Notification Preference Toggle */}

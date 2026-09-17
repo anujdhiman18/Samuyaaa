@@ -189,7 +189,7 @@ export const seedData = async () => {
         fatherName: 'Vikas Mehta',
         motherName: 'Priya Mehta',
         phone: '9816112233',
-        parentPhone: '8894190175',
+        parentPhone: '9816112244',
         email: 'aryan.m@gmail.com',
         password: studentHashedPass,
         address: 'Ward No 4, Civil Lines, HP',

@@ -100,6 +100,20 @@ export const updateFaculty = async (req, res) => {
 
     const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });
     cacheInvalidate('faculty:'); // Bust cache after update
+
+    // Dispatch multi-channel alert to Faculty: SMS + Email + In-App notification
+    try {
+      const changedKeys = Object.keys(updateData).filter(k => !['_id', '__v', 'updatedAt', 'createdAt'].includes(k)).join(', ') || 'Profile & Teaching Details';
+      const { notifyFacultyUpdate } = await import('../services/notificationService.js');
+      await notifyFacultyUpdate({
+        faculty: updated,
+        updatedFields: changedKeys,
+        triggeredBy: req.user?.name || 'Admin',
+      });
+    } catch (notifyErr) {
+      console.warn('[facultyController] Faculty notify update failed:', notifyErr.message);
+    }
+
     res.json({ success: true, faculty: updated, message: 'Faculty updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -331,6 +345,19 @@ Application ID: ${applicationId}
 
       const info = await transporter.sendMail(mailOptions);
       console.log(`✅ [Nodemailer] Email sent to ${EMAIL_TARGET_STRING}: ${info.messageId}`);
+
+      // Dispatch SMS alert to Admin
+      try {
+        const { sendGenericSMS } = await import('../services/twilioService.js');
+        const Admin = (await import('../models/Admin.js')).default;
+        const adminUser = await Admin.findOne({ role: { $in: ['SuperAdmin', 'Admin'] } });
+        const adminPhone = adminUser?.phone || '+91 9816543210';
+        await sendGenericSMS({
+          phone: adminPhone,
+          text: `🚨 Saumyaa Admin Alert: New Faculty Application from ${fullName} for ${positionApplied || 'Faculty'}. Email: ${email}, Phone: ${contactNumber}`.slice(0, 160),
+        });
+      } catch (smsErr) {}
+
       return res.json({
         success: true,
         message: `Faculty application email sent to ${EMAIL_TARGET_STRING} via Nodemailer`,

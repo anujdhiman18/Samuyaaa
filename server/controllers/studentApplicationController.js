@@ -148,6 +148,29 @@ export const submitStudentApplication = async (req, res) => {
       status: 'Pending',
     });
 
+    // Alert Admin via Email + SMS + In-App Notification
+    try {
+      const { notifyAdminCriticalEvent } = await import('../services/notificationService.js');
+      await notifyAdminCriticalEvent({
+        alertType: 'New Student Application',
+        title: `New Admission Application: ${application.fullName} (${application.targetClass || application.academicStage})`,
+        details: {
+          'Application ID': application.applicationId,
+          'Student Name': application.fullName,
+          'Contact Number': application.contactNumber,
+          'Email': application.email,
+          'Target Class': application.targetClass || application.academicStage,
+          'Branch': application.branch,
+          'Parent Name': application.parentName,
+          'Parent Contact': application.parentContact,
+        },
+        actionUrl: '/admin/applications',
+        triggeredBy: application.fullName,
+      });
+    } catch (adminAlertErr) {
+      console.warn('[studentApplicationController] Admin alert error:', adminAlertErr.message);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Student application submitted successfully!',
@@ -201,6 +224,26 @@ export const updatePendingStudentApplication = async (req, res) => {
 
     application.submittedAt = new Date();
     await application.save();
+
+    // Alert Admin via Email + SMS + In-App Notification
+    try {
+      const { notifyAdminCriticalEvent } = await import('../services/notificationService.js');
+      await notifyAdminCriticalEvent({
+        alertType: 'Student Application Updated',
+        title: `Application Details Updated: ${application.fullName} (${application.applicationId})`,
+        details: {
+          'Application ID': application.applicationId,
+          'Student Name': application.fullName,
+          'Contact': application.contactNumber,
+          'Target Class': application.targetClass || application.academicStage,
+          'Status': application.status,
+        },
+        actionUrl: '/admin/applications',
+        triggeredBy: application.fullName,
+      });
+    } catch (adminAlertErr) {
+      console.warn('[studentApplicationController] Admin alert error on update:', adminAlertErr.message);
+    }
 
     res.json({
       success: true,

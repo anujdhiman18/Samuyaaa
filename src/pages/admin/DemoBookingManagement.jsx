@@ -168,27 +168,69 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
       facultyMentor: booking.facultyMentor || 'Jitender Sharma',
       meetingMode: booking.meetingMode || 'Offline Classroom',
       adminNotes: booking.adminNotes || '',
+      parentPhone: booking.parentPhone || booking.phone || '',
+      parentEmail: booking.parentEmail || booking.email || '',
+      notifyStudent: true,
       status: booking.status === 'Pending' ? 'Scheduled' : booking.status,
     });
     setScheduleModalOpen(true);
   };
 
-  // Save Schedule
+  // Save Schedule & Dispatch Notifications
   const handleSaveSchedule = async (e) => {
     e.preventDefault();
     if (!selectedBooking) return;
     try {
+      const schedulePayload = {
+        ...scheduleForm,
+        parentPhone: scheduleForm.parentPhone || selectedBooking.parentPhone || selectedBooking.phone,
+        parentEmail: scheduleForm.parentEmail || selectedBooking.parentEmail || selectedBooking.email,
+      };
+
       await demoBookingService.updateBookingStatus(
         selectedBooking._id || selectedBooking.id,
         scheduleForm.status,
         scheduleForm.adminNotes,
-        scheduleForm
+        schedulePayload
       );
-      addToast(`Demo for ${selectedBooking.studentName} scheduled successfully!`, 'success');
+
+      if (scheduleForm.notifyStudent) {
+        try {
+          const notifyRes = await demoBookingService.notifyDemoSchedule({
+            ...selectedBooking,
+            ...schedulePayload,
+          });
+          if (notifyRes && notifyRes.success) {
+            addToast(`Demo scheduled & SMS/Email notification sent to ${selectedBooking.studentName}!`, 'success', 5000);
+          } else {
+            addToast(`Demo scheduled, but notification delivery notice: ${notifyRes?.message || 'Queued'}`, 'info', 5000);
+          }
+        } catch (notifErr) {
+          console.warn('Notification error on schedule save:', notifErr);
+        }
+      } else {
+        addToast(`Demo for ${selectedBooking.studentName} scheduled successfully!`, 'success');
+      }
+
       setScheduleModalOpen(false);
       fetchBookings();
     } catch (err) {
       addToast(err.message || 'Error updating schedule', 'error');
+    }
+  };
+
+  // Quick 1-Click Send / Resend Demo Notification to Student
+  const handleQuickNotifyStudent = async (booking) => {
+    try {
+      addToast(`Dispatching SMS & Email notification to ${booking.studentName}...`, 'info');
+      const res = await demoBookingService.notifyDemoSchedule(booking);
+      if (res && res.success) {
+        addToast(`Notification dispatched successfully to ${booking.studentName} via SMS & Email!`, 'success', 5000);
+      } else {
+        addToast(res?.message || 'Failed to dispatch notification. Please verify phone number.', 'error', 5000);
+      }
+    } catch (err) {
+      addToast(`Error dispatching notification: ${err.message}`, 'error');
     }
   };
 
@@ -638,6 +680,15 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
 
                 {/* Secondary Quick Contact Tools */}
                 <div className="flex items-center gap-1">
+                  {/* Quick 1-Click Notify Button */}
+                  <button
+                    onClick={() => handleQuickNotifyStudent(b)}
+                    className="p-1.5 rounded-lg bg-amber-500/10 text-amber-700 hover:bg-amber-500 hover:text-white transition-colors"
+                    title="Send/Resend Demo Class Confirmation (SMS & Email)"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">notifications_active</span>
+                  </button>
+
                   <a
                     href={getWhatsAppLink(b)}
                     target="_blank"
@@ -766,6 +817,30 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
             </select>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-secondary">Student/Parent Mobile (SMS) *</label>
+              <input
+                type="tel"
+                required
+                value={scheduleForm.parentPhone}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, parentPhone: e.target.value })}
+                placeholder="e.g. 8894190175"
+                className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs bg-white focus:border-primary"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-secondary">Student/Parent Email</label>
+              <input
+                type="email"
+                value={scheduleForm.parentEmail}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, parentEmail: e.target.value })}
+                placeholder="e.g. anuj@example.com"
+                className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs bg-white focus:border-primary"
+              />
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-secondary">Admin &amp; Follow-up Notes</label>
             <textarea
@@ -775,6 +850,20 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
               placeholder="e.g. Spoke with parent on phone. Student requested extra guidance in Algebra and Mechanics."
               className="px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs bg-white focus:border-primary"
             />
+          </div>
+
+          {/* Instant SMS & Email Notification Checkbox */}
+          <div className="flex items-center gap-2.5 p-3 bg-primary/5 rounded-xl border border-primary/20">
+            <input
+              type="checkbox"
+              id="notifyStudentCheckbox"
+              checked={scheduleForm.notifyStudent}
+              onChange={(e) => setScheduleForm({ ...scheduleForm, notifyStudent: e.target.checked })}
+              className="w-4 h-4 text-primary rounded border-outline-variant/50 cursor-pointer accent-primary"
+            />
+            <label htmlFor="notifyStudentCheckbox" className="text-xs font-semibold text-secondary cursor-pointer select-none">
+              Send instant notification to student/parent via <strong>SMS &amp; Email</strong>
+            </label>
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-outline-variant/15">

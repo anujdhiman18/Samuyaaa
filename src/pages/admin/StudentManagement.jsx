@@ -119,6 +119,45 @@ export default function StudentManagement() {
 
   const { addToast } = useToast();
 
+  // Sibling and duplicity detection helper
+  const siblingDetection = useMemo(() => {
+    if (!form.phone && !form.parentPhone && !form.email) return null;
+
+    const clean = (p) => (p ? String(p).replace(/\D/g, '').slice(-10) : '');
+    const norm = (str) => (str ? String(str).trim().toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+    const pPhone = clean(form.phone);
+    const prPhone = clean(form.parentPhone);
+    const pEmail = (form.email || '').trim().toLowerCase();
+
+    const fName = norm(form.fatherName);
+    const mName = norm(form.motherName);
+
+    for (const s of students) {
+      const sPhone = clean(s.phone);
+      const sParentPhone = clean(s.parentPhone);
+      const sEmail = (s.email || '').trim().toLowerCase();
+
+      const phoneMatch = (pPhone && (pPhone === sPhone || pPhone === sParentPhone)) ||
+                         (prPhone && (prPhone === sPhone || prPhone === sParentPhone));
+      const emailMatch = pEmail && pEmail.includes('@') && pEmail === sEmail;
+
+      if (phoneMatch || emailMatch) {
+        const sFather = norm(s.fatherName);
+        const sMother = norm(s.motherName);
+        const isSibling = Boolean(fName && sFather && fName === sFather && mName && sMother && mName === sMother);
+
+        return {
+          matchedStudent: s.fullName,
+          rollNumber: s.rollNumber,
+          isSibling,
+          conflictType: phoneMatch && emailMatch ? 'Phone & Email' : phoneMatch ? 'Phone Number' : 'Email',
+        };
+      }
+    }
+    return null;
+  }, [form.phone, form.parentPhone, form.email, form.fatherName, form.motherName, students]);
+
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     setSearchParams({ tab });
@@ -981,12 +1020,23 @@ export default function StudentManagement() {
               </div>
 
               <div>
-                <label className="block font-bold text-secondary mb-1">Parent Name</label>
+                <label className="block font-bold text-secondary mb-1">Father's Name</label>
                 <input
                   type="text"
                   value={form.fatherName}
                   onChange={(e) => setForm({ ...form, fatherName: e.target.value })}
-                  placeholder="Parent / Guardian Name"
+                  placeholder="Father's Full Name"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-secondary mb-1">Mother's Name</label>
+                <input
+                  type="text"
+                  value={form.motherName}
+                  onChange={(e) => setForm({ ...form, motherName: e.target.value })}
+                  placeholder="Mother's Full Name"
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>
@@ -998,6 +1048,7 @@ export default function StudentManagement() {
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="10-digit mobile"
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>
@@ -1008,6 +1059,7 @@ export default function StudentManagement() {
                   type="tel"
                   value={form.parentPhone}
                   onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
+                  placeholder="Parent phone number"
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>
@@ -1018,10 +1070,45 @@ export default function StudentManagement() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="student@saumyaa.edu.in"
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>
             </div>
+
+            {/* Sibling Policy Notice & Live Detection Feedback */}
+            {siblingDetection ? (
+              siblingDetection.isSibling ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">verified</span>
+                  <div>
+                    <p className="font-bold">Verified Sibling Match</p>
+                    <p className="mt-0.5">
+                      Both Father's and Mother's names match existing student <strong>{siblingDetection.matchedStudent}</strong> ({siblingDetection.rollNumber || 'Enrolled'}).
+                      Shared {siblingDetection.conflictType} is permitted under the Sibling Policy.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800">
+                  <span className="material-symbols-outlined text-rose-600 text-base shrink-0 mt-0.5">error</span>
+                  <div>
+                    <p className="font-bold">Duplicate Contact Conflict</p>
+                    <p className="mt-0.5">
+                      {siblingDetection.conflictType} is already in use by student <strong>{siblingDetection.matchedStudent}</strong>.
+                      To share contact info as siblings, both <strong>Father's Name</strong> and <strong>Mother's Name</strong> must match.
+                    </p>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="p-2.5 bg-surface-container-low border border-outline-variant/20 rounded-xl flex items-center gap-2 text-xs text-on-surface-variant">
+                <span className="material-symbols-outlined text-primary text-sm shrink-0">info</span>
+                <span>
+                  <strong>Sibling Policy:</strong> Students can share phone &amp; email only if both Father's and Mother's names match.
+                </span>
+              </div>
+            )}
 
             <div className="pt-3 border-t border-outline-variant/15 flex items-center justify-end gap-2">
               <button

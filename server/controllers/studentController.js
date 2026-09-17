@@ -1,5 +1,6 @@
 import Student from '../models/Student.js';
 import { cacheGet, cacheSet, cacheInvalidate } from '../utils/cache.js';
+import { notifyStudentUpdate, notifyAdminCriticalEvent } from '../services/notificationService.js';
 
 // @desc    Get all students with filter, search, pagination, sorting
 // @route   GET /api/students
@@ -72,11 +73,141 @@ export const getStudentById = async (req, res) => {
   }
 };
 
+/**
+ * Helper to normalize name for sibling comparison
+ */
+export const normalizeName = (name) => {
+  if (!name) return '';
+  return String(name).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
+/**
+ * Helper to extract clean 10-digit mobile number
+ */
+export const cleanDigitsPhone = (phone) => {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
+/**
+ * Validates duplicity of student phone and email, enforcing the sibling rule:
+ * - Each student must have unique phone / parentPhone and email.
+ * - Sibling exception: Same phone / email is permitted ONLY if BOTH Father's Name AND Mother's Name match!
+ */
+export const checkStudentDuplicityWithSiblingRule = async ({
+  studentId = null,
+  phone = '',
+  parentPhone = '',
+  email = '',
+  fatherName = '',
+  motherName = '',
+}) => {
+  const normPhone = cleanDigitsPhone(phone);
+  const normParentPhone = cleanDigitsPhone(parentPhone);
+  const normEmail = (email || '').trim().toLowerCase();
+  const normFather = normalizeName(fatherName);
+  const normMother = normalizeName(motherName);
+
+  // Build query to find potential duplicates
+  const matchConditions = [];
+  const phonesToCheck = [normPhone, normParentPhone].filter((p) => p && p.length >= 10);
+
+  if (phonesToCheck.length > 0) {
+    phonesToCheck.forEach((p) => {
+      matchConditions.push({ phone: new RegExp(`${p}$`) });
+      matchConditions.push({ parentPhone: new RegExp(`${p}$`) });
+    });
+  }
+
+  if (normEmail && normEmail.includes('@')) {
+    matchConditions.push({ email: normEmail });
+  }
+
+  if (matchConditions.length === 0) {
+    return { valid: true };
+  }
+
+  const query = { $or: matchConditions };
+  if (studentId) {
+    query._id = { $ne: studentId };
+  }
+
+  const conflictingStudents = await Student.find(query).lean();
+
+  for (const existing of conflictingStudents) {
+    const existFather = normalizeName(existing.fatherName);
+    const existMother = normalizeName(existing.motherName);
+
+    // Sibling Match: BOTH Father AND Mother names must match
+    const isSibling = Boolean(
+      normFather &&
+      existFather &&
+      normFather === existFather &&
+      normMother &&
+      existMother &&
+      normMother === existMother
+    );
+
+    if (isSibling) {
+      // Allowed under sibling exception
+      continue;
+    }
+
+    // Not verified siblings — check which contact field conflicted
+    const existPhone = cleanDigitsPhone(existing.phone);
+    const existParentPhone = cleanDigitsPhone(existing.parentPhone);
+    const existEmail = (existing.email || '').trim().toLowerCase();
+
+    const phoneMatched =
+      (normPhone && (normPhone === existPhone || normPhone === existParentPhone)) ||
+      (normParentPhone && (normParentPhone === existPhone || normParentPhone === existParentPhone));
+
+    if (phoneMatched) {
+      const conflictNum = normPhone === existPhone || normPhone === existParentPhone ? phone : parentPhone;
+      return {
+        valid: false,
+        field: 'phone',
+        conflictingStudent: existing.fullName,
+        message: `Phone number "${conflictNum}" is already registered with student "${existing.fullName}" (${existing.rollNumber || 'N/A'}). Sibling exception requires matching Father's and Mother's names.`,
+      };
+    }
+
+    if (normEmail && normEmail === existEmail) {
+      return {
+        valid: false,
+        field: 'email',
+        conflictingStudent: existing.fullName,
+        message: `Email "${email}" is already registered with student "${existing.fullName}" (${existing.rollNumber || 'N/A'}). Sibling exception requires matching Father's and Mother's names.`,
+      };
+    }
+  }
+
+  return { valid: true };
+};
+
 // @desc    Create student
 // @route   POST /api/students
 export const createStudent = async (req, res) => {
   try {
     let { rollNumber, className, admissionNumber } = req.body;
+
+    // Validate phone & email duplicity with sibling exception rule
+    const duplicityCheck = await checkStudentDuplicityWithSiblingRule({
+      phone: req.body.phone,
+      parentPhone: req.body.parentPhone,
+      email: req.body.email,
+      fatherName: req.body.fatherName,
+      motherName: req.body.motherName,
+    });
+
+    if (!duplicityCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        field: duplicityCheck.field,
+        message: duplicityCheck.message,
+      });
+    }
 
     // Auto-generate sequential Roll Number if missing or blank
     if (!rollNumber || rollNumber.trim() === '') {
@@ -133,24 +264,38 @@ export const updateStudent = async (req, res) => {
       }
     }
 
+    // Validate phone & email duplicity with sibling exception rule
+    const duplicityCheck = await checkStudentDuplicityWithSiblingRule({
+      studentId: student._id,
+      phone: req.body.phone !== undefined ? req.body.phone : student.phone,
+      parentPhone: req.body.parentPhone !== undefined ? req.body.parentPhone : student.parentPhone,
+      email: req.body.email !== undefined ? req.body.email : student.email,
+      fatherName: req.body.fatherName !== undefined ? req.body.fatherName : student.fatherName,
+      motherName: req.body.motherName !== undefined ? req.body.motherName : student.motherName,
+    });
+
+    if (!duplicityCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        field: duplicityCheck.field,
+        message: duplicityCheck.message,
+      });
+    }
+
     const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
-    // Dispatch automated SMS alert
-    try {
-      const phoneToNotify = updated.parentPhone || updated.phone;
-      const smsText = `Saumyaa Update: Profile details updated for ${updated.fullName} (${updated.rollNumber || 'N/A'}, Class ${updated.className || '10th'}). - Saumyaa Studies`;
-      const { sendGenericSMS } = await import('../services/twilioService.js');
-      await sendGenericSMS({ phone: phoneToNotify, text: smsText });
 
-      const Notification = (await import('../models/Notification.js')).default;
-      await Notification.create({
-        student: updated._id,
-        rollNumber: updated.rollNumber,
-        title: 'Profile Updated',
-        message: smsText,
-        type: 'Performance',
+    // Multi-channel notifications: SMS + Email + In-App notification
+    try {
+      const changedKeys = Object.keys(req.body).filter(k => !['_id', '__v', 'updatedAt', 'createdAt'].includes(k)).join(', ') || 'Academic & Profile Details';
+      await notifyStudentUpdate({
+        student: updated,
+        updatedFields: changedKeys,
+        triggeredBy: req.user?.name || 'Admin',
       });
-    } catch (e) {}
+    } catch (notifyErr) {
+      console.warn('[studentController] Error in notifyStudentUpdate:', notifyErr.message);
+    }
 
     cacheInvalidate('students:'); // Bust the student list cache
     res.json({ success: true, student: updated, message: 'Student updated successfully' });
@@ -390,6 +535,212 @@ export const remindSMS = async (req, res) => {
   }
 };
 
+// @desc    Send automated Email reminder
+// @route   POST /api/students/:id/remind-email
+export const remindEmail = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const studentEmail = student.email || req.body.email;
+    if (!studentEmail) {
+      return res.status(400).json({ success: false, message: 'Student registered email is missing or empty' });
+    }
+
+    const dueAmount = student.totalFeeAmount ? (student.totalFeeAmount - (student.amountPaid || 0)) : (student.monthlyFee || 2500);
+    const { sendFeeReminderEmail } = await import('../services/emailService.js');
+    const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+
+    const emailRes = await sendFeeReminderEmail({
+      student,
+      dueAmount,
+      className: student.className,
+      rollNumber: student.rollNumber,
+    });
+
+    const log = await FeeReminderLog.create({
+      student: student._id,
+      studentName: student.fullName,
+      parentPhone: student.parentPhone || student.phone || studentEmail,
+      amountDue: Number(dueAmount),
+      monthYear: req.body.monthYear || 'July 2026',
+      channel: 'Email',
+      status: emailRes.success ? 'sent' : 'failed',
+      message: emailRes.success ? `Email fee reminder sent to ${studentEmail}` : (emailRes.error || 'Failed to send email'),
+    });
+
+    return res.json({
+      success: emailRes.success,
+      message: emailRes.success ? `Email reminder dispatched to ${student.fullName} (${studentEmail})` : `Failed to send email: ${emailRes.error}`,
+      email: emailRes,
+      log,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    1-Click Bulk SMS Fee Reminders to all unpaid students
+// @route   POST /api/students/bulk-remind-sms
+export const bulkRemindDueFeesSMS = async (req, res) => {
+  try {
+    const students = await Student.find({
+      $or: [
+        { feesPaid: false },
+        { $expr: { $gt: [{ $subtract: [{ $ifNull: ['$totalFeeAmount', 0] }, { $ifNull: ['$amountPaid', 0] }] }, 0] } }
+      ]
+    });
+
+    const unpaidStudents = students.filter(s => {
+      const due = (s.totalFeeAmount || 0) - (s.amountPaid || 0);
+      return !s.feesPaid || due > 0;
+    });
+
+    if (unpaidStudents.length === 0) {
+      return res.json({ success: true, message: 'No students with pending fees found', sentCount: 0, failedCount: 0, total: 0 });
+    }
+
+    const { sendSMSReminder } = await import('../services/twilioService.js');
+    const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const failures = [];
+
+    for (const student of unpaidStudents) {
+      const phone = student.parentPhone || student.phone;
+      if (!phone || String(phone).replace(/\D/g, '').length < 10) {
+        failedCount++;
+        failures.push({ name: student.fullName, reason: 'Invalid or missing phone' });
+        continue;
+      }
+
+      const dueAmount = student.totalFeeAmount ? (student.totalFeeAmount - (student.amountPaid || 0)) : (student.monthlyFee || 2500);
+
+      try {
+        const twilioRes = await sendSMSReminder({
+          studentPhone: phone,
+          studentName: student.fullName,
+          dueAmount,
+          rollNumber: student.rollNumber,
+          className: student.className,
+        });
+
+        await FeeReminderLog.create({
+          student: student._id,
+          studentName: student.fullName,
+          parentPhone: phone,
+          amountDue: Number(dueAmount),
+          monthYear: req.body.monthYear || 'July 2026',
+          channel: 'SMS',
+          status: 'sent',
+          message: twilioRes.message,
+        });
+        sentCount++;
+      } catch (err) {
+        failedCount++;
+        failures.push({ name: student.fullName, reason: err.message });
+      }
+
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk SMS completed: ${sentCount} sent, ${failedCount} failed`,
+      sentCount,
+      failedCount,
+      total: unpaidStudents.length,
+      failures,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    1-Click Bulk Email Fee Reminders to all unpaid students
+// @route   POST /api/students/bulk-remind-email
+export const bulkRemindDueFeesEmail = async (req, res) => {
+  try {
+    const students = await Student.find({
+      $or: [
+        { feesPaid: false },
+        { $expr: { $gt: [{ $subtract: [{ $ifNull: ['$totalFeeAmount', 0] }, { $ifNull: ['$amountPaid', 0] }] }, 0] } }
+      ]
+    });
+
+    const unpaidStudents = students.filter(s => {
+      const due = (s.totalFeeAmount || 0) - (s.amountPaid || 0);
+      return !s.feesPaid || due > 0;
+    });
+
+    if (unpaidStudents.length === 0) {
+      return res.json({ success: true, message: 'No students with pending fees found', sentCount: 0, failedCount: 0, total: 0 });
+    }
+
+    const { sendFeeReminderEmail } = await import('../services/emailService.js');
+    const FeeReminderLog = (await import('../models/FeeReminderLog.js')).default;
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const failures = [];
+
+    for (const student of unpaidStudents) {
+      if (!student.email || !student.email.includes('@')) {
+        failedCount++;
+        failures.push({ name: student.fullName, reason: 'Invalid or missing email' });
+        continue;
+      }
+
+      const dueAmount = student.totalFeeAmount ? (student.totalFeeAmount - (student.amountPaid || 0)) : (student.monthlyFee || 2500);
+
+      try {
+        const emailRes = await sendFeeReminderEmail({
+          student,
+          dueAmount,
+          className: student.className,
+          rollNumber: student.rollNumber,
+        });
+
+        await FeeReminderLog.create({
+          student: student._id,
+          studentName: student.fullName,
+          parentPhone: student.email,
+          amountDue: Number(dueAmount),
+          monthYear: req.body.monthYear || 'July 2026',
+          channel: 'Email',
+          status: emailRes.success ? 'sent' : 'failed',
+          message: emailRes.success ? `Bulk Email sent to ${student.email}` : emailRes.error,
+        });
+
+        if (emailRes.success) sentCount++;
+        else {
+          failedCount++;
+          failures.push({ name: student.fullName, reason: emailRes.error });
+        }
+      } catch (err) {
+        failedCount++;
+        failures.push({ name: student.fullName, reason: err.message });
+      }
+
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk Email completed: ${sentCount} sent, ${failedCount} failed`,
+      sentCount,
+      failedCount,
+      total: unpaidStudents.length,
+      failures,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Get all reminder logs history
 // @route   GET /api/students/reminder-logs
 export const getReminderLogs = async (req, res) => {
@@ -443,6 +794,26 @@ export const applyStudentLeave = async (req, res) => {
       supportingDocument,
       status: 'Pending',
     });
+
+    // Notify Admin via Email + SMS + In-App
+    try {
+      await notifyAdminCriticalEvent({
+        alertType: 'Student Leave Application',
+        title: `New Leave Application from ${studentName} (${className})`,
+        details: {
+          'Student Name': studentName,
+          'Admission No': admissionNo,
+          'Class & Section': `${className} - ${section}`,
+          'Leave Type': leaveType,
+          'Period': `${startDate} to ${endDate} (${numberOfDays} days)`,
+          'Reason': reason,
+        },
+        actionUrl: '/admin/leaves',
+        triggeredBy: studentName,
+      });
+    } catch (e) {
+      console.warn('[studentController] Admin alert error for student leave:', e.message);
+    }
 
     res.status(201).json({ success: true, leave, message: 'Student leave application submitted successfully' });
   } catch (error) {

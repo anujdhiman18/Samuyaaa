@@ -113,7 +113,10 @@ function FeeRemindersContent() {
   // Automated Twilio Sending & Log States
   const [sendingWhatsappId, setSendingWhatsappId] = useState(null);
   const [sendingSmsId, setSendingSmsId] = useState(null);
+  const [sendingEmailId, setSendingEmailId] = useState(null);
   const [bulkSending, setBulkSending] = useState(false);
+  const [bulkSmsSending, setBulkSmsSending] = useState(false);
+  const [bulkEmailSending, setBulkEmailSending] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [reminderLogs, setReminderLogs] = useState(() => reminderService.getLogs());
 
@@ -308,6 +311,67 @@ function FeeRemindersContent() {
     }
   };
 
+  // Single Email Reminder Action
+  const handleSendEmailAPI = async (student) => {
+    if (!student.email) {
+      addToast(`No registered email found for ${student.fullName}!`, 'error');
+      return;
+    }
+    setSendingEmailId(student.id);
+    try {
+      const payload = {
+        studentName: student.fullName,
+        email: student.email,
+        dueAmount: student.dueAmount,
+        rollNumber: student.rollNumber,
+        className: student.className,
+      };
+      const res = await reminderService.sendEmail(student.id, payload);
+      addToast(res.message || `Automated Email reminder sent to ${student.fullName}!`, res.success ? 'success' : 'warning');
+      setReminderLogs(reminderService.getLogs());
+    } catch (err) {
+      addToast(`Failed to send Email to ${student.fullName}: ${err.message}`, 'error');
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  // 1-Click Bulk SMS to All Unpaid Students
+  const handle1ClickBulkSMS = async () => {
+    if (stats.unpaidCount === 0) {
+      addToast('No unpaid students found to send reminders!', 'info');
+      return;
+    }
+    setBulkSmsSending(true);
+    try {
+      const res = await reminderService.bulkRemindSMS();
+      addToast(res.message || `Bulk SMS complete. Sent: ${res.sentCount || 0}`, res.success ? 'success' : 'warning', 6000);
+      setReminderLogs(reminderService.getLogs());
+    } catch (err) {
+      addToast(`Bulk SMS failed: ${err.message}`, 'error');
+    } finally {
+      setBulkSmsSending(false);
+    }
+  };
+
+  // 1-Click Bulk Email to All Unpaid Students
+  const handle1ClickBulkEmail = async () => {
+    if (stats.unpaidCount === 0) {
+      addToast('No unpaid students found to send reminders!', 'info');
+      return;
+    }
+    setBulkEmailSending(true);
+    try {
+      const res = await reminderService.bulkRemindEmail();
+      addToast(res.message || `Bulk Email complete. Sent: ${res.sentCount || 0}`, res.success ? 'success' : 'warning', 6000);
+      setReminderLogs(reminderService.getLogs());
+    } catch (err) {
+      addToast(`Bulk Email failed: ${err.message}`, 'error');
+    } finally {
+      setBulkEmailSending(false);
+    }
+  };
+
   // Bulk Remind All Unpaid Students Action with Rate Limiting Delay
   const handleBulkRemindUnpaid = async () => {
     const unpaidList = normalizedStudents.filter((s) => s.dueAmount > 0);
@@ -426,6 +490,8 @@ function FeeRemindersContent() {
         className: formData.className,
         phone: formData.phone,
         parentPhone: formData.phone,
+        fatherName: editingStudent?.fatherName || '',
+        motherName: editingStudent?.motherName || '',
         totalFeeAmount: totalFee,
         monthlyFee: totalFee,
         amountPaid: paid,
@@ -485,32 +551,72 @@ function FeeRemindersContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          {/* Bulk Send Button */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* 1-Click Bulk SMS Button */}
           <button
-            onClick={handleBulkRemindUnpaid}
-            disabled={bulkSending || stats.unpaidCount === 0}
-            className="bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all disabled:opacity-50"
+            onClick={handle1ClickBulkSMS}
+            disabled={bulkSmsSending || stats.unpaidCount === 0}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all disabled:opacity-50"
+            title="Send SMS reminder to all due fees students in 1 click"
           >
-            {bulkSending ? (
+            {bulkSmsSending ? (
               <>
-                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                Sending ({bulkProgress.current}/{bulkProgress.total})...
+                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Sending SMS...
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">send</span>
-                Remind All Unpaid ({stats.unpaidCount})
+                <span className="material-symbols-outlined text-[16px]">sms</span>
+                1-Click Bulk SMS ({stats.unpaidCount})
+              </>
+            )}
+          </button>
+
+          {/* 1-Click Bulk Email Button */}
+          <button
+            onClick={handle1ClickBulkEmail}
+            disabled={bulkEmailSending || stats.unpaidCount === 0}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all disabled:opacity-50"
+            title="Send Email reminder to all due fees students in 1 click"
+          >
+            {bulkEmailSending ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Sending Email...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[16px]">mail</span>
+                1-Click Bulk Email ({stats.unpaidCount})
+              </>
+            )}
+          </button>
+
+          {/* Bulk WhatsApp Send Button */}
+          <button
+            onClick={handleBulkRemindUnpaid}
+            disabled={bulkSending || stats.unpaidCount === 0}
+            className="bg-[#25D366] hover:bg-[#1ebf59] text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all disabled:opacity-50"
+          >
+            {bulkSending ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                WA ({bulkProgress.current}/{bulkProgress.total})...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[16px]">send</span>
+                Remind WhatsApp ({stats.unpaidCount})
               </>
             )}
           </button>
 
           <button
             onClick={handleOpenAdd}
-            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-2.5 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
+            className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-4 py-2 rounded-full text-xs flex items-center gap-1.5 shadow-premium hover:shadow-glow-primary active:scale-95 transition-all"
           >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            Add Student Record
+            <span className="material-symbols-outlined text-[16px]">person_add</span>
+            Add Student
           </button>
         </div>
       </div>
@@ -766,15 +872,30 @@ function FeeRemindersContent() {
                             <button
                               onClick={() => handleSendSMSAPI(student)}
                               disabled={sendingSmsId === student.id || bulkSending}
-                              className="px-3 py-1.5 rounded-lg border border-outline-variant/40 bg-white hover:bg-surface-container text-secondary font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                              title="Send Automated SMS Payment Reminder via Server"
+                              className="px-2.5 py-1.5 rounded-lg border border-outline-variant/40 bg-white hover:bg-surface-container text-amber-700 font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                              title="Send Automated SMS Payment Reminder"
                             >
                               {sendingSmsId === student.id ? (
-                                <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                                <span className="material-symbols-outlined animate-spin text-[15px]">progress_activity</span>
                               ) : (
-                                <span className="material-symbols-outlined text-[16px]">sms</span>
+                                <span className="material-symbols-outlined text-[15px]">sms</span>
                               )}
-                              Send SMS
+                              SMS
+                            </button>
+
+                            {/* Automated Email Button */}
+                            <button
+                              onClick={() => handleSendEmailAPI(student)}
+                              disabled={sendingEmailId === student.id || bulkSending}
+                              className="px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                              title="Send Automated Email Payment Reminder"
+                            >
+                              {sendingEmailId === student.id ? (
+                                <span className="material-symbols-outlined animate-spin text-[15px]">progress_activity</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[15px]">mail</span>
+                              )}
+                              Email
                             </button>
                           </div>
                         ) : (

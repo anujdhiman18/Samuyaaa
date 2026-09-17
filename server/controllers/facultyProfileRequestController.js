@@ -141,6 +141,23 @@ export const createProfileChangeRequest = async (req, res) => {
       existingPending.requestDate = new Date();
       await existingPending.save();
 
+      // Alert Admin via Email + SMS + In-App
+      try {
+        const { notifyAdminCriticalEvent } = await import('../services/notificationService.js');
+        await notifyAdminCriticalEvent({
+          alertType: 'Faculty Profile Change Request',
+          title: `Updated Profile Request from ${facultyName}`,
+          details: {
+            'Faculty Name': facultyName,
+            'Email': facultyEmail,
+            'Reason': reason.trim(),
+            'Modified Fields': Object.keys(filteredRequested).join(', '),
+          },
+          actionUrl: '/admin/faculty-requests',
+          triggeredBy: facultyName,
+        });
+      } catch (e) {}
+
       return res.status(200).json({
         success: true,
         message: 'Pending profile change request updated successfully.',
@@ -163,6 +180,23 @@ export const createProfileChangeRequest = async (req, res) => {
       requestDate,
       status: 'Pending',
     });
+
+    // Alert Admin via Email + SMS + In-App
+    try {
+      const { notifyAdminCriticalEvent } = await import('../services/notificationService.js');
+      await notifyAdminCriticalEvent({
+        alertType: 'Faculty Profile Change Request',
+        title: `New Profile Change Request from ${facultyName}`,
+        details: {
+          'Faculty Name': facultyName,
+          'Email': facultyEmail,
+          'Reason': reason.trim(),
+          'Requested Fields': Object.keys(filteredRequested).join(', '),
+        },
+        actionUrl: '/admin/faculty-requests',
+        triggeredBy: facultyName,
+      });
+    } catch (e) {}
 
     return res.status(201).json({
       success: true,

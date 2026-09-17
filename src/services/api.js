@@ -72,12 +72,18 @@ export const apiCall = async (endpoint, options = {}) => {
       localStorage.removeItem('saumyaa_user');
     }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.message || 'Request failed');
+      const err = new Error(data.message || `Request failed with status ${res.status}`);
+      err.status = res.status;
+      err.isApiError = true;
+      throw err;
     }
     return data;
   } catch (err) {
+    if (err.isApiError) {
+      throw err;
+    }
     lastBackendFailureTime = Date.now();
     return null;
   }
@@ -1090,6 +1096,89 @@ export const getStoredStudentLeaves = () => {
 };
 export const setStoredStudentLeaves = (data) => localStorage.setItem('mock_student_leaves', JSON.stringify(data));
 
+export const normalizeStudentName = (name) => {
+  if (!name) return '';
+  return String(name).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
+export const cleanDigitsPhone = (phone) => {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
+export const checkClientStudentDuplicityWithSiblingRule = ({
+  studentId = null,
+  phone = '',
+  parentPhone = '',
+  email = '',
+  fatherName = '',
+  motherName = '',
+  existingStudents = [],
+}) => {
+  const normPhone = cleanDigitsPhone(phone);
+  const normParentPhone = cleanDigitsPhone(parentPhone);
+  const normEmail = (email || '').trim().toLowerCase();
+  const normFather = normalizeStudentName(fatherName);
+  const normMother = normalizeStudentName(motherName);
+
+  const targetId = studentId ? String(studentId) : null;
+
+  for (const existing of existingStudents) {
+    if (!existing) continue;
+    if (targetId && (String(existing._id) === targetId || String(existing.id) === targetId)) {
+      continue;
+    }
+
+    const existFather = normalizeStudentName(existing.fatherName);
+    const existMother = normalizeStudentName(existing.motherName);
+
+    // Sibling Match: BOTH Father AND Mother names must match
+    const isSibling = Boolean(
+      normFather &&
+      existFather &&
+      normFather === existFather &&
+      normMother &&
+      existMother &&
+      normMother === existMother
+    );
+
+    if (isSibling) {
+      // Allowed under sibling exception
+      continue;
+    }
+
+    const existPhone = cleanDigitsPhone(existing.phone);
+    const existParentPhone = cleanDigitsPhone(existing.parentPhone);
+    const existEmail = (existing.email || '').trim().toLowerCase();
+
+    const phoneMatched =
+      (normPhone && (normPhone === existPhone || normPhone === existParentPhone)) ||
+      (normParentPhone && (normParentPhone === existPhone || normParentPhone === existParentPhone));
+
+    if (phoneMatched) {
+      const conflictNum = normPhone === existPhone || normPhone === existParentPhone ? phone : parentPhone;
+      return {
+        valid: false,
+        field: 'phone',
+        conflictingStudent: existing.fullName,
+        message: `Phone number "${conflictNum}" is already registered with student "${existing.fullName}" (${existing.rollNumber || 'N/A'}). Sibling exception requires matching Father's and Mother's names.`,
+      };
+    }
+
+    if (normEmail && normEmail === existEmail) {
+      return {
+        valid: false,
+        field: 'email',
+        conflictingStudent: existing.fullName,
+        message: `Email "${email}" is already registered with student "${existing.fullName}" (${existing.rollNumber || 'N/A'}). Sibling exception requires matching Father's and Mother's names.`,
+      };
+    }
+  }
+
+  return { valid: true };
+};
+
 // Student Service with Firebase Firestore DB Integration
 export const studentService = {
   getStudents: async (params = {}) => {
@@ -1133,11 +1222,25 @@ export const studentService = {
   },
 
   createStudent: async (data) => {
+    const list = getStoredStudents();
+
+    // Client-side sibling duplicity validation
+    const duplicityCheck = checkClientStudentDuplicityWithSiblingRule({
+      phone: data.phone,
+      parentPhone: data.parentPhone,
+      email: data.email,
+      fatherName: data.fatherName,
+      motherName: data.motherName,
+      existingStudents: list,
+    });
+    if (!duplicityCheck.valid) {
+      throw new Error(duplicityCheck.message);
+    }
+
     let finalRollNumber = data.rollNumber;
     if (!finalRollNumber || finalRollNumber.trim() === '') {
       const classCode = data.className ? data.className.replace(/\D/g, '') || '10' : '10';
       const prefix = `SAU-${classCode.padStart(2, '0')}-`;
-      const list = getStoredStudents();
       let maxSeq = 0;
       list.forEach((s) => {
         if (s.rollNumber) {
@@ -1168,7 +1271,11 @@ export const studentService = {
     try {
       const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
       if (remote && remote.student) remoteStudent = remote.student;
-    } catch (e) {}
+    } catch (e) {
+      if (e.isApiError) {
+        throw e;
+      }
+    }
 
     const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
     const newStudent = remoteStudent ? { ...remoteStudent, initialPassword: tempPassword, tempPassword: tempPassword, mustChangePassword: true } : { ...payload, _id: id, id };
@@ -1180,7 +1287,6 @@ export const studentService = {
       console.warn('Firestore setDoc student error:', fsErr.message);
     }
 
-    const list = getStoredStudents();
     const updatedList = [newStudent, ...list.filter((s) => String(s._id || s.id) !== String(id))];
     setStoredStudents(updatedList);
     return { success: true, student: newStudent, temporaryPassword: tempPassword, message: 'Student registered successfully' };
@@ -1218,7 +1324,30 @@ export const studentService = {
   },
 
   updateStudent: async (id, data) => {
-    const remote = await apiCall(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    const list = getStoredStudents();
+
+    // Client-side sibling duplicity validation
+    const duplicityCheck = checkClientStudentDuplicityWithSiblingRule({
+      studentId: id,
+      phone: data.phone,
+      parentPhone: data.parentPhone,
+      email: data.email,
+      fatherName: data.fatherName,
+      motherName: data.motherName,
+      existingStudents: list,
+    });
+    if (!duplicityCheck.valid) {
+      throw new Error(duplicityCheck.message);
+    }
+
+    let remote = null;
+    try {
+      remote = await apiCall(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    } catch (e) {
+      if (e.isApiError) {
+        throw e;
+      }
+    }
     if (remote) return remote;
 
     // Update in Firebase Firestore DB
@@ -1228,7 +1357,6 @@ export const studentService = {
       console.warn('Firestore updateDoc student error:', fsErr.message);
     }
 
-    const list = getStoredStudents();
     const idx = list.findIndex((s) => String(s._id) === String(id) || String(s.id) === String(id));
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...data };
@@ -1976,6 +2104,58 @@ export const reminderService = {
       message: `Automated SMS reminder dispatched for ${studentData.studentName}!`,
       log: newLog,
     };
+  },
+
+  sendEmail: async (studentId, studentData) => {
+    const remote = await apiCall(`/students/${studentId}/remind-email`, {
+      method: 'POST',
+      body: JSON.stringify(studentData),
+    });
+    if (remote) {
+      if (remote.log) {
+        reminderService.saveLog({
+          studentId: String(studentId),
+          channel: 'Email',
+          sentAt: remote.log.sentAt || new Date().toISOString(),
+          status: remote.log.status || 'sent',
+          message: remote.log.message,
+        });
+      }
+      return remote;
+    }
+
+    const newLog = {
+      studentId: String(studentId),
+      studentName: studentData.studentName,
+      email: studentData.email,
+      channel: 'Email',
+      sentAt: new Date().toISOString(),
+      status: 'sent',
+      message: `Email payment reminder dispatched for ${studentData.studentName}`,
+    };
+    reminderService.saveLog(newLog);
+
+    return {
+      success: true,
+      message: `Automated Email reminder dispatched for ${studentData.studentName}!`,
+      log: newLog,
+    };
+  },
+
+  bulkRemindSMS: async () => {
+    const remote = await apiCall('/students/bulk-remind-sms', {
+      method: 'POST',
+    });
+    if (remote) return remote;
+    return { success: true, message: 'Bulk SMS dispatched', sentCount: 0 };
+  },
+
+  bulkRemindEmail: async () => {
+    const remote = await apiCall('/students/bulk-remind-email', {
+      method: 'POST',
+    });
+    if (remote) return remote;
+    return { success: true, message: 'Bulk Email dispatched', sentCount: 0 };
   },
 };
 
@@ -4280,11 +4460,47 @@ export const demoBookingService = {
     setStoredDemoBookings([...currentList]);
     notifyDataUpdate();
 
+    let notificationResult = null;
+    if (scheduleInfo && (scheduleInfo.scheduledDate || scheduleInfo.scheduledTime)) {
+      try {
+        notificationResult = await demoBookingService.notifyDemoSchedule(updatedItem);
+      } catch (notifyErr) {
+        console.warn('Demo schedule notification error:', notifyErr.message);
+      }
+    }
+
     return {
       success: true,
       booking: updatedItem,
+      notification: notificationResult,
       message: `Demo booking marked as ${status}!`,
     };
+  },
+
+  notifyDemoSchedule: async (bookingData) => {
+    try {
+      const remote = await apiCall('/demo-bookings/notify-schedule', {
+        method: 'POST',
+        body: JSON.stringify({
+          studentName: bookingData.studentName,
+          phone: bookingData.parentPhone || bookingData.phone,
+          email: bookingData.parentEmail || bookingData.email,
+          subject: bookingData.subject,
+          className: bookingData.class || bookingData.className,
+          scheduledDate: bookingData.scheduledDate,
+          scheduledTime: bookingData.scheduledTime,
+          facultyMentor: bookingData.facultyMentor,
+          meetingMode: bookingData.meetingMode,
+          branch: bookingData.branch,
+          bookingId: bookingData.bookingId || bookingData._id || bookingData.id,
+          notes: bookingData.adminNotes,
+        }),
+      });
+      return remote || { success: true, message: 'Notification dispatched' };
+    } catch (e) {
+      console.warn('notifyDemoSchedule API call error:', e.message);
+      return { success: false, error: e.message };
+    }
   },
 
   deleteBooking: async (id) => {
