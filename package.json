@@ -4,16 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n \"server,client\" -c \"cyan,green\" \"node server/index.js\" \"vite\"",
+    "dev:client": "vite",
     "server": "node server/index.js",
     "seed": "node server/seed.js",
-
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
-
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -34,6 +33,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.5",
     "oxlint": "^1.71.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.1.1"

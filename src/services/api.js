@@ -42,10 +42,10 @@ export const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return `${window.location.protocol}//${hostname}:5000/api`;
+      return `${window.location.protocol}//${hostname}:5001/api`;
     }
   }
-  return 'http://localhost:5000/api';
+  return '/api';
 };
 
 export const apiCall = async (endpoint, options = {}) => {
