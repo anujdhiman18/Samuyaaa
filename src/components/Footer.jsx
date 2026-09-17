@@ -70,7 +70,6 @@ export default function Footer() {
               { to: '/alumni', label: 'Proud Alumni Network' },
               { to: '/results', label: 'Wall of Excellence' },
               { to: '/testimonials', label: 'Student Testimonials' },
-              { to: '/faq', label: 'Frequently Asked Questions' },
               { to: '/contact', label: 'Contact Us & Centers' },
             ].map((link) => (
               <li key={link.label}>

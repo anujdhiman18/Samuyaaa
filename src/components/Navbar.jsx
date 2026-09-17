@@ -6,12 +6,10 @@ const links = [
   { to: '/', label: 'Home' },
   { to: '/about', label: 'About' },
   { to: '/courses', label: 'Courses' },
-  { to: '/admissions', label: 'Admissions' },
   { to: '/faculty', label: 'Faculty' },
   { to: '/alumni', label: 'Alumni' },
   { to: '/results', label: 'Results' },
   { to: '/testimonials', label: 'Testimonials' },
-  { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
 ];
 

@@ -19,7 +19,6 @@ import FacultyPage from './pages/public/FacultyPage';
 import AlumniPage from './pages/public/AlumniPage';
 import ResultsPage from './pages/public/ResultsPage';
 import TestimonialsPage from './pages/public/TestimonialsPage';
-import FaqPage from './pages/public/FaqPage';
 import ContactPage from './pages/public/ContactPage';
 
 import FacultyApplicationPage from './pages/FacultyApplicationPage';
@@ -152,7 +151,6 @@ export default function App() {
                   <Route path="/results" element={<ResultsPage />} />
                   <Route path="/toppers" element={<ResultsPage />} />
                   <Route path="/testimonials" element={<TestimonialsPage />} />
-                  <Route path="/faq" element={<FaqPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/contact-us" element={<ContactPage />} />
                 </Route>
