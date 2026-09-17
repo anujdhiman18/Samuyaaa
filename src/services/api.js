@@ -1134,13 +1134,15 @@ export const checkClientStudentDuplicityWithSiblingRule = ({
     const existMother = normalizeStudentName(existing.motherName);
 
     // Sibling Match: BOTH Father AND Mother names must match
+    // (If existing student was saved before motherName was introduced and has empty motherName, matching father is accepted)
     const isSibling = Boolean(
       normFather &&
       existFather &&
       normFather === existFather &&
-      normMother &&
-      existMother &&
-      normMother === existMother
+      (
+        (normMother && existMother && normMother === existMother) ||
+        (!existMother)
+      )
     );
 
     if (isSibling) {
@@ -4278,21 +4280,22 @@ export const studentApplicationService = {
     return { success: true, message: 'Student application deleted successfully' };
   },
 
-  approveAndConvertToStudent: async (app) => {
+  approveAndConvertToStudent: async (app, extraStudentFields = {}) => {
     const newStudentData = {
       fullName: app.fullName,
       email: app.email,
       phone: app.contactNumber || app.phone,
-      fatherName: app.parentName || 'Guardian',
-      motherName: '',
+      fatherName: extraStudentFields.fatherName || app.fatherName || app.parentName || 'Guardian',
+      motherName: extraStudentFields.motherName || app.motherName || '',
       parentPhone: app.parentContact || app.contactNumber || app.phone,
-      className: app.targetClass || '10th',
+      className: extraStudentFields.className || app.targetClass || '10th',
       subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'General Academics'],
-      batch: '2026-2027',
+      batch: extraStudentFields.batch || '2026-2027',
       branch: app.branch || 'Main Center',
-      monthlyFee: 2500,
+      monthlyFee: extraStudentFields.monthlyFee !== undefined ? extraStudentFields.monthlyFee : 2500,
       monthlyDueDay: 5,
       status: 'Active',
+      ...extraStudentFields,
     };
 
     const res = await studentService.createStudent(newStudentData);

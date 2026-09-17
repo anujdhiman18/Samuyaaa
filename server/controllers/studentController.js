@@ -140,13 +140,15 @@ export const checkStudentDuplicityWithSiblingRule = async ({
     const existMother = normalizeName(existing.motherName);
 
     // Sibling Match: BOTH Father AND Mother names must match
+    // (If existing student was saved before motherName was introduced and has empty motherName, matching father is accepted)
     const isSibling = Boolean(
       normFather &&
       existFather &&
       normFather === existFather &&
-      normMother &&
-      existMother &&
-      normMother === existMother
+      (
+        (normMother && existMother && normMother === existMother) ||
+        (!existMother)
+      )
     );
 
     if (isSibling) {

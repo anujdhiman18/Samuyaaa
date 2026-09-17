@@ -75,6 +75,8 @@ export default function StudentManagement() {
   const [selectedApp, setSelectedApp] = useState(null);
   const [appFilterStatus, setAppFilterStatus] = useState('All');
   const [adminNotes, setAdminNotes] = useState('');
+  const [enrollFatherName, setEnrollFatherName] = useState('');
+  const [enrollMotherName, setEnrollMotherName] = useState('');
   const [examSchedule, setExamSchedule] = useState({
     day: 'Saturday',
     date: '',
@@ -157,6 +159,48 @@ export default function StudentManagement() {
     }
     return null;
   }, [form.phone, form.parentPhone, form.email, form.fatherName, form.motherName, students]);
+
+  // Sibling detection specifically for Student Application Review Modal
+  const appSiblingDetection = useMemo(() => {
+    if (!selectedApp) return null;
+    const phone = selectedApp.contactNumber || selectedApp.phone || selectedApp.parentContact;
+    const email = selectedApp.email;
+    if (!phone && !email) return null;
+
+    const clean = (p) => (p ? String(p).replace(/\D/g, '').slice(-10) : '');
+    const norm = (str) => (str ? String(str).trim().toLowerCase().replace(/[^a-z0-9]/g, '') : '');
+
+    const pPhone = clean(phone);
+    const pEmail = (email || '').trim().toLowerCase();
+
+    const fName = norm(enrollFatherName);
+    const mName = norm(enrollMotherName);
+
+    for (const s of students) {
+      const sPhone = clean(s.phone);
+      const sParentPhone = clean(s.parentPhone);
+      const sEmail = (s.email || '').trim().toLowerCase();
+
+      const phoneMatch = (pPhone && (pPhone === sPhone || pPhone === sParentPhone));
+      const emailMatch = pEmail && pEmail.includes('@') && pEmail === sEmail;
+
+      if (phoneMatch || emailMatch) {
+        const sFather = norm(s.fatherName);
+        const sMother = norm(s.motherName);
+        const isSibling = Boolean(fName && sFather && fName === sFather && mName && sMother && mName === sMother);
+
+        return {
+          matchedStudent: s.fullName,
+          rollNumber: s.rollNumber,
+          isSibling,
+          conflictType: phoneMatch && emailMatch ? 'Phone & Email' : phoneMatch ? 'Phone Number' : 'Email',
+          existingFather: s.fatherName || 'Not Set',
+          existingMother: s.motherName || 'Not Set',
+        };
+      }
+    }
+    return null;
+  }, [selectedApp, enrollFatherName, enrollMotherName, students]);
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
@@ -284,6 +328,8 @@ export default function StudentManagement() {
 
   const handleOpenAppReview = (app) => {
     setSelectedApp(app);
+    setEnrollFatherName(app.fatherName || app.parentName || '');
+    setEnrollMotherName(app.motherName || '');
     setAdminNotes(app.notes || '');
     if (app.examInterviewSchedule) {
       setExamSchedule({
@@ -364,7 +410,13 @@ export default function StudentManagement() {
     if (!app) return;
     setUpdatingApp(true);
     try {
-      const res = await studentApplicationService.approveAndConvertToStudent(app);
+      const father = (enrollFatherName || app.fatherName || app.parentName || 'Guardian').trim();
+      const mother = (enrollMotherName || app.motherName || '').trim();
+
+      const res = await studentApplicationService.approveAndConvertToStudent(app, {
+        fatherName: father,
+        motherName: mother,
+      });
       const newSt = res && res.student;
 
       // Remove application immediately from local UI state
@@ -1190,8 +1242,10 @@ export default function StudentManagement() {
                   <span className="font-bold text-secondary">{selectedApp.previousSchool || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-on-surface-variant block text-[11px]">Parent / Guardian:</span>
-                  <span className="font-bold text-secondary">{selectedApp.parentName} ({selectedApp.parentContact})</span>
+                  <span className="text-on-surface-variant block text-[11px]">Father / Mother:</span>
+                  <span className="font-bold text-secondary">
+                    {selectedApp.fatherName || selectedApp.parentName || 'N/A'}{selectedApp.motherName ? ` / ${selectedApp.motherName}` : ''} ({selectedApp.parentContact})
+                  </span>
                 </div>
                 <div className="col-span-2">
                   <span className="text-on-surface-variant block text-[11px]">Subjects of Interest:</span>
@@ -1310,6 +1364,83 @@ export default function StudentManagement() {
                 placeholder="Add notes for candidate counselling or admission status..."
                 className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary focus:outline-none focus:border-secondary"
               />
+            </div>
+
+            {/* PARENT DETAILS FOR ENROLLMENT & SIBLING VERIFICATION */}
+            <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">family_restroom</span>
+                  <h4 className="font-headings font-bold text-sm text-secondary">
+                    Parent Details for Enrollment &amp; Sibling Verification
+                  </h4>
+                </div>
+                <span className="text-[10px] text-on-surface-variant font-bold bg-surface-container px-2.5 py-0.5 rounded-full border border-outline-variant/20">
+                  Required for Student Record
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    Father's Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={enrollFatherName}
+                    onChange={(e) => setEnrollFatherName(e.target.value)}
+                    placeholder="Enter Father's Full Name"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary text-xs focus:outline-none focus:border-primary font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-secondary mb-1">
+                    Mother's Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={enrollMotherName}
+                    onChange={(e) => setEnrollMotherName(e.target.value)}
+                    placeholder="Enter Mother's Full Name"
+                    className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary text-xs focus:outline-none focus:border-primary font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Sibling Live Detection Banner for Application */}
+              {appSiblingDetection ? (
+                appSiblingDetection.isSibling ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800">
+                    <span className="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">verified</span>
+                    <div>
+                      <p className="font-bold">Verified Sibling Match</p>
+                      <p className="mt-0.5">
+                        {appSiblingDetection.conflictType} matches registered student <strong>{appSiblingDetection.matchedStudent}</strong> ({appSiblingDetection.rollNumber || 'Enrolled'}).
+                        Both Father's and Mother's names match &mdash; shared contact allowed under Sibling Policy.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800">
+                    <span className="material-symbols-outlined text-rose-600 text-base shrink-0 mt-0.5">error</span>
+                    <div>
+                      <p className="font-bold">Sibling Conflict Detected</p>
+                      <p className="mt-0.5">
+                        {appSiblingDetection.conflictType} is already registered with student <strong>{appSiblingDetection.matchedStudent}</strong> ({appSiblingDetection.rollNumber || 'Enrolled'}).
+                        To enroll as siblings, Father's Name and Mother's Name must match the existing student's parents exactly.
+                      </p>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="p-2.5 bg-surface-container border border-outline-variant/20 rounded-xl flex items-center gap-2 text-xs text-on-surface-variant">
+                  <span className="material-symbols-outlined text-primary text-sm shrink-0">info</span>
+                  <span>
+                    <strong>Sibling Policy:</strong> Students sharing phone/email can be enrolled if both Father's and Mother's names match.
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Status Flow Action Buttons */}

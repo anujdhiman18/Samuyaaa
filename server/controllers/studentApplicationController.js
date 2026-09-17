@@ -39,6 +39,8 @@ export const submitStudentApplication = async (req, res) => {
       subjects,
       previousSchool,
       parentName,
+      fatherName,
+      motherName,
       parentContact,
       message,
     } = req.body;
@@ -140,7 +142,9 @@ export const submitStudentApplication = async (req, res) => {
       branch: branch || 'Main Center (Bagru)',
       subjects: Array.isArray(subjects) ? subjects : subjects ? [subjects] : [],
       previousSchool: previousSchool || '',
-      parentName: parentName.trim(),
+      parentName: (parentName || fatherName || 'Guardian').trim(),
+      fatherName: (fatherName || parentName || '').trim(),
+      motherName: (motherName || '').trim(),
       parentContact: parentContact.trim(),
       message: message || '',
       submittedAt: new Date(),
@@ -331,6 +335,8 @@ export const updateStudentApplicationStatus = async (req, res) => {
     }
 
     if (notes !== undefined) application.notes = notes;
+    if (req.body.fatherName !== undefined) application.fatherName = req.body.fatherName;
+    if (req.body.motherName !== undefined) application.motherName = req.body.motherName;
 
     const historyEntry = {
       status: status || application.status,

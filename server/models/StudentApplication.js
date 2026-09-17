@@ -71,6 +71,16 @@ const studentApplicationSchema = new mongoose.Schema(
       required: [true, 'Parent/Guardian name is required'],
       trim: true,
     },
+    fatherName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    motherName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     parentContact: {
       type: String,
       required: [true, 'Parent/Guardian contact number is required'],

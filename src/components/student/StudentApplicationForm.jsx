@@ -26,6 +26,8 @@ const initialFormData = {
   subjects: ['Mathematics', 'Physics'],
   previousSchool: '',
   parentName: '',
+  fatherName: '',
+  motherName: '',
   parentContact: '',
   message: '',
 };
@@ -70,7 +72,9 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       branch: app.branch || 'Main Center (Bagru)',
       subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'Mathematics'],
       previousSchool: app.previousSchool || '',
-      parentName: app.parentName || '',
+      parentName: app.parentName || app.fatherName || '',
+      fatherName: app.fatherName || app.parentName || '',
+      motherName: app.motherName || '',
       parentContact: app.parentContact || '',
       message: app.message || '',
       status: app.status || 'Pending',
@@ -604,12 +608,12 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-secondary mb-1">
-                Parent / Guardian Full Name <span className="text-rose-500">*</span>
+                Father's / Guardian's Full Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.parentName}
-                onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, parentName: e.target.value, fatherName: e.target.value })}
                 placeholder="e.g. Sanjay Sharma"
                 className={`w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${
                   errors.parentName ? 'border-rose-500 bg-rose-50/50' : 'border-outline-variant/30'
@@ -619,6 +623,19 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             </div>
 
             <div>
+              <label className="block text-xs font-bold text-secondary mb-1">
+                Mother's Full Name
+              </label>
+              <input
+                type="text"
+                value={formData.motherName || ''}
+                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
+                placeholder="e.g. Sunita Sharma"
+                className="w-full px-4 py-2.5 rounded-2xl border text-xs bg-surface-container-lowest text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all border-outline-variant/30"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-secondary mb-1">
                 Parent / Guardian Contact Number <span className="text-rose-500">*</span>
               </label>
