@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 
 const links = [
   { to: '/', label: 'Home' },
-  { to: '/about', label: 'About' },
-  { to: '/courses', label: 'Courses' },
   { to: '/our-faculty', label: 'Faculty' },
+  { to: '/courses', label: 'Courses' },
   { to: '/alumni', label: 'Alumni' },
+  { to: '/about', label: 'About' },
 ];
 
 export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {

@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 
 const links = [
   { to: '/', label: 'Home Overview' },
-  { to: '/about', label: 'About Founder & Vision' },
-  { to: '/courses', label: 'Academic Programs (S1-S4)' },
   { to: '/our-faculty', label: 'Faculty Roster' },
+  { to: '/courses', label: 'Academic Programs (S1-S4)' },
   { to: '/alumni', label: 'Proud Alumni' },
+  { to: '/about', label: 'About Founder & Vision' },
 ];
 
 export default function MobileMenu({ open, onClose, onOpenBooking }) {
