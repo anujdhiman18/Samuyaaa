@@ -8,7 +8,6 @@ const links = [
   { to: '/courses', label: 'Courses' },
   { to: '/our-faculty', label: 'Faculty' },
   { to: '/alumni', label: 'Alumni' },
-  { to: '/results', label: 'Results' },
   { to: '/contact', label: 'Contact' },
 ];
 
