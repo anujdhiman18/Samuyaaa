@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import FacultySection from '../../components/FacultySection';
-import CtaHub from '../../components/CtaHub';
 
 export default function FacultyPage() {
   const context = useOutletContext() || {};
@@ -42,9 +41,6 @@ export default function FacultyPage() {
 
       {/* Main Faculty Component */}
       <FacultySection />
-
-      {/* Bottom CTA */}
-      <CtaHub onOpenBooking={openBooking} />
     </div>
   );
 }
