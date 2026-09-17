@@ -1,10 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { subjectService, demoBookingService } from '../services/api.js';
+import { subjectService, demoBookingService, getStoredSubjects } from '../services/api.js';
 
 export default function BookingModal({ open, prefilledProgram, onClose }) {
   const [animateIn, setAnimateIn] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [liveSubjects, setLiveSubjects] = useState([]);
+  const [liveSubjects, setLiveSubjects] = useState(() => {
+    try {
+      return getStoredSubjects() || [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   // Form selections (Cascading: Subject -> Category -> Class)
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -96,25 +102,31 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     ].sort();
   }, [liveSubjects]);
 
-  // 2. Available Categories for selected Subject (with standard fallback)
-  const standardCategories = ['Foundation', 'Advanced', 'JEE', 'NEET', 'Olympiad'];
-  const categoriesFromData = selectedSubject
-    ? liveSubjects
-        .filter(
-          (s) =>
-            s.name?.trim() === selectedSubject ||
-            selectedSubject.includes(s.name?.trim() || '') ||
-            (s.name?.trim() || '').includes(selectedSubject)
-        )
-        .map((s) => s.category?.trim())
-        .filter(Boolean)
-    : [];
+  // 2. Available Categories for selected Subject (Only assigned categories)
+  const availableCategories = useMemo(() => {
+    const categoriesFromData = selectedSubject
+      ? liveSubjects
+          .filter((s) => {
+            const sName = (s.name || '').trim();
+            const sel = (selectedSubject || '').trim();
+            return (
+              sName === sel ||
+              sel.toLowerCase().includes(sName.toLowerCase()) ||
+              sName.toLowerCase().includes(sel.toLowerCase())
+            );
+          })
+          .map((s) => s.category?.trim())
+          .filter(Boolean)
+      : [];
 
-  const availableCategories = Array.from(
-    new Set([...categoriesFromData, ...standardCategories])
-  ).sort();
+    const uniqueFromData = Array.from(new Set(categoriesFromData)).sort();
+    if (uniqueFromData.length > 0) {
+      return uniqueFromData;
+    }
+    return ['Foundation', 'Advanced', 'JEE', 'NEET', 'Olympiad'];
+  }, [selectedSubject, liveSubjects]);
 
-  // 3. Available Classes for selected Subject + Category (Clean, user-friendly & non-duplicated)
+  // 3. Available Classes for selected Subject + Category (Only assigned classes - other classes removed)
   const normalizeDisplayClass = (clsStr) => {
     if (!clsStr) return '';
     const str = String(clsStr).trim();
@@ -122,62 +134,97 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     if (str === 'S2' || str === 'Class S2') return 'Class S2 (6th - 10th)';
     if (str === 'S3' || str === 'Class S3') return 'Class S3 (11th - 12th)';
     if (str === 'S4' || str === 'Class S4') return 'Class S4 (Higher Ed)';
-    if (str.startsWith('Class ')) return str;
+    if (/^class\s+/i.test(str)) return str;
+    if (/grade$/i.test(str)) return str;
     return `Class ${str}`;
   };
 
-  const standardClasses = [
-    '6th Grade',
-    '7th Grade',
-    '8th Grade',
-    '9th Grade',
-    '10th Grade',
-    '11th (+1)',
-    '12th (+2)',
-    'Class S1 (Nursery - 5th)',
-    'Class S2 (6th - 10th)',
-    'Class S3 (11th - 12th)',
-    'Class S4 (Higher Ed)',
-  ];
+  const availableClasses = useMemo(() => {
+    if (!selectedSubject) return [];
 
-  const adminClasses = liveSubjects
-    .filter(
-      (s) =>
-        !selectedSubject ||
-        s.name?.trim() === selectedSubject ||
-        selectedSubject.includes(s.name?.trim() || '') ||
-        (s.name?.trim() || '').includes(selectedSubject)
-    )
-    .filter(
+    const subjectMatches = liveSubjects.filter((s) => {
+      const sName = (s.name || '').trim();
+      const sel = (selectedSubject || '').trim();
+      return (
+        sName === sel ||
+        sel.toLowerCase().includes(sName.toLowerCase()) ||
+        sName.toLowerCase().includes(sel.toLowerCase())
+      );
+    });
+
+    const categoryMatches = subjectMatches.filter(
       (s) =>
         !selectedCategory ||
         !s.category ||
-        s.category.trim().toLowerCase() === selectedCategory.toLowerCase()
-    )
-    .map((s) => normalizeDisplayClass(s.className?.trim()))
-    .filter(Boolean);
+        s.category.trim().toLowerCase() === (selectedCategory || '').trim().toLowerCase()
+    );
 
-  const availableClasses = Array.from(new Set([...standardClasses, ...adminClasses])).sort((a, b) => {
+    // Prefer classes that match both subject and category; fallback to subject matches
+    const targetSubjects = categoryMatches.length > 0 ? categoryMatches : subjectMatches;
+
+    const assigned = targetSubjects
+      .map((s) => normalizeDisplayClass(s.className?.trim()))
+      .filter(Boolean);
+
+    // ONLY classes assigned to this subject/category in the database
+    const uniqueClasses = Array.from(new Set(assigned));
+
     const order = [
+      'Class S1 (Nursery - 5th)',
+      'Class S2 (6th - 10th)',
+      'Class S3 (11th - 12th)',
+      'Class S4 (Higher Ed)',
+      'Class Nursery',
+      'Class LKG',
+      'Class UKG',
+      'Class 1st',
+      'Class 2nd',
+      'Class 3rd',
+      'Class 4th',
+      'Class 5th',
+      'Class 6th',
+      'Class 7th',
+      'Class 8th',
+      'Class 9th',
+      'Class 10th',
+      'Class 11th (+1)',
+      'Class 12th (+2)',
+      'Class 11th',
+      'Class 12th',
       '6th Grade',
       '7th Grade',
       '8th Grade',
       '9th Grade',
       '10th Grade',
-      '11th (+1)',
-      '12th (+2)',
-      'Class S1 (Nursery - 5th)',
-      'Class S2 (6th - 10th)',
-      'Class S3 (11th - 12th)',
-      'Class S4 (Higher Ed)',
     ];
-    const idxA = order.indexOf(a);
-    const idxB = order.indexOf(b);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    if (idxA !== -1) return -1;
-    if (idxB !== -1) return 1;
-    return a.localeCompare(b);
-  });
+
+    return uniqueClasses.sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }, [liveSubjects, selectedSubject, selectedCategory]);
+
+  // Keep selectedClass synchronized with available assigned classes
+  useEffect(() => {
+    if (availableClasses.length === 1) {
+      setSelectedClass(availableClasses[0]);
+    } else if (selectedClass && !availableClasses.includes(selectedClass)) {
+      setSelectedClass('');
+    }
+  }, [availableClasses, selectedClass]);
+
+  // Keep selectedCategory synchronized with available assigned categories
+  useEffect(() => {
+    if (availableCategories.length === 1) {
+      setSelectedCategory(availableCategories[0]);
+    } else if (selectedCategory && !availableCategories.includes(selectedCategory)) {
+      setSelectedCategory(availableCategories[0] || '');
+    }
+  }, [availableCategories, selectedCategory]);
 
   // 4. Automatically assigned batch timings from admin dataset (Read-Only with multi-tier fallback)
   const getAssignedBatchTimes = () => {
@@ -294,9 +341,6 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   // Reset when Class changes
   const handleClassChange = (val) => {
     setSelectedClass(val);
-    if (!selectedCategory) {
-      setSelectedCategory('Foundation');
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -502,16 +546,16 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               <select
                 value={selectedClass}
                 onChange={(e) => handleClassChange(e.target.value)}
-                disabled={!selectedSubject}
+                disabled={!selectedSubject || availableClasses.length === 0}
                 required
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-200 ${
-                  !selectedSubject
+                  !selectedSubject || availableClasses.length === 0
                     ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
                 }`}
               >
                 <option value="" disabled>
-                  -- Select Class --
+                  {availableClasses.length === 0 ? '-- No Classes Assigned --' : '-- Select Class --'}
                 </option>
                 {availableClasses.map((cls) => (
                   <option key={cls} value={cls}>
