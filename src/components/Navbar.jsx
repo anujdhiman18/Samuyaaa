@@ -9,7 +9,6 @@ const links = [
   { to: '/faculty', label: 'Faculty' },
   { to: '/alumni', label: 'Alumni' },
   { to: '/results', label: 'Results' },
-  { to: '/testimonials', label: 'Testimonials' },
   { to: '/contact', label: 'Contact' },
 ];
 

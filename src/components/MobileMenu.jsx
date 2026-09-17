@@ -9,7 +9,6 @@ const links = [
   { to: '/faculty', label: 'Faculty Roster' },
   { to: '/alumni', label: 'Proud Alumni' },
   { to: '/results', label: 'Wall of Excellence' },
-  { to: '/testimonials', label: 'Student Testimonials' },
   { to: '/contact', label: 'Contact & Centers' },
 ];
 
