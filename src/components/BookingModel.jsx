@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { subjectService } from '../services/api.js';
+import { subjectService, demoBookingService } from '../services/api.js';
 
 export default function BookingModal({ open, prefilledProgram, onClose }) {
   const [animateIn, setAnimateIn] = useState(false);
@@ -299,7 +299,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedSubject || !selectedCategory || !selectedClass) {
       alert('Please select Subject, Category, and Class before booking.');
@@ -311,7 +311,25 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     }
 
     setSubmitting(true);
+
     try {
+      // 1. Save to Database / Firestore / LocalStorage via demoBookingService
+      await demoBookingService.submitDemoBooking({
+        studentName,
+        parentPhone,
+        parentEmail,
+        branch,
+        subject: selectedSubject,
+        category: selectedCategory,
+        class: selectedClass,
+        batchTime: autoBatchTimeText || 'To Be Assigned',
+      });
+    } catch (saveErr) {
+      console.warn('Error saving demo booking to service:', saveErr);
+    }
+
+    try {
+      // 2. Send email notification in background via webhook
       const formData = new FormData();
       formData.append('studentName', studentName);
       formData.append('parentPhone', parentPhone);

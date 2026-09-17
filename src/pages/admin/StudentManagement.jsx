@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   studentService,
   studentApplicationService,
@@ -435,13 +435,21 @@ export default function StudentManagement() {
             }`}
           >
             <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-            <span>Student Applications</span>
+            <span>Admissions Applications</span>
             {pendingAppsCount > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">
                 {pendingAppsCount}
               </span>
             )}
           </button>
+
+          <Link
+            to="/admin/demo-bookings"
+            className="px-4 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-2 text-on-surface-variant hover:text-secondary hover:bg-surface-container-high"
+          >
+            <span className="material-symbols-outlined text-[16px] text-blue-600">event_available</span>
+            <span>Demo Class Bookings</span>
+          </Link>
         </div>
       </div>
 

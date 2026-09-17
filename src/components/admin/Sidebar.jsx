@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const mainNavItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
+  { path: '/admin/demo-bookings', label: 'Demo Class Bookings', icon: 'event_available' },
   { path: '/admin/students?tab=applications', label: 'Student Applications', icon: 'how_to_reg' },
   { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },

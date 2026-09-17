@@ -46,6 +46,7 @@ import FeeReminders from './pages/admin/FeeReminders';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminSMSLogs from './pages/admin/AdminSMSLogs';
 import ProfileChangeRequests from './pages/admin/ProfileChangeRequests';
+import DemoBookingManagement from './pages/admin/DemoBookingManagement';
 
 // Student Portal Pages
 import StudentLayout from './layouts/StudentLayout';
@@ -241,6 +242,9 @@ export default function App() {
                 >
                   <Route index element={<AdminDashboard />} />
                   <Route path="students" element={<StudentManagement />} />
+                  <Route path="demo-bookings" element={<DemoBookingManagement />} />
+                  <Route path="demo-classes" element={<DemoBookingManagement />} />
+                  <Route path="demos" element={<DemoBookingManagement />} />
                   <Route path="student-leaves" element={<StudentLeaveManagement />} />
                   <Route path="student/leaves" element={<StudentLeaveManagement />} />
                   <Route path="faculty-leaves" element={<Navigate to="/admin/faculty?tab=leaves" replace />} />

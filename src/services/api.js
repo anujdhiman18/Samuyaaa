@@ -1031,6 +1031,8 @@ export const getStoredCollectionFallback = (collectionName, defaultData = []) =>
         return getStoredStudentApplications();
       case 'faculty_applications':
         return getStoredFacultyApplications();
+      case 'demo_bookings':
+        return getStoredDemoBookings();
       default:
         return defaultData;
     }
@@ -4113,6 +4115,215 @@ export const studentApplicationService = {
 
     const res = await studentService.createStudent(newStudentData);
     await studentApplicationService.deleteApplication(app._id || app.id || app.applicationId);
+    return res;
+  }
+};
+
+// ==========================================
+// DEMO CLASS BOOKINGS SERVICE & REPOSITORIES
+// ==========================================
+export const initialMockDemoBookings = [
+  {
+    _id: 'demo_init_1',
+    id: 'demo_init_1',
+    bookingId: 'DM-2026-101',
+    studentName: 'Aarav Sharma',
+    parentPhone: '9816012345',
+    parentEmail: 'aarav.parent@gmail.com',
+    branch: 'Main Center (Bagru)',
+    subject: 'Physics IIT-JEE Prep',
+    category: 'JEE',
+    class: '11th (+1)',
+    batchTime: '4:30 PM - 6:00 PM',
+    status: 'Scheduled',
+    scheduledDate: '2026-09-22',
+    scheduledTime: '04:30 PM',
+    facultyMentor: 'Jitender Sharma',
+    meetingMode: 'Offline Classroom',
+    adminNotes: 'Student wants to prepare for JEE 2027. Needs focus on Mechanics & Vectors.',
+    submittedAt: new Date(Date.now() - 86400000).toISOString(),
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    _id: 'demo_init_2',
+    id: 'demo_init_2',
+    bookingId: 'DM-2026-102',
+    studentName: 'Sneha Verma',
+    parentPhone: '9805543210',
+    parentEmail: 'sneha.verma@yahoo.com',
+    branch: 'Branch (Daroh)',
+    subject: 'Biology for NEET Medical',
+    category: 'NEET',
+    class: '12th (+2)',
+    batchTime: '5:00 PM - 6:30 PM',
+    status: 'Pending',
+    scheduledDate: '',
+    scheduledTime: '',
+    facultyMentor: '',
+    meetingMode: 'Offline Classroom',
+    adminNotes: 'Interested in Sunday doubt clearing session.',
+    submittedAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+  }
+];
+
+export const getStoredDemoBookings = () => {
+  const deleted = getDeletedIds('demo_bookings');
+  try {
+    const data = localStorage.getItem('saumyaa_demo_bookings');
+    const list = data ? JSON.parse(data) : initialMockDemoBookings;
+    return (list || []).filter((b) => b && !deleted.includes(String(b._id)) && !deleted.includes(String(b.id)) && !deleted.includes(String(b.bookingId)));
+  } catch (e) {
+    return initialMockDemoBookings.filter((b) => b && !deleted.includes(String(b._id)) && !deleted.includes(String(b.id)));
+  }
+};
+
+export const setStoredDemoBookings = (list) => {
+  try {
+    localStorage.setItem('saumyaa_demo_bookings', JSON.stringify(list));
+  } catch (e) {
+    console.warn('LocalStorage demo bookings write error:', e);
+  }
+};
+
+export const demoBookingService = {
+  getBookings: async () => {
+    try {
+      const fsBookings = await syncFirestoreCollection('demo_bookings', initialMockDemoBookings);
+      let list = fsBookings || getStoredDemoBookings();
+      list.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0) - new Date(a.submittedAt || a.createdAt || 0));
+      setStoredDemoBookings(list);
+      return { success: true, bookings: list };
+    } catch (err) {
+      console.warn('Firestore getBookings fallback:', err);
+      const list = getStoredDemoBookings();
+      list.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0) - new Date(a.submittedAt || a.createdAt || 0));
+      return { success: true, bookings: list };
+    }
+  },
+
+  submitDemoBooking: async (formData) => {
+    const newId = 'demo_' + Date.now();
+    const shortCode = 'DM-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900);
+    const newBooking = {
+      _id: newId,
+      id: newId,
+      bookingId: shortCode,
+      studentName: (formData.studentName || '').trim(),
+      parentPhone: (formData.parentPhone || '').trim(),
+      parentEmail: (formData.parentEmail || '').trim(),
+      branch: formData.branch || 'Main Center (Bagru)',
+      subject: formData.subject || 'General Academic Coaching',
+      category: formData.category || 'Foundation',
+      class: formData.class || '10th Grade',
+      batchTime: formData.batchTime || 'To Be Assigned',
+      status: 'Pending',
+      scheduledDate: formData.scheduledDate || '',
+      scheduledTime: formData.scheduledTime || '',
+      facultyMentor: formData.facultyMentor || 'Jitender Sharma',
+      meetingMode: formData.meetingMode || 'Offline Classroom',
+      adminNotes: formData.adminNotes || '',
+      submittedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await setDoc(doc(db, 'demo_bookings', newId), newBooking, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore save demo booking err:', fsErr.message);
+    }
+
+    const currentList = getStoredDemoBookings();
+    const updatedList = [newBooking, ...currentList.filter(b => b._id !== newId && b.id !== newId)];
+    setStoredDemoBookings(updatedList);
+    notifyDataUpdate();
+
+    return {
+      success: true,
+      booking: newBooking,
+      message: 'Demo Class Booking registered successfully!',
+    };
+  },
+
+  updateBookingStatus: async (id, status, notes = '', scheduleInfo = null) => {
+    if (!id) throw new Error('Booking ID is required');
+    const targetStr = String(id);
+    const currentList = getStoredDemoBookings();
+    const idx = currentList.findIndex(b => String(b._id) === targetStr || String(b.id) === targetStr || String(b.bookingId) === targetStr);
+
+    let updatedItem = idx !== -1 ? { ...currentList[idx] } : { _id: id, id: id };
+    updatedItem.status = status;
+    if (notes) updatedItem.adminNotes = notes;
+    if (scheduleInfo) {
+      if (scheduleInfo.scheduledDate) updatedItem.scheduledDate = scheduleInfo.scheduledDate;
+      if (scheduleInfo.scheduledTime) updatedItem.scheduledTime = scheduleInfo.scheduledTime;
+      if (scheduleInfo.facultyMentor) updatedItem.facultyMentor = scheduleInfo.facultyMentor;
+      if (scheduleInfo.meetingMode) updatedItem.meetingMode = scheduleInfo.meetingMode;
+      if (scheduleInfo.adminNotes) updatedItem.adminNotes = scheduleInfo.adminNotes;
+    }
+    updatedItem.updatedAt = new Date().toISOString();
+
+    try {
+      await setDoc(doc(db, 'demo_bookings', String(updatedItem._id || id)), updatedItem, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore update demo status err:', fsErr.message);
+    }
+
+    if (idx !== -1) {
+      currentList[idx] = updatedItem;
+    } else {
+      currentList.unshift(updatedItem);
+    }
+    setStoredDemoBookings([...currentList]);
+    notifyDataUpdate();
+
+    return {
+      success: true,
+      booking: updatedItem,
+      message: `Demo booking marked as ${status}!`,
+    };
+  },
+
+  deleteBooking: async (id) => {
+    if (!id) return { success: false, message: 'Invalid ID' };
+    const targetStr = String(id);
+    addDeletedId('demo_bookings', targetStr);
+
+    try {
+      await deleteDoc(doc(db, 'demo_bookings', targetStr));
+    } catch (fsErr) {
+      console.warn('Firestore delete demo booking err:', fsErr.message);
+    }
+
+    const currentList = getStoredDemoBookings();
+    const filtered = currentList.filter(b => String(b._id) !== targetStr && String(b.id) !== targetStr && String(b.bookingId) !== targetStr);
+    setStoredDemoBookings(filtered);
+    notifyDataUpdate();
+
+    return { success: true, message: 'Demo booking deleted successfully' };
+  },
+
+  convertToStudent: async (booking, extraStudentFields = {}) => {
+    const newStudentData = {
+      fullName: booking.studentName,
+      email: booking.parentEmail && booking.parentEmail !== 'Not Provided' ? booking.parentEmail : `${booking.studentName.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.saumyaa.edu.in`,
+      phone: booking.parentPhone,
+      fatherName: 'Guardian',
+      motherName: '',
+      parentPhone: booking.parentPhone,
+      className: booking.class || '10th',
+      subjects: [booking.subject || 'General Academics'],
+      batch: '2026-2027',
+      branch: booking.branch || 'Main Center (Bagru)',
+      monthlyFee: 2500,
+      monthlyDueDay: 5,
+      status: 'Active',
+      ...extraStudentFields,
+    };
+
+    const res = await studentService.createStudent(newStudentData);
+    await demoBookingService.updateBookingStatus(booking._id || booking.id, 'Enrolled', 'Converted into enrolled regular student.');
     return res;
   }
 };
