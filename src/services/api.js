@@ -3760,6 +3760,16 @@ export const setStoredStudentApplications = (list) => {
 
 export const studentApplicationService = {
   getApplications: async () => {
+    try {
+      const remote = await apiCall('/student-applications');
+      if (remote && Array.isArray(remote.applications)) {
+        setStoredStudentApplications(remote.applications);
+        return { success: true, applications: remote.applications };
+      }
+    } catch (e) {
+      console.warn('Backend getStudentApplications error, falling back:', e);
+    }
+
     const fsApps = await syncFirestoreCollection('student_applications', initialMockStudentApplications);
     let list = fsApps || getStoredStudentApplications();
     list.sort((a, b) => new Date(b.submittedAt || b.appliedAt || b.createdAt || 0) - new Date(a.submittedAt || a.appliedAt || a.createdAt || 0));
@@ -3814,50 +3824,35 @@ export const studentApplicationService = {
 
     const list = getStoredStudentApplications();
 
-    // 2. Check for active pending request - allow update/modify
-    const existingPendingIdx = list.findIndex(
-      (a) =>
-        (formData.applicationId && a.applicationId === formData.applicationId) ||
-        (a.status === 'Pending' &&
-          ((emailClean && a.email && a.email.toLowerCase() === emailClean) ||
-           (contactClean && a.contactNumber && a.contactNumber === contactClean)))
-    );
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const generatedAppId = `SAU-STU-${new Date().getFullYear()}-${randomCode}`;
+    const payload = {
+      ...formData,
+      applicationId: formData.applicationId || generatedAppId,
+    };
 
-    if (existingPendingIdx !== -1) {
-      const existingApp = list[existingPendingIdx];
-      const updatedApp = {
-        ...existingApp,
-        ...formData,
-        submittedAt: new Date().toISOString(),
-        appliedAt: new Date().toISOString(),
-        status: 'Pending',
-      };
-
-      try {
-        await setDoc(doc(db, 'student_applications', String(existingApp._id || existingApp.id)), updatedApp, { merge: true });
-      } catch (fsErr) {}
-
-      list[existingPendingIdx] = updatedApp;
-      setStoredStudentApplications([...list]);
-      notifyDataUpdate();
-
-      return {
-        success: true,
-        application: updatedApp,
-        applicationId: updatedApp.applicationId,
-        message: 'Pending student application updated successfully!',
-        isUpdate: true,
-      };
+    let remoteApp = null;
+    try {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/student-applications` : '/api/student-applications';
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (data && data.success && data.application) {
+        remoteApp = data.application;
+      }
+    } catch (apiErr) {
+      console.warn('Student application backend POST warning:', apiErr.message);
     }
 
-    const id = 'app_stu_' + Date.now();
-    const randomCode = Math.floor(1000 + Math.random() * 9000);
-    const applicationId = `SAU-STU-${new Date().getFullYear()}-${randomCode}`;
-
-    const newApp = {
-      _id: id,
-      id,
-      applicationId,
+    const finalId = remoteApp?._id || remoteApp?.id || 'app_stu_' + Date.now();
+    const finalApp = remoteApp || {
+      _id: finalId,
+      id: finalId,
+      applicationId: payload.applicationId,
       ...formData,
       status: 'Pending',
       submittedAt: new Date().toISOString(),
@@ -3866,31 +3861,34 @@ export const studentApplicationService = {
     };
 
     try {
-      await setDoc(doc(db, 'student_applications', id), newApp);
+      await setDoc(doc(db, 'student_applications', String(finalApp._id || finalApp.id)), finalApp);
     } catch (fsErr) {
       console.warn('Firestore setDoc student_application error:', fsErr.message);
     }
 
-    const updated = [newApp, ...list];
-    setStoredStudentApplications(updated);
-    notifyDataUpdate();
+    const existingPendingIdx = list.findIndex(
+      (a) =>
+        (finalApp.applicationId && a.applicationId === finalApp.applicationId) ||
+        (a.status === 'Pending' &&
+          ((emailClean && a.email && a.email.toLowerCase() === emailClean) ||
+           (contactClean && a.contactNumber && a.contactNumber === contactClean)))
+    );
 
-    try {
-      const baseUrl = getApiBaseUrl();
-      const apiUrl = baseUrl ? `${baseUrl}/student-applications` : '/api/student-applications';
-      await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newApp),
-      });
-    } catch (apiErr) {
-      console.warn('Student application backend POST warning:', apiErr.message);
+    let updatedList;
+    if (existingPendingIdx !== -1) {
+      list[existingPendingIdx] = finalApp;
+      updatedList = [...list];
+    } else {
+      updatedList = [finalApp, ...list];
     }
+
+    setStoredStudentApplications(updatedList);
+    notifyDataUpdate();
 
     // Direct email notification dispatch to admin email
     let emailSent = false;
     try {
-      const emailRes = await sendStudentApplicationNotification(newApp);
+      const emailRes = await sendStudentApplicationNotification(finalApp);
       if (emailRes && emailRes.success) {
         emailSent = true;
       }
@@ -3900,26 +3898,39 @@ export const studentApplicationService = {
 
     return {
       success: true,
-      application: newApp,
-      applicationId,
+      application: finalApp,
+      applicationId: finalApp.applicationId,
       emailSent,
       message: 'Student Application submitted successfully!',
     };
   },
 
   updateApplication: async (id, formData) => {
+    let remoteApp = null;
+    try {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/student-applications/${id}` : `/api/student-applications/${id}`;
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (data && data.success && data.application) {
+        remoteApp = data.application;
+      }
+    } catch (apiErr) {
+      console.warn('Student application backend PUT warning:', apiErr.message);
+    }
+
     const list = getStoredStudentApplications();
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
 
-    if (idx === -1) {
+    if (!remoteApp && idx === -1) {
       throw new Error('Application not found');
     }
 
-    if (list[idx].status === 'Approved') {
-      throw new Error('Approved applications are locked and cannot be modified.');
-    }
-
-    const updatedApp = {
+    const updatedApp = remoteApp || {
       ...list[idx],
       ...formData,
       status: 'Pending',
@@ -3928,10 +3939,14 @@ export const studentApplicationService = {
     };
 
     try {
-      await setDoc(doc(db, 'student_applications', String(list[idx]._id || list[idx].id)), updatedApp, { merge: true });
+      await setDoc(doc(db, 'student_applications', String(updatedApp._id || id)), updatedApp, { merge: true });
     } catch (fsErr) {}
 
-    list[idx] = updatedApp;
+    if (idx !== -1) {
+      list[idx] = updatedApp;
+    } else {
+      list.unshift(updatedApp);
+    }
     setStoredStudentApplications([...list]);
     notifyDataUpdate();
 
@@ -3943,18 +3958,40 @@ export const studentApplicationService = {
   },
 
   updateApplicationStatus: async (id, status, notes = '', examInterviewSchedule = null) => {
+    let remoteApp = null;
+    try {
+      const baseUrl = getApiBaseUrl();
+      if (baseUrl) {
+        const response = await fetch(`${baseUrl}/student-applications/${id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, notes, examInterviewSchedule }),
+        });
+        const data = await response.json();
+        if (data && data.success && data.application) {
+          remoteApp = data.application;
+        }
+      }
+    } catch (apiErr) {
+      console.warn('Student application status backend PUT warning:', apiErr.message);
+    }
+
     const list = getStoredStudentApplications();
     const idx = list.findIndex((a) => String(a._id) === String(id) || String(a.id) === String(id) || String(a.applicationId) === String(id));
 
-    if (idx !== -1) {
-      const now = new Date().toISOString();
-      list[idx].status = status;
-      if (notes !== undefined) list[idx].notes = notes;
-      list[idx].updatedAt = now;
+    const now = new Date().toISOString();
+    let targetApp = remoteApp || (idx !== -1 ? { ...list[idx] } : null);
+
+    if (!targetApp && idx === -1) {
+      targetApp = { id, _id: id, status, notes, updatedAt: now };
+    } else if (!remoteApp && targetApp) {
+      targetApp.status = status;
+      if (notes !== undefined) targetApp.notes = notes;
+      targetApp.updatedAt = now;
 
       if (examInterviewSchedule) {
-        list[idx].examInterviewSchedule = {
-          ...(list[idx].examInterviewSchedule || {}),
+        targetApp.examInterviewSchedule = {
+          ...(targetApp.examInterviewSchedule || {}),
           ...examInterviewSchedule,
           scheduledAt: now,
           scheduledBy: examInterviewSchedule.scheduledBy || 'Admin / Admissions Committee',
@@ -3962,12 +3999,12 @@ export const studentApplicationService = {
       }
 
       if (status === 'Approved') {
-        list[idx].approvedAt = now;
-        list[idx].nextEligibleDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-        list[idx].lastApprovedRequestId = String(id);
+        targetApp.approvedAt = now;
+        targetApp.nextEligibleDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        targetApp.lastApprovedRequestId = String(id);
       } else if (status === 'Rejected') {
-        list[idx].rejectedAt = now;
-        list[idx].nextEligibleDate = null;
+        targetApp.rejectedAt = now;
+        targetApp.nextEligibleDate = null;
       }
 
       const scheduleSummary = examInterviewSchedule && examInterviewSchedule.date
@@ -3978,41 +4015,36 @@ export const studentApplicationService = {
         status,
         date: now,
         notes: notes || scheduleSummary || `Status updated to ${status}`,
-        sentTo: list[idx].email,
+        sentTo: targetApp.email,
         schedule: examInterviewSchedule || undefined,
       };
 
-      list[idx].notificationHistory = [
-        ...(list[idx].notificationHistory || []),
+      targetApp.notificationHistory = [
+        ...(targetApp.notificationHistory || []),
         historyLog,
       ];
+    }
 
+    if (targetApp) {
       try {
-        await setDoc(doc(db, 'student_applications', String(list[idx]._id || id)), list[idx], { merge: true });
+        await setDoc(doc(db, 'student_applications', String(targetApp._id || id)), targetApp, { merge: true });
       } catch (fsErr) {
         console.warn('Firestore update student application status error:', fsErr.message);
       }
 
+      if (idx !== -1) {
+        list[idx] = targetApp;
+      } else {
+        list.unshift(targetApp);
+      }
       setStoredStudentApplications([...list]);
       notifyDataUpdate();
-
-      // Attempt to sync to backend API if available
-      try {
-        const baseUrl = getApiBaseUrl();
-        if (baseUrl) {
-          await fetch(`${baseUrl}/student-applications/${list[idx]._id || id}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status, notes, examInterviewSchedule }),
-          });
-        }
-      } catch (apiErr) {}
     }
 
     return {
       success: true,
       message: `Student application status updated to ${status}`,
-      application: idx !== -1 ? list[idx] : null,
+      application: targetApp,
     };
   },
 
@@ -4020,6 +4052,17 @@ export const studentApplicationService = {
     if (!id) return { success: false, message: 'Invalid ID' };
     const targetStr = String(id);
     addDeletedId('student_applications', targetStr);
+
+    try {
+      const baseUrl = getApiBaseUrl();
+      if (baseUrl) {
+        await fetch(`${baseUrl}/student-applications/${targetStr}`, {
+          method: 'DELETE',
+        });
+      }
+    } catch (apiErr) {
+      console.warn('Student application backend DELETE warning:', apiErr.message);
+    }
 
     const currentList = JSON.parse(localStorage.getItem('saumyaa_student_applications') || 'null') || initialMockStudentApplications;
     const targetItem = currentList.find(
@@ -4069,7 +4112,7 @@ export const studentApplicationService = {
     };
 
     const res = await studentService.createStudent(newStudentData);
-    await studentApplicationService.deleteApplication(app._id || app.id);
+    await studentApplicationService.deleteApplication(app._id || app.id || app.applicationId);
     return res;
   }
 };

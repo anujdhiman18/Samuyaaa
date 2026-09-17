@@ -260,7 +260,10 @@ export const updateStudentApplicationStatus = async (req, res) => {
     const { id } = req.params;
     const { status, notes, examInterviewSchedule } = req.body;
 
-    const application = await StudentApplication.findById(id);
+    const application = mongoose.Types.ObjectId.isValid(id)
+      ? await StudentApplication.findById(id)
+      : await StudentApplication.findOne({ $or: [{ applicationId: id }, { _id: id }] });
+
     if (!application) {
       return res.status(404).json({
         success: false,
@@ -321,7 +324,9 @@ export const updateStudentApplicationStatus = async (req, res) => {
 export const deleteStudentApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const application = await StudentApplication.findByIdAndDelete(id);
+    const application = mongoose.Types.ObjectId.isValid(id)
+      ? await StudentApplication.findByIdAndDelete(id)
+      : await StudentApplication.findOneAndDelete({ $or: [{ applicationId: id }, { _id: id }] });
 
     if (!application) {
       return res.status(404).json({

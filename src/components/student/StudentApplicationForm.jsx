@@ -170,31 +170,6 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     addToast('Form cleared.', 'info');
   };
 
-  const handleAutoFillDemo = () => {
-    // Generate sample SVG passport photo data url for instant testing
-    const demoPhotoSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23e0e7ff"/><circle cx="150" cy="140" r="60" fill="%234f46e5"/><path d="M60,340 C60,240 240,240 240,340 Z" fill="%233730a3"/><text x="150" y="380" font-family="sans-serif" font-size="16" font-weight="bold" fill="%231e1b4b" text-anchor="middle">PASSPORT PHOTO</text></svg>`;
-
-    setFormData({
-      fullName: 'Aarav Sharma',
-      email: 'aarav.sharma@gmail.com',
-      contactNumber: '9816512345',
-      dob: '2010-05-14',
-      photoUrl: demoPhotoSvg,
-      photoFileName: 'aarav_sharma_passport_photo.jpg',
-      academicStage: 'S2',
-      currentClass: '10th',
-      targetClass: '10th',
-      branch: 'Main Center (Bagru)',
-      subjects: ['Mathematics', 'Physics', 'Chemistry'],
-      previousSchool: 'DAV Public Senior Secondary School',
-      parentName: 'Sanjay Sharma',
-      parentContact: '9816598765',
-      message: 'Looking for top-tier coaching for Board Exams and Olympiad competitive preparation.',
-    });
-    setErrors({});
-    addToast('Demo student details & passport photo auto-filled!', 'success');
-  };
-
   // Get subjects dynamically tailored to selected academic stage (S1, S2, S3, S4)
   const currentStageSubjects = useMemo(() => {
     return getSubjectsForStage(formData.academicStage || 'S2');
@@ -443,14 +418,6 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
             </button>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={handleAutoFillDemo}
-                className="px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
-              >
-                <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-                Auto-Fill Demo
-              </button>
               {draftSaved && (
                 <button
                   type="button"

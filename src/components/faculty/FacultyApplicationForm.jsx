@@ -224,58 +224,6 @@ export default function FacultyApplicationForm({
     addToast('Form cleared.', 'info');
   };
 
-  // Auto-fill sample application data for demonstration
-  const handleAutoFillDemo = () => {
-    const demoPhotoSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23ecfdf5"/><circle cx="150" cy="140" r="60" fill="%23059669"/><path d="M60,340 C60,240 240,240 240,340 Z" fill="%23047857"/><text x="150" y="380" font-family="sans-serif" font-size="16" font-weight="bold" fill="%23064e3b" text-anchor="middle">FACULTY PHOTO</text></svg>`;
-
-    setFormData({
-      fullName: 'Prof. Ramesh Chander',
-      dob: '1988-06-18',
-      gender: 'Male',
-      photoUrl: demoPhotoSvg,
-      photoFileName: 'prof_ramesh_chander_passport_photo.jpg',
-      contactNumber: '9816543210',
-      email: 'ramesh.chander@gmail.com',
-      currentAddress: 'Villa #12, Rose Colony, Main Highway, Palampur, HP',
-      permanentAddress: 'Villa #12, Rose Colony, Main Highway, Palampur, HP',
-      sameAsCurrentAddress: true,
-
-      highestDegree: "Master's Degree (M.Sc / M.Tech / M.A / M.Ed)",
-      universityName: 'Himachal Pradesh University, Shimla',
-      graduationYear: '2012',
-      specialization: 'Organic Chemistry & Chemical Kinetics',
-      certifications: 'CSIR-NET Lecturer Certificate, B.Ed with Honors',
-
-      totalExperience: '5 - 10 Years',
-      previousInstitutions: 'St. Xavier Senior Secondary, Resonance Academy',
-      subjectsTaught: 'Senior Chemistry (Class 11 & 12), NEET Organic Chemistry',
-      currentStatus: 'Serving Notice Period',
-
-      positionApplied: 'Head of Department (HOD)',
-      subjectsExpertise: ['Chemistry (Organic/Inorganic)', 'JEE / NEET Competitive Specialist'],
-      preferredTimeSlot: 'Full-time (Morning Shift)',
-      expectedJoiningDate: '2026-08-20',
-
-      whyJoinReason: `${centerName} has earned an stellar reputation for academic rigour and student mentorship. I wish to contribute my 10+ years of teaching excellence to build top rankers here.`,
-      skillsAchievements: 'Authored 3 study modules for NEET aspirants. Conducted hands-on chemistry lab demonstrations for 500+ students.',
-      references: [
-        { name: 'Dr. S. K. Sood', contact: '9816098765', relationship: 'Former Principal at St. Xavier' },
-        { name: 'Er. Vikas Mahajan', contact: '9876501234', relationship: 'Academic Director, Resonance' }
-      ],
-
-      resumeFile: null,
-      resumeFileName: 'Ramesh_Chander_CV.pdf',
-      idProofFile: null,
-      idProofFileName: 'Aadhaar_Ramesh.pdf',
-      certificatesFile: null,
-      certificatesFileName: 'MSc_Chemistry_Degree.pdf',
-
-      acceptedDeclaration: true,
-    });
-    setErrors({});
-    addToast('Demo faculty details & passport photo auto-filled!', 'success');
-  };
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
@@ -702,15 +650,6 @@ export default function FacultyApplicationForm({
               </button>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleAutoFillDemo}
-                  className="bg-white/15 hover:bg-white/25 text-white border border-white/20 font-headings font-bold text-[11px] px-3.5 py-2 rounded-full backdrop-blur-md transition-all flex items-center gap-1.5 shadow-sm"
-                  title="Auto fill sample data for quick preview"
-                >
-                  <span className="material-symbols-outlined text-[16px]">auto_fix_high</span>
-                  Auto-Fill Demo
-                </button>
 
                 <button
                   type="button"

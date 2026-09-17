@@ -88,6 +88,13 @@ export default function StudentManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && (tab === 'applications' || tab === 'directory')) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     const unsubscribeStudents = subscribeFirestoreCollection('students', initialMockStudents, (list) => {
       if (list) {
         setStudents(list);
@@ -109,9 +116,19 @@ export default function StudentManagement() {
     fetchStudents();
     fetchApplications();
 
+    const handleDataRefresh = () => {
+      fetchApplications();
+      fetchStudents();
+    };
+
+    window.addEventListener('saumyaa_data_updated', handleDataRefresh);
+    window.addEventListener('focus', handleDataRefresh);
+
     return () => {
       unsubscribeStudents();
       unsubscribeApps();
+      window.removeEventListener('saumyaa_data_updated', handleDataRefresh);
+      window.removeEventListener('focus', handleDataRefresh);
     };
   }, []);
 

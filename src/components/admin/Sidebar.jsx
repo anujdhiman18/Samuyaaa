@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const mainNavItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
+  { path: '/admin/students?tab=applications', label: 'Student Applications', icon: 'how_to_reg' },
   { path: '/admin/student-leaves', label: 'Student Leaves', icon: 'event_busy' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/faculty?tab=leaves', label: 'Faculty Leaves', icon: 'event_busy' },
@@ -46,7 +47,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
       return location.pathname.startsWith(basePath) && location.search.includes(`tab=${tabParam}`);
     }
     if (itemPath === '/admin/students') {
-      return location.pathname === '/admin/students' && (!location.search || !location.search.includes('tab=leaves'));
+      return location.pathname === '/admin/students' && (!location.search || (!location.search.includes('tab=leaves') && !location.search.includes('tab=applications')));
     }
     if (itemPath === '/admin/faculty') {
       return location.pathname === '/admin/faculty' && (!location.search || !location.search.includes('tab=leaves'));
