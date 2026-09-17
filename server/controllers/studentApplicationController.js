@@ -1,5 +1,6 @@
 import StudentApplication from '../models/StudentApplication.js';
 import { normalizeClassCode } from '../config/classConfig.js';
+import { cacheGet, cacheSet, cacheInvalidate } from '../utils/cache.js';
 
 const COOLDOWN_DAYS = 30;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -221,12 +222,12 @@ export const updatePendingStudentApplication = async (req, res) => {
 export const getStudentApplications = async (req, res) => {
   try {
     const { status, search } = req.query;
+    const cacheKey = `applications:status=${status || 'all'}:search=${search || ''}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
+
     let query = {};
-
-    if (status && status !== 'All') {
-      query.status = status;
-    }
-
+    if (status && status !== 'All') query.status = status;
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: 'i' } },
@@ -237,18 +238,12 @@ export const getStudentApplications = async (req, res) => {
     }
 
     const applications = await StudentApplication.find(query).sort({ submittedAt: -1, appliedAt: -1, createdAt: -1 }).lean();
-
-    res.json({
-      success: true,
-      count: applications.length,
-      applications,
-    });
+    const payload = { success: true, count: applications.length, applications };
+    cacheSet(cacheKey, payload, 30); // 30s TTL — applications change more frequently
+    res.json(payload);
   } catch (error) {
     console.error('Error in getStudentApplications:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error fetching student applications',
-    });
+    res.status(500).json({ success: false, message: 'Server Error fetching student applications' });
   }
 };
 
@@ -303,6 +298,7 @@ export const updateStudentApplicationStatus = async (req, res) => {
     application.notificationHistory.push(historyEntry);
 
     await application.save();
+    cacheInvalidate('applications:'); // Bust cache after status change
 
     res.json({
       success: true,

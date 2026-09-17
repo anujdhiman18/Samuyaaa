@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Faculty from '../models/Faculty.js';
+import { cacheGet, cacheSet, cacheInvalidate } from '../utils/cache.js';
 import { getTransporter, EMAIL_TARGET, PRIMARY_EMAIL_TARGET, SECONDARY_EMAIL_TARGET, ALL_EMAIL_TARGETS, EMAIL_TARGET_STRING } from '../config/nodemailer.js';
 
 // @desc    Get all faculty members
@@ -7,22 +8,24 @@ import { getTransporter, EMAIL_TARGET, PRIMARY_EMAIL_TARGET, SECONDARY_EMAIL_TAR
 export const getFaculty = async (req, res) => {
   try {
     const { activeOnly } = req.query;
-    const filter = activeOnly === 'true' ? { is_active: true } : {};
+    const cacheKey = `faculty:activeOnly=${activeOnly || 'all'}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
 
+    const filter = activeOnly === 'true' ? { is_active: true } : {};
     const allFaculty = await Faculty.find(filter).sort({ updatedAt: -1, createdAt: -1 }).lean();
 
     // Deduplicate by email (latest updated document wins)
     const map = new Map();
     allFaculty.forEach((f) => {
       const k = f.email ? f.email.trim().toLowerCase() : String(f._id);
-      if (!map.has(k)) {
-        map.set(k, f);
-      }
+      if (!map.has(k)) map.set(k, f);
     });
 
     const faculty = Array.from(map.values()).sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
-
-    res.json({ success: true, count: faculty.length, faculty });
+    const payload = { success: true, count: faculty.length, faculty };
+    cacheSet(cacheKey, payload, 60); // Cache for 60 seconds
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -53,7 +56,7 @@ export const createFaculty = async (req, res) => {
       roles: assignedRoles,
       role: assignedRoles[0] || 'SUBJECT_TEACHER',
     });
-
+    cacheInvalidate('faculty:'); // Bust cache after write
     res.status(201).json({ success: true, faculty: newFaculty, message: 'Faculty member added successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -96,6 +99,7 @@ export const updateFaculty = async (req, res) => {
     }
 
     const updated = await Faculty.findByIdAndUpdate(faculty._id, updateData, { new: true, runValidators: true });
+    cacheInvalidate('faculty:'); // Bust cache after update
     res.json({ success: true, faculty: updated, message: 'Faculty updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -122,6 +126,7 @@ export const deleteFaculty = async (req, res) => {
       });
     } catch (e) {}
 
+    cacheInvalidate('faculty:'); // Bust cache after delete
     res.json({ success: true, message: 'Faculty member removed successfully from database' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

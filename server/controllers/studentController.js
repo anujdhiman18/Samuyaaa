@@ -1,4 +1,5 @@
 import Student from '../models/Student.js';
+import { cacheGet, cacheSet, cacheInvalidate } from '../utils/cache.js';
 
 // @desc    Get all students with filter, search, pagination, sorting
 // @route   GET /api/students
@@ -12,29 +13,12 @@ export const getStudents = async (req, res) => {
 
     const query = {};
 
-    if (className && className !== 'All') {
-      query.className = className;
-    }
-
-    if (course && course !== 'All') {
-      query.course = course;
-    }
-
-    if (batch && batch !== 'All') {
-      query.batch = batch;
-    }
-
-    if (semester && semester !== 'All') {
-      query.semester = semester;
-    }
-
-    if (status && status !== 'All') {
-      query.status = status;
-    }
-
-    if (feeStatus && feeStatus !== 'All') {
-      query.feesPaid = feeStatus === 'paid';
-    }
+    if (className && className !== 'All') query.className = className;
+    if (course && course !== 'All') query.course = course;
+    if (batch && batch !== 'All') query.batch = batch;
+    if (semester && semester !== 'All') query.semester = semester;
+    if (status && status !== 'All') query.status = status;
+    if (feeStatus && feeStatus !== 'All') query.feesPaid = feeStatus === 'paid';
 
     if (search) {
       query.$or = [
@@ -54,20 +38,25 @@ export const getStudents = async (req, res) => {
       sortOptions.createdAt = -1;
     }
 
+    // Cache key — unique per query params so filtered queries don't pollute base list
+    const cacheKey = `students:${JSON.stringify({ page, limit, skip, search, className, course, batch, semester, status, feeStatus, sortBy, sortOrder })}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const total = await Student.countDocuments(query);
     const students = await Student.find(query).sort(sortOptions).skip(skip).limit(limit).lean();
 
-    res.json({
-      success: true,
-      students,
-      page,
-      pages: Math.ceil(total / limit) || 1,
-      total,
-    });
+    const payload = { success: true, students, page, pages: Math.ceil(total / limit) || 1, total };
+    cacheSet(cacheKey, payload, 60); // Cache for 60 seconds
+
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // @desc    Get single student by ID
 // @route   GET /api/students/:id
@@ -121,6 +110,7 @@ export const createStudent = async (req, res) => {
     }
 
     const student = await Student.create(req.body);
+    cacheInvalidate('students:'); // Bust the student list cache
     res.status(201).json({ success: true, student, message: 'Student registered successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -162,6 +152,7 @@ export const updateStudent = async (req, res) => {
       });
     } catch (e) {}
 
+    cacheInvalidate('students:'); // Bust the student list cache
     res.json({ success: true, student: updated, message: 'Student updated successfully' });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -188,6 +179,7 @@ export const deleteStudent = async (req, res) => {
       });
     } catch (e) {}
 
+    cacheInvalidate('students:'); // Bust the student list cache
     res.json({ success: true, message: 'Student record deleted successfully from database' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -463,9 +455,15 @@ export const applyStudentLeave = async (req, res) => {
 // @route   GET /api/student-panel/leaves
 export const getStudentLeaves = async (req, res) => {
   try {
+    const cacheKey = 'leaves:student:all';
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
+
     const StudentLeave = (await import('../models/StudentLeave.js')).default;
-    const leaves = await StudentLeave.find().sort({ createdAt: -1 });
-    res.json({ success: true, count: leaves.length, leaves });
+    const leaves = await StudentLeave.find().sort({ createdAt: -1 }).lean();
+    const payload = { success: true, count: leaves.length, leaves };
+    cacheSet(cacheKey, payload, 30);
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -540,6 +538,7 @@ export const updateStudentLeaveStatus = async (req, res) => {
     if (adminRemarks !== undefined) leave.adminRemarks = adminRemarks;
     if (adminNote !== undefined) leave.adminNote = adminNote;
     await leave.save();
+    cacheInvalidate('leaves:'); // Bust leaves cache after status update
 
     try {
       const { sendGenericSMS } = await import('../services/twilioService.js');
