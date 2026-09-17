@@ -162,10 +162,13 @@ export default function StudentManagement() {
       }
     });
 
-    fetchStudents();
-    fetchApplications();
-    fetchDemoBookings();
-    fetchStudentLeaves();
+    // Run all 4 fetches in parallel instead of sequentially
+    Promise.all([
+      fetchStudents(),
+      fetchApplications(),
+      fetchDemoBookings(),
+      fetchStudentLeaves(),
+    ]);
 
     const handleDataRefresh = () => {
       fetchApplications();
@@ -175,7 +178,7 @@ export default function StudentManagement() {
     };
 
     window.addEventListener('saumyaa_data_updated', handleDataRefresh);
-    window.addEventListener('focus', handleDataRefresh);
+    // Removed window focus listener — it caused full refetch on every tab switch
 
     return () => {
       unsubscribeStudents();
@@ -183,7 +186,6 @@ export default function StudentManagement() {
       unsubscribeDemos();
       unsubscribeLeaves();
       window.removeEventListener('saumyaa_data_updated', handleDataRefresh);
-      window.removeEventListener('focus', handleDataRefresh);
     };
   }, []);
 

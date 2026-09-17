@@ -9,7 +9,7 @@ export const getFaculty = async (req, res) => {
     const { activeOnly } = req.query;
     const filter = activeOnly === 'true' ? { is_active: true } : {};
 
-    const allFaculty = await Faculty.find(filter).sort({ updatedAt: -1, createdAt: -1 });
+    const allFaculty = await Faculty.find(filter).sort({ updatedAt: -1, createdAt: -1 }).lean();
 
     // Deduplicate by email (latest updated document wins)
     const map = new Map();

@@ -72,5 +72,11 @@ const studentLeaveSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for fast admin queries
+studentLeaveSchema.index({ status: 1, createdAt: -1 });
+studentLeaveSchema.index({ studentId: 1 });
+studentLeaveSchema.index({ createdAt: -1 });
+
 const StudentLeave = mongoose.models.StudentLeave || mongoose.model('StudentLeave', studentLeaveSchema);
 export default StudentLeave;
+

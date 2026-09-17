@@ -119,5 +119,11 @@ const facultySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for fast admin queries
+facultySchema.index({ is_active: 1 });
+facultySchema.index({ branch: 1, branchId: 1 });
+facultySchema.index({ email: 1 });
+
 const Faculty = mongoose.models.Faculty || mongoose.model('Faculty', facultySchema);
 export default Faculty;
+

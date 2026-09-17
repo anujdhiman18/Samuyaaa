@@ -236,7 +236,7 @@ export const getStudentApplications = async (req, res) => {
       ];
     }
 
-    const applications = await StudentApplication.find(query).sort({ submittedAt: -1, appliedAt: -1, createdAt: -1 });
+    const applications = await StudentApplication.find(query).sort({ submittedAt: -1, appliedAt: -1, createdAt: -1 }).lean();
 
     res.json({
       success: true,

@@ -137,6 +137,12 @@ const studentApplicationSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for fast admin status filtering and sorting
+studentApplicationSchema.index({ status: 1, submittedAt: -1 });
+studentApplicationSchema.index({ email: 1 });
+studentApplicationSchema.index({ submittedAt: -1 });
+
 const StudentApplication = mongoose.model('StudentApplication', studentApplicationSchema);
 
 export default StudentApplication;
+

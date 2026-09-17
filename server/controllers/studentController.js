@@ -55,7 +55,7 @@ export const getStudents = async (req, res) => {
     }
 
     const total = await Student.countDocuments(query);
-    const students = await Student.find(query).sort(sortOptions).skip(skip).limit(limit);
+    const students = await Student.find(query).sort(sortOptions).skip(skip).limit(limit).lean();
 
     res.json({
       success: true,

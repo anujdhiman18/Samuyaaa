@@ -53,7 +53,7 @@ export const apiCall = async (endpoint, options = {}) => {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
@@ -1468,27 +1468,28 @@ export const studentService = {
   },
 
   getAllStudentLeaves: async () => {
-    let remoteLeaves = [];
-    try {
-      const remote = await apiCall('/admin/student-leaves');
-      if (remote && remote.success && Array.isArray(remote.leaves)) {
-        remoteLeaves = remote.leaves;
-      }
-    } catch (e) {}
-
-    let remotePanelLeaves = [];
-    try {
-      const remote2 = await apiCall('/student-panel/leaves');
-      if (remote2 && remote2.success && Array.isArray(remote2.leaves)) {
-        remotePanelLeaves = remote2.leaves;
-      }
-    } catch (e) {}
-
-    const fsLeaves = await syncFirestoreCollection('student_leaves', initialMockStudentLeaves);
+    // Return local cache immediately, then sync in background
     const localLeaves = getStoredStudentLeaves();
 
+    // Fire both API calls in parallel instead of sequential (saves ~3s)
+    const [remote1, remote2] = await Promise.allSettled([
+      apiCall('/admin/student-leaves'),
+      apiCall('/student-panel/leaves'),
+    ]);
+
+    const remoteLeaves =
+      remote1.status === 'fulfilled' && remote1.value?.success && Array.isArray(remote1.value.leaves)
+        ? remote1.value.leaves
+        : [];
+    const remotePanelLeaves =
+      remote2.status === 'fulfilled' && remote2.value?.success && Array.isArray(remote2.value.leaves)
+        ? remote2.value.leaves
+        : [];
+
+    const fsLeaves = await syncFirestoreCollection('student_leaves', initialMockStudentLeaves);
+
     const mergedMap = new Map();
-    [...initialMockStudentLeaves, ...localLeaves, ...(fsLeaves || []), ...remoteLeaves, ...remotePanelLeaves].forEach((item) => {
+    [...localLeaves, ...(fsLeaves || []), ...remoteLeaves, ...remotePanelLeaves].forEach((item) => {
       const key = String(item._id || item.id || '');
       if (key) {
         if (!mergedMap.has(key)) {
