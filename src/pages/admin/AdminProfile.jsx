@@ -267,7 +267,7 @@ export default function AdminProfile() {
                 {uploadingPhoto && (
                   <div className="space-y-1 pt-1">
                     <div className="flex justify-between text-[10px] text-on-surface-variant">
-                      <span>Uploading to Firebase Storage...</span>
+                      <span>Uploading photo...</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
@@ -557,11 +557,11 @@ export default function AdminProfile() {
               </p>
               <p className="flex justify-between">
                 <span>Authentication Mode:</span>
-                <strong className="text-emerald-700 font-mono">JWT + Firebase</strong>
+                <strong className="text-emerald-700 font-mono">JWT + MongoDB</strong>
               </p>
               <p className="flex justify-between">
                 <span>Database Sync:</span>
-                <strong className="text-primary font-semibold">Firestore & MongoDB</strong>
+                <strong className="text-primary font-semibold">MongoDB Atlas</strong>
               </p>
             </div>
           </div>

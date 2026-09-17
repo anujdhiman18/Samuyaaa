@@ -73,7 +73,7 @@ export default function Results() {
   const [totalStudentsCount, setTotalStudentsCount] = useState(1);
 
   useEffect(() => {
-    // Real-Time Firebase Firestore listener for Toppers
+    // Real-time listener for Toppers data (synced from MongoDB via localStorage cache)
     const unsubscribeToppers = subscribeFirestoreCollection('toppers', initialMockToppers, (list) => {
       if (list && list.length > 0) {
         const active = list.filter((t) => t.is_active !== false);

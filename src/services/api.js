@@ -1,20 +1,21 @@
-import { uploadFirebaseFile, deleteFirebaseFile } from '../firebase';
-const auth = null;
-const db = null;
-const doc = () => null;
-const setDoc = async () => {};
-const getDoc = async () => ({ exists: () => false, data: () => null });
-const collection = () => null;
-const getDocs = async () => ({ empty: true, forEach: () => {} });
-const deleteDoc = async () => {};
-const onSnapshot = () => () => {};
-const signInWithEmailAndPassword = async () => { throw new Error('Firebase Auth is disabled; use MongoDB authentication.'); };
-const createUserWithEmailAndPassword = async () => { throw new Error('Firebase Auth is disabled; use MongoDB registration.'); };
-import { supabase, isSupabaseConfigured } from '../supabase';
+import { uploadFirebaseFile, deleteFirebaseFile } from '../fileUpload';
 import { sendFacultyApplicationNotification, sendCandidateStatusNotification, sendStudentApplicationNotification } from './emailService';
 import { normalizeClassCode, formatClassLabel, getStageForClass, isClassOrStageMatch, isExactClassMatch, CLASS_CATEGORIES, CLASS_CODES, DEFAULT_CENTER_CONFIGS } from '../config/classConfig';
 import { normalizeBranchId, getBranchCode, getBranchLabel } from '../config/rbacConfig';
 import { generateSecureTemporaryPassword, hashPasswordClient } from '../config/passwordUtils';
+
+// ─── MongoDB-only: All Firestore stubs removed ────────────────────────────────
+// These no-op stubs keep backward-compat for any remaining try-catch blocks
+// that called Firestore. They are safe to remove one-by-one as code is cleaned.
+const db = null;
+const doc = () => null;
+const setDoc = async () => {};
+const getDoc = async () => ({ exists: () => false, data: () => null });
+const deleteDoc = async () => {};
+const signInWithEmailAndPassword = async () => { throw new Error('Use MongoDB auth.'); };
+const createUserWithEmailAndPassword = async () => { throw new Error('Use MongoDB registration.'); };
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 export const initialMockStudents = [];
 export const initialMockSubjects = [];
