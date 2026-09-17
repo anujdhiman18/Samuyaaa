@@ -126,7 +126,39 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     return ['Foundation', 'Advanced', 'JEE', 'NEET', 'Olympiad'];
   }, [selectedSubject, liveSubjects]);
 
-  // 3. Available Classes for selected Subject + Category (Only assigned classes - other classes removed)
+  // Standard classes grouped by Stage Category (S1, S2, S3, S4)
+  const STAGE_CATEGORY_CLASSES = {
+    S1: [
+      'Nursery',
+      'LKG',
+      'UKG',
+      '1st Grade',
+      '2nd Grade',
+      '3rd Grade',
+      '4th Grade',
+      '5th Grade',
+    ],
+    S2: [
+      '6th Grade',
+      '7th Grade',
+      '8th Grade',
+      '9th Grade',
+      '10th Grade',
+    ],
+    S3: [
+      '11th (+1)',
+      '12th (+2)',
+    ],
+    S4: [
+      'College / University',
+      'Undergraduate',
+      'Postgraduate',
+      'Higher Education',
+    ],
+  };
+
+  // 3. Available Classes for selected Subject + Category
+  // If the subject is created by category stage, show all classes present in that category.
   const normalizeDisplayClass = (clsStr) => {
     if (!clsStr) return '';
     const str = String(clsStr).trim();
@@ -162,40 +194,67 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
     // Prefer classes that match both subject and category; fallback to subject matches
     const targetSubjects = categoryMatches.length > 0 ? categoryMatches : subjectMatches;
 
-    const assigned = targetSubjects
-      .map((s) => normalizeDisplayClass(s.className?.trim()))
-      .filter(Boolean);
+    const assigned = [];
 
-    // ONLY classes assigned to this subject/category in the database
+    targetSubjects.forEach((s) => {
+      const rawClass = (s.className || '').trim();
+      const rawCatCode = (s.categoryCode || '').trim().toUpperCase();
+
+      // Check if subject is created by category stage (e.g. S1, S2, S3, S4, Class S1, Class S2, etc.)
+      const isStageCategory = (val) => {
+        if (!val) return false;
+        const v = val.toLowerCase();
+        return (
+          v === 's1' || v === 'class s1' || v.startsWith('class s1') ||
+          v === 's2' || v === 'class s2' || v.startsWith('class s2') ||
+          v === 's3' || v === 'class s3' || v.startsWith('class s3') ||
+          v === 's4' || v === 'class s4' || v.startsWith('class s4')
+        );
+      };
+
+      let detectedStage = null;
+      if (isStageCategory(rawClass)) {
+        const v = rawClass.toLowerCase();
+        if (v.includes('s1')) detectedStage = 'S1';
+        else if (v.includes('s2')) detectedStage = 'S2';
+        else if (v.includes('s3')) detectedStage = 'S3';
+        else if (v.includes('s4')) detectedStage = 'S4';
+      } else if (['S1', 'S2', 'S3', 'S4'].includes(rawCatCode)) {
+        detectedStage = rawCatCode;
+      }
+
+      // If created by category, show all classes present in that category
+      if (detectedStage && STAGE_CATEGORY_CLASSES[detectedStage]) {
+        STAGE_CATEGORY_CLASSES[detectedStage].forEach((c) => assigned.push(c));
+      } else if (rawClass) {
+        assigned.push(normalizeDisplayClass(rawClass));
+      }
+    });
+
+    // Deduplicate
     const uniqueClasses = Array.from(new Set(assigned));
 
     const order = [
-      'Class S1 (Nursery - 5th)',
-      'Class S2 (6th - 10th)',
-      'Class S3 (11th - 12th)',
-      'Class S4 (Higher Ed)',
-      'Class Nursery',
-      'Class LKG',
-      'Class UKG',
-      'Class 1st',
-      'Class 2nd',
-      'Class 3rd',
-      'Class 4th',
-      'Class 5th',
-      'Class 6th',
-      'Class 7th',
-      'Class 8th',
-      'Class 9th',
-      'Class 10th',
-      'Class 11th (+1)',
-      'Class 12th (+2)',
-      'Class 11th',
-      'Class 12th',
+      'Nursery',
+      'LKG',
+      'UKG',
+      '1st Grade',
+      '2nd Grade',
+      '3rd Grade',
+      '4th Grade',
+      '5th Grade',
       '6th Grade',
       '7th Grade',
       '8th Grade',
       '9th Grade',
       '10th Grade',
+      'Class 10th',
+      '11th (+1)',
+      '12th (+2)',
+      'College / University',
+      'Undergraduate',
+      'Postgraduate',
+      'Higher Education',
     ];
 
     return uniqueClasses.sort((a, b) => {
@@ -230,17 +289,24 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   const getAssignedBatchTimes = () => {
     if (!selectedSubject || !selectedClass) return [];
 
-    const isClassMatchHelper = (sClsRaw, selClsRaw) => {
+    const isClassMatchHelper = (sClsRaw, selClsRaw, sCatRaw) => {
       const sCls = (sClsRaw || '').toLowerCase();
       const selCls = (selClsRaw || '').toLowerCase();
+      const sCat = (sCatRaw || '').toLowerCase();
+
+      const matchesCategoryS1 = sCls.includes('s1') || sCat === 's1';
+      const matchesCategoryS2 = sCls.includes('s2') || sCat === 's2';
+      const matchesCategoryS3 = sCls.includes('s3') || sCat === 's3';
+      const matchesCategoryS4 = sCls.includes('s4') || sCat === 's4';
+
       return (
         sCls === selCls ||
         selCls.includes(sCls) ||
         sCls.includes(selCls) ||
-        (sCls.includes('s1') && selCls.includes('s1')) ||
-        (sCls.includes('s2') && (selCls.includes('s2') || selCls.includes('6th') || selCls.includes('7th') || selCls.includes('8th') || selCls.includes('9th') || selCls.includes('10th'))) ||
-        (sCls.includes('s3') && (selCls.includes('s3') || selCls.includes('11th') || selCls.includes('12th'))) ||
-        (sCls.includes('s4') && selCls.includes('s4')) ||
+        (matchesCategoryS1 && (selCls.includes('s1') || selCls.includes('nursery') || selCls.includes('lkg') || selCls.includes('ukg') || selCls.includes('1st') || selCls.includes('2nd') || selCls.includes('3rd') || selCls.includes('4th') || selCls.includes('5th'))) ||
+        (matchesCategoryS2 && (selCls.includes('s2') || selCls.includes('6th') || selCls.includes('7th') || selCls.includes('8th') || selCls.includes('9th') || selCls.includes('10th'))) ||
+        (matchesCategoryS3 && (selCls.includes('s3') || selCls.includes('11th') || selCls.includes('12th'))) ||
+        (matchesCategoryS4 && (selCls.includes('s4') || selCls.includes('college') || selCls.includes('undergraduate') || selCls.includes('postgraduate') || selCls.includes('higher'))) ||
         (sCls.includes('6th') && selCls.includes('6th')) ||
         (sCls.includes('7th') && selCls.includes('7th')) ||
         (sCls.includes('8th') && selCls.includes('8th')) ||
@@ -263,7 +329,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         !selectedCategory ||
         (s.category?.trim() || '').toLowerCase() === selectedCategory.toLowerCase();
 
-      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass);
+      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass, s.categoryCode?.trim());
 
       return subMatch && catMatch && clsMatch;
     });
@@ -280,7 +346,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         selectedSubject.includes(sName) ||
         sName.includes(selectedSubject);
 
-      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass);
+      const clsMatch = isClassMatchHelper(s.className?.trim(), selectedClass, s.categoryCode?.trim());
 
       return subMatch && clsMatch;
     });
