@@ -8,7 +8,6 @@ const links = [
   { to: '/courses', label: 'Academic Programs (S1-S4)' },
   { to: '/our-faculty', label: 'Faculty Roster' },
   { to: '/alumni', label: 'Proud Alumni' },
-  { to: '/contact', label: 'Contact & Centers' },
 ];
 
 export default function MobileMenu({ open, onClose, onOpenBooking }) {

@@ -8,7 +8,6 @@ const links = [
   { to: '/courses', label: 'Courses' },
   { to: '/our-faculty', label: 'Faculty' },
   { to: '/alumni', label: 'Alumni' },
-  { to: '/contact', label: 'Contact' },
 ];
 
 export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
