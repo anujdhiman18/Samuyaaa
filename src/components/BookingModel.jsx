@@ -350,18 +350,18 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
 
       {/* Modal Card */}
       <div
-        className={`bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/15 relative transform transition-all duration-300 ease-out z-10 ${
+        className={`bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-premium border border-outline-variant/20 relative transform transition-all duration-300 ease-out z-10 ${
           animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {/* Modal Header */}
-        <div className="bg-surface-container-low px-6 py-4 border-b border-outline-variant/15 flex items-center justify-between">
+        <div className="bg-surface px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-              <span className="material-symbols-outlined text-[22px]">calendar_month</span>
+            <span className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20">
+              <span className="material-symbols-outlined text-[22px] text-secondary">calendar_month</span>
             </span>
             <div>
-              <h3 className="font-headings font-extrabold text-lg text-secondary">
+              <h3 className="font-headings font-extrabold text-lg text-primary">
                 Book a Free Live Demo Class
               </h3>
               <p className="text-[11px] text-on-surface-variant">
@@ -371,7 +371,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+            className="p-1.5 rounded-lg text-secondary hover:bg-surface-container transition-colors duration-200 cursor-pointer"
             aria-label="Close modal"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -386,22 +386,22 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         ) : submitted ? (
           /* Confirmation Screen */
           <div className="p-8 text-center">
-            <span className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <span className="material-symbols-outlined text-[36px]">event_available</span>
+            <span className="w-16 h-16 rounded-full bg-surface-container text-primary flex items-center justify-center mx-auto mb-4 shadow-premium border border-outline-variant/20">
+              <span className="material-symbols-outlined text-[36px] text-secondary">event_available</span>
             </span>
-            <h4 className="font-headings font-bold text-xl text-on-surface mb-2">Demo Booked Successfully!</h4>
+            <h4 className="font-headings font-bold text-xl text-primary mb-2">Demo Booked Successfully!</h4>
             <p className="text-xs text-on-surface-variant max-w-sm mx-auto leading-relaxed mb-6">
-              A live demo slot has been scheduled for <strong className="text-secondary font-bold">{studentName}</strong>. Our academic coordinator will contact you with access instructions.
+              A live demo slot has been scheduled for <strong className="text-primary font-bold">{studentName}</strong>. Our academic coordinator will contact you with access instructions.
             </p>
 
-            <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 text-left space-y-2 text-xs font-medium text-on-surface mb-6 max-w-sm mx-auto">
+            <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-left space-y-2 text-xs font-medium text-on-surface mb-6 max-w-sm mx-auto">
               <p className="flex justify-between border-b border-outline-variant/15 pb-2">
                 <span className="text-on-surface-variant">Subject:</span>
-                <strong className="text-secondary">{selectedSubject}</strong>
+                <strong className="text-primary">{selectedSubject}</strong>
               </p>
               <p className="flex justify-between border-b border-outline-variant/15 pb-2">
                 <span className="text-on-surface-variant">Category:</span>
-                <strong>{selectedCategory}</strong>
+                <strong className="text-on-surface">{selectedCategory}</strong>
               </p>
               <p className="flex justify-between border-b border-outline-variant/15 pb-2">
                 <span className="text-on-surface-variant">Selected Class:</span>
@@ -409,17 +409,17 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               </p>
               <p className="flex justify-between border-b border-outline-variant/15 pb-2">
                 <span className="text-on-surface-variant">Scheduled Batch Time:</span>
-                <strong className="font-mono text-emerald-700">{autoBatchTimeText}</strong>
+                <strong className="font-mono text-primary font-bold">{autoBatchTimeText}</strong>
               </p>
               <p className="flex justify-between">
                 <span className="text-on-surface-variant">Center:</span>
-                <span>{branch}</span>
+                <span className="text-on-surface">{branch}</span>
               </p>
             </div>
 
             <button
               onClick={onClose}
-              className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3 rounded-full text-xs transition-all shadow-tactile-btn"
+              className="w-full bg-primary hover:bg-inverse-surface text-white font-headings font-bold py-3 rounded-full text-xs transition-all duration-300 shadow-premium cursor-pointer"
             >
               Done &amp; Close Form
             </button>
@@ -436,7 +436,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 value={selectedSubject}
                 onChange={(e) => handleSubjectChange(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-semibold text-on-surface transition-all cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/40 bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-semibold text-on-surface transition-all duration-200 cursor-pointer"
               >
                 <option value="" disabled>
                   -- Select Subject --
@@ -459,7 +459,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 disabled={!selectedSubject}
                 required
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-200 ${
                   !selectedSubject
                     ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
@@ -486,7 +486,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 onChange={(e) => handleClassChange(e.target.value)}
                 disabled={!selectedSubject}
                 required
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all duration-200 ${
                   !selectedSubject
                     ? 'bg-surface-container/50 border-outline-variant/20 text-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-surface-container-lowest border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-on-surface cursor-pointer'
@@ -507,21 +507,21 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
             {selectedClass && (
               <div className="pt-1">
                 {assignedBatchTimes.length > 0 ? (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3.5 space-y-1.5 shadow-sm">
+                  <div className="bg-surface-container border border-outline-variant/20 rounded-xl p-3.5 space-y-1.5 shadow-xs">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-on-surface-variant font-semibold">Selected Class:</span>
-                      <strong className="text-secondary">{selectedClass}</strong>
+                      <strong className="text-primary">{selectedClass}</strong>
                     </div>
-                    <div className="flex justify-between items-center text-xs border-t border-primary/10 pt-1.5">
+                    <div className="flex justify-between items-center text-xs border-t border-outline-variant/15 pt-1.5">
                       <span className="text-on-surface-variant font-semibold">Assigned Batch Time:</span>
-                      <strong className="font-mono text-primary text-sm bg-white px-2.5 py-0.5 rounded-md border border-primary/15">
+                      <strong className="font-mono text-primary text-sm bg-white px-2.5 py-0.5 rounded-md border border-outline-variant/20">
                         {autoBatchTimeText}
                       </strong>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-amber-600">info</span>
+                  <div className="p-3.5 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface text-xs font-semibold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-tertiary">info</span>
                     <span>No batch timing is currently available for this class.</span>
                   </div>
                 )}
@@ -532,7 +532,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
             <div className="pt-2 border-t border-outline-variant/15 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                  <label className="text-[11px] font-semibold text-on-surface">
                     Student Name *
                   </label>
                   <input
@@ -541,11 +541,11 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                     value={studentName}
                     onChange={(e) => setStudentName(e.target.value)}
                     placeholder="Student full name"
-                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-body text-on-surface"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                  <label className="text-[11px] font-semibold text-on-surface">
                     Parent's Phone *
                   </label>
                   <input
@@ -554,14 +554,14 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                     value={parentPhone}
                     onChange={(e) => setParentPhone(e.target.value)}
                     placeholder="10-digit mobile number"
-                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-body text-on-surface"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                  <label className="text-[11px] font-semibold text-on-surface">
                     Parent's Email (Optional)
                   </label>
                   <input
@@ -569,17 +569,17 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                     value={parentEmail}
                     onChange={(e) => setParentEmail(e.target.value)}
                     placeholder="email@example.com"
-                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs font-body"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs font-body text-on-surface"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                  <label className="text-[11px] font-semibold text-on-surface">
                     Preferred Center
                   </label>
                   <select
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 text-xs bg-white font-body"
+                    className="w-full px-3.5 py-2 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs bg-white font-body text-on-surface cursor-pointer"
                   >
                     <option value="Main Center (Bagru)">Main Center (Bagru)</option>
                     <option value="Branch (Daroh)">Branch (Daroh)</option>
@@ -593,14 +593,14 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               <button
                 type="submit"
                 disabled={submitting || !selectedSubject || !selectedCategory || !selectedClass}
-                className="w-full bg-primary hover:bg-primary-container disabled:bg-surface-container-highest text-white font-headings font-bold py-3 rounded-full text-xs transition-colors shadow-tactile-btn shadow-premium flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full bg-primary hover:bg-inverse-surface disabled:bg-outline-variant/40 text-white font-headings font-bold py-3 rounded-full text-xs transition-all duration-300 shadow-premium flex items-center justify-center gap-2 cursor-pointer"
               >
                 {submitting ? (
                   <span>Processing Demo Booking...</span>
                 ) : (
                   <>
                     <span>Book Live Demo</span>
-                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span className="material-symbols-outlined text-[16px] text-surface">check_circle</span>
                   </>
                 )}
               </button>

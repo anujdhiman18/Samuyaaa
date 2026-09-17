@@ -21,15 +21,6 @@ export default function Contact() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function getMailtoUrl(data) {
-    const classLabel = data.targetClass ? formatClassLabel(data.targetClass) : 'N/A';
-    const subjectStr = encodeURIComponent(`Inquiry from ${data.name} (${classLabel}): ${data.subject}`);
-    const bodyStr = encodeURIComponent(
-      `Student/Parent Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || 'N/A'}\nClass/Grade: ${classLabel}\nPreferred Location: ${data.branch || 'Main Center'}\nSubject: ${data.subject}\n\nMessage Details:\n${data.message}`
-    );
-    return `mailto:Jitender0585@gmail.com?subject=${subjectStr}&body=${bodyStr}`;
-  }
-
   function handleResetForm() {
     setForm(initialForm);
     setSubmitting(false);
@@ -78,17 +69,19 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="bg-surface-container-low border-t border-surface-container-high py-16 md:py-24">
+    <section id="contact" className="bg-[#BBDEFB]/25 border-t border-[#90CAF9]/30 py-16 md:py-24 font-body">
       <div className="max-w-container-max mx-auto px-gutter">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left: Contact details */}
           <div className="lg:col-span-5 flex flex-col justify-between">
             <div>
-              <span className="text-primary font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
+              <span className="text-[#D97706] font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
                 Reach Out to Us
               </span>
-              <h2 className="font-headings font-extrabold text-3xl text-secondary mb-6">Let's Connect</h2>
-              <p className="text-on-surface-variant font-body text-sm md:text-base leading-relaxed mb-8">
+              <h2 className="font-headings font-extrabold text-3xl text-[#0D47A1] mb-6">
+                Let's <span className="text-[#D97706]">Connect</span>
+              </h2>
+              <p className="text-[#1565C0] font-body text-sm md:text-base leading-relaxed mb-8">
                 Have questions about fees, timings, syllabus, or demo bookings? Drop in at our study center or
                 message us directly.
               </p>
@@ -96,80 +89,80 @@ export default function Contact() {
               <div className="space-y-4">
                 <a
                   href="tel:+919816477341"
-                  className="flex items-center gap-4 p-3 rounded-xl border border-surface-container-high bg-white hover:border-secondary hover:shadow-sm transition-all group"
+                  className="flex items-center gap-4 p-3 rounded-2xl border border-[#90CAF9]/30 bg-white hover:border-[#0D47A1] hover:shadow-premium transition-all duration-300 group"
                 >
-                  <span className="w-10 h-10 rounded-lg bg-secondary/5 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-colors">
+                  <span className="w-10 h-10 rounded-xl bg-[#E3F2FD] text-[#0D47A1] flex items-center justify-center group-hover:bg-[#0D47A1] group-hover:text-white transition-colors duration-200">
                     <span className="material-symbols-outlined text-[20px]">call</span>
                   </span>
                   <div>
-                    <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Phone Contact</p>
-                    <p className="text-sm font-bold text-on-surface">+91 98164 77341</p>
+                    <p className="text-[10px] text-[#1565C0] uppercase font-semibold">Phone Contact</p>
+                    <p className="text-sm font-bold text-[#0D47A1]">+91 98164 77341</p>
                   </div>
                 </a>
 
                 <a
                   href="mailto:Jitender0585@gmail.com"
-                  className="flex items-center gap-4 p-3 rounded-xl border border-surface-container-high bg-white hover:border-secondary hover:shadow-sm transition-all group"
+                  className="flex items-center gap-4 p-3 rounded-2xl border border-[#90CAF9]/30 bg-white hover:border-[#0D47A1] hover:shadow-premium transition-all duration-300 group"
                 >
-                  <span className="w-10 h-10 rounded-lg bg-secondary/5 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-colors">
+                  <span className="w-10 h-10 rounded-xl bg-[#E3F2FD] text-[#0D47A1] flex items-center justify-center group-hover:bg-[#0D47A1] group-hover:text-white transition-colors duration-200">
                     <span className="material-symbols-outlined text-[20px]">mail</span>
                   </span>
                   <div>
-                    <p className="text-[10px] text-on-surface-variant uppercase font-semibold">Email Inquiry</p>
-                    <p className="text-sm font-bold text-on-surface">Jitender0585@gmail.com</p>
+                    <p className="text-[10px] text-[#1565C0] uppercase font-semibold">Email Inquiry</p>
+                    <p className="text-sm font-bold text-[#0D47A1]">Jitender0585@gmail.com</p>
                   </div>
                 </a>
 
                 <div className="pt-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-secondary mb-3 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-primary">domain</span>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#D97706] mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-[#D97706]">domain</span>
                     Our Academic Centers
                   </p>
 
                   <div className="space-y-3">
                     {/* Main Center (Bagru) */}
-                    <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
+                    <div className="p-3.5 rounded-2xl border border-[#90CAF9]/30 bg-white hover:border-[#0D47A1] transition-all duration-200">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                        <span className="font-headings font-bold text-xs text-[#0D47A1] flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#D97706] inline-block" />
                           Main Center (Bagru)
                         </span>
-                        <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold text-[#0D47A1] bg-[#BBDEFB]/40 px-2.5 py-0.5 rounded-full border border-[#90CAF9]/30">
                           Main Center
                         </span>
                       </div>
-                      <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
+                      <p className="text-xs text-[#1565C0] leading-relaxed mb-2">
                         Saumyaa Studies, Bagru Garh, Jamula, Palaid, Himachal Pradesh 176093
                       </p>
                       <a
                         href="https://www.google.com/maps/search/?api=1&query=Bagru+Garh%2C+Jamula%2C+Palaid%2C+Himachal+Pradesh+176093"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1976D2] hover:text-[#0D47A1] hover:underline"
                       >
                         <span className="material-symbols-outlined text-[14px]">map</span> View Bagru Main Center on Google Maps
                       </a>
                     </div>
 
                     {/* Branch (Daroh) */}
-                    <div className="p-3.5 rounded-xl border border-surface-container-high bg-white hover:border-secondary transition-all">
+                    <div className="p-3.5 rounded-2xl border border-[#90CAF9]/30 bg-white hover:border-[#0D47A1] transition-all duration-200">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-headings font-bold text-xs text-secondary flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                        <span className="font-headings font-bold text-xs text-[#0D47A1] flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#1976D2] inline-block" />
                           Branch (Daroh)
                         </span>
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold text-[#1976D2] bg-[#E3F2FD] px-2.5 py-0.5 rounded-full border border-[#90CAF9]/40">
                           Branch
                         </span>
                       </div>
-                      <p className="text-xs text-on-surface-variant leading-relaxed mb-2">
+                      <p className="text-xs text-[#1565C0] leading-relaxed mb-2">
                         Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092
                       </p>
                       <a
                         href="https://www.google.com/maps/search/?api=1&query=31.997361,76.478083"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1976D2] hover:text-[#0D47A1] hover:underline"
                       >
                         <span className="material-symbols-outlined text-[14px]">map</span> View Daroh Branch on Google Maps
                       </a>
@@ -181,13 +174,15 @@ export default function Contact() {
           </div>
 
           {/* Right: Contact form */}
-          <div className="lg:col-span-7 bg-white rounded-2xl p-6 md:p-8 shadow-premium border border-outline-variant/15 relative">
-            <h3 className="font-headings font-bold text-xl text-on-surface mb-6">Send an Inquiry</h3>
+          <div className="lg:col-span-7 bg-white rounded-2xl p-6 md:p-8 shadow-premium border border-[#90CAF9]/30 relative">
+            <h3 className="font-headings font-bold text-xl text-[#0D47A1] mb-6">
+              Send an <span className="text-[#D97706]">Inquiry</span>
+            </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-name" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-name" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Name *
                   </label>
                   <input
@@ -197,11 +192,11 @@ export default function Contact() {
                     value={form.name}
                     onChange={(e) => updateField('name', e.target.value)}
                     placeholder="Enter student/parent name"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-[#E3F2FD]/50 font-body text-sm text-[#0D1B2A] transition-all duration-200"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-phone" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-phone" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Phone Number *
                   </label>
                   <input
@@ -211,14 +206,14 @@ export default function Contact() {
                     value={form.phone}
                     onChange={(e) => updateField('phone', e.target.value)}
                     placeholder="10-digit number"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-[#E3F2FD]/50 font-body text-sm text-[#0D1B2A] transition-all duration-200"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-email" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-email" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Email Address
                   </label>
                   <input
@@ -227,12 +222,12 @@ export default function Contact() {
                     value={form.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     placeholder="example@email.com"
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-[#E3F2FD]/50 font-body text-sm text-[#0D1B2A] transition-all duration-200"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-class" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-class" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Class / Grade *
                   </label>
                   <select
@@ -240,7 +235,7 @@ export default function Contact() {
                     required
                     value={form.targetClass}
                     onChange={(e) => updateField('targetClass', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-white font-body text-sm text-[#0D1B2A] cursor-pointer transition-all duration-200"
                   >
                     <option value="">-- Select Class / Grade --</option>
                     {CLASS_CATEGORIES.map((cat) => (
@@ -254,7 +249,7 @@ export default function Contact() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-subject" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-subject" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Subject *
                   </label>
                   <select
@@ -262,7 +257,7 @@ export default function Contact() {
                     required
                     value={form.subject}
                     onChange={(e) => updateField('subject', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-white font-body text-sm text-[#0D1B2A] cursor-pointer transition-all duration-200"
                   >
                     <option value="">
                       -- Select Subject --
@@ -274,7 +269,7 @@ export default function Contact() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="contact-branch" className="font-body text-xs font-semibold text-on-surface-variant">
+                  <label htmlFor="contact-branch" className="font-body text-xs font-semibold text-[#0D1B2A]">
                     Select Center *
                   </label>
                   <select
@@ -282,7 +277,7 @@ export default function Contact() {
                     required
                     value={form.branch || 'Main Center (Bagru)'}
                     onChange={(e) => updateField('branch', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-white font-body text-sm text-on-surface cursor-pointer transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-white font-body text-sm text-[#0D1B2A] cursor-pointer transition-all duration-200"
                   >
                     <option value="Main Center (Bagru)">Main Center (Bagru)</option>
                     <option value="Branch (Daroh)">Branch (Daroh)</option>
@@ -291,7 +286,7 @@ export default function Contact() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="contact-message" className="font-body text-xs font-semibold text-on-surface-variant">
+                <label htmlFor="contact-message" className="font-body text-xs font-semibold text-[#0D1B2A]">
                   Message Details *
                 </label>
                 <textarea
@@ -301,14 +296,14 @@ export default function Contact() {
                   value={form.message}
                   onChange={(e) => updateField('message', e.target.value)}
                   placeholder="Tell us about the student's current grade, academic goals, or queries..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-outline-variant/50 focus:border-secondary focus:ring-1 focus:ring-secondary/30 bg-surface-container-lowest font-body text-sm text-on-surface transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 bg-[#E3F2FD]/50 font-body text-sm text-[#0D1B2A] transition-all duration-200"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-headings font-bold py-3.5 rounded-lg text-sm transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
+                className="w-full bg-[#0D47A1] hover:bg-[#1565C0] text-white font-headings font-bold py-3.5 rounded-xl text-sm transition-all duration-300 active:scale-95 shadow-premium flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
               >
                 {submitting ? (
                   <>
@@ -326,17 +321,17 @@ export default function Contact() {
 
             {submitted && (
               <div className="absolute inset-0 bg-white rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20 transition-all duration-300">
-                <span className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+                <span className="w-16 h-16 rounded-full bg-[#E3F2FD] text-[#0D47A1] flex items-center justify-center mb-4 border border-[#90CAF9]/40">
                   <span className="material-symbols-outlined text-[36px]">mark_email_read</span>
                 </span>
-                <h4 className="font-headings font-bold text-xl text-on-surface mb-2">Query Sent Directly!</h4>
-                <p className="text-sm text-on-surface-variant max-w-sm mb-6">
-                  Thank you! Your query has been directly sent to <strong className="text-secondary font-bold">Jitender0585@gmail.com</strong>. Our team will contact you shortly.
+                <h4 className="font-headings font-bold text-xl text-[#0D47A1] mb-2">Query Sent Directly!</h4>
+                <p className="text-sm text-[#1565C0] max-w-sm mb-6">
+                  Thank you! Your query has been directly sent to <strong className="text-[#0D47A1] font-bold">Jitender0585@gmail.com</strong>. Our team will contact you shortly.
                 </p>
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="bg-secondary text-white font-headings font-bold px-6 py-2.5 rounded-lg text-xs hover:bg-on-secondary-fixed-variant transition-colors shadow-sm cursor-pointer"
+                  className="bg-[#0D47A1] hover:bg-[#1565C0] text-white font-headings font-bold px-6 py-2.5 rounded-xl text-xs transition-colors duration-200 shadow-premium cursor-pointer"
                 >
                   Send Another Message
                 </button>

@@ -70,30 +70,30 @@ export default function Courses({ onOpenBooking }) {
   });
 
   return (
-    <section id="courses" className="bg-surface-container-low border-y border-outline-variant/15 py-16 md:py-24 font-body">
+    <section id="courses" className="bg-[#BBDEFB]/25 border-y border-[#90CAF9]/30 py-16 md:py-24 font-body">
       <div className="max-w-container-max mx-auto px-gutter">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
           <div className="max-w-2xl">
-            <span className="text-secondary font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
+            <span className="text-[#D97706] font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
               Empowering Every Grade &bull; Live Batches
             </span>
-            <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-on-surface mb-3">
-              Our Academic Programs &amp; Active Courses
+            <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-[#0D47A1] mb-3">
+              Our Academic Programs &amp; <span className="text-[#D97706]">Active Courses</span>
             </h2>
-            <p className="text-on-surface-variant font-body text-sm md:text-base leading-relaxed">
+            <p className="text-[#1565C0] font-body text-sm md:text-base leading-relaxed">
               Managed live from the Admin Control Panel. Small batch sizes with individual focus by Jitender Sharma &amp; Expert Faculty.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 w-full md:w-auto bg-white p-1.5 rounded-2xl border border-outline-variant/15 shadow-sm">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto bg-white p-1.5 rounded-2xl border border-[#90CAF9]/30 shadow-premium">
             {courseFilters.map((filter) => (
               <button
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`px-4 py-2 rounded-xl font-headings font-semibold text-xs transition-all ${
+                className={`px-4 py-2 rounded-xl font-headings font-semibold text-xs transition-all duration-200 cursor-pointer ${
                   activeFilter === filter.id
-                    ? 'bg-secondary text-white shadow-tactile-btn'
-                    : 'text-on-surface-variant hover:text-on-surface'
+                    ? 'bg-[#0D47A1] text-white shadow-premium'
+                    : 'text-[#1976D2] hover:text-[#0D47A1]'
                 }`}
               >
                 {filter.label}
@@ -106,34 +106,34 @@ export default function Courses({ onOpenBooking }) {
           {visibleCourses.map((course) => (
             <div
               key={course.id}
-              className="course-card bg-white rounded-2xl p-6 shadow-premium hover:shadow-premium-hover border border-outline-variant/15 flex flex-col hover:-translate-y-1.5 transition-all duration-300"
+              className="course-card bg-white rounded-2xl p-6 shadow-premium hover:shadow-premium-hover border border-[#90CAF9]/30 flex flex-col hover:-translate-y-1.5 transition-all duration-300"
             >
-              <div className={`w-12 h-12 ${course.iconBg} flex items-center justify-center rounded-xl mb-4`}>
-                <span className={`material-symbols-outlined ${course.iconColor} text-[24px]`}>
+              <div className="w-12 h-12 bg-[#E3F2FD] flex items-center justify-center rounded-xl mb-4 border border-[#90CAF9]/40">
+                <span className="material-symbols-outlined text-[#0D47A1] text-[24px]">
                   {course.icon}
                 </span>
               </div>
 
-              <h3 className="font-headings font-bold text-xl text-on-surface mb-2">{course.title}</h3>
+              <h3 className="font-headings font-bold text-xl text-[#0D47A1] mb-2">{course.title}</h3>
 
               {course.teacherName && (
-                <div className="flex items-center gap-1.5 text-xs text-secondary font-semibold mb-3">
-                  <span className="material-symbols-outlined text-[16px]">person</span>
+                <div className="flex items-center gap-1.5 text-xs text-[#1976D2] font-semibold mb-3">
+                  <span className="material-symbols-outlined text-[#1976D2] text-[16px]">person</span>
                   <span>{course.teacherName}</span>
                 </div>
               )}
 
-              <p className="text-on-surface-variant font-body text-sm leading-relaxed mb-6 flex-grow">
+              <p className="text-[#0D1B2A] font-body text-sm leading-relaxed mb-6 flex-grow">
                 {course.description}
               </p>
 
-              <div className="border-t border-outline-variant/15 pt-4 mt-auto flex justify-end items-center">
+              <div className="border-t border-[#90CAF9]/30 pt-4 mt-auto flex justify-end items-center">
                 <button
                   onClick={() => onOpenBooking(course.program)}
-                  className="bg-primary text-white hover:bg-primary-container px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-colors shadow-tactile-btn shadow-premium flex items-center gap-1.5"
+                  className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-all duration-300 shadow-premium flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Enquire Now</span>
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[16px] text-white">arrow_forward</span>
                 </button>
               </div>
             </div>

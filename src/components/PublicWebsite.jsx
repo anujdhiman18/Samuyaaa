@@ -63,10 +63,10 @@ export default function PublicWebsite() {
       <main className="flex-grow pt-20">
         {/* Dynamic Admin Announcement Bar */}
         {latestAnnouncement && (
-          <div className="bg-primary text-white text-xs py-2.5 px-4 text-center font-headings font-bold flex items-center justify-center gap-2 shadow-md">
-            <span className="material-symbols-outlined text-[18px]">campaign</span>
+          <div className="bg-primary text-white text-xs py-2.5 px-4 text-center font-headings font-bold flex items-center justify-center gap-2 shadow-premium border-b border-outline-variant/20">
+            <span className="material-symbols-outlined text-[18px] text-tertiary">campaign</span>
             <span>
-              <strong>LATEST NOTICE:</strong> {latestAnnouncement.title} - {latestAnnouncement.content}
+              <strong className="text-surface font-extrabold">LATEST NOTICE:</strong> {latestAnnouncement.title} - {latestAnnouncement.content}
             </span>
           </div>
         )}

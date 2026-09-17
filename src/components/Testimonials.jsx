@@ -118,26 +118,26 @@ export default function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="bg-surface-container-low border-y border-outline-variant/15 py-16 md:py-24 overflow-hidden font-body"
+      className="bg-surface border-y border-[#90CAF9]/30 py-16 md:py-24 overflow-hidden font-body"
     >
       <div className="max-w-container-max mx-auto px-gutter relative">
         {/* Toast Notification */}
         {successToast && (
-          <div className="fixed top-20 right-6 z-50 bg-emerald-700 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-headings font-bold text-xs animate-fadeIn">
-            <span className="material-symbols-outlined text-[20px]">check_circle</span>
+          <div className="fixed top-20 right-6 z-50 bg-[#0D47A1] text-white px-5 py-3 rounded-2xl shadow-premium border border-[#90CAF9]/40 flex items-center gap-2 font-headings font-bold text-xs animate-fadeIn">
+            <span className="material-symbols-outlined text-[20px] text-[#FBBF24]">check_circle</span>
             Thank you! Your feedback has been published to our community voices.
           </div>
         )}
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div className="text-left max-w-xl">
-            <span className="text-secondary font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
+            <span className="text-[#D97706] font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
               Student &amp; Parent Voices
             </span>
-            <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-on-surface mb-3">
-              What Our Community Says
+            <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-[#0D47A1] mb-3">
+              What Our <span className="text-[#D97706]">Community</span> Says
             </h2>
-            <p className="text-on-surface-variant font-body text-sm md:text-base leading-relaxed">
+            <p className="text-[#1565C0] font-body text-sm md:text-base leading-relaxed">
               Real feedback from families who have experienced academic transformation with Jitender Sharma.
             </p>
           </div>
@@ -145,9 +145,9 @@ export default function Testimonials() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setModalOpen(true)}
-              className="bg-primary hover:bg-primary-container text-white font-headings font-bold px-5 py-3 rounded-full text-xs flex items-center gap-2 shadow-premium hover:shadow-glow-primary active:scale-95 shadow-tactile-btn transition-all"
+              className="bg-[#0D47A1] hover:bg-[#1565C0] text-white font-headings font-bold px-5 py-3 rounded-full text-xs flex items-center gap-2 shadow-premium active:scale-95 transition-all duration-300 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">rate_review</span>
+              <span className="material-symbols-outlined text-[18px] text-white">rate_review</span>
               + Share Your Feedback
             </button>
 
@@ -157,7 +157,7 @@ export default function Testimonials() {
                   prev();
                   resetAutoplay();
                 }}
-                className="w-11 h-11 rounded-full border border-outline-variant/30 hover:bg-white flex items-center justify-center transition-all focus:outline-none hover:shadow-premium active:scale-95 bg-white text-secondary"
+                className="w-11 h-11 rounded-full border border-[#90CAF9]/50 hover:bg-[#E3F2FD] flex items-center justify-center transition-all duration-200 focus:outline-none shadow-premium active:scale-95 bg-white text-[#1976D2] hover:text-[#0D47A1] cursor-pointer"
                 aria-label="Previous Testimonial"
               >
                 <span className="material-symbols-outlined">arrow_back</span>
@@ -167,7 +167,7 @@ export default function Testimonials() {
                   next();
                   resetAutoplay();
                 }}
-                className="w-11 h-11 rounded-full border border-outline-variant/30 hover:bg-white flex items-center justify-center transition-all focus:outline-none hover:shadow-premium active:scale-95 bg-white text-secondary"
+                className="w-11 h-11 rounded-full border border-[#90CAF9]/50 hover:bg-[#E3F2FD] flex items-center justify-center transition-all duration-200 focus:outline-none shadow-premium active:scale-95 bg-white text-[#1976D2] hover:text-[#0D47A1] cursor-pointer"
                 aria-label="Next Testimonial"
               >
                 <span className="material-symbols-outlined">arrow_forward</span>
@@ -184,33 +184,29 @@ export default function Testimonials() {
           >
             {feedbacks.map((t, idx) => (
               <div key={t._id || t.id || idx} className="w-full md:w-1/2 lg:w-1/3 px-3 shrink-0">
-                <div className="bg-white rounded-2xl p-6 shadow-premium border border-outline-variant/15 flex flex-col justify-between h-80 hover:shadow-premium-hover hover:-translate-y-1 transition-all duration-300">
+                <div className="bg-white rounded-2xl p-6 shadow-premium border border-[#90CAF9]/30 flex flex-col justify-between h-80 hover:shadow-premium-hover hover:-translate-y-1 transition-all duration-300">
                   <div>
-                    {/* Fixed Star Rating Display */}
-                    <div className="flex text-amber-500 gap-0.5 mb-4">
+                    {/* Star Rating Display */}
+                    <div className="flex text-[#D97706] gap-0.5 mb-4">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <span key={i} className={`material-symbols-outlined text-[16px] ${i < (t.stars || 5) ? 'text-amber-500 fill-current' : 'text-slate-200'}`}>
+                        <span key={i} className={`material-symbols-outlined text-[16px] ${i < (t.stars || 5) ? 'text-[#D97706] fill-current' : 'text-[#90CAF9]/40'}`}>
                           star
                         </span>
                       ))}
                     </div>
-                    <p className="text-xs md:text-sm text-on-surface-variant leading-relaxed font-body italic mb-6 line-clamp-4">
+                    <p className="text-xs md:text-sm text-[#1565C0] leading-relaxed font-body italic mb-6 line-clamp-4">
                       "{t.quote}"
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 border-t border-outline-variant/15 pt-4 mt-auto">
+                  <div className="flex items-center gap-3 border-t border-[#90CAF9]/20 pt-4 mt-auto">
                     <div
-                      className={`w-10 h-10 rounded-full ${
-                        t.initialsBg || 'bg-secondary/15'
-                      } flex items-center justify-center font-headings font-bold ${
-                        t.initialsColor || 'text-secondary'
-                      } text-sm`}
+                      className="w-10 h-10 rounded-full bg-[#E3F2FD] text-[#0D47A1] flex items-center justify-center font-headings font-bold text-sm border border-[#90CAF9]/40"
                     >
-                      {t.initials || 'SB'}
+                      {t.initials || (t.name ? t.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'SS')}
                     </div>
                     <div>
-                      <h4 className="font-headings font-bold text-xs text-on-surface">{t.name}</h4>
-                      <p className="text-[11px] text-on-surface-variant font-medium">{t.role}</p>
+                      <h4 className="font-headings font-bold text-xs text-[#0D47A1]">{t.name}</h4>
+                      <p className="text-[11px] text-[#1565C0] font-medium">{t.role}</p>
                     </div>
                   </div>
                 </div>
@@ -226,8 +222,8 @@ export default function Testimonials() {
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to testimonial slide ${i + 1}`}
-              className={`h-2.5 rounded-full transition-all focus:outline-none ${
-                i === currentSlide ? 'bg-secondary w-6' : 'bg-outline-variant/40 w-2.5'
+              className={`h-2.5 rounded-full transition-all duration-300 focus:outline-none cursor-pointer ${
+                i === currentSlide ? 'bg-[#0D47A1] w-6' : 'bg-[#90CAF9]/50 w-2.5 hover:bg-[#90CAF9]'
               }`}
             />
           ))}
@@ -239,23 +235,23 @@ export default function Testimonials() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             onClick={() => setModalOpen(false)}
-            className="fixed inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-[#0D1B2A]/50 backdrop-blur-sm transition-opacity"
           />
 
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-premium border border-outline-variant/15 p-6 relative z-10 overflow-hidden animate-fadeIn font-body">
-            <div className="flex items-center justify-between border-b border-outline-variant/15 pb-4 mb-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-premium border border-[#90CAF9]/30 p-6 relative z-10 overflow-hidden animate-fadeIn font-body">
+            <div className="flex items-center justify-between border-b border-[#90CAF9]/30 pb-4 mb-4">
               <div>
-                <h3 className="font-headings font-extrabold text-lg text-secondary">
-                  Submit Student / Parent Feedback
+                <h3 className="font-headings font-extrabold text-lg text-[#0D47A1]">
+                  Submit Student / Parent <span className="text-[#D97706]">Feedback</span>
                 </h3>
-                <p className="text-xs text-on-surface-variant">
+                <p className="text-xs text-[#1565C0]">
                   Share your experience with Saumyaa Studies
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container"
+                className="p-1 rounded-lg text-[#1976D2] hover:bg-[#E3F2FD] transition-colors duration-200 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
@@ -263,7 +259,7 @@ export default function Testimonials() {
 
             <form onSubmit={handleFeedbackSubmit} className="space-y-4 text-xs">
               <div className="flex flex-col gap-1">
-                <label className="font-headings font-bold text-on-surface-variant">
+                <label className="font-headings font-bold text-[#0D1B2A]">
                   Your Full Name *
                 </label>
                 <input
@@ -272,12 +268,12 @@ export default function Testimonials() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Sneha Sharma / Mr. Rajesh Gupta"
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-on-surface"
+                  className="px-3.5 py-2.5 rounded-xl border border-[#90CAF9]/50 bg-[#E3F2FD]/50 text-xs font-semibold text-[#0D1B2A] focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 transition-all duration-200"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-headings font-bold text-on-surface-variant">
+                <label className="font-headings font-bold text-[#0D1B2A]">
                   Role / Class Batch *
                 </label>
                 <input
@@ -286,12 +282,12 @@ export default function Testimonials() {
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   placeholder="e.g. Class 10th Student or Parent of Grade 9 Student"
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-semibold text-on-surface"
+                  className="px-3.5 py-2.5 rounded-xl border border-[#90CAF9]/50 bg-[#E3F2FD]/50 text-xs font-semibold text-[#0D1B2A] focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 transition-all duration-200"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-headings font-bold text-on-surface-variant">
+                <label className="font-headings font-bold text-[#0D1B2A]">
                   Rating *
                 </label>
                 <div className="flex gap-2 items-center">
@@ -300,21 +296,21 @@ export default function Testimonials() {
                       key={starVal}
                       type="button"
                       onClick={() => setStars(starVal)}
-                      className={`p-0.5 transition-transform ${
-                        starVal <= stars ? 'text-amber-500 scale-105' : 'text-slate-300 hover:text-amber-300'
+                      className={`p-0.5 transition-transform duration-200 cursor-pointer ${
+                        starVal <= stars ? 'text-[#D97706] scale-105' : 'text-[#90CAF9]/40 hover:text-[#D97706]'
                       }`}
                     >
                       <span className="material-symbols-outlined text-[22px]">star</span>
                     </button>
                   ))}
-                  <span className="text-xs font-bold text-secondary ml-2">
+                  <span className="text-xs font-bold text-[#D97706] ml-2">
                     {stars} / 5 Stars
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-headings font-bold text-on-surface-variant">
+                <label className="font-headings font-bold text-[#0D1B2A]">
                   Your Feedback / Experience *
                 </label>
                 <textarea
@@ -323,22 +319,22 @@ export default function Testimonials() {
                   value={quote}
                   onChange={(e) => setQuote(e.target.value)}
                   placeholder="Write your review about the teaching methodology, conceptual clarity, or results..."
-                  className="px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs font-body text-on-surface"
+                  className="px-3.5 py-2.5 rounded-xl border border-[#90CAF9]/50 bg-[#E3F2FD]/50 text-xs font-body text-[#0D1B2A] focus:border-[#0D47A1] focus:ring-1 focus:ring-[#0D47A1]/20 transition-all duration-200"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/15">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#90CAF9]/20">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-outline-variant/30 text-xs font-headings font-bold"
+                  className="px-4 py-2 rounded-full border border-[#90CAF9]/50 text-xs font-headings font-bold text-[#1976D2] hover:text-[#0D47A1] transition-colors duration-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="bg-primary hover:bg-primary-container text-white px-5 py-2 rounded-full text-xs font-headings font-bold transition-all shadow-tactile-btn shadow-premium flex items-center gap-1.5"
+                  className="bg-[#0D47A1] hover:bg-[#1565C0] text-white px-5 py-2 rounded-full text-xs font-headings font-bold transition-all duration-300 shadow-premium flex items-center gap-1.5 cursor-pointer"
                 >
                   {submitting ? 'Submitting...' : 'Post Review'}
                 </button>

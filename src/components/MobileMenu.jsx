@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const links = [
   { href: '#', label: 'Home' },
   { href: '#about', label: 'About Founder' },
   { href: '#courses', label: 'Academic Programs' },
-  { href: '#admission-process', label: 'Admission / Joining Process' },
+  { href: '#admission-process', label: 'Admission Process' },
   { href: '#faculty', label: 'Faculty Roster' },
   { href: '#alumni', label: 'Proud Alumni' },
   { href: '#results', label: 'Wall of Excellence' },
@@ -15,6 +16,7 @@ const links = [
 
 export default function MobileMenu({ open, onClose, onOpenBooking }) {
   const [animateIn, setAnimateIn] = useState(false);
+  const { user, isAuthenticated, isAdmin, isFaculty, logout } = useAuth();
 
   useEffect(() => {
     if (open) {
@@ -23,6 +25,12 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
     }
     setAnimateIn(false);
   }, [open]);
+
+  const getDashboardPath = () => {
+    if (isAdmin) return '/admin';
+    if (isFaculty) return '/faculty/dashboard';
+    return '/student/dashboard';
+  };
 
   if (!open && !animateIn) return null;
 
@@ -35,7 +43,7 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
       {/* Dark overlay backdrop */}
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-inverse-surface/50 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-[#0D1B2A]/50 backdrop-blur-sm transition-opacity duration-300 ${
           animateIn ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -46,23 +54,23 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
           animateIn ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="w-80 max-w-[85vw] bg-surface shadow-2xl flex flex-col justify-between py-6 px-6 relative h-full overflow-y-auto">
+        <div className="w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col justify-between py-6 px-6 relative h-full overflow-y-auto border-l border-[#90CAF9]/30">
           {/* Top Header inside Drawer */}
           <div>
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-surface-container-high">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#90CAF9]/30">
               <div className="flex items-center gap-2.5">
                 <img
                   src="/logo.jpg"
                   alt="Saumyaa Studies Logo"
-                  className="w-9 h-9 object-contain rounded-xl shadow-sm bg-white p-0.5"
+                  className="w-9 h-9 object-contain rounded-xl shadow-md bg-white p-0.5 border border-[#90CAF9]/30"
                 />
-                <span className="font-headings font-extrabold text-lg text-secondary tracking-tight">
+                <span className="font-headings font-extrabold text-lg text-[#0D47A1] tracking-tight">
                   Saumyaa Studies
                 </span>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                className="p-2 rounded-xl text-[#1976D2] hover:bg-[#BBDEFB]/20 transition-colors duration-200"
                 aria-label="Close Menu"
               >
                 <span className="material-symbols-outlined text-[24px]">close</span>
@@ -70,75 +78,81 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
             </div>
 
             {/* Navigation Links */}
-            <div className="flex flex-col space-y-2 font-headings text-base font-semibold">
-              {links.map((link) => {
-                if (link.isRoute) {
-                  return (
-                    <Link
-                      key={link.label}
-                      to={link.to}
-                      onClick={onClose}
-                      className={`py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-between ${
-                        link.highlight
-                          ? 'bg-primary/10 text-primary font-extrabold border border-primary/20 shadow-sm'
-                          : 'hover:bg-surface-container-low hover:text-primary'
-                      }`}
-                    >
-                      <span>{link.label}</span>
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </Link>
-                  );
-                }
-                return (
-                  <a
-                    key={link.label}
-                    onClick={onClose}
-                    href={link.href}
-                    className="py-2.5 px-3.5 rounded-xl hover:bg-surface-container-low hover:text-primary transition-all text-on-surface"
-                  >
-                    {link.label}
-                  </a>
-                );
-              })}
+            <div className="flex flex-col space-y-1.5 font-headings text-sm font-semibold">
+              {links.map((link) => (
+                <a
+                  key={link.label}
+                  onClick={onClose}
+                  href={link.href}
+                  className="py-2.5 px-3.5 rounded-xl hover:bg-[#BBDEFB]/20 hover:text-[#0D47A1] transition-colors duration-200 text-[#0D1B2A] flex items-center justify-between"
+                >
+                  <span>{link.label}</span>
+                  <span className="material-symbols-outlined text-[16px] text-[#90CAF9]">chevron_right</span>
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Bottom Actions Section */}
-          <div className="border-t border-surface-container-high pt-5 mt-6 flex flex-col gap-2.5 shrink-0">
-            <Link
-              to="/faculty-application"
-              onClick={onClose}
-              className="w-full bg-gradient-to-r from-secondary to-primary text-white text-center py-3 rounded-xl font-headings font-bold hover:opacity-95 transition-all text-xs flex items-center justify-center gap-2 shadow-md"
-            >
-              <span className="material-symbols-outlined text-[18px]">work</span>
-              Join as Faculty (Apply Now)
-            </Link>
+          <div className="border-t border-[#90CAF9]/30 pt-5 mt-6 flex flex-col gap-2.5 shrink-0">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to={getDashboardPath()}
+                  onClick={onClose}
+                  className="w-full bg-[#D97706] hover:bg-[#B45309] text-white text-center py-3 rounded-xl font-headings font-bold transition-all duration-300 text-xs flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  Go to {isAdmin ? 'Admin Portal' : isFaculty ? 'Faculty Panel' : 'Student Dashboard'}
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    onClose();
+                  }}
+                  className="w-full border border-red-200 text-red-600 hover:bg-red-50 text-center py-2.5 rounded-xl font-headings font-bold transition-colors duration-200 text-xs flex items-center justify-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">logout</span>
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/student-application"
+                    onClick={onClose}
+                    className="bg-[#BBDEFB]/40 border border-[#90CAF9]/50 text-[#0D47A1] text-center py-2.5 rounded-xl font-headings font-bold hover:bg-[#BBDEFB]/60 transition-colors text-xs flex items-center justify-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[15px] text-[#1976D2]">school</span> Apply
+                  </Link>
+                  <Link
+                    to="/faculty-application"
+                    onClick={onClose}
+                    className="border border-[#90CAF9]/50 text-[#1976D2] text-center py-2.5 rounded-xl font-headings font-bold hover:bg-[#BBDEFB]/20 transition-colors text-xs flex items-center justify-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[15px] text-[#1976D2]">work</span> Faculty
+                  </Link>
+                </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                to="/login"
-                onClick={onClose}
-                className="border border-secondary text-secondary text-center py-2.5 rounded-xl font-headings font-bold hover:bg-secondary/10 transition-colors text-xs flex items-center justify-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">login</span> Login
-              </Link>
-              <Link
-                to="/signup"
-                onClick={onClose}
-                className="bg-secondary text-white text-center py-2.5 rounded-xl font-headings font-bold hover:bg-on-secondary-fixed-variant transition-colors text-xs flex items-center justify-center gap-1 shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[16px]">person_add</span> Sign Up
-              </Link>
-            </div>
+                <Link
+                  to="/login"
+                  onClick={onClose}
+                  className="w-full bg-[#0D47A1] text-white text-center py-2.5 rounded-xl font-headings font-extrabold hover:bg-[#1565C0] transition-colors duration-200 text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[16px]">login</span> Login
+                </Link>
+              </>
+            )}
 
             <button
               onClick={() => {
                 onClose();
                 onOpenBooking();
               }}
-              className="w-full bg-primary text-white text-center py-2.5 rounded-xl font-headings font-bold shadow-premium shadow-tactile-btn hover:bg-primary-container transition-colors text-xs flex items-center justify-center gap-1"
+              className="w-full bg-[#0D47A1] text-white hover:bg-[#1565C0] text-center py-2.5 rounded-xl font-headings font-bold shadow-sm transition-colors duration-200 text-xs flex items-center justify-center gap-1 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">event_available</span>
+              <span className="material-symbols-outlined text-[16px] text-white">event_available</span>
               Book a Free Demo
             </button>
           </div>
@@ -147,3 +161,4 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
     </div>
   );
 }
+
