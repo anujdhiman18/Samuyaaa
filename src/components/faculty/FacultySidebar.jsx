@@ -63,7 +63,7 @@ export default function FacultySidebar({ mobileOpen, onCloseMobile }) {
           {/* Brand Header */}
           <div className="h-20 px-5 flex flex-col justify-center border-b border-outline-variant/15">
             <div className="flex items-center justify-between">
-              <Link to="/faculty" className="flex items-center gap-2.5 group">
+              <Link to="/faculty/dashboard" className="flex items-center gap-2.5 group">
                 <img
                   src="/logo.jpg"
                   alt="Saumyaa Faculty Logo"

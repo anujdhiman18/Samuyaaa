@@ -146,7 +146,9 @@ export default function App() {
                   <Route path="/programs" element={<CoursesPage />} />
                   <Route path="/admissions" element={<AdmissionsPage />} />
                   <Route path="/admission-process" element={<AdmissionsPage />} />
-                  <Route path="/faculty" element={<FacultyPage />} />
+                  <Route path="/our-faculty" element={<FacultyPage />} />
+                  <Route path="/faculty-team" element={<FacultyPage />} />
+                  <Route path="/faculty-members" element={<FacultyPage />} />
                   <Route path="/alumni" element={<AlumniPage />} />
                   <Route path="/results" element={<ResultsPage />} />
                   <Route path="/toppers" element={<ResultsPage />} />
@@ -169,6 +171,7 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/faculty-login" element={<FacultyLogin />} />
+                <Route path="/faculty/login" element={<FacultyLogin />} />
 
                 {/* Faculty Portal Shell (/faculty/*) */}
                 <Route

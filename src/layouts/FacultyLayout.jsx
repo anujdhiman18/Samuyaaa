@@ -21,7 +21,7 @@ export default function FacultyLayout() {
 
   // STRICT ROLE-BASED ACCESS CONTROL (RBAC)
   if (!isAuthenticated || !isFaculty) {
-    return <Navigate to="/faculty/login" replace />;
+    return <Navigate to="/faculty-login" replace />;
   }
 
   return (

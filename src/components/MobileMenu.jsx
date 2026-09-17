@@ -6,7 +6,7 @@ const links = [
   { to: '/', label: 'Home Overview' },
   { to: '/about', label: 'About Founder & Vision' },
   { to: '/courses', label: 'Academic Programs (S1-S4)' },
-  { to: '/faculty', label: 'Faculty Roster' },
+  { to: '/our-faculty', label: 'Faculty Roster' },
   { to: '/alumni', label: 'Proud Alumni' },
   { to: '/results', label: 'Wall of Excellence' },
   { to: '/contact', label: 'Contact & Centers' },

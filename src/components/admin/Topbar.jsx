@@ -56,7 +56,7 @@ export default function Topbar({ onToggleMobile }) {
       {/* Right Controls: Faculty Shortcut, Admin Profile */}
       <div className="flex items-center gap-3">
         <Link
-          to="/faculty"
+          to="/faculty/dashboard"
           className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-headings font-bold text-xs transition-colors"
           title="Switch to Faculty Portal"
         >

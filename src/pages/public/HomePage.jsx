@@ -299,7 +299,7 @@ export default function HomePage() {
 
           <div className="flex flex-wrap gap-3 shrink-0">
             <Link
-              to="/faculty"
+              to="/our-faculty"
               className="px-5 py-2.5 rounded-full bg-white text-[#0D47A1] hover:bg-[#E3F2FD] font-headings font-bold text-xs shadow-md transition-all"
             >
               Faculty Directory

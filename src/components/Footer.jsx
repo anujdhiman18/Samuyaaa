@@ -66,7 +66,7 @@ export default function Footer() {
               { to: '/about', label: 'About Founder & Vision' },
               { to: '/courses', label: 'Academic Programs (S1-S4)' },
               { to: '/admissions', label: 'Admission / Joining Process' },
-              { to: '/faculty', label: 'Faculty Directory' },
+              { to: '/our-faculty', label: 'Faculty Directory' },
               { to: '/alumni', label: 'Proud Alumni Network' },
               { to: '/results', label: 'Wall of Excellence' },
               { to: '/testimonials', label: 'Student Testimonials' },
