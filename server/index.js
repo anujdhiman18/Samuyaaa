@@ -115,7 +115,15 @@ process.on('unhandledRejection', (reason) => {
 
 // Database Connection & Server Listener with Port Conflict Protection
 mongoose
-  .connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+  .connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,  // 10s to find server
+    socketTimeoutMS: 45000,           // 45s socket timeout
+    connectTimeoutMS: 10000,          // 10s connection timeout
+    maxPoolSize: 10,                  // Connection pool — parallel queries fast
+    minPoolSize: 2,                   // Keep 2 connections warm always
+    heartbeatFrequencyMS: 10000,      // Heartbeat to keep Atlas alive
+    retryWrites: true,
+  })
   .then(() => {
     console.log(`✅ Connected to MongoDB database: ${MONGO_URI}`);
     startServer();

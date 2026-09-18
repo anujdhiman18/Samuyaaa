@@ -301,7 +301,7 @@ export default function StudentManagement() {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const data = await studentService.getStudents({ limit: 200 });
+      const data = await studentService.getStudents({ limit: 500 });
       if (data && data.students) {
         setStudents(data.students);
       }

@@ -54,7 +54,7 @@ export const apiCall = async (endpoint, options = {}) => {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s — handles MongoDB Atlas cold start
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
@@ -1188,8 +1188,8 @@ export const studentService = {
     const remote = await apiCall(`/students?${query}`);
     if (remote) return remote;
 
-    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
-    let list = fsStudents || getStoredStudents();
+    // Fallback to localStorage if server unreachable
+    let list = getStoredStudents();
 
     if (params.className && params.className !== 'All') {
       list = list.filter((s) => isExactClassMatch(s.className, params.className));
@@ -1214,8 +1214,8 @@ export const studentService = {
     const remote = await apiCall(`/students/${id}`);
     if (remote) return remote;
 
-    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
-    const students = fsStudents || getStoredStudents();
+    // Fallback to localStorage if server unreachable
+    const students = getStoredStudents();
     const student = students.find((s) => String(s._id) === String(id) || String(s.id) === String(id));
     if (!student || deletedIds.includes(String(student._id)) || deletedIds.includes(String(student.id))) {
       return { success: false, student: null };
@@ -2956,16 +2956,10 @@ export const dashboardService = {
     const remote = await apiCall('/dashboard/stats');
     if (remote) return remote;
 
-    const fsStudents = await syncFirestoreCollection('students', initialMockStudents);
-    const students = fsStudents || getStoredStudents();
-    if (fsStudents) setStoredStudents(fsStudents, true);
-
-    const fsSubjects = await syncFirestoreCollection('subjects', []);
-    const subjects = fsSubjects || getStoredSubjects();
-
-    const fsPayments = await syncFirestoreCollection('fees', initialMockPayments);
-    const rawPayments = fsPayments || getStoredPayments();
-    if (fsPayments) setStoredPayments(rawPayments, true);
+    // Fallback: instant localStorage read (no async Firestore calls)
+    const students = getStoredStudents();
+    const subjects = getStoredSubjects();
+    const rawPayments = getStoredPayments();
 
     const validStudentIds = new Set(students.map((s) => String(s._id || s.id)));
     const payments = rawPayments.filter((p) => validStudentIds.has(String(p.student?._id || p.student)));

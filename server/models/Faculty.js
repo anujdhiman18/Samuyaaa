@@ -122,7 +122,7 @@ const facultySchema = new mongoose.Schema(
 // Indexes for fast admin queries
 facultySchema.index({ is_active: 1 });
 facultySchema.index({ branch: 1, branchId: 1 });
-facultySchema.index({ email: 1 });
+// Note: email index auto-created by unique:true in schema field — no duplicate needed
 
 const Faculty = mongoose.models.Faculty || mongoose.model('Faculty', facultySchema);
 export default Faculty;
