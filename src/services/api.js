@@ -4402,6 +4402,8 @@ export const demoBookingService = {
       facultyMentor: formData.facultyMentor || 'Jitender Sharma',
       meetingMode: formData.meetingMode || 'Offline Classroom',
       adminNotes: formData.adminNotes || '',
+      paymentScreenshot: formData.paymentScreenshot || '',
+      paymentVerified: formData.paymentVerified || false,
       submittedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -4540,6 +4542,29 @@ export const demoBookingService = {
     const res = await studentService.createStudent(newStudentData);
     await demoBookingService.updateBookingStatus(booking._id || booking.id, 'Enrolled', 'Converted into enrolled regular student.');
     return res;
+  },
+
+  verifyPayment: async (id, verified = true) => {
+    if (!id) throw new Error('Booking ID is required');
+    const targetStr = String(id);
+    const currentList = getStoredDemoBookings();
+    const idx = currentList.findIndex(b => String(b._id) === targetStr || String(b.id) === targetStr || String(b.bookingId) === targetStr);
+    if (idx === -1) throw new Error('Booking not found');
+
+    currentList[idx].paymentVerified = verified;
+    currentList[idx].paymentVerifiedAt = verified ? new Date().toISOString() : null;
+    currentList[idx].updatedAt = new Date().toISOString();
+
+    setStoredDemoBookings([...currentList]);
+    notifyDataUpdate();
+
+    try {
+      await setDoc(doc(db, 'demo_bookings', targetStr), { paymentVerified: verified, paymentVerifiedAt: currentList[idx].paymentVerifiedAt, updatedAt: currentList[idx].updatedAt }, { merge: true });
+    } catch (fsErr) {
+      console.warn('Firestore update payment verification err:', fsErr.message);
+    }
+
+    return { success: true, booking: currentList[idx], message: verified ? 'Payment verified successfully.' : 'Payment verification removed.' };
   }
 };
 

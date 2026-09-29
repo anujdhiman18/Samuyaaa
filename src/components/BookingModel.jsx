@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { subjectService, demoBookingService, getStoredSubjects } from '../services/api.js';
+import { uploadFile } from '../fileUpload.js';
 
 export default function BookingModal({ open, prefilledProgram, onClose }) {
   const [animateIn, setAnimateIn] = useState(false);
@@ -23,6 +24,15 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
   const [parentEmail, setParentEmail] = useState('');
   const [branch, setBranch] = useState('Main Center (Bagru)');
 
+  // Payment screenshot state
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null); // base64 data URL
+  const [screenshotFile, setScreenshotFile] = useState(null);
+  const [screenshotError, setScreenshotError] = useState('');
+  const [screenshotPreview, setScreenshotPreview] = useState('');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef(null);
+
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,6 +55,11 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       fetchLiveSubjects();
       setSubmitted(false);
       setSubmitting(false);
+      setPaymentScreenshot(null);
+      setScreenshotFile(null);
+      setScreenshotError('');
+      setScreenshotPreview('');
+      setUploadProgress(0);
 
       const t = setTimeout(() => setAnimateIn(true), 10);
       return () => clearTimeout(t);
@@ -52,6 +67,69 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       setAnimateIn(false);
     }
   }, [open]);
+
+  // Handle screenshot file validation & preview
+  const handleScreenshotFile = useCallback(async (file) => {
+    setScreenshotError('');
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const maxSizeMB = 5;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      setScreenshotError('Invalid file type. Please upload a JPG, JPEG, or PNG image.');
+      setScreenshotFile(null);
+      setScreenshotPreview('');
+      setPaymentScreenshot(null);
+      return;
+    }
+
+    if (file.size > maxSizeBytes) {
+      setScreenshotError(`File size exceeds ${maxSizeMB}MB. Please upload a smaller image.`);
+      setScreenshotFile(null);
+      setScreenshotPreview('');
+      setPaymentScreenshot(null);
+      return;
+    }
+
+    setScreenshotFile(file);
+    setUploadProgress(10);
+    try {
+      const dataUrl = await uploadFile(file, 'payment_screenshots', (p) => setUploadProgress(p));
+      setPaymentScreenshot(dataUrl);
+      setScreenshotPreview(dataUrl);
+      setUploadProgress(100);
+    } catch (err) {
+      setScreenshotError('Failed to process the image. Please try again.');
+      setPaymentScreenshot(null);
+      setScreenshotPreview('');
+    }
+  }, []);
+
+  const handleFileInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleScreenshotFile(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleScreenshotFile(file);
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setIsDraggingOver(true); };
+  const handleDragLeave = () => setIsDraggingOver(false);
+
+  const handleRemoveScreenshot = () => {
+    setPaymentScreenshot(null);
+    setScreenshotFile(null);
+    setScreenshotPreview('');
+    setScreenshotError('');
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Handle prefilled subject from course card click
   useEffect(() => {
@@ -419,6 +497,12 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       alert('Please fill out Student Name and Parent Phone Number.');
       return;
     }
+    if (!paymentScreenshot) {
+      setScreenshotError('Please upload your payment screenshot to proceed.');
+      const el = document.getElementById('payment-screenshot-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     setSubmitting(true);
 
@@ -433,6 +517,8 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
         category: selectedCategory,
         class: selectedClass,
         batchTime: autoBatchTimeText || 'To Be Assigned',
+        paymentScreenshot: paymentScreenshot || '',
+        paymentVerified: false,
       });
     } catch (saveErr) {
       console.warn('Error saving demo booking to service:', saveErr);
@@ -713,6 +799,126 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                     <option value="Branch (Daroh)">Branch (Daroh)</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            {/* Payment Screenshot Upload */}
+            <div id="payment-screenshot-section" className="pt-3 border-t border-outline-variant/15 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-on-surface flex items-center gap-1">
+                  Payment Screenshot
+                  <span className="text-rose-500 font-extrabold ml-0.5">*</span>
+                </label>
+                <span className="text-[10px] text-on-surface-variant font-medium bg-surface-container px-2 py-0.5 rounded-full">
+                  JPG, JPEG, PNG &middot; Max 5MB
+                </span>
+              </div>
+
+              {/* Drop Zone / Preview */}
+              {!screenshotPreview ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={`relative flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 select-none ${
+                    isDraggingOver
+                      ? 'border-primary bg-primary/5 scale-[1.01]'
+                      : screenshotError
+                      ? 'border-rose-400 bg-rose-50/40'
+                      : 'border-outline-variant/50 bg-surface-container-lowest hover:border-primary/50 hover:bg-primary/3'
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[32px] transition-colors ${
+                      isDraggingOver ? 'text-primary' : screenshotError ? 'text-rose-400' : 'text-on-surface-variant/50'
+                    }`}
+                  >
+                    upload_file
+                  </span>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-on-surface">
+                      {isDraggingOver ? 'Drop your screenshot here' : 'Click to upload or drag & drop'}
+                    </p>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      Payment receipt / UPI / bank transfer screenshot
+                    </p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+                </div>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden border border-outline-variant/30 shadow-sm bg-surface-container-lowest group">
+                  <img
+                    src={screenshotPreview}
+                    alt="Payment Screenshot Preview"
+                    className="w-full max-h-48 object-contain"
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-secondary text-[11px] font-bold shadow-md hover:bg-surface-container transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveScreenshot}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold shadow-md hover:bg-rose-600 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                      Remove
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+                  <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-inverse-surface/70 backdrop-blur-sm text-[10px] font-semibold text-white truncate max-w-[180px]">
+                    {screenshotFile?.name}
+                  </div>
+                  <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm">
+                    <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                    Uploaded
+                  </div>
+                </div>
+              )}
+
+              {/* Upload progress bar */}
+              {screenshotFile && uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="w-full bg-outline-variant/20 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+
+              {/* Error message */}
+              {screenshotError && (
+                <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1.5 bg-rose-50 px-3 py-2 rounded-lg border border-rose-200">
+                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  {screenshotError}
+                </p>
+              )}
+
+              {/* Fee Adjustment Notice */}
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/70">
+                <span className="material-symbols-outlined text-[16px] text-amber-600 mt-0.5 shrink-0">info</span>
+                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                  <strong className="font-bold text-amber-900">Note:</strong> If you continue with the course after the demo classes, the demo class fee will be adjusted against your course fees.
+                </p>
               </div>
             </div>
 

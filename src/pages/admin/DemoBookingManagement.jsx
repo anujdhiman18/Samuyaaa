@@ -81,6 +81,11 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
 
+  // Payment screenshot lightbox
+  const [screenshotModalOpen, setScreenshotModalOpen] = useState(false);
+  const [screenshotBooking, setScreenshotBooking] = useState(null);
+  const [verifyingId, setVerifyingId] = useState(null);
+
   useEffect(() => {
     fetchBookings();
     fetchFacultyAndSubjects();
@@ -131,7 +136,9 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
     const scheduled = bookings.filter((b) => b.status === 'Scheduled').length;
     const completed = bookings.filter((b) => b.status === 'Completed').length;
     const enrolled = bookings.filter((b) => b.status === 'Enrolled').length;
-    return { total, pending, scheduled, completed, enrolled };
+    const paymentVerified = bookings.filter((b) => b.paymentVerified === true).length;
+    const pendingVerification = bookings.filter((b) => b.paymentScreenshot && !b.paymentVerified).length;
+    return { total, pending, scheduled, completed, enrolled, paymentVerified, pendingVerification };
   }, [bookings]);
 
   // Filtered dataset
@@ -305,6 +312,30 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
     }
   };
 
+  // Handle Payment Verification
+  const handleVerifyPayment = async (booking, verified) => {
+    const id = booking._id || booking.id;
+    setVerifyingId(id);
+    try {
+      await demoBookingService.verifyPayment(id, verified);
+      addToast(
+        verified
+          ? `Payment verified for ${booking.studentName}.`
+          : `Payment verification removed for ${booking.studentName}.`,
+        verified ? 'success' : 'info'
+      );
+      fetchBookings();
+      // Update screenshotBooking if modal is open
+      if (screenshotBooking && (screenshotBooking._id === id || screenshotBooking.id === id)) {
+        setScreenshotBooking((prev) => ({ ...prev, paymentVerified: verified, paymentVerifiedAt: verified ? new Date().toISOString() : null }));
+      }
+    } catch (err) {
+      addToast('Failed to update payment verification: ' + err.message, 'error');
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
   // Quick WhatsApp helper
   const getWhatsAppLink = (booking) => {
     const cleanPhone = (booking.parentPhone || '').replace(/[^0-9]/g, '');
@@ -401,7 +432,7 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
       </div>
 
       {/* 2. Metric KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Total Bookings</p>
@@ -442,13 +473,26 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
           </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center justify-between col-span-2 lg:col-span-1">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wider">Converted Enrolled</p>
             <p className="font-headings font-extrabold text-2xl text-purple-600 mt-0.5">{metrics.enrolled}</p>
           </div>
           <span className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">school</span>
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wider">Payments Verified</p>
+            <p className="font-headings font-extrabold text-2xl text-teal-600 mt-0.5">{metrics.paymentVerified}</p>
+            {metrics.pendingVerification > 0 && (
+              <p className="text-[10px] text-amber-600 font-semibold mt-0.5">{metrics.pendingVerification} pending</p>
+            )}
+          </div>
+          <span className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[20px]">verified</span>
           </span>
         </div>
       </div>
@@ -652,6 +696,43 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
                     <strong className="not-italic text-secondary font-bold">Admin Note:</strong> "{b.adminNotes}"
                   </p>
                 )}
+
+                {/* Payment Screenshot & Verification Status */}
+                {b.paymentScreenshot && (
+                  <div className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border text-xs ${
+                    b.paymentVerified
+                      ? 'bg-teal-50/70 border-teal-200/60'
+                      : 'bg-amber-50/70 border-amber-200/60'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`material-symbols-outlined text-[16px] ${
+                        b.paymentVerified ? 'text-teal-600' : 'text-amber-600'
+                      }`}>
+                        {b.paymentVerified ? 'verified' : 'pending_actions'}
+                      </span>
+                      <span className={`font-semibold ${
+                        b.paymentVerified ? 'text-teal-800' : 'text-amber-800'
+                      }`}>
+                        Payment Screenshot
+                        {b.paymentVerified
+                          ? ' — Verified'
+                          : ' — Pending Verification'}
+                      </span>
+                      {b.paymentVerifiedAt && (
+                        <span className="text-[10px] text-teal-600 font-medium">
+                          {new Date(b.paymentVerifiedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setScreenshotBooking(b); setScreenshotModalOpen(true); }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-outline-variant/30 text-[11px] font-bold text-secondary hover:bg-surface-container hover:border-primary/30 transition-colors cursor-pointer shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[14px] text-primary">image_search</span>
+                      View Screenshot
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Quick Action Buttons */}
@@ -680,6 +761,23 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
 
                 {/* Secondary Quick Contact Tools */}
                 <div className="flex items-center gap-1">
+                  {/* Payment Verification Quick Action */}
+                  {b.paymentScreenshot && (
+                    <button
+                      onClick={() => handleVerifyPayment(b, !b.paymentVerified)}
+                      disabled={verifyingId === (b._id || b.id)}
+                      title={b.paymentVerified ? 'Unmark payment as verified' : 'Verify payment'}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        b.paymentVerified
+                          ? 'bg-teal-500/10 text-teal-700 hover:bg-teal-500 hover:text-white'
+                          : 'bg-amber-500/10 text-amber-700 hover:bg-amber-500 hover:text-white'
+                      } ${verifyingId === (b._id || b.id) ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {b.paymentVerified ? 'verified' : 'pending_actions'}
+                      </span>
+                    </button>
+                  )}
                   {/* Quick 1-Click Notify Button */}
                   <button
                     onClick={() => handleQuickNotifyStudent(b)}
@@ -1100,6 +1198,92 @@ export default function DemoBookingManagement({ isEmbedded = false }) {
         confirmText="Delete Booking"
         type="danger"
       />
+
+      {/* 9. Payment Screenshot Lightbox Modal */}
+      {screenshotModalOpen && screenshotBooking && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-inverse-surface/70 backdrop-blur-sm"
+          onClick={() => setScreenshotModalOpen(false)}
+        >
+          <div
+            className="bg-white w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/20 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-outline-variant/15 flex items-center justify-between">
+              <div>
+                <h3 className="font-headings font-bold text-base text-secondary">Payment Screenshot</h3>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  {screenshotBooking.studentName} &bull; {screenshotBooking.bookingId}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Payment Verified Badge */}
+                {screenshotBooking.paymentVerified ? (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-700 text-[11px] font-bold border border-teal-300/40">
+                    <span className="material-symbols-outlined text-[14px]">verified</span>
+                    Payment Verified
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 text-[11px] font-bold border border-amber-300/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Awaiting Verification
+                  </span>
+                )}
+                <button
+                  onClick={() => setScreenshotModalOpen(false)}
+                  className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Screenshot */}
+            <div className="p-4 bg-surface-container-lowest">
+              <img
+                src={screenshotBooking.paymentScreenshot}
+                alt="Payment Screenshot"
+                className="w-full rounded-xl object-contain max-h-96 border border-outline-variant/20 shadow-sm"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 py-4 border-t border-outline-variant/15 flex items-center justify-between gap-3">
+              <div className="text-[11px] text-on-surface-variant">
+                Submitted: <strong className="text-secondary">{screenshotBooking.submittedAt ? new Date(screenshotBooking.submittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</strong>
+              </div>
+              <div className="flex gap-2">
+                {screenshotBooking.paymentVerified ? (
+                  <button
+                    onClick={() => handleVerifyPayment(screenshotBooking, false)}
+                    disabled={verifyingId === (screenshotBooking._id || screenshotBooking.id)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-rose-300/60 bg-rose-50 text-rose-700 text-xs font-headings font-bold hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">remove_done</span>
+                    Remove Verification
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleVerifyPayment(screenshotBooking, true)}
+                    disabled={verifyingId === (screenshotBooking._id || screenshotBooking.id)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-teal-600 text-white text-xs font-headings font-bold hover:bg-teal-700 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">verified</span>
+                    {verifyingId === (screenshotBooking._id || screenshotBooking.id) ? 'Verifying...' : 'Verify Payment'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setScreenshotModalOpen(false)}
+                  className="px-4 py-2 rounded-full text-xs font-headings font-bold text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
