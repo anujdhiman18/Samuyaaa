@@ -1269,26 +1269,29 @@ export const studentService = {
       mustChangePassword: true,
     };
 
+    // ── Strictly require backend (MongoDB) to save the student ──────────────
+    // If the API call returns null (network timeout / server unreachable),
+    // we throw an error instead of silently saving to localStorage only.
+    // A localStorage-only save would make the student "disappear" the moment
+    // fetchStudents re-fetches the real list from MongoDB.
     let remoteStudent = null;
     try {
       const remote = await apiCall('/students', { method: 'POST', body: JSON.stringify(payload) });
-      if (remote && remote.student) remoteStudent = remote.student;
-    } catch (e) {
-      if (e.isApiError) {
-        throw e;
+      if (remote && remote.student) {
+        remoteStudent = remote.student;
+      } else if (remote === null) {
+        // apiCall returns null on network/timeout failures — surface this clearly
+        throw new Error('Unable to reach the server. Please check your internet connection or try again in a moment.');
       }
+    } catch (e) {
+      // Re-throw all errors (API errors or network errors)
+      throw e;
     }
 
-    const id = (remoteStudent && (remoteStudent._id || remoteStudent.id)) || ('s_' + Date.now());
-    const newStudent = remoteStudent ? { ...remoteStudent, initialPassword: tempPassword, tempPassword: tempPassword, mustChangePassword: true } : { ...payload, _id: id, id };
+    const id = remoteStudent._id || remoteStudent.id;
+    const newStudent = { ...remoteStudent, initialPassword: tempPassword, tempPassword: tempPassword, mustChangePassword: true };
 
-    // Save to Firebase Firestore DB
-    try {
-      await setDoc(doc(db, 'students', String(id)), newStudent);
-    } catch (fsErr) {
-      console.warn('Firestore setDoc student error:', fsErr.message);
-    }
-
+    // Sync to localStorage cache so the list updates immediately without an extra fetch
     const updatedList = [newStudent, ...list.filter((s) => String(s._id || s.id) !== String(id))];
     setStoredStudents(updatedList);
     return { success: true, student: newStudent, temporaryPassword: tempPassword, message: 'Student registered successfully' };

@@ -304,6 +304,9 @@ export default function StudentManagement() {
       const data = await studentService.getStudents({ limit: 500 });
       if (data && data.students) {
         setStudents(data.students);
+        // Keep localStorage in sync with real MongoDB data
+        const { setStoredStudents } = await import('../../services/api');
+        setStoredStudents(data.students, true);
       }
     } catch (err) {
       console.error('Error fetching students:', err);
