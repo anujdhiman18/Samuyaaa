@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { facultyPanelService, subjectService, getStoredSubjects } from '../../services/api';
-import { sortClassList, DEFAULT_SUBJECTS } from '../../config/classConfig';
+import { sortClassList, DEFAULT_SUBJECTS, getSubjectsForClass, isHomeworkEligibleClass } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
@@ -68,14 +68,23 @@ export default function FacultyAssignments() {
     .filter((s) => !newClass || s.className === newClass || s.className === 'All')
     .map((s) => s.name);
 
+  // Get stage-aware subjects including 'Homework' only for eligible classes (up to 8th)
+  const stageSubjects = getSubjectsForClass(newClass);
+
   let availableSubjects = [];
   if (isAdmin || userSubjects.length === 0) {
-    availableSubjects = Array.from(new Set([...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
+    availableSubjects = Array.from(new Set([...stageSubjects, ...userSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
   } else {
-    availableSubjects = Array.from(new Set(userSubjects));
+    availableSubjects = Array.from(new Set([...stageSubjects, ...userSubjects]));
     if (availableSubjects.length === 0) {
-      availableSubjects = Array.from(new Set([...classSubjects, ...DEFAULT_SUBJECTS]));
+      availableSubjects = Array.from(new Set([...stageSubjects, ...classSubjects, ...DEFAULT_SUBJECTS]));
     }
+  }
+  // Enforce: 'Homework' only shows for classes up to 8th
+  if (!isHomeworkEligibleClass(newClass)) {
+    availableSubjects = availableSubjects.filter((s) => s !== 'Homework');
+  } else if (!availableSubjects.includes('Homework')) {
+    availableSubjects = ['Homework', ...availableSubjects];
   }
 
   const [newSubject, setNewSubject] = useState(() => availableSubjects[0] || 'Mathematics Advanced');

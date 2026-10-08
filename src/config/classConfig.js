@@ -338,6 +338,7 @@ export const STAGE_CLASSES = {
 
 export const STAGE_SUBJECTS = {
   S1: [
+    'Homework',
     'Foundational Mathematics & Mental Math',
     'English Phonics, Reading & Communication',
     'Environmental Studies (EVS) & Young Science',
@@ -372,12 +373,51 @@ export const STAGE_SUBJECTS = {
 };
 
 /**
+ * Classes eligible for the 'Homework' subject option:
+ * - All S1 classes (Nursery to 5th)
+ * - S2 classes up to 8th only (6th, 7th, 8th — NOT 9th or 10th)
+ */
+export const HOMEWORK_ELIGIBLE_CLASSES = [
+  'Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th',
+  '6th', '7th', '8th',
+];
+
+/**
+ * Returns true if the given class is eligible for the 'Homework' subject option.
+ */
+export const isHomeworkEligibleClass = (className) => {
+  if (!className) return false;
+  const trimmed = String(className).trim();
+  if (HOMEWORK_ELIGIBLE_CLASSES.includes(trimmed)) return true;
+  // Stage code S1 directly also qualifies (covers all Nursery–5th)
+  if (normalizeClassCode(trimmed) === 'S1') return true;
+  return false;
+};
+
+/**
  * Get standard list of subjects tailored for an academic category/stage (S1, S2, S3, S4)
  */
 export const getSubjectsForStage = (stageCode) => {
   if (!stageCode) return STAGE_SUBJECTS.S2;
   const code = normalizeClassCode(stageCode);
   return STAGE_SUBJECTS[code] || STAGE_SUBJECTS.S2;
+};
+
+/**
+ * Get subjects for a specific class name.
+ * 'Homework' is included only for classes up to 8th (Nursery–5th and 6th/7th/8th).
+ * Use this instead of getSubjectsForStage when the exact class is known.
+ */
+export const getSubjectsForClass = (className) => {
+  if (!className) return STAGE_SUBJECTS.S2;
+  const stage = normalizeClassCode(className);
+  const baseSubjects = STAGE_SUBJECTS[stage] || STAGE_SUBJECTS.S2;
+  if (isHomeworkEligibleClass(className)) {
+    // Ensure 'Homework' appears first and is never duplicated
+    return ['Homework', ...baseSubjects.filter((s) => s !== 'Homework')];
+  }
+  // Remove 'Homework' from subjects for classes above 8th
+  return baseSubjects.filter((s) => s !== 'Homework');
 };
 
 /**
