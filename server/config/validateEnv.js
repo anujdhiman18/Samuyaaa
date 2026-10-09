@@ -1,7 +1,3 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 export function validateEnv() {
   console.log('--- Environment Configuration Check ---');
   
@@ -30,9 +26,9 @@ export function validateEnv() {
   }
 
   // MongoDB Check
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!mongoUri) {
-    console.log('ℹ️ MongoDB URI not set in .env. Backend will attempt local database connection.');
+    console.log('ℹ️ MongoDB URI not set in environment. Backend will attempt local database connection.');
   } else {
     console.log('✅ MongoDB Database URI: SPECIFIED');
   }

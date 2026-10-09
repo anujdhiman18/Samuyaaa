@@ -51,6 +51,8 @@ export default function Courses({ onOpenBooking }) {
           ? 'science'
           : sName.toLowerCase().includes('bio')
           ? 'biotech'
+          : sName.toLowerCase().includes('homework') || sName.toLowerCase().includes('home work')
+          ? 'assignment'
           : 'school',
         iconBg: 'bg-primary/10',
         iconColor: 'text-primary',
@@ -66,6 +68,7 @@ export default function Courses({ onOpenBooking }) {
     if (activeFilter === 'math') return t.includes('math');
     if (activeFilter === 'science') return t.includes('physic') || t.includes('chem') || t.includes('bio') || t.includes('sci');
     if (activeFilter === 'english') return t.includes('eng') || t.includes('comm');
+    if (activeFilter === 'homework') return t.includes('homework') || t.includes('home work');
     return true;
   });
 

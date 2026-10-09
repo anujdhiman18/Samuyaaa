@@ -37,7 +37,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config();
 
 // Step 1: Startup Environment Validation
 validateEnv();
@@ -91,12 +90,20 @@ app.post('/api/student-leaves', applyStudentLeave);
 app.get('/api/student-leaves', getStudentLeaves);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Health Check Endpoint
+// Health Check Endpoint — exposes real DB connection state for remote diagnosis
 app.get('/api/health', (req, res) => {
+  const dbStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const readyState = mongoose.connection.readyState;
   res.json({
     success: true,
     status: 'OK',
     message: 'Saumyaa Studies API backend is operational',
+    db: {
+      state: dbStates[readyState] || 'unknown',
+      readyState,
+      host: mongoose.connection.host || null,
+      name: mongoose.connection.name || null,
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -129,8 +136,10 @@ mongoose
     startServer();
   })
   .catch((err) => {
-    console.warn(`⚠️ MongoDB Connection Warning: ${err.message}. Backend running in standalone mode on port ${PORT}.`);
-    startServer();
+    console.error(`❌ FATAL: MongoDB connection failed: ${err.message}`);
+    console.error(`   URI attempted: ${MONGO_URI.replace(/:([^@]+)@/, ':<password>@')}`);
+    console.error('🛑 Server will NOT start without a database. Fix MONGODB_URI in your hosting dashboard.');
+    process.exit(1);
   });
 
 import { runClassCategoryMigration } from './migrateClassCategories.js';
@@ -140,6 +149,20 @@ function startServer() {
   runClassCategoryMigration();
   const server = app.listen(PORT, () => {
     console.log(`🚀 Saumyaa Admin & Public Backend running on http://localhost:${PORT}`);
+
+    // Keep-alive ping — prevents Render free tier from sleeping (spins down after 15min idle)
+    const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    setInterval(() => {
+      import('https').then(({ default: https }) => {
+        https.get(`${SELF_URL}/api/health`, (res) => {
+          console.log(`🏓 Keep-alive ping sent → HTTP ${res.statusCode}`);
+        }).on('error', () => {
+          // Silently ignore ping errors (non-critical)
+        });
+      }).catch(() => {
+        // https not available in this context — skip
+      });
+    }, 14 * 60 * 1000); // every 14 minutes
   });
 
   server.on('error', (err) => {

@@ -51,6 +51,19 @@ export const courses = [
     batch: 'Mon-Wed-Fri | 6:30 PM',
     program: 'Senior Chemistry Crackers',
   },
+  {
+    id: 'homework',
+    category: 'homework',
+    icon: 'assignment',
+    iconBg: 'bg-tertiary-fixed',
+    iconColor: 'text-tertiary',
+    title: 'Homework Help',
+    tags: ['Class Nursery - 8', 'All Subjects'],
+    description:
+      'Dedicated homework assistance for young learners from Nursery to Class 8. Our experienced teachers guide students through daily assignments, strengthen foundational concepts, and build independent study habits across all subjects.',
+    batch: 'Mon-Sat | 3:30 PM',
+    program: 'Homework Help (Nursery – Class 8)',
+  },
 ];
 
 export const courseFilters = [
@@ -58,6 +71,7 @@ export const courseFilters = [
   { id: 'math', label: 'Mathematics' },
   { id: 'science', label: 'Sciences & NEET/JEE' },
   { id: 'english', label: 'English & Comm' },
+  { id: 'homework', label: 'Homework Help' },
 ];
 
 export const testimonials = [
@@ -137,6 +151,7 @@ export const subjectOptions = [
   'Senior Physics (IIT-JEE / NEET)',
   'Senior Chemistry Crackers',
   'Mental Ability & Logical Reasoning',
+  'Homework Help (Nursery – Class 8)',
 ];
 
 export const timeSlots = [
