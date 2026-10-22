@@ -9,7 +9,6 @@ const mainNavItems = [
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/profile-requests', label: 'Profile Change Requests', icon: 'edit_attributes' },
   { path: '/admin/roles', label: 'Role Management (RBAC)', icon: 'admin_panel_settings' },
-  { path: '/admin/permissions', label: 'Permission Matrix', icon: 'fact_check' },
   { path: '/admin/activity-logs', label: 'Activity Audit Logs', icon: 'history_toggle_off' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
   { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },

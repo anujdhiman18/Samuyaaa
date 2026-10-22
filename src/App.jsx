@@ -37,7 +37,7 @@ import AttendanceManagement from './pages/admin/AttendanceManagement';
 import SubjectManagement from './pages/admin/SubjectManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import RoleManagement from './pages/admin/RoleManagement';
-import PermissionManagement from './pages/admin/PermissionManagement';
+
 import ActivityLogs from './pages/admin/ActivityLogs';
 import AlumniManagement from './pages/admin/AlumniManagement';
 import ToppersManagement from './pages/admin/ToppersManagement';
@@ -256,7 +256,7 @@ export default function App() {
                   <Route path="faculty" element={<FacultyManagement />} />
                   <Route path="profile-requests" element={<ProfileChangeRequests />} />
                   <Route path="roles" element={<RoleManagement />} />
-                  <Route path="permissions" element={<PermissionManagement />} />
+
                   <Route path="activity-logs" element={<ActivityLogs />} />
                   <Route path="alumni" element={<AlumniManagement />} />
                   <Route path="toppers" element={<ToppersManagement />} />
