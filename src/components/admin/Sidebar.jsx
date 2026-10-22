@@ -7,7 +7,6 @@ const mainNavItems = [
   { path: '/admin', label: 'Dashboard', icon: 'dashboard' },
   { path: '/admin/students', label: 'Students', icon: 'groups' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
-  { path: '/admin/profile-requests', label: 'Profile Change Requests', icon: 'edit_attributes' },
   { path: '/admin/roles', label: 'Permission Matrix', icon: 'fact_check' },
   { path: '/admin/activity-logs', label: 'Activity Audit Logs', icon: 'history_toggle_off' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
@@ -15,7 +14,6 @@ const mainNavItems = [
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
   { path: '/admin/reminders', label: 'Fee Reminders', icon: 'notifications_active' },
   { path: '/admin/sms-logs', label: 'SMS Notification Logs', icon: 'sms' },
-  { path: '/admin/profile', label: 'Admin Profile', icon: 'manage_accounts' },
 ];
 
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
