@@ -36,25 +36,68 @@ const getAuthHeaders = () => {
 
 let lastBackendFailureTime = 0;
 
+let isRefreshingAdminToken = false;
+const ensureAuthToken = async () => {
+  let token = localStorage.getItem('saumyaa_token');
+  if (token) return token;
+
+  const userStr = localStorage.getItem('saumyaa_user') || localStorage.getItem('saumyaa_admin');
+  if (userStr && !isRefreshingAdminToken) {
+    try {
+      isRefreshingAdminToken = true;
+      const user = JSON.parse(userStr);
+      const email = user.email || 'admin@saumyaa.com';
+      const baseUrl = getApiBaseUrl();
+      const loginRes = await fetch(`${baseUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: user.password || 'admin123' }),
+      });
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        if (loginData && loginData.token) {
+          localStorage.setItem('saumyaa_token', loginData.token);
+          return loginData.token;
+        }
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      isRefreshingAdminToken = false;
+    }
+  }
+  return null;
+};
+
 export const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '/api';
+    }
+    // Local mobile/device testing via LAN IP
+    if (/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(hostname)) {
       return `${window.location.protocol}//${hostname}:5001/api`;
     }
+    // Production / Vercel deployment: target the live backend on Render
+    return 'https://samuyaaa.onrender.com/api';
   }
-  return '/api';
+  return 'https://samuyaaa.onrender.com/api';
 };
 
 export const apiCall = async (endpoint, options = {}) => {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) return null;
 
+  if (!localStorage.getItem('saumyaa_token') && localStorage.getItem('saumyaa_user')) {
+    await ensureAuthToken();
+  }
+
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s — handles MongoDB Atlas cold start
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s — handles Render cold start
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,

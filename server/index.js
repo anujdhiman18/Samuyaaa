@@ -49,7 +49,11 @@ validateEnv();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/saumyaa_db';
+let rawMongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/saumyaa_db';
+if (rawMongoUri.includes('mongodb+srv://') && !rawMongoUri.includes('/saumyaa_db')) {
+  rawMongoUri = rawMongoUri.replace(/\/(?:\?|$)/, '/saumyaa_db?');
+}
+const MONGO_URI = rawMongoUri;
 
 // Security Headers & Middlewares
 app.use(helmet({ crossOriginResourcePolicy: false }));
@@ -129,6 +133,7 @@ process.on('unhandledRejection', (reason) => {
 // Database Connection & Server Listener with Port Conflict Protection
 mongoose
   .connect(MONGO_URI, {
+    dbName: 'saumyaa_db',
     serverSelectionTimeoutMS: 10000,  // 10s to find server
     socketTimeoutMS: 45000,           // 45s socket timeout
     connectTimeoutMS: 10000,          // 10s connection timeout
