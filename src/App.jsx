@@ -37,8 +37,6 @@ import AttendanceManagement from './pages/admin/AttendanceManagement';
 import SubjectManagement from './pages/admin/SubjectManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import RoleManagement from './pages/admin/RoleManagement';
-
-import ActivityLogs from './pages/admin/ActivityLogs';
 import AlumniManagement from './pages/admin/AlumniManagement';
 import ToppersManagement from './pages/admin/ToppersManagement';
 import FeeManagement from './pages/admin/FeeManagement';
@@ -254,7 +252,7 @@ export default function App() {
                   <Route path="profile-requests" element={<ProfileChangeRequests />} />
                   <Route path="roles" element={<RoleManagement />} />
 
-                  <Route path="activity-logs" element={<ActivityLogs />} />
+                  <Route path="activity-logs" element={<Navigate to="/admin" replace />} />
                   <Route path="alumni" element={<AlumniManagement />} />
                   <Route path="toppers" element={<ToppersManagement />} />
                   <Route path="fees" element={<FeeManagement />} />

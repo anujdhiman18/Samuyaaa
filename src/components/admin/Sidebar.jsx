@@ -8,7 +8,6 @@ const mainNavItems = [
   { path: '/admin/students', label: 'Students', icon: 'groups' },
   { path: '/admin/faculty', label: 'Faculty Directory', icon: 'badge' },
   { path: '/admin/roles', label: 'Permission Matrix', icon: 'fact_check' },
-  { path: '/admin/activity-logs', label: 'Activity Audit Logs', icon: 'history_toggle_off' },
   { path: '/admin/alumni', label: 'Alumni Directory', icon: 'school' },
   { path: '/admin/toppers', label: 'Topper Students', icon: 'emoji_events' },
   { path: '/admin/fees', label: 'Fee Management', icon: 'payments' },
