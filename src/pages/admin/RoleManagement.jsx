@@ -186,8 +186,8 @@ export default function RoleManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-premium border border-outline-variant/15">
         <div>
           <h1 className="font-headings font-extrabold text-2xl md:text-3xl text-secondary flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-3xl">admin_panel_settings</span>
-            Role-Based Access Control (RBAC) Management
+            <span className="material-symbols-outlined text-primary text-3xl">fact_check</span>
+            Permission Matrix
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
             System &amp; Custom Role Definitions, Permission Rules, and Hierarchy Matrix.
