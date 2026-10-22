@@ -298,10 +298,11 @@ export default function StudentDetail() {
           </span>
         );
       case 'Alumni':
+      case 'Graduated':
         return (
           <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-800 border border-purple-200 inline-flex items-center gap-1.5 shadow-xs">
             <span className="material-symbols-outlined text-[14px] text-purple-700">school</span>
-            Alumni
+            Graduated
           </span>
         );
       case 'Suspended':
@@ -885,7 +886,7 @@ export default function StudentDetail() {
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
-                <option value="Alumni">Alumni</option>
+                <option value="Graduated">Graduated</option>
                 <option value="Suspended">Suspended</option>
               </select>
             </div>

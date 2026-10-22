@@ -216,18 +216,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. FACULTY & ALUMNI TEASER BANNER */}
+      {/* 3. FACULTY TEASER BANNER */}
       <section className="py-12 bg-gradient-to-r from-[#0D47A1] to-[#1565C0] text-white">
         <div className="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <span className="text-xs font-headings font-bold text-[#D97706] uppercase tracking-wider block mb-1">
-              Experienced Educators &amp; Inspiring Alumni
+              Experienced Educators &amp; Expert Mentors
             </span>
             <h3 className="font-headings font-extrabold text-xl sm:text-2xl md:text-3xl text-white">
-              Learn from the Best Mentors. Connect with Successful Alumni.
+              Learn from the Best Mentors. Achieve Academic Excellence.
             </h3>
             <p className="text-xs sm:text-sm text-[#BBDEFB] mt-1 max-w-xl">
-              Our faculty members bring decades of coaching expertise, while our alumni mentor the next generation.
+              Our faculty members bring decades of coaching expertise to guide students toward exceptional results.
             </p>
           </div>
 
@@ -237,12 +237,6 @@ export default function HomePage() {
               className="px-5 py-2.5 rounded-full bg-white text-[#0D47A1] hover:bg-[#E3F2FD] font-headings font-bold text-xs shadow-md transition-all"
             >
               Faculty Directory
-            </Link>
-            <Link
-              to="/alumni"
-              className="px-5 py-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white font-headings font-bold text-xs backdrop-blur-md border border-white/30 transition-all"
-            >
-              Alumni Network
             </Link>
           </div>
         </div>

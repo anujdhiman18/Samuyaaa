@@ -5,7 +5,6 @@ import MobileMenu from './MobileMenu';
 import About from './About';
 import Course from './Course';
 import FacultySection from './FacultySection';
-import AlumniSection from './AlumniSection';
 import Results from './Results';
 import Testimonials from './Testimonials';
 import AdmissionProcessSection from './AdmissionProcessSection';
@@ -61,7 +60,6 @@ export default function PublicWebsite() {
         <Course />
         <AdmissionProcessSection />
         <FacultySection />
-        <AlumniSection />
         <Results />
         <Testimonials />
         <Faq />

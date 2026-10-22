@@ -6,7 +6,6 @@ const links = [
   { to: '/', label: 'Home' },
   { to: '/our-faculty', label: 'Faculty' },
   { to: '/courses', label: 'Courses' },
-  { to: '/alumni', label: 'Alumni' },
   { to: '/about', label: 'About' },
 ];
 

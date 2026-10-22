@@ -16,7 +16,6 @@ import AboutPage from './pages/public/AboutPage';
 import CoursesPage from './pages/public/CoursesPage';
 import AdmissionsPage from './pages/public/AdmissionsPage';
 import FacultyPage from './pages/public/FacultyPage';
-import AlumniPage from './pages/public/AlumniPage';
 import ResultsPage from './pages/public/ResultsPage';
 import TestimonialsPage from './pages/public/TestimonialsPage';
 import ContactPage from './pages/public/ContactPage';
@@ -37,7 +36,6 @@ import AttendanceManagement from './pages/admin/AttendanceManagement';
 import SubjectManagement from './pages/admin/SubjectManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import RoleManagement from './pages/admin/RoleManagement';
-import AlumniManagement from './pages/admin/AlumniManagement';
 import ToppersManagement from './pages/admin/ToppersManagement';
 import FeeManagement from './pages/admin/FeeManagement';
 import FeeReminders from './pages/admin/FeeReminders';
@@ -147,7 +145,7 @@ export default function App() {
                   <Route path="/our-faculty" element={<FacultyPage />} />
                   <Route path="/faculty-team" element={<FacultyPage />} />
                   <Route path="/faculty-members" element={<FacultyPage />} />
-                  <Route path="/alumni" element={<AlumniPage />} />
+                  <Route path="/alumni" element={<Navigate to="/" replace />} />
                   <Route path="/results" element={<ResultsPage />} />
                   <Route path="/toppers" element={<ResultsPage />} />
                   <Route path="/testimonials" element={<TestimonialsPage />} />
@@ -253,7 +251,7 @@ export default function App() {
                   <Route path="roles" element={<RoleManagement />} />
 
                   <Route path="activity-logs" element={<Navigate to="/admin" replace />} />
-                  <Route path="alumni" element={<AlumniManagement />} />
+                  <Route path="alumni" element={<Navigate to="/admin" replace />} />
                   <Route path="toppers" element={<ToppersManagement />} />
                   <Route path="fees" element={<FeeManagement />} />
                   <Route path="reminders" element={<FeeReminders />} />

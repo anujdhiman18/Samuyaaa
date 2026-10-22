@@ -2,7 +2,6 @@ import express from 'express';
 import Feedback from '../../models/Feedback.js';
 import Faculty from '../../models/Faculty.js';
 import Subject from '../../models/Subject.js';
-import Alumni from '../../models/Alumni.js';
 import { asyncHandler } from '../../middleware/asyncHandler.js';
 
 const router = express.Router();
@@ -58,15 +57,6 @@ router.get(
   asyncHandler(async (req, res) => {
     const subjects = await Subject.find({ isActive: { $ne: false } }).sort({ name: 1 });
     res.json({ success: true, subjects });
-  })
-);
-
-// Public Featured Alumni
-router.get(
-  '/alumni',
-  asyncHandler(async (req, res) => {
-    const alumni = await Alumni.find({ is_active: { $ne: false } }).sort({ is_featured: -1, display_order: 1 });
-    res.json({ success: true, alumni });
   })
 );
 

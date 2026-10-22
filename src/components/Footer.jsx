@@ -67,7 +67,6 @@ export default function Footer() {
               { to: '/courses', label: 'Academic Programs (S1-S5)' },
               { to: '/admissions', label: 'Admission / Joining Process' },
               { to: '/our-faculty', label: 'Faculty Directory' },
-              { to: '/alumni', label: 'Proud Alumni Network' },
               { to: '/results', label: 'Wall of Excellence' },
               { to: '/testimonials', label: 'Student Testimonials' },
               { to: '/contact', label: 'Contact Us & Centers' },

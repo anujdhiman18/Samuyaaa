@@ -3,7 +3,6 @@ import studentRoutes from '../studentRoutes.js';
 import feeRoutes from '../feeRoutes.js';
 import subjectRoutes from '../subjectRoutes.js';
 import facultyRoutes from '../facultyRoutes.js';
-import alumniRoutes from '../alumniRoutes.js';
 import dashboardRoutes from '../dashboardRoutes.js';
 import { getAllFacultyLeaves, updateFacultyLeaveStatus } from '../../controllers/facultyController.js';
 import { getAllStudentLeaves, updateStudentLeaveStatus } from '../../controllers/studentController.js';
@@ -27,7 +26,6 @@ router.put('/student-leaves/:id/status', updateStudentLeaveStatus);
 router.get('/profile-change-requests', getAllProfileChangeRequests);
 router.put('/profile-change-requests/:id/approve', approveProfileChangeRequest);
 router.put('/profile-change-requests/:id/reject', rejectProfileChangeRequest);
-router.use('/alumni', alumniRoutes);
 router.use('/dashboard', dashboardRoutes);
 
 export default router;
