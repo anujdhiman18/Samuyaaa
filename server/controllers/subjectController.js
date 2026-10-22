@@ -84,12 +84,13 @@ export const getSubjectStats = async (req, res) => {
 
     const totalActiveSubjects = activeSubjects.length;
 
-    // S1, S2, S3, S4 breakdown
+    // S1, S2, S3, S4, S5 breakdown
     const stageCounts = {
       S1: activeSubjects.filter((s) => s.categoryCode === 'S1' || (s.className && s.className.includes('S1'))).length,
       S2: activeSubjects.filter((s) => s.categoryCode === 'S2' || (s.className && s.className.includes('S2'))).length,
       S3: activeSubjects.filter((s) => s.categoryCode === 'S3' || (s.className && s.className.includes('S3'))).length,
       S4: activeSubjects.filter((s) => s.categoryCode === 'S4' || (s.className && s.className.includes('S4'))).length,
+      S5: activeSubjects.filter((s) => s.categoryCode === 'S5' || (s.className && s.className.includes('S5'))).length,
     };
 
     // Calculate unique faculty assigned

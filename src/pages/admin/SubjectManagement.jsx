@@ -210,7 +210,7 @@ export default function SubjectManagement() {
 
   // Category statistics counts (calculated dynamically from real user subjects)
   const categoryCounts = useMemo(() => {
-    const counts = { All: subjects.length, S1: 0, S2: 0, S3: 0, S4: 0 };
+    const counts = { All: subjects.length, S1: 0, S2: 0, S3: 0, S4: 0, S5: 0 };
     subjects.forEach((sub) => {
       const cat = getSubjectCategory(sub);
       if (counts[cat] !== undefined) {
@@ -379,6 +379,8 @@ export default function SubjectManagement() {
         return 'bg-amber-100 text-amber-800 border-amber-300';
       case 'S4':
         return 'bg-purple-100 text-purple-800 border-purple-300';
+      case 'S5':
+        return 'bg-rose-100 text-rose-800 border-rose-300';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-300';
     }
@@ -848,7 +850,7 @@ export default function SubjectManagement() {
               <span className="material-symbols-outlined text-[16px] text-primary">category</span>
               Category Stage *
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {CLASS_CATEGORIES.map((cat) => {
                 const isSelected = form.categoryCode === cat.code;
                 return (

@@ -20,7 +20,7 @@ export default function CoursesPage() {
             Structured Courses for Every Learning Stage
           </h1>
           <p className="text-sm sm:text-base text-[#BBDEFB] max-w-2xl mx-auto leading-relaxed">
-            From Middle School Foundation (S1) to Advanced Senior Secondary JEE/NEET Specialist Coaching (S4).
+            From Primary Foundation (S1) and Junior/Middle Wing (S5) to Advanced Senior Secondary JEE/NEET Specialist Coaching (S3/S4).
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">

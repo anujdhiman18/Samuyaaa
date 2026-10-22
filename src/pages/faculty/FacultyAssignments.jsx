@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
+const DEFAULT_CLASSES = ['S1', 'S2', 'S3', 'S4', 'S5', '6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 
 export default function FacultyAssignments() {
   const { addToast } = useToast();

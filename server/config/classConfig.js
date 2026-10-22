@@ -6,13 +6,14 @@
  * S4 = Higher Education
  */
 
-export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
+export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4', 'S5'];
 
 export const STAGE_CLASSES = {
   S1: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th'],
   S2: ['6th', '7th', '8th', '9th', '10th'],
   S3: ['11th (+1)', '12th (+2)', '11th', '12th'],
   S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Other'],
+  S5: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'],
 };
 
 export const STAGE_SUBJECTS = {
@@ -48,6 +49,17 @@ export const STAGE_SUBJECTS = {
     'Competitive Exam Aptitude & Logical Reasoning',
     'UGC / CSIR / Target Entrance Prep',
   ],
+  S5: [
+    'Homework',
+    'Foundational Mathematics & Mental Math',
+    'English Phonics, Reading & Communication',
+    'General Science (Physics, Chemistry & Biology)',
+    'Environmental Studies (EVS)',
+    'Hindi & Regional Language Literacy',
+    'Social Studies & Civics',
+    'Creative Thinking & Junior Coding Basics',
+    'Mathematics Olympiad Foundation',
+  ],
 };
 
 export const getSubjectsForStage = (stageCode) => {
@@ -76,11 +88,12 @@ export const normalizeClassCode = (val) => {
 
   const str = raw.toLowerCase();
 
-  // Explicit S1-S4 checks
+  // Explicit S1-S5 checks
   if (str === 's1' || str === 'class s1' || str.startsWith('class s1') || str.includes('s1')) return 'S1';
   if (str === 's2' || str === 'class s2' || str.startsWith('class s2') || str.includes('s2')) return 'S2';
   if (str === 's3' || str === 'class s3' || str.startsWith('class s3') || str.includes('s3')) return 'S3';
   if (str === 's4' || str === 'class s4' || str.startsWith('class s4') || str.includes('s4')) return 'S4';
+  if (str === 's5' || str === 'class s5' || str.startsWith('class s5') || str.includes('s5')) return 'S5';
 
   if (
     str.includes('nursery') ||

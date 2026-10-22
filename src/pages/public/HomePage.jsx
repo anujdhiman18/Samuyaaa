@@ -157,10 +157,10 @@ export default function HomePage() {
                   <span className="material-symbols-outlined text-[28px]">menu_book</span>
                 </div>
                 <h3 className="font-headings font-bold text-lg text-[#0D47A1] mb-2 group-hover:text-[#D97706] transition-colors">
-                  Academic Programs (S1-S4)
+                  Academic Programs (S1-S5)
                 </h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Tailored foundation, board preparation, and competitive JEE/NEET tracks for classes 6th to 12th.
+                  Tailored foundation, board preparation, and competitive JEE/NEET tracks from Nursery to Higher Education.
                 </p>
               </div>
               <div className="mt-6 flex items-center gap-1 text-xs font-bold text-[#D97706] group-hover:translate-x-1 transition-transform">

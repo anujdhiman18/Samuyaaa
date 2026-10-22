@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { facultyPanelService, marksService, subjectService, getStoredSubjects, getStoredStudents, smsNotificationService } from '../../services/api';
-import { CLASS_CATEGORIES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
+import { CLASS_CATEGORIES, CLASS_CODES, STAGE_CLASSES, sortClassList, getStageForClass, isExactClassMatch, isClassOrStageMatch } from '../../config/classConfig';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { calculateGradeBreakdown, getGradeMeta, calculateGrade, calculateEntranceExamResult, ASSESSMENT_TYPES_CONFIG } from '../../utils/gradeUtils';
@@ -9,7 +9,7 @@ import ConfirmModal from '../../components/admin/ConfirmModal';
 const DEFAULT_CLASSES = ['6th', '7th', '8th', '9th', '10th', '11th (+1)', '12th (+2)'];
 
 const CATEGORY_OPTIONS = [
-  { code: 'All', label: 'All Categories (S1-S4)' },
+  { code: 'All', label: 'All Categories (S1-S5)' },
   ...CLASS_CATEGORIES.map((c) => ({ code: c.code, label: `${c.code} — ${c.description}` })),
 ];
 
@@ -64,7 +64,7 @@ export default function FacultyMarks() {
   // Compute filtered classes based on selectedCategory
   const filteredClasses = useMemo(() => {
     if (selectedCategory === 'All') {
-      const base = allAvailableClasses.filter((c) => !['S1', 'S2', 'S3', 'S4'].includes(c));
+      const base = allAvailableClasses.filter((c) => !CLASS_CODES.includes(c));
       return sortClassList(base.length > 0 ? base : DEFAULT_CLASSES);
     }
 

@@ -249,9 +249,80 @@ export const CLASS_CATEGORIES = [
       },
     ],
   },
+  {
+    code: 'S5',
+    label: 'S5 — Nursery to 8th',
+    shortLabel: 'S5 (Nursery - 8th)',
+    title: 'Junior Foundation & Middle Wing',
+    gradeSpan: 'Nursery, LKG, UKG, 1st – 8th Grade',
+    description: 'Comprehensive integrated foundation from early phonics and numeracy through middle school arithmetic, science concepts, and homework guidance.',
+    badgeBg: 'bg-rose-50 text-rose-700 border-rose-200',
+    colorHex: '#e11d48',
+    icon: 'menu_book',
+    classes: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', 'Class S5'],
+    availableStreams: ['Foundation', 'Early Learner', 'Homework Help', 'Middle School', 'Olympiad', 'Activity Club', 'General'],
+    defaultSubjects: [
+      {
+        name: 'Foundational & Middle Math',
+        category: 'Foundation',
+        description: 'Comprehensive number sense, arithmetic, algebra basics, and rapid mental math.',
+        batchTime: '4:00 PM – 5:15 PM',
+        teacherName: 'Jitender Sharma',
+      },
+      {
+        name: 'English Grammar & Phonics',
+        category: 'Early Learner',
+        description: 'Phonetics, reading comprehension, grammar mastery, vocabulary, and creative writing.',
+        batchTime: '3:00 PM – 4:15 PM',
+        teacherName: 'Mrs. Sunita Sharma',
+      },
+      {
+        name: 'General Science & Experimentation',
+        category: 'Middle School',
+        description: 'Physics, Chemistry, Biology fundamentals, hands-on science experiments, and nature exploration.',
+        batchTime: '5:15 PM – 6:30 PM',
+        teacherName: 'Dr. Ramesh Verma',
+      },
+      {
+        name: 'Environmental Studies (EVS)',
+        category: 'Foundation',
+        description: 'Nature exploration, human body, ecosystem awareness, and environmental awareness.',
+        batchTime: '5:15 PM – 6:15 PM',
+        teacherName: 'Dr. Ramesh Verma',
+      },
+      {
+        name: 'Hindi & Regional Language Literacy',
+        category: 'Foundation',
+        description: 'Varnamala, grammar rules, conversational fluency, and reading practice.',
+        batchTime: '2:00 PM – 3:15 PM',
+        teacherName: 'Mrs. Sunita Sharma',
+      },
+      {
+        name: 'Social Studies & Civics',
+        category: 'Middle School',
+        description: 'History, geography, social awareness, and environmental science basics.',
+        batchTime: '4:30 PM – 5:45 PM',
+        teacherName: 'Mrs. Sunita Sharma',
+      },
+      {
+        name: 'Junior Coding & Computer Basics',
+        category: 'Activity Club',
+        description: 'Algorithmic thinking, visual block coding, digital skills, and creative logic.',
+        batchTime: '5:30 PM – 6:45 PM',
+        teacherName: 'Jitender Sharma',
+      },
+      {
+        name: 'Homework Help & Daily Tutoring',
+        category: 'Homework Help',
+        description: 'Dedicated daily homework assistance, doubt clearing, and independent study mentoring for Nursery to Class 8.',
+        batchTime: '3:30 PM – 5:00 PM',
+        teacherName: 'Mrs. Sunita Sharma',
+      },
+    ],
+  },
 ];
 
-export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4'];
+export const CLASS_CODES = ['S1', 'S2', 'S3', 'S4', 'S5'];
 
 export const DEFAULT_SUBJECTS = [
   'Mathematics',
@@ -288,6 +359,7 @@ export const SORTED_CLASS_ORDER = [
   'S2',
   'S3',
   'S4',
+  'S5',
   'Nursery',
   'LKG',
   'UKG',
@@ -334,6 +406,7 @@ export const STAGE_CLASSES = {
   S2: ['6th', '7th', '8th', '9th', '10th'],
   S3: ['11th (+1)', '12th (+2)'],
   S4: ['College / University', 'Undergraduate', 'Postgraduate', 'Higher Education', 'Other'],
+  S5: ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'],
 };
 
 export const STAGE_SUBJECTS = {
@@ -370,6 +443,17 @@ export const STAGE_SUBJECTS = {
     'Competitive Exam Aptitude & Logical Reasoning',
     'UGC / CSIR / Target Entrance Prep',
   ],
+  S5: [
+    'Homework',
+    'Foundational Mathematics & Mental Math',
+    'English Phonics, Reading & Communication',
+    'General Science (Physics, Chemistry & Biology)',
+    'Environmental Studies (EVS)',
+    'Hindi & Regional Language Literacy',
+    'Social Studies & Civics',
+    'Creative Thinking & Junior Coding Basics',
+    'Mathematics Olympiad Foundation',
+  ],
 };
 
 /**
@@ -389,8 +473,9 @@ export const isHomeworkEligibleClass = (className) => {
   if (!className) return false;
   const trimmed = String(className).trim();
   if (HOMEWORK_ELIGIBLE_CLASSES.includes(trimmed)) return true;
-  // Stage code S1 directly also qualifies (covers all Nursery–5th)
-  if (normalizeClassCode(trimmed) === 'S1') return true;
+  // Stage codes S1 or S5 directly also qualify (covers Nursery–5th and Nursery–8th)
+  const norm = normalizeClassCode(trimmed);
+  if (norm === 'S1' || norm === 'S5') return true;
   return false;
 };
 
@@ -503,6 +588,7 @@ export const formatClassLabel = (code, currentClass) => {
   if (code === 'S2') return 'Class 10th';
   if (code === 'S3') return 'Class 11th (+1)';
   if (code === 'S4') return 'Class 12th (+2)';
+  if (code === 'S5') return 'Class 8th';
   if (code === 'All') return 'All Classes';
 
   if (code.startsWith('Class')) return code;
@@ -523,11 +609,12 @@ export const normalizeClassCode = (val) => {
 
   const str = raw.toLowerCase();
 
-  // Explicit S1-S4 checks
+  // Explicit S1-S5 checks
   if (str === 's1' || str === 'class s1' || str.startsWith('class s1') || str.includes('s1')) return 'S1';
   if (str === 's2' || str === 'class s2' || str.startsWith('class s2') || str.includes('s2')) return 'S2';
   if (str === 's3' || str === 'class s3' || str.startsWith('class s3') || str.includes('s3')) return 'S3';
   if (str === 's4' || str === 'class s4' || str.startsWith('class s4') || str.includes('s4')) return 'S4';
+  if (str === 's5' || str === 'class s5' || str.startsWith('class s5') || str.includes('s5')) return 'S5';
 
   // Nursery - 5th
   if (
