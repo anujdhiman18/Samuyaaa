@@ -4,6 +4,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Ensure reliable DNS resolution for MongoDB Atlas SRV records
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 
 import { validateEnv } from './config/validateEnv.js';
 import publicRoutes from './routes/public/publicWebsiteRoutes.js';

@@ -56,7 +56,7 @@ router.get(
 router.get(
   '/subjects',
   asyncHandler(async (req, res) => {
-    const subjects = await Subject.find({ status: 'Active' }).sort({ name: 1 });
+    const subjects = await Subject.find({ isActive: { $ne: false } }).sort({ name: 1 });
     res.json({ success: true, subjects });
   })
 );

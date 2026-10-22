@@ -15,7 +15,7 @@ const studyMaterialSchema = new mongoose.Schema(
     className: {
       type: String,
       required: true,
-      enum: ['S1', 'S2', 'S3', 'S4'],
+      enum: ['S1', 'S2', 'S3', 'S4', 'S5'],
       default: 'S2',
     },
     facultyId: {

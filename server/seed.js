@@ -1,3 +1,8 @@
+import dns from 'dns';
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
+
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
@@ -117,6 +122,7 @@ export const seedData = async () => {
     const batches = await Batch.insertMany([
       { name: 'Class 10th Morning Batch', academicSession: '2025-2026', className: '10th', category: 'S2', timings: '5:00 PM – 6:30 PM', maxCapacity: 20 },
       { name: 'Class 12th IIT-JEE Target', academicSession: '2025-2026', className: '12th (+2)', category: 'S4', timings: '6:30 PM – 8:00 PM', maxCapacity: 25 },
+      { name: 'Junior & Middle Foundation Batch', academicSession: '2025-2026', className: '8th', category: 'S5', timings: '4:00 PM – 5:15 PM', maxCapacity: 20 },
     ]);
     console.log(`✓ Seeded ${batches.length} Academic Batches`);
 
@@ -149,6 +155,21 @@ export const seedData = async () => {
         faculty: facultyMembers[0]._id,
         batchTime: '6:30 PM – 8:00 PM',
         maxCapacity: 25,
+        branch: 'Main Center (Bagru)',
+        isActive: true,
+      },
+      {
+        name: 'Foundational & Middle Math',
+        subjectCode: 'MATH-S5',
+        className: 'Class S5',
+        category: 'Foundation',
+        categoryCode: 'S5',
+        stream: 'Middle School',
+        description: 'Comprehensive number sense, arithmetic, algebra basics, and rapid mental math.',
+        teacherName: 'Prof. Jitender Sharma',
+        faculty: facultyMembers[0]._id,
+        batchTime: '4:00 PM – 5:15 PM',
+        maxCapacity: 20,
         branch: 'Main Center (Bagru)',
         isActive: true,
       },
