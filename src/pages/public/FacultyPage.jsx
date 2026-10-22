@@ -29,12 +29,12 @@ export default function FacultyPage() {
             >
               Join Our Faculty / Apply for Teaching
             </Link>
-            <button
-              onClick={() => openBooking()}
-              className="bg-white/15 hover:bg-white/25 text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full backdrop-blur-md transition-all border border-white/20 cursor-pointer"
+            <Link
+              to="/courses"
+              className="bg-white/15 hover:bg-white/25 text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full backdrop-blur-md transition-all border border-white/20"
             >
-              Experience a Live Demo Lecture
-            </button>
+              Explore Academic Programs
+            </Link>
           </div>
         </div>
       </section>

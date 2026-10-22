@@ -331,7 +331,7 @@ export default function AdmissionProcessSection() {
                   <div className="p-4 rounded-2xl bg-[#E3F2FD]/50 border border-[#90CAF9]/30 space-y-1.5">
                     <div className="flex items-center gap-2 text-[#0D47A1] font-bold">
                       <span className="material-symbols-outlined text-[18px] text-[#D97706]">cast_for_education</span>
-                      <span>2. Live Classroom Demonstration (Demo Class)</span>
+                      <span>2. Live Classroom Teaching Demonstration</span>
                     </div>
                     <p className="text-[#0D1B2A]/80 leading-relaxed">
                       A 20-minute live demonstration lecture before our academic board and student panel to evaluate student engagement and communication clarity.

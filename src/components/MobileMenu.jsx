@@ -146,16 +146,14 @@ export default function MobileMenu({ open, onClose, onOpenBooking }) {
               </Link>
             )}
 
-            <button
-              onClick={() => {
-                onClose();
-                onOpenBooking();
-              }}
+            <Link
+              to="/student-application"
+              onClick={onClose}
               className="w-full bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 rounded-xl font-headings font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">play_circle</span>
-              <span>Book a Free Demo</span>
-            </button>
+              <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+              <span>Apply for Admission</span>
+            </Link>
           </div>
         </div>
       </div>

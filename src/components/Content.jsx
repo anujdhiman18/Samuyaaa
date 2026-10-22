@@ -222,7 +222,7 @@ export default function Contact({ isStandalone = false }) {
                   rows={5}
                   value={form.message}
                   onChange={(e) => updateField('message', e.target.value)}
-                  placeholder="Tell us what you are looking for (e.g. Class 10th batch admission, demo class, fee details, or any questions)..."
+                  placeholder="Tell us what you are looking for (e.g. Class 10th batch admission, course enquiry, fee details, or any questions)..."
                   className="w-full px-4 py-3 rounded-xl border border-[#90CAF9]/50 focus:border-[#0D47A1] focus:ring-2 focus:ring-[#0D47A1]/15 bg-[#E3F2FD]/30 font-body text-sm text-[#0D1B2A] transition-all duration-200 placeholder:text-on-surface-variant/40 resize-y"
                 />
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function CtaHub({ onOpenBooking }) {
   return (
@@ -11,16 +12,16 @@ export default function CtaHub({ onOpenBooking }) {
           Start Your Academic <span className="text-[#FBBF24]">Transformation</span>
         </h2>
         <p className="font-body text-sm md:text-base mb-8 text-white/90 max-w-xl mx-auto relative z-10 leading-relaxed font-normal">
-          Join a community where curiosity is rewarded and excellence is coached. Book a discovery session or
-          enquire about the next batches with Jitender Sharma today.
+          Join a community where curiosity is rewarded and excellence is coached. Enquire about admissions and
+          upcoming batches with Jitender Sharma today.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
-          <button
-            onClick={() => onOpenBooking()}
-            className="w-full sm:w-auto bg-white text-[#0D47A1] hover:bg-[#E3F2FD] px-8 py-4 rounded-full font-headings font-bold text-base shadow-premium hover:shadow-premium-hover hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+          <Link
+            to="/student-application"
+            className="w-full sm:w-auto bg-white text-[#0D47A1] hover:bg-[#E3F2FD] px-8 py-4 rounded-full font-headings font-bold text-base shadow-premium hover:shadow-premium-hover hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer text-center inline-block"
           >
-            Schedule a Free Demo
-          </button>
+            Apply for Admission
+          </Link>
           <a
             href="#courses"
             className="w-full sm:w-auto bg-transparent border-2 border-white/40 text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-headings font-semibold text-base transition-all duration-300 text-center"

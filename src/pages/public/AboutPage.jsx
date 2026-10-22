@@ -25,12 +25,12 @@ export default function AboutPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => openBooking()}
-              className="bg-[#D97706] hover:bg-[#B45309] text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full transition-all shadow-premium cursor-pointer"
+            <Link
+              to="/student-application"
+              className="bg-[#D97706] hover:bg-[#B45309] text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full transition-all shadow-premium"
             >
-              Book a Free Demo Class
-            </button>
+              Apply for Admission
+            </Link>
             <Link
               to="/courses"
               className="bg-white/15 hover:bg-white/25 text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full backdrop-blur-md transition-all border border-white/20"

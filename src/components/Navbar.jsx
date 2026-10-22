@@ -148,14 +148,6 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
             )}
           </div>
 
-          {/* Book Demo Button */}
-          <button
-            onClick={() => onOpenBooking()}
-            className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-3.5 py-1.5 rounded-full font-headings font-bold shadow-sm hover:shadow active:scale-95 transition-all duration-200 text-xs whitespace-nowrap cursor-pointer flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[15px]">event_available</span>
-            <span>Book Demo</span>
-          </button>
 
           {/* Authenticated vs Guest Actions */}
           {isAuthenticated ? (
@@ -207,12 +199,6 @@ export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
             </Link>
           )}
 
-          <button
-            onClick={() => onOpenBooking()}
-            className="bg-[#0D47A1] text-white px-2.5 py-1 rounded-full font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs"
-          >
-            <span>Demo</span>
-          </button>
 
           <button
             onClick={onOpenMobileMenu}

@@ -30,12 +30,12 @@ export default function CoursesPage() {
             >
               Apply for Admission
             </Link>
-            <button
-              onClick={() => openBooking()}
-              className="bg-white/15 hover:bg-white/25 text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full backdrop-blur-md transition-all border border-white/20 cursor-pointer"
+            <a
+              href="#courses"
+              className="bg-white/15 hover:bg-white/25 text-white font-headings font-bold text-xs sm:text-sm px-6 py-3 rounded-full backdrop-blur-md transition-all border border-white/20"
             >
-              Book a Free Live Demo
-            </button>
+              Explore Batch Details
+            </a>
           </div>
         </div>
       </section>

@@ -534,8 +534,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
       formData.append('subject', selectedSubject);
       formData.append('category', selectedCategory);
       formData.append('class', selectedClass);
-      formData.append('batchTime', autoBatchTimeText || 'To Be Assigned');
-      formData.append('_subject', `Live Demo Booking: ${selectedSubject} - ${selectedCategory} (${selectedClass}) [${autoBatchTimeText || 'Pending'}]`);
+      formData.append('_subject', `Course Admission & Batch Enquiry: ${selectedSubject} - ${selectedCategory} (${selectedClass}) [${autoBatchTimeText || 'Pending'}]`);
 
       fetch('https://formsubmit.co/ajax/f785f212ac6d3b7066a696d35d1be84f', {
         method: 'POST',
@@ -576,7 +575,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
             </span>
             <div>
               <h3 className="font-headings font-extrabold text-lg text-primary">
-                Book a Free Live Demo Class
+                Course Admission &amp; Batch Enquiry
               </h3>
               <p className="text-[11px] text-on-surface-variant">
                 Select your class to view automatically assigned batch timing
@@ -603,9 +602,9 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
             <span className="w-16 h-16 rounded-full bg-surface-container text-primary flex items-center justify-center mx-auto mb-4 shadow-premium border border-outline-variant/20">
               <span className="material-symbols-outlined text-[36px] text-secondary">event_available</span>
             </span>
-            <h4 className="font-headings font-bold text-xl text-primary mb-2">Demo Booked Successfully!</h4>
+            <h4 className="font-headings font-bold text-xl text-primary mb-2">Enquiry Submitted Successfully!</h4>
             <p className="text-xs text-on-surface-variant max-w-sm mx-auto leading-relaxed mb-6">
-              A live demo slot has been scheduled for <strong className="text-primary font-bold">{studentName}</strong>. Our academic coordinator will contact you with access instructions.
+              An admission enquiry has been submitted for <strong className="text-primary font-bold">{studentName}</strong>. Our academic coordinator will contact you with batch details and schedule instructions.
             </p>
 
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 text-left space-y-2 text-xs font-medium text-on-surface mb-6 max-w-sm mx-auto">
@@ -917,7 +916,7 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/70">
                 <span className="material-symbols-outlined text-[16px] text-amber-600 mt-0.5 shrink-0">info</span>
                 <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
-                  <strong className="font-bold text-amber-900">Note:</strong> If you continue with the course after the demo classes, the demo class fee will be adjusted against your course fees.
+                  <strong className="font-bold text-amber-900">Note:</strong> Any registration fee paid will be adjusted against your official course admission fees.
                 </p>
               </div>
             </div>
@@ -930,10 +929,10 @@ export default function BookingModal({ open, prefilledProgram, onClose }) {
                 className="w-full bg-primary hover:bg-inverse-surface disabled:bg-outline-variant/40 text-white font-headings font-bold py-3 rounded-full text-xs transition-all duration-300 shadow-premium flex items-center justify-center gap-2 cursor-pointer"
               >
                 {submitting ? (
-                  <span>Processing Demo Booking...</span>
+                  <span>Submitting Enquiry...</span>
                 ) : (
                   <>
-                    <span>Book Live Demo</span>
+                    <span>Submit Course Enquiry</span>
                     <span className="material-symbols-outlined text-[16px] text-surface">check_circle</span>
                   </>
                 )}

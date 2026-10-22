@@ -3,13 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   studentService,
   studentApplicationService,
-  demoBookingService,
   subscribeFirestoreCollection,
   initialMockStudents,
   getStoredStudents,
   initialMockStudentApplications,
-  initialMockDemoBookings,
-  getStoredDemoBookings,
   initialMockStudentLeaves,
   getStoredStudentLeaves,
 } from '../../services/api';
@@ -17,7 +14,6 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/admin/Modal';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import { CLASS_CATEGORIES, STAGE_CLASSES, getStageForClass, formatClassLabel } from '../../config/classConfig';
-import DemoBookingManagement from './DemoBookingManagement';
 import StudentLeaveManagement from './StudentLeaveManagement';
 
 const CLASSES = ['All', ...CLASS_CATEGORIES.map((c) => c.code)];
@@ -25,7 +21,6 @@ const BRANCHES = ['All', 'Main Center (Bagru)', 'Branch (Daroh)'];
 
 const normalizeTabParam = (tab) => {
   if (tab === 'applications') return 'applications';
-  if (tab === 'demo_bookings' || tab === 'demo-bookings' || tab === 'demos' || tab === 'demo_classes') return 'demo_bookings';
   if (tab === 'leaves' || tab === 'student-leaves' || tab === 'student_leaves') return 'leaves';
   return 'directory';
 };
@@ -86,14 +81,6 @@ export default function StudentManagement() {
   });
   const [updatingApp, setUpdatingApp] = useState(false);
 
-  // Demo Bookings State (for badge count)
-  const [demoBookingsList, setDemoBookingsList] = useState(() => {
-    try {
-      return getStoredDemoBookings() || initialMockDemoBookings;
-    } catch (e) {
-      return initialMockDemoBookings;
-    }
-  });
 
   // Student Leaves State (for badge count)
   const [studentLeavesList, setStudentLeavesList] = useState(() => {
@@ -233,30 +220,22 @@ export default function StudentManagement() {
       }
     );
 
-    const unsubscribeDemos = subscribeFirestoreCollection('demo_bookings', initialMockDemoBookings, (list) => {
-      if (list) {
-        setDemoBookingsList(list);
-      }
-    });
-
     const unsubscribeLeaves = subscribeFirestoreCollection('student_leaves', initialMockStudentLeaves, (list) => {
       if (list) {
         setStudentLeavesList(list);
       }
     });
 
-    // Run all 4 fetches in parallel instead of sequentially
+    // Run fetches in parallel instead of sequentially
     Promise.all([
       fetchStudents(),
       fetchApplications(),
-      fetchDemoBookings(),
       fetchStudentLeaves(),
     ]);
 
     const handleDataRefresh = () => {
       fetchApplications();
       fetchStudents();
-      fetchDemoBookings();
       fetchStudentLeaves();
     };
 
@@ -266,20 +245,10 @@ export default function StudentManagement() {
     return () => {
       unsubscribeStudents();
       unsubscribeApps();
-      unsubscribeDemos();
       unsubscribeLeaves();
       window.removeEventListener('saumyaa_data_updated', handleDataRefresh);
     };
   }, []);
-
-  const fetchDemoBookings = async () => {
-    try {
-      const res = await demoBookingService.getBookings();
-      if (res && res.bookings) {
-        setDemoBookingsList(res.bookings);
-      }
-    } catch (e) {}
-  };
 
   const fetchStudentLeaves = async () => {
     try {
@@ -562,10 +531,6 @@ export default function StudentManagement() {
     return (applications || []).filter((a) => a.status === 'Pending').length;
   }, [applications]);
 
-  const pendingDemosCount = useMemo(() => {
-    return (demoBookingsList || []).filter((b) => (b.status || 'Pending').toLowerCase() === 'pending').length;
-  }, [demoBookingsList]);
-
   const pendingLeavesCount = useMemo(() => {
     return (studentLeavesList || []).filter((l) => l && l.status === 'Pending').length;
   }, [studentLeavesList]);
@@ -579,7 +544,7 @@ export default function StudentManagement() {
             Student Management Hub
           </h1>
           <p className="font-body text-xs text-on-surface-variant mt-1">
-            Unified center for student directory, admission applications, demo class bookings, and leave management.
+            Unified center for student directory, admission applications, and leave management.
           </p>
         </div>
 
@@ -614,22 +579,6 @@ export default function StudentManagement() {
             )}
           </button>
 
-          <button
-            onClick={() => handleTabSwitch('demo_bookings')}
-            className={`px-3.5 py-2 rounded-full text-xs font-headings font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'demo_bookings'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-on-surface-variant hover:text-secondary hover:bg-surface-container-high'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">event_available</span>
-            <span>Demo Classes ({demoBookingsList.length})</span>
-            {pendingDemosCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px] font-extrabold">
-                {pendingDemosCount}
-              </span>
-            )}
-          </button>
 
           <button
             onClick={() => handleTabSwitch('leaves')}
@@ -996,10 +945,6 @@ export default function StudentManagement() {
         </div>
       )}
 
-      {/* TAB 3: DEMO CLASS BOOKINGS & INQUIRIES */}
-      {activeTab === 'demo_bookings' && (
-        <DemoBookingManagement isEmbedded={true} />
-      )}
 
       {/* TAB 4: STUDENT LEAVE APPLICATIONS */}
       {activeTab === 'leaves' && (

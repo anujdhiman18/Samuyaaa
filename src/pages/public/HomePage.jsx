@@ -42,14 +42,6 @@ export default function HomePage() {
                   Apply for Admission
                 </Link>
 
-                <button
-                  onClick={() => openBooking()}
-                  className="bg-[#D97706] hover:bg-[#B45309] text-white px-6 py-3.5 rounded-full font-headings font-bold text-sm transition-all duration-300 shadow-premium hover:shadow-lg active:scale-95 flex items-center gap-2 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">play_circle</span>
-                  Book a Free Live Demo
-                </button>
-
                 <Link
                   to="/courses"
                   className="bg-white hover:bg-surface-container text-[#0D47A1] border border-[#90CAF9]/50 px-5 py-3.5 rounded-full font-headings font-bold text-sm transition-all duration-200 shadow-sm hover:shadow"

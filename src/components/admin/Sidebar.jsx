@@ -38,8 +38,6 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
     if (itemPath === '/admin/students') {
       return (
         location.pathname.startsWith('/admin/students') ||
-        location.pathname.startsWith('/admin/demo-bookings') ||
-        location.pathname.startsWith('/admin/demo-classes') ||
         location.pathname.startsWith('/admin/student-leaves')
       );
     }

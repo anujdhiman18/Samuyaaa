@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import founderImg from '../imges/Unknown.jpg';
 
 export default function About({ onOpenBooking }) {
@@ -79,12 +80,12 @@ export default function About({ onOpenBooking }) {
             </div>
 
             <div className="pt-4 flex flex-wrap gap-4 items-center">
-              <button
-                onClick={() => onOpenBooking()}
-                className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-3 rounded-xl font-headings font-bold text-sm transition-all duration-300 shadow-premium active:scale-95 cursor-pointer"
+              <Link
+                to="/student-application"
+                className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-3 rounded-xl font-headings font-bold text-sm transition-all duration-300 shadow-premium active:scale-95 cursor-pointer inline-block text-center"
               >
-                Book Live Class
-              </button>
+                Apply for Admission
+              </Link>
               <a
                 href="#courses"
                 className="border-2 border-[#1976D2] text-[#1976D2] hover:bg-[#1976D2] hover:text-white px-6 py-2.5 rounded-xl font-headings font-bold text-sm transition-all duration-300 active:scale-95 cursor-pointer"
