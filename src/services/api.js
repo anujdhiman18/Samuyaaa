@@ -1330,6 +1330,10 @@ export const studentService = {
 
     const payload = {
       ...data,
+      address: data.address && data.address.trim() ? data.address.trim() : (data.branch?.includes('Daroh') ? 'Daroh, Himachal Pradesh' : 'Bagru, Palampur, Himachal Pradesh'),
+      parentPhone: data.parentPhone || data.phone || '',
+      monthlyFee: Number(data.monthlyFee) || 2500,
+      subjects: Array.isArray(data.subjects) && data.subjects.length > 0 ? data.subjects : ['General Science', 'Mathematics'],
       rollNumber: finalRollNumber,
       email: data.email ? data.email.trim().toLowerCase() : `${finalRollNumber.toLowerCase()}@saumyaa.com`,
       password: hashedPassword,

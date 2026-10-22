@@ -9,12 +9,12 @@ const studentSchema = new mongoose.Schema(
     },
     fatherName: {
       type: String,
-      required: [true, "Father's name is required"],
+      default: '',
       trim: true,
     },
     motherName: {
       type: String,
-      required: [true, "Mother's name is required"],
+      default: '',
       trim: true,
     },
     phone: {
@@ -24,7 +24,7 @@ const studentSchema = new mongoose.Schema(
     },
     parentPhone: {
       type: String,
-      required: [true, 'Parent phone number is required'],
+      default: '',
       trim: true,
     },
     email: {
@@ -34,7 +34,7 @@ const studentSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      required: [true, 'Address is required'],
+      default: 'Palampur, Himachal Pradesh',
       trim: true,
     },
     academicStage: {
@@ -61,7 +61,6 @@ const studentSchema = new mongoose.Schema(
     subjects: [
       {
         type: String,
-        required: true,
       },
     ],
     dateOfAdmission: {
@@ -70,7 +69,7 @@ const studentSchema = new mongoose.Schema(
     },
     monthlyFee: {
       type: Number,
-      required: [true, 'Monthly fee amount is required'],
+      default: 2500,
       min: [0, 'Fee must be positive'],
     },
     feeDueDate: {

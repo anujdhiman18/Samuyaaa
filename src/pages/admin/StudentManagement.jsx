@@ -34,7 +34,7 @@ const initialStudentForm = {
   parentPhone: '',
   email: '',
   password: 'Student123',
-  address: '',
+  address: 'Palampur, Himachal Pradesh',
   academicStage: '',
   currentClass: '',
   className: 'S2',
@@ -1071,6 +1071,17 @@ export default function StudentManagement() {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="student@saumyaa.edu.in"
+                  className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-secondary mb-1">Residential Address</label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="e.g. Bagru, Palampur, H.P."
                   className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-secondary"
                 />
               </div>

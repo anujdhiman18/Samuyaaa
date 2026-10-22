@@ -194,6 +194,22 @@ export const createStudent = async (req, res) => {
   try {
     let { rollNumber, className, admissionNumber } = req.body;
 
+    // Provide sensible defaults for optional or omitted fields
+    if (!req.body.address || !req.body.address.trim()) {
+      req.body.address = req.body.branch?.includes('Daroh')
+        ? 'Daroh, Himachal Pradesh'
+        : 'Bagru, Palampur, Himachal Pradesh';
+    }
+    if (!req.body.parentPhone) {
+      req.body.parentPhone = req.body.phone || '';
+    }
+    if (req.body.monthlyFee === undefined || req.body.monthlyFee === null || isNaN(Number(req.body.monthlyFee))) {
+      req.body.monthlyFee = 2500;
+    }
+    if (!req.body.subjects || !Array.isArray(req.body.subjects) || req.body.subjects.length === 0) {
+      req.body.subjects = ['General Science', 'Mathematics'];
+    }
+
     // Validate phone & email duplicity with sibling exception rule
     const duplicityCheck = await checkStudentDuplicityWithSiblingRule({
       phone: req.body.phone,
