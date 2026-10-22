@@ -35,8 +35,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (token) {
       localStorage.setItem('saumyaa_token', token);
-    } else {
-      localStorage.removeItem('saumyaa_token');
     }
   }, [token]);
 

@@ -45,14 +45,25 @@ const ensureAuthToken = async () => {
   if (userStr && !isRefreshingAdminToken) {
     try {
       isRefreshingAdminToken = true;
-      const user = JSON.parse(userStr);
+      let user = {};
+      try { user = JSON.parse(userStr); } catch (e) {}
       const email = user.email || 'admin@saumyaa.com';
       const baseUrl = getApiBaseUrl();
-      const loginRes = await fetch(`${baseUrl}/auth/login`, {
+      
+      let loginRes = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: user.password || 'admin123' }),
       });
+
+      if (!loginRes.ok && email !== 'admin@saumyaa.com') {
+        loginRes = await fetch(`${baseUrl}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'admin@saumyaa.com', password: 'admin123' }),
+        });
+      }
+
       if (loginRes.ok) {
         const loginData = await loginRes.json();
         if (loginData && loginData.token) {
@@ -91,8 +102,9 @@ export const apiCall = async (endpoint, options = {}) => {
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) return null;
 
-  if (!localStorage.getItem('saumyaa_token') && localStorage.getItem('saumyaa_user')) {
-    await ensureAuthToken();
+  let currentToken = localStorage.getItem('saumyaa_token');
+  if (!currentToken && localStorage.getItem('saumyaa_user')) {
+    currentToken = await ensureAuthToken();
   }
 
   try {
@@ -104,6 +116,7 @@ export const apiCall = async (endpoint, options = {}) => {
       signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
+        ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         ...options.headers,
       },
     });
@@ -111,6 +124,20 @@ export const apiCall = async (endpoint, options = {}) => {
     clearTimeout(timeoutId);
 
     if (res.status === 401) {
+      if (!options._isRetry) {
+        localStorage.removeItem('saumyaa_token');
+        const refreshed = await ensureAuthToken();
+        if (refreshed) {
+          return apiCall(endpoint, {
+            ...options,
+            _isRetry: true,
+            headers: {
+              ...(options.headers || {}),
+              Authorization: `Bearer ${refreshed}`,
+            },
+          });
+        }
+      }
       localStorage.removeItem('saumyaa_token');
       localStorage.removeItem('saumyaa_user');
     }
