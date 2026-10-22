@@ -876,7 +876,15 @@ export default function StudentManagement() {
                             </div>
                           </div>
                         </td>
-                        <td className="p-4 font-bold text-secondary">{formatClassLabel(app.targetClass)}</td>
+                        <td className="p-4">
+                          <span className="font-bold text-secondary block">{formatClassLabel(app.targetClass)}</span>
+                          {Array.isArray(app.subjects) && app.subjects.some((s) => typeof s === 'string' && s.startsWith('Other')) && (
+                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[9px] font-extrabold uppercase inline-flex items-center gap-0.5 mt-1">
+                              <span className="material-symbols-outlined text-[10px] text-amber-700">star</span>
+                              <span>Custom Subject</span>
+                            </span>
+                          )}
+                        </td>
                         <td className="p-4">
                           <span className="px-2 py-0.5 rounded-md bg-surface-container font-bold text-secondary text-[11px] inline-block border border-outline-variant/20">
                             {app.branch?.includes('Daroh') || app.branch === 'Branch (Daroh)' ? 'Branch (Daroh)' : 'Main Center (Bagru)'}
@@ -1207,10 +1215,29 @@ export default function StudentManagement() {
                   </span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-on-surface-variant block text-[11px]">Subjects of Interest:</span>
-                  <span className="font-bold text-secondary">
-                    {Array.isArray(selectedApp.subjects) ? selectedApp.subjects.join(', ') : selectedApp.subjects || 'N/A'}
-                  </span>
+                  <span className="text-on-surface-variant block text-[11px] mb-1">Subjects of Interest:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.isArray(selectedApp.subjects) && selectedApp.subjects.length > 0 ? (
+                      selectedApp.subjects.map((subj, idx) => {
+                        const isCustom = typeof subj === 'string' && subj.startsWith('Other');
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1 ${
+                              isCustom
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs'
+                                : 'bg-primary/10 text-primary border border-primary/20'
+                            }`}
+                          >
+                            {isCustom && <span className="material-symbols-outlined text-[13px] text-amber-700">star</span>}
+                            <span>{subj}</span>
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="font-bold text-secondary">{selectedApp.subjects || 'N/A'}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 

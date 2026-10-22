@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { studentApplicationService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -34,7 +35,10 @@ const initialFormData = {
 
 export default function StudentApplicationForm({ centerName = 'Saumyaa Studies', onSuccess, editingApp = null, onCancelEdit }) {
   const { addToast } = useToast();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState(initialFormData);
+  const [isOtherSubject, setIsOtherSubject] = useState(false);
+  const [otherSubjectText, setOtherSubjectText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submittedApp, setSubmittedApp] = useState(null);
   const [isSelfEditing, setIsSelfEditing] = useState(false);
@@ -56,6 +60,23 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       }
     }
 
+    const appSubjects = Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'Mathematics'];
+    const customSubj = appSubjects.find(
+      (s) => typeof s === 'string' && (s.startsWith('Other') || s.startsWith('Custom:'))
+    );
+    if (customSubj) {
+      setIsOtherSubject(true);
+      const cleanText = customSubj
+        .replace(/^Other(:|-)?\s*/i, '')
+        .replace(/^Custom(:|-)?\s*/i, '')
+        .replace(/Custom Subject/i, '')
+        .trim();
+      setOtherSubjectText(cleanText);
+    } else {
+      setIsOtherSubject(false);
+      setOtherSubjectText('');
+    }
+
     setFormData({
       _id: app._id || app.id || '',
       id: app._id || app.id || '',
@@ -70,7 +91,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       currentClass: currClass || '10th',
       targetClass: currClass || stage || '10th',
       branch: app.branch || 'Main Center (Bagru)',
-      subjects: Array.isArray(app.subjects) ? app.subjects : [app.subjects || 'Mathematics'],
+      subjects: appSubjects,
       previousSchool: app.previousSchool || '',
       parentName: app.parentName || app.fatherName || '',
       fatherName: app.fatherName || app.parentName || '',
@@ -106,6 +127,11 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           currClass = '';
         }
 
+        if (parsed.isOtherSubject) {
+          setIsOtherSubject(true);
+          setOtherSubjectText(parsed.otherSubjectText || '');
+        }
+
         setFormData((prev) => ({
           ...prev,
           ...parsed,
@@ -119,6 +145,41 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
       console.warn('Could not load student draft:', e);
     }
   }, [editingApp]);
+
+  // Handle URL query param: e.g. /student-application?subject=Other
+  useEffect(() => {
+    const paramSubject = searchParams.get('subject');
+    if (!paramSubject) return;
+
+    const trimmed = paramSubject.trim();
+    if (
+      trimmed.toLowerCase() === 'other' ||
+      trimmed.toLowerCase() === 'custom' ||
+      trimmed.toLowerCase().includes('other')
+    ) {
+      setIsOtherSubject(true);
+      setFormData((prev) => {
+        const existing = prev.subjects || [];
+        const hasOther = existing.some((s) => typeof s === 'string' && s.startsWith('Other'));
+        if (hasOther) return prev;
+        const nonDefault = existing.filter((s) => s !== 'Mathematics' && s !== 'Physics');
+        return {
+          ...prev,
+          subjects: ['Other / Custom Subject', ...nonDefault],
+        };
+      });
+    } else {
+      setFormData((prev) => {
+        const existing = prev.subjects || [];
+        if (existing.includes(trimmed)) return prev;
+        const nonDefault = existing.filter((s) => s !== 'Mathematics' && s !== 'Physics');
+        return {
+          ...prev,
+          subjects: [trimmed, ...nonDefault],
+        };
+      });
+    }
+  }, [searchParams]);
 
   // Check 30-day approval lock on email or phone change
   useEffect(() => {
@@ -158,7 +219,10 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
   const handleSaveDraft = () => {
     try {
-      localStorage.setItem('saumyaa_student_app_draft', JSON.stringify(formData));
+      localStorage.setItem(
+        'saumyaa_student_app_draft',
+        JSON.stringify({ ...formData, isOtherSubject, otherSubjectText })
+      );
       setDraftSaved(true);
       addToast('Draft saved to browser storage!', 'info');
     } catch (e) {
@@ -169,6 +233,8 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
   const handleClearDraft = () => {
     localStorage.removeItem('saumyaa_student_app_draft');
     setFormData(initialFormData);
+    setIsOtherSubject(false);
+    setOtherSubjectText('');
     setDraftSaved(false);
     setErrors({});
     addToast('Form cleared.', 'info');
@@ -184,8 +250,14 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     const newClass = validClasses.includes(formData.currentClass) ? formData.currentClass : '';
     const newStageSubjects = getSubjectsForStage(stageCode);
     const prevSubjects = formData.subjects || [];
-    const retained = prevSubjects.filter((s) => newStageSubjects.includes(s));
-    const nextSubjects = retained.length > 0 ? retained : [newStageSubjects[0], newStageSubjects[1]].filter(Boolean);
+    const retained = prevSubjects.filter(
+      (s) => newStageSubjects.includes(s) || (typeof s === 'string' && s.startsWith('Other'))
+    );
+    let nextSubjects = retained.length > 0 ? retained : [newStageSubjects[0], newStageSubjects[1]].filter(Boolean);
+    if (isOtherSubject && !nextSubjects.some((s) => typeof s === 'string' && s.startsWith('Other'))) {
+      const customTag = otherSubjectText.trim() ? `Other: ${otherSubjectText.trim()}` : 'Other / Custom Subject';
+      nextSubjects.push(customTag);
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -221,8 +293,45 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
         return { ...prev, subjects: [...current, subj] };
       }
     });
+    if (errors.subjects) {
+      setErrors((prev) => ({ ...prev, subjects: null }));
+    }
   };
 
+  const handleToggleOtherSubject = () => {
+    setIsOtherSubject((prev) => {
+      const nextState = !prev;
+      setFormData((prevForm) => {
+        const list = (prevForm.subjects || []).filter((s) => typeof s !== 'string' || !s.startsWith('Other'));
+        if (nextState) {
+          const customTag = otherSubjectText.trim() ? `Other: ${otherSubjectText.trim()}` : 'Other / Custom Subject';
+          return { ...prevForm, subjects: [...list, customTag] };
+        } else {
+          return { ...prevForm, subjects: list };
+        }
+      });
+      return nextState;
+    });
+    if (errors.subjects || errors.otherSubject) {
+      setErrors((prev) => ({ ...prev, subjects: null, otherSubject: null }));
+    }
+  };
+
+  const handleOtherSubjectTextChange = (text) => {
+    setOtherSubjectText(text);
+    if (errors.otherSubject) {
+      setErrors((prev) => ({ ...prev, otherSubject: null }));
+    }
+    const clean = text.trim();
+    const customTag = clean ? `Other: ${clean}` : 'Other / Custom Subject';
+    setFormData((prev) => {
+      const list = (prev.subjects || []).filter((s) => typeof s !== 'string' || !s.startsWith('Other'));
+      return {
+        ...prev,
+        subjects: isOtherSubject ? [...list, customTag] : list,
+      };
+    });
+  };
 
   const validate = () => {
     const errs = {};
@@ -237,6 +346,13 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
     if (!formData.academicStage) errs.academicStage = 'Please select an academic stage';
     if (!formData.currentClass) errs.currentClass = 'Please select your current class / grade';
     if (!formData.branch) errs.branch = 'Please select a preferred branch';
+
+    if (isOtherSubject && !otherSubjectText.trim()) {
+      errs.otherSubject = 'Please specify the custom subject name you are requesting.';
+    }
+    if (!formData.subjects || formData.subjects.length === 0) {
+      errs.subjects = 'Please select at least one subject of interest or specify your custom subject.';
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -256,19 +372,33 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
 
     setSubmitting(true);
     try {
+      let finalSubjects = formData.subjects || [];
+      if (isOtherSubject && otherSubjectText.trim()) {
+        const customEntry = `Other: ${otherSubjectText.trim()}`;
+        finalSubjects = [
+          ...finalSubjects.filter((s) => typeof s !== 'string' || !s.startsWith('Other')),
+          customEntry,
+        ];
+      }
+
+      const payload = {
+        ...formData,
+        subjects: finalSubjects,
+      };
+
       let res;
       const targetAppId = formData._id || formData.id || editingApp?._id || editingApp?.id || formData.applicationId;
       if (isEditing && targetAppId) {
-        res = await studentApplicationService.updateApplication(targetAppId, formData);
+        res = await studentApplicationService.updateApplication(targetAppId, payload);
       } else {
-        res = await studentApplicationService.submitApplication(formData);
+        res = await studentApplicationService.submitApplication(payload);
       }
 
       if (res.success) {
         localStorage.removeItem('saumyaa_student_app_draft');
         const updatedOrNewApp = res.application || {
           applicationId: res.applicationId || formData.applicationId || editingApp?.applicationId,
-          ...formData,
+          ...payload,
         };
         setSubmittedApp(updatedOrNewApp);
         setLastSubmittedSnapshot(updatedOrNewApp);
@@ -335,6 +465,12 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div className="flex justify-between items-center text-xs">
             <span className="text-on-surface-variant">Parent/Guardian:</span>
             <span className="font-bold text-secondary">{submittedApp.parentName} ({submittedApp.parentContact})</span>
+          </div>
+          <div className="flex justify-between items-start text-xs pt-0.5">
+            <span className="text-on-surface-variant shrink-0">Subjects:</span>
+            <span className="font-bold text-secondary text-right max-w-[220px]">
+              {Array.isArray(submittedApp.subjects) ? submittedApp.subjects.join(', ') : submittedApp.subjects || 'N/A'}
+            </span>
           </div>
           {submittedApp.status && (
             <div className="flex justify-between items-center text-xs pt-1 border-t border-outline-variant/15">
@@ -739,7 +875,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-secondary">
-                Subjects of Interest
+                Subjects of Interest <span className="text-rose-500">*</span>
               </label>
               {formData.academicStage && (
                 <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
@@ -747,6 +883,7 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
                 </span>
               )}
             </div>
+
             <div className="flex flex-wrap gap-2">
               {currentStageSubjects.map((subj) => {
                 const isSelected = (formData.subjects || []).includes(subj);
@@ -766,9 +903,95 @@ export default function StudentApplicationForm({ centerName = 'Saumyaa Studies',
                   </button>
                 );
               })}
+
+              {/* Special Other / Custom Subject Toggle Button */}
+              <button
+                type="button"
+                onClick={handleToggleOtherSubject}
+                className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                  isOtherSubject
+                    ? 'bg-[#D97706] text-white border-[#D97706] shadow-sm scale-[1.02]'
+                    : 'bg-amber-50/80 text-amber-900 border-amber-300 hover:border-amber-500 hover:bg-amber-100/70'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  {isOtherSubject ? 'check' : 'add'}
+                </span>
+                <span>+ Other / Custom Subject</span>
+              </button>
             </div>
+
+            {errors.subjects && (
+              <p className="text-[11px] text-rose-500 mt-1 font-semibold">{errors.subjects}</p>
+            )}
+
+            {/* Expandable Custom Subject Specification Panel */}
+            {isOtherSubject && (
+              <div className="mt-3.5 p-4 bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-amber-50/90 border-2 border-amber-300/80 rounded-2xl animate-fade-in space-y-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-700 text-base">edit_note</span>
+                    <label className="text-xs font-bold text-amber-950">
+                      Specify Subject(s) Not Listed Above <span className="text-rose-500">*</span>
+                    </label>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">
+                    Open For Any Curriculum
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-amber-900/85 leading-relaxed">
+                  We welcome applications for <strong>any subject, language, or syllabus</strong>! Enter your requested subject(s) below and our faculty will design a tailored schedule for you:
+                </p>
+
+                <input
+                  type="text"
+                  value={otherSubjectText}
+                  onChange={(e) => handleOtherSubjectTextChange(e.target.value)}
+                  placeholder="e.g. Sanskrit, Economics, Accountancy, Business Studies, Computer Applications, French, etc."
+                  className={`w-full px-4 py-2.5 rounded-xl border text-xs bg-white text-secondary focus:outline-none focus:ring-2 focus:ring-amber-500/40 transition-all ${
+                    errors.otherSubject ? 'border-rose-500 bg-rose-50/30' : 'border-amber-300'
+                  }`}
+                />
+                {errors.otherSubject && (
+                  <p className="text-[11px] text-rose-500 font-semibold">{errors.otherSubject}</p>
+                )}
+
+                {/* Popular suggestions quick chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold text-amber-900/80 mr-1">Quick Select:</span>
+                  {[
+                    'Sanskrit',
+                    'Economics',
+                    'Accountancy',
+                    'Business Studies',
+                    'Computer Applications / IT',
+                    'Psychology',
+                    'Regional Language',
+                    'Olympiad Mathematics',
+                  ].map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => {
+                        const newText = otherSubjectText
+                          ? otherSubjectText.includes(sug)
+                            ? otherSubjectText
+                            : `${otherSubjectText}, ${sug}`
+                          : sug;
+                        handleOtherSubjectTextChange(newText);
+                      }}
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-white border border-amber-300 text-amber-900 rounded-md hover:bg-amber-100 hover:border-amber-400 transition-colors cursor-pointer"
+                    >
+                      + {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <p className="text-[11px] text-on-surface-variant/70 mt-2">
-              Select one or more subjects you wish to focus on for this academic category.
+              Select one or more subjects you wish to focus on, or click "+ Other / Custom Subject" to request any subject not listed.
             </p>
           </div>
         </div>

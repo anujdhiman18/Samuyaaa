@@ -64,6 +64,19 @@ export const courses = [
     batch: 'Mon-Sat | 3:30 PM',
     program: 'Homework Help (Nursery – Class 8)',
   },
+  {
+    id: 'other',
+    category: 'other',
+    icon: 'edit_note',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-700',
+    title: 'Other Subjects & Custom Requests',
+    tags: ['All Grades', 'Any Board / Subject'],
+    description:
+      'Looking for a subject or curriculum not listed above? We offer customized 1-on-1 and small batch coaching for any subject — including Sanskrit, Economics, Accounts, Regional Languages, Computer Applications, Olympiads, and more. Apply now to request your subject!',
+    batch: 'Flexible Batch Timings',
+    program: 'Personalized Coaching Track',
+  },
 ];
 
 export const courseFilters = [
@@ -72,6 +85,7 @@ export const courseFilters = [
   { id: 'science', label: 'Sciences & NEET/JEE' },
   { id: 'english', label: 'English & Comm' },
   { id: 'homework', label: 'Homework Help' },
+  { id: 'other', label: 'Other / Custom Subjects' },
 ];
 
 export const testimonials = [
