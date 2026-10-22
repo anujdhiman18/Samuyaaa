@@ -4,7 +4,7 @@ const studentLeaveSchema = new mongoose.Schema(
   {
     studentId: {
       type: String,
-      default: 's_demo',
+      default: '',
     },
     admissionNo: {
       type: String,

@@ -59,7 +59,7 @@ export default function FacultyManagement() {
     date: '',
     time: '11:00 AM - 01:00 PM',
     venueMode: 'Main Campus (Bagru) - Conference Room / Online',
-    instructions: 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+    instructions: 'Please prepare a 15-minute sample presentation on your core subject and bring all original educational certificates & ID proof.',
   });
 
   // Faculty Modal states
@@ -640,7 +640,7 @@ export default function FacultyManagement() {
         date: app.examInterviewSchedule.date || '',
         time: app.examInterviewSchedule.time || '11:00 AM - 01:00 PM',
         venueMode: app.examInterviewSchedule.venueMode || 'Main Campus (Bagru) - Conference Room / Online',
-        instructions: app.examInterviewSchedule.instructions || 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+        instructions: app.examInterviewSchedule.instructions || 'Please prepare a 15-minute sample presentation on your core subject and bring all original educational certificates & ID proof.',
       });
     } else {
       setExamSchedule({
@@ -648,7 +648,7 @@ export default function FacultyManagement() {
         date: '',
         time: '11:00 AM - 01:00 PM',
         venueMode: 'Main Campus (Bagru) - Conference Room / Online',
-        instructions: 'Please prepare a 15-minute demo lecture on your core subject and bring all original educational certificates & ID proof.',
+        instructions: 'Please prepare a 15-minute sample presentation on your core subject and bring all original educational certificates & ID proof.',
       });
     }
   };
@@ -1691,12 +1691,12 @@ export default function FacultyManagement() {
               </div>
             )}
 
-            {/* Interview & Demo Lecture Scheduling Suite */}
+            {/* Interview & Presentation Scheduling Suite */}
             <div className="p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-headings font-bold text-secondary uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-amber-600 text-[18px]">calendar_month</span>
-                  Schedule Interview &amp; Demo Lecture
+                  Schedule Interview &amp; Presentation
                 </h4>
                 {selectedApp.examInterviewSchedule?.date && (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -1705,7 +1705,7 @@ export default function FacultyManagement() {
                 )}
               </div>
               <p className="text-[11px] text-on-surface-variant">
-                Set the official Day, Date, Time, Venue/Mode, and Demo lecture guidelines. This will be updated live on the applicant's status tracking slip.
+                Set the official Day, Date, Time, Venue/Mode, and candidate presentation guidelines. This will be updated live on the applicant's status tracking slip.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1759,7 +1759,7 @@ export default function FacultyManagement() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-secondary mb-1">Demo Lecture Topic / Instructions for Candidate</label>
+                  <label className="block font-bold text-secondary mb-1">Teaching Presentation Topic / Instructions for Candidate</label>
                   <textarea
                     rows={2}
                     value={examSchedule.instructions}
@@ -1790,7 +1790,7 @@ export default function FacultyManagement() {
                 rows={2}
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Add interviewer notes, demo feedback, background check results..."
+                placeholder="Add interviewer notes, candidate feedback, background check results..."
                 className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary text-xs"
               />
             </div>

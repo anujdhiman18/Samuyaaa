@@ -9,7 +9,6 @@ import {
   sendFacultyUpdateEmail,
   sendAdminAlertEmail,
   sendFeeReminderEmail,
-  sendDemoScheduleEmail,
 } from './emailService.js';
 
 /**
@@ -474,88 +473,6 @@ export async function notifyAdminCriticalEvent({
   return { success: true, email: emailResult, sms: smsResult, inApp: inAppResult };
 }
 
-/**
- * 8. Dispatch Demo Class Scheduled Notification (SMS + Email)
- */
-export async function notifyDemoClassSchedule({
-  studentName,
-  phone,
-  email,
-  subject,
-  className,
-  scheduledDate,
-  scheduledTime,
-  facultyMentor,
-  meetingMode,
-  branch,
-  bookingId,
-  notes,
-  triggeredBy = 'Admin',
-}) {
-  const formattedDate = scheduledDate
-    ? new Date(scheduledDate).toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'Scheduled Date';
 
-  // 1. Dispatch SMS
-  let smsResult = null;
-  const smsText = `Dear ${studentName || 'Student'}, your Demo Class for ${subject || 'Demo'} (${className || 'General'}) is scheduled on ${formattedDate} at ${scheduledTime || '04:30 PM'} (${meetingMode || 'Offline Classroom'}) at ${branch || 'Main Center'}. Mentor: ${facultyMentor || 'Jitender Sharma'}. - Saumyaa Studies`;
-
-  if (phone) {
-    try {
-      smsResult = await sendGenericSMS({
-        phone,
-        text: smsText,
-      });
-    } catch (e) {
-      smsResult = { success: false, error: e.message };
-    }
-  }
-
-  // 2. Dispatch Email
-  let emailResult = null;
-  if (email && email.includes('@')) {
-    try {
-      emailResult = await sendDemoScheduleEmail({
-        to: email,
-        studentName: studentName || 'Student',
-        subject: subject || 'Demo Class',
-        className: className || 'General',
-        scheduledDate,
-        scheduledTime: scheduledTime || '04:30 PM',
-        facultyMentor: facultyMentor || 'Jitender Sharma',
-        meetingMode: meetingMode || 'Offline Classroom',
-        branch: branch || 'Main Center',
-        bookingId: bookingId || 'DM-DEMO',
-        notes,
-      });
-    } catch (e) {
-      emailResult = { success: false, error: e.message };
-    }
-  }
-
-  // 3. Create Admin / System Notification
-  if (mongoose.connection.readyState === 1) {
-    try {
-      await Notification.create({
-        recipientRole: 'Admin',
-        title: `Demo Scheduled: ${studentName || 'Student'}`,
-        message: `Demo for ${studentName} (${subject}) scheduled on ${formattedDate} at ${scheduledTime}. SMS: ${smsResult?.success ? 'Sent' : 'Attempted'}, Email: ${emailResult?.success ? 'Sent' : 'Skipped/Sent'}`,
-        type: 'Announcement',
-      });
-    } catch (e) {}
-  }
-
-  return {
-    success: true,
-    sms: smsResult,
-    email: emailResult,
-    smsText,
-  };
-}
 
 

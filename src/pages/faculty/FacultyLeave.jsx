@@ -46,7 +46,7 @@ export default function FacultyLeave() {
           return (curId && lId === curId) || (curEmail && lEmail === curEmail);
         });
 
-        // Show logged-in faculty's leaves if any, else return all demo leaves
+        // Show logged-in faculty's leaves if found, otherwise show leaves list
         setLeaves(myLeaves.length > 0 ? myLeaves : res.leaves);
       }
     } catch (err) {

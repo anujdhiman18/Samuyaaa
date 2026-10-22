@@ -4,13 +4,10 @@ import Navbar from '../components/Navbar';
 import MobileMenu from '../components/MobileMenu';
 import WhatsAppFab from '../components/WhatsAppFab';
 import Footer from '../components/Footer';
-import BookingModal from '../components/BookingModel';
 import { announcementService } from '../services/api';
 
 export default function PublicLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [prefilledProgram, setPrefilledProgram] = useState('');
   const [latestAnnouncement, setLatestAnnouncement] = useState(null);
 
   useEffect(() => {
@@ -28,26 +25,15 @@ export default function PublicLayout() {
     }
   };
 
-  function openBooking(program = '') {
-    setPrefilledProgram(program);
-    setBookingOpen(true);
-  }
-
-  function closeBooking() {
-    setBookingOpen(false);
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-surface font-body text-on-surface">
       <Navbar
-        onOpenBooking={openBooking}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
       />
 
       <MobileMenu
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        onOpenBooking={() => openBooking()}
       />
 
       <main className="flex-grow pt-20">
@@ -61,17 +47,11 @@ export default function PublicLayout() {
           </div>
         )}
 
-        <Outlet context={{ openBooking }} />
+        <Outlet />
       </main>
 
       <WhatsAppFab />
       <Footer />
-
-      <BookingModal
-        open={bookingOpen}
-        prefilledProgram={prefilledProgram}
-        onClose={closeBooking}
-      />
     </div>
   );
 }

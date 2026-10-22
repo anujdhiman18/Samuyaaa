@@ -33,7 +33,7 @@ export default function FacultyLogin() {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleQuickLogin = async () => {
     setLoading(true);
     try {
       const res = await facultyPanelService.loginFaculty({
@@ -42,11 +42,11 @@ export default function FacultyLogin() {
       });
       if (res && res.success) {
         login(res.user, res.token);
-        addToast('Logged in as Faculty Member (Demo Mode)', 'success');
+        addToast('Logged in as Faculty Member', 'success');
         navigate('/faculty/dashboard');
       }
     } catch (err) {
-      addToast('Demo login error', 'error');
+      addToast('Quick login error', 'error');
     } finally {
       setLoading(false);
     }
@@ -103,24 +103,24 @@ export default function FacultyLogin() {
           </button>
         </form>
 
-        {/* Demo Fast Fill & Login Shortcuts */}
+        {/* Quick Fill & Login Shortcuts */}
         <div className="pt-4 border-t border-outline-variant/15 text-center space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => {
                 setEmail('jitender.sharma@saumyaa.edu.in');
                 setPassword('faculty123');
-                addToast('Filled Faculty Demo Credentials!', 'info');
+                addToast('Filled Faculty Credentials!', 'info');
               }}
               type="button"
               className="py-2.5 px-3 rounded-full border border-primary/30 bg-primary/10 text-primary font-headings font-bold text-xs hover:bg-primary/20 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">edit_note</span>
-              Fill Demo Info
+              Auto Fill
             </button>
 
             <button
-              onClick={handleDemoLogin}
+              onClick={handleQuickLogin}
               type="button"
               className="py-2.5 px-3 rounded-full bg-secondary text-white font-headings font-bold text-xs hover:bg-secondary/90 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >

@@ -309,7 +309,7 @@ export default function CandidateStatusTracker({ onClose, onEditApplication }) {
 
                   {schedule.instructions && (
                     <div className="p-2.5 bg-white/80 rounded-xl border border-amber-500/20 text-[11px]">
-                      <span className="font-bold text-secondary block mb-0.5">Demo Topic / Instructions:</span>
+                      <span className="font-bold text-secondary block mb-0.5">Presentation Topic / Instructions:</span>
                       <p className="text-on-surface-variant leading-relaxed">{schedule.instructions}</p>
                     </div>
                   )}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import founderImg from '../imges/Unknown.jpg';
 
-export default function About({ onOpenBooking }) {
+export default function About() {
   return (
     <section id="about" className="max-w-container-max mx-auto px-gutter py-12 md:py-24">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">

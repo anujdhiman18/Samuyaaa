@@ -46,7 +46,7 @@ export default function StudentLeave() {
           return (curId && lId === curId) || (curAdmission && lAdm === curAdmission);
         });
 
-        // Show student's leaves if any, else return all demo student leaves
+        // Show student's leaves if found, otherwise show leaves list
         setLeaves(myLeaves.length > 0 ? myLeaves : res.leaves);
       }
     } catch (err) {

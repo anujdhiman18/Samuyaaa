@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function CtaHub({ onOpenBooking }) {
+export default function CtaHub() {
   return (
     <section className="max-w-[1000px] mx-auto px-gutter py-8 mb-16 font-body">
       <div className="bg-gradient-to-tr from-[#0D47A1] via-[#1565C0] to-[#0A192F] rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 text-white text-center relative overflow-hidden shadow-premium border border-[#90CAF9]/30">

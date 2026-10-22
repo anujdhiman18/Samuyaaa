@@ -52,7 +52,7 @@ export default function StudentManagement() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = normalizeTabParam(searchParams.get('tab'));
-  const [activeTab, setActiveTab] = useState(initialTab); // 'directory' | 'applications' | 'demo_bookings' | 'leaves'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'directory' | 'applications' | 'leaves'
 
   // Student Directory State
   const [students, setStudents] = useState(() => {

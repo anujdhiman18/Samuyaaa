@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { courseFilters } from '../data.js';
 import { subjectService } from '../services/api.js';
 
-export default function Courses({ onOpenBooking }) {
+export default function Courses() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [liveSubjects, setLiveSubjects] = useState([]);
 
@@ -131,13 +132,13 @@ export default function Courses({ onOpenBooking }) {
               </p>
 
               <div className="border-t border-[#90CAF9]/30 pt-4 mt-auto flex justify-end items-center">
-                <button
-                  onClick={() => onOpenBooking(course.program)}
-                  className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-all duration-300 shadow-premium flex items-center gap-1.5 cursor-pointer"
+                <Link
+                  to="/student-application"
+                  className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-all duration-300 shadow-premium flex items-center gap-1.5"
                 >
                   <span>Enquire Now</span>
                   <span className="material-symbols-outlined text-[16px] text-white">arrow_forward</span>
-                </button>
+                </Link>
               </div>
             </div>
           ))}

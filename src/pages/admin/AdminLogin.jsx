@@ -47,7 +47,7 @@ export default function AdminLogin() {
     }
   };
 
-  const handleFillDemo = () => {
+  const handleFillCredentials = () => {
     setEmail(activeAdminEmail);
     setPassword('admin123');
     addToast(`Admin credentials filled: ${activeAdminEmail} / admin123`, 'info');
@@ -74,7 +74,7 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        {/* Demo Credentials Alert Banner */}
+        {/* Quick Credentials Alert Banner */}
         <div className="mb-6 p-3.5 rounded-xl bg-primary-fixed/40 dark:bg-zinc-800 border border-primary/20 flex items-center justify-between text-xs">
           <div>
             <p className="font-bold text-on-primary-fixed dark:text-zinc-200">Active Admin Username</p>
@@ -84,7 +84,7 @@ export default function AdminLogin() {
           </div>
           <button
             type="button"
-            onClick={handleFillDemo}
+            onClick={handleFillCredentials}
             className="bg-primary text-white px-3 py-1.5 rounded-lg text-[11px] font-headings font-bold hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
           >
             Auto Fill

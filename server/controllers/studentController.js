@@ -760,7 +760,7 @@ export const getReminderLogs = async (req, res) => {
 export const applyStudentLeave = async (req, res) => {
   try {
     const StudentLeave = (await import('../models/StudentLeave.js')).default;
-    const studentId = req.body.studentId || req.user?._id || req.user?.id || 's_demo';
+    const studentId = req.body.studentId || req.user?._id || req.user?.id || '';
     const admissionNo = req.body.admissionNo || req.user?.admissionNo || 'ADM-2025-089';
     const studentName = req.body.studentName || req.user?.name || req.user?.fullName || 'Varun Sharma';
     const parentPhone = req.body.parentPhone || req.user?.phone || req.user?.parentPhone || '9816099999';
@@ -847,47 +847,7 @@ export const getStudentLeaves = async (req, res) => {
 export const getAllStudentLeaves = async (req, res) => {
   try {
     const StudentLeave = (await import('../models/StudentLeave.js')).default;
-    let leaves = await StudentLeave.find().sort({ createdAt: -1 });
-
-    if (!leaves || leaves.length === 0) {
-      const demoLeaves = [
-        {
-          studentId: 's_demo_1',
-          admissionNo: 'ADM-2025-089',
-          studentName: 'Varun Sharma',
-          parentPhone: '9816099999',
-          className: '10th',
-          section: 'Section A',
-          branch: 'Main Center',
-          leaveType: 'Sick Leave',
-          startDate: '2026-08-10',
-          endDate: '2026-08-12',
-          numberOfDays: 3,
-          reason: 'Severe viral fever and doctor advised 3 days complete bed rest',
-          supportingDocument: 'https://example.com/medical-fitness-cert.pdf',
-          status: 'Pending',
-        },
-        {
-          studentId: 's_demo_2',
-          admissionNo: 'ADM-2025-092',
-          studentName: 'Ananya Gupta',
-          parentPhone: '9816088888',
-          className: '12th (+2)',
-          section: 'Medical',
-          branch: 'Main Center',
-          leaveType: 'Casual Leave',
-          startDate: '2026-08-15',
-          endDate: '2026-08-16',
-          numberOfDays: 2,
-          reason: 'Attending family wedding ceremony in Shimla',
-          supportingDocument: '',
-          status: 'Approved',
-          adminRemarks: 'Approved by Class Teacher. Make up missed assignments.',
-        },
-      ];
-      leaves = await StudentLeave.insertMany(demoLeaves);
-    }
-
+    const leaves = await StudentLeave.find().sort({ createdAt: -1 });
     res.json({ success: true, count: leaves.length, leaves });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

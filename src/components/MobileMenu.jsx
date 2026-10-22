@@ -10,7 +10,7 @@ const links = [
   { to: '/about', label: 'About Founder & Vision' },
 ];
 
-export default function MobileMenu({ open, onClose, onOpenBooking }) {
+export default function MobileMenu({ open, onClose }) {
   const [animateIn, setAnimateIn] = useState(false);
   const { user, isAuthenticated, isAdmin, isFaculty, logout } = useAuth();
 

@@ -14,13 +14,10 @@ import CtaHub from './CtaHub';
 import Content from './Content';
 import WhatsAppFab from './WhatsAppFab';
 import Footer from './Footer';
-import BookingModal from './BookingModel';
 import { announcementService } from '../services/api';
 
 export default function PublicWebsite() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [prefilledProgram, setPrefilledProgram] = useState('');
   const [latestAnnouncement, setLatestAnnouncement] = useState(null);
 
   useEffect(() => {
@@ -38,26 +35,15 @@ export default function PublicWebsite() {
     }
   };
 
-  function openBooking(program = '') {
-    setPrefilledProgram(program);
-    setBookingOpen(true);
-  }
-
-  function closeBooking() {
-    setBookingOpen(false);
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-surface font-body text-on-surface">
       <Navbar
-        onOpenBooking={openBooking}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
       />
 
       <MobileMenu
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        onOpenBooking={() => openBooking()}
       />
 
       <main className="flex-grow pt-20">
@@ -71,26 +57,20 @@ export default function PublicWebsite() {
           </div>
         )}
 
-        <About onOpenBooking={openBooking} />
-        <Course onOpenBooking={openBooking} />
+        <About />
+        <Course />
         <AdmissionProcessSection />
         <FacultySection />
         <AlumniSection />
         <Results />
         <Testimonials />
         <Faq />
-        <CtaHub onOpenBooking={openBooking} />
+        <CtaHub />
         <Content />
       </main>
 
       <WhatsAppFab />
       <Footer />
-
-      <BookingModal
-        open={bookingOpen}
-        prefilledProgram={prefilledProgram}
-        onClose={closeBooking}
-      />
     </div>
   );
 }

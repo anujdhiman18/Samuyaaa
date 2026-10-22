@@ -10,7 +10,7 @@ const links = [
   { to: '/about', label: 'About' },
 ];
 
-export default function Navbar({ onOpenBooking, onOpenMobileMenu }) {
+export default function Navbar({ onOpenMobileMenu }) {
   const [scrolled, setScrolled] = useState(false);
   const [applyMenuOpen, setApplyMenuOpen] = useState(false);
   const applyDropdownRef = useRef(null);

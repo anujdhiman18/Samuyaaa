@@ -215,7 +215,7 @@ export default function TodayAttendanceCard() {
               {verifying ? 'Verifying GPS...' : 'Auto-Verify & Check In (GPS)'}
             </button>
 
-            {/* Simulated Location Trigger for Testing / Demo */}
+            {/* Simulated Location Trigger for Campus Testing */}
             {centerConfig && (
               <button
                 type="button"
