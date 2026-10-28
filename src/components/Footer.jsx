@@ -65,12 +65,7 @@ export default function Footer() {
           <ul className="space-y-2.5 font-normal">
             {[
               { to: '/', label: 'Home Overview' },
-              { to: '/about', label: 'About Founder & Vision' },
-              { to: '/courses', label: 'Academic Programs (S1-S5)' },
               { to: '/admissions', label: 'Admission / Joining Process' },
-              { to: '/our-faculty', label: 'Faculty Directory' },
-              { to: '/results', label: 'Wall of Excellence' },
-              { to: '/testimonials', label: 'Student Testimonials' },
               { to: '/contact', label: 'Contact Us & Centers' },
             ].map((link) => (
               <li key={link.label}>
