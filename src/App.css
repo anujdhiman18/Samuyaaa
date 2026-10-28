@@ -16,7 +16,27 @@ h5,
 h6 {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   font-weight: 600;
+  color: inherit;
+}
+
+h1 {
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+h2 {
   letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+h3 {
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+h4, h5, h6 {
+  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 /* Material Symbols */

@@ -70,7 +70,7 @@
   --spring-ease: cubic-bezier(0.2, 1, 0.3, 1);
   --spring-duration: 350ms;
   --spring-duration-fast: 200ms;
-  --spring-duration-slow: 500ms;
+  --spring-duration-slow: 400ms;
 }
 
 /* Base resets & typography */
@@ -94,29 +94,49 @@ body {
   max-width: 100vw;
   width: 100%;
   line-height: 1.5;
+  letter-spacing: 0;
 }
 
-/* Apple Headlines: weight 600, letter-spacing -0.02em */
-h1, h2, h3, h4, h5, h6 {
+/* ==========================================================================
+   Apple §15: Optical Typography System
+   Tightened negative tracking on large display headlines (-0.02em to -0.025em),
+   inverse leading (line-height) per size
+   ========================================================================== */
+h1, .display-large {
   font-family: var(--apple-font-stack);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
   color: inherit;
 }
 
-h1 {
-  letter-spacing: -0.025em;
-  line-height: 1.08;
-}
-
-h2 {
+h2, .display-medium {
+  font-family: var(--apple-font-stack);
+  font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  color: inherit;
 }
 
-h3 {
+h3, .display-small {
+  font-family: var(--apple-font-stack);
+  font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.25;
+  color: inherit;
+}
+
+h4, h5, h6 {
+  font-family: var(--apple-font-stack);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: inherit;
+}
+
+p, span, li, input, textarea, select {
+  line-height: 1.5;
+  letter-spacing: 0;
 }
 
 /* Links: #0066cc (underline on hover only) */
@@ -124,13 +144,14 @@ a.apple-link, .apple-link {
   color: var(--apple-link);
   text-decoration: none;
   transition: opacity var(--spring-duration-fast) var(--spring-ease);
+  will-change: opacity;
 }
 
 a.apple-link:hover, .apple-link:hover {
   text-decoration: underline;
 }
 
-/* Buttons */
+/* Buttons: Spring transform and opacity animations only */
 .apple-btn-primary {
   background-color: #0071e3;
   color: #ffffff !important;
@@ -144,19 +165,19 @@ a.apple-link:hover, .apple-link:hover {
   font-size: 0.875rem;
   line-height: 1.25rem;
   border: 1px solid transparent;
-  transition: background-color 150ms ease, transform 100ms var(--spring-ease);
-  will-change: transform;
+  transition: transform 100ms var(--spring-ease), opacity var(--spring-duration-fast) var(--spring-ease);
+  will-change: transform, opacity;
   cursor: pointer;
 }
 
 .apple-btn-primary:hover {
-  background-color: #0077ed;
+  opacity: 0.95;
   text-decoration: none;
 }
 
 .apple-btn-primary:active {
-  background-color: #006edb;
-  transform: scale(0.97);
+  transform: scale(0.97) !important;
+  opacity: 0.9;
 }
 
 .apple-btn-secondary {
@@ -172,18 +193,20 @@ a.apple-link:hover, .apple-link:hover {
   padding: 0.625rem 1.375rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  transition: background-color 150ms ease, color 150ms ease, transform 100ms var(--spring-ease);
-  will-change: transform;
+  transition: transform 100ms var(--spring-ease), opacity var(--spring-duration-fast) var(--spring-ease);
+  will-change: transform, opacity;
   cursor: pointer;
 }
 
 .apple-btn-secondary:hover {
   background-color: rgba(0, 113, 227, 0.08);
+  opacity: 0.95;
   text-decoration: none;
 }
 
 .apple-btn-secondary:active {
-  transform: scale(0.97);
+  transform: scale(0.97) !important;
+  opacity: 0.9;
 }
 
 /* Apple Sections: alternating rhythm with generous 80-120px padding */
@@ -209,10 +232,19 @@ a.apple-link:hover, .apple-link:hover {
 }
 
 /* Apple Cards: 18-28px radius (22px), no hard borders, soft neutral shadows */
+.apple-card-white,
+.apple-card-alt,
+.apple-card-dark,
+.course-card,
+.apple-card {
+  border-radius: 22px;
+  will-change: transform;
+  transition: transform 100ms var(--spring-ease), opacity var(--spring-duration) var(--spring-ease);
+}
+
 .apple-card-white {
   background-color: #ffffff;
   color: #1d1d1f;
-  border-radius: 22px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -231,7 +263,6 @@ a.apple-link:hover, .apple-link:hover {
 .apple-card-alt {
   background-color: #f5f5f7;
   color: #1d1d1f;
-  border-radius: 22px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.04);
 }
@@ -250,7 +281,6 @@ a.apple-link:hover, .apple-link:hover {
 .apple-card-dark {
   background-color: #1d1d1f;
   color: #f5f5f7;
-  border-radius: 22px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   border: 1px solid #424245;
 }
@@ -266,26 +296,46 @@ a.apple-link:hover, .apple-link:hover {
   color: #86868b;
 }
 
-/* Apple Glass Header: translucent glass with blur(20px) saturate(180%) */
-.apple-glass-navbar {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+/* Apple Glass Header & Navbar: translucent glass with blur(20px) saturate(180%) */
+.apple-glass-navbar,
+#navbar,
+.glass-header {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Interactive Press Feedback: scale(0.97) in 100ms */
+/* ==========================================================================
+   Apple §1: Direct Press Response
+   Every button, link, and card responds on press (not release) with scale(0.97) in 100ms
+   ========================================================================== */
 button:active,
 [role="button"]:active,
 a:active,
-.apple-press:active {
-  transform: scale(0.97);
+.apple-card-white:active,
+.apple-card-alt:active,
+.apple-card-dark:active,
+.course-card:active,
+.apple-card:active,
+.apple-press:active,
+[class*="rounded-[22px]"]:active,
+[class*="rounded-[24px]"]:active {
+  transform: scale(0.97) !important;
+  transition: transform 100ms var(--spring-ease) !important;
 }
 
 button,
 [role="button"],
-a {
+a,
+.apple-card-white,
+.apple-card-alt,
+.apple-card-dark,
+.course-card,
+.apple-card,
+.apple-press {
   transition: transform 100ms var(--spring-ease), opacity var(--spring-duration) var(--spring-ease);
+  will-change: transform;
 }
 
 /* Utility Containers */
@@ -295,6 +345,41 @@ a {
   margin-right: auto;
   padding-left: 24px;
   padding-right: 24px;
+}
+
+/* ==========================================================================
+   Apple §3 & §4: Fluid Modal & Spring Transitions
+   Interruptible, spring-based transforms (damping 1.0, response 0.35s)
+   ========================================================================== */
+@keyframes appleSpringModalIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes appleFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn,
+.animate-modal {
+  animation: appleSpringModalIn var(--spring-duration) var(--spring-ease) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-backdrop {
+  animation: appleFadeIn var(--spring-duration-fast) var(--spring-ease) forwards;
+  will-change: opacity;
 }
 
 /* ==========================================================================
@@ -314,13 +399,22 @@ a {
 
   button:active,
   [role="button"]:active,
-  a:active {
+  a:active,
+  .apple-card-white:active,
+  .apple-card-alt:active,
+  .apple-card-dark:active,
+  .course-card:active,
+  .apple-card:active,
+  .apple-press:active,
+  [class*="rounded-[22px]"]:active,
+  [class*="rounded-[24px]"]:active {
     transform: none !important;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .apple-glass-navbar,
+  #navbar,
   .glass-header {
     background: #ffffff !important;
     backdrop-filter: none !important;
@@ -337,7 +431,9 @@ a {
     --apple-link: #004085;
   }
 
-  .apple-glass-navbar {
+  .apple-glass-navbar,
+  #navbar,
+  .glass-header {
     background: #ffffff !important;
     border-bottom: 2px solid #000000 !important;
     backdrop-filter: none !important;
@@ -346,7 +442,8 @@ a {
 
   .apple-card-white,
   .apple-card-alt,
-  .course-card {
+  .course-card,
+  .apple-card {
     border: 2px solid #000000 !important;
   }
 

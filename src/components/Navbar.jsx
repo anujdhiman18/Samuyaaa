@@ -42,17 +42,14 @@ export default function Navbar({ onOpenMobileMenu }) {
   return (
     <nav
       id="navbar"
-      className={`fixed top-0 w-full z-40 border-b ${
-        scrolled ? 'py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]' : 'py-3'
+      className={`fixed top-0 w-full z-40 py-3 border-b apple-glass-navbar transition-[box-shadow] duration-300 ${
+        scrolled ? 'shadow-[0_4px_24px_rgba(0,0,0,0.06)]' : 'shadow-none'
       }`}
       style={{
-        background: 'var(--apple-nav-glass)',
+        background: 'rgba(255, 255, 255, 0.72)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderColor: 'var(--apple-nav-border)',
-        transition: `background var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1)),
-                     border-color var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1)),
-                     padding var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1))`,
+        borderColor: 'rgba(0, 0, 0, 0.08)',
       }}
     >
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
