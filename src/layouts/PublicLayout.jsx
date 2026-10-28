@@ -26,23 +26,21 @@ export default function PublicLayout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface font-body text-on-surface">
-      <Navbar
-        onOpenMobileMenu={() => setMobileMenuOpen(true)}
-      />
+    <div className="min-h-screen flex flex-col bg-[var(--apple-bg)] text-[var(--apple-text-primary)] font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','SF_Pro_Display','Helvetica_Neue',Arial,sans-serif]">
+      <Navbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
 
       <MobileMenu
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
       />
 
-      <main className="flex-grow pt-20">
-        {/* Dynamic Admin Announcement Bar */}
+      <main className="flex-grow pt-14 sm:pt-16">
+        {/* Apple Style Announcement Ribbon */}
         {latestAnnouncement && (
-          <div className="bg-primary text-white text-xs py-2.5 px-4 text-center font-headings font-bold flex items-center justify-center gap-2 shadow-premium border-b border-outline-variant/20">
-            <span className="material-symbols-outlined text-[18px] text-tertiary">campaign</span>
+          <div className="bg-[#f5f5f7] dark:bg-[#1d1d1f] text-[#1d1d1f] dark:text-[#f5f5f7] text-xs py-2.5 px-4 text-center border-b border-[#d2d2d7] dark:border-[#424245] flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-[#0071e3] dark:text-[#2997ff]">campaign</span>
             <span>
-              <strong className="text-surface font-extrabold">LATEST NOTICE:</strong> {latestAnnouncement.title} - {latestAnnouncement.content}
+              <strong className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">NOTICE:</strong> {latestAnnouncement.title} — {latestAnnouncement.content}
             </span>
           </div>
         )}

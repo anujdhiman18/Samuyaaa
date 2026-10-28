@@ -240,16 +240,40 @@ a.apple-link:hover, .apple-link:hover {
 /* Apple Cards: 18-28px radius (22px), no hard borders, soft neutral shadows */
 .apple-card-white {
   background-color: #ffffff;
+  color: #1d1d1f;
   border-radius: 22px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.apple-card-white h1,
+.apple-card-white h2,
+.apple-card-white h3,
+.apple-card-white h4 {
+  color: #1d1d1f;
+}
+
+.apple-card-white p {
+  color: #6e6e73;
 }
 
 .apple-card-alt {
   background-color: #f5f5f7;
+  color: #1d1d1f;
   border-radius: 22px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.apple-card-alt h1,
+.apple-card-alt h2,
+.apple-card-alt h3,
+.apple-card-alt h4 {
+  color: #1d1d1f;
+}
+
+.apple-card-alt p {
+  color: #6e6e73;
 }
 
 .apple-card-dark {
@@ -258,6 +282,17 @@ a.apple-link:hover, .apple-link:hover {
   border-radius: 22px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   border: 1px solid #424245;
+}
+
+.apple-card-dark h1,
+.apple-card-dark h2,
+.apple-card-dark h3,
+.apple-card-dark h4 {
+  color: #f5f5f7;
+}
+
+.apple-card-dark p {
+  color: #86868b;
 }
 
 /* Apple Glass Header: translucent glass with blur(20px) saturate(180%) */
@@ -269,6 +304,52 @@ a.apple-link:hover, .apple-link:hover {
 }
 
 @media (prefers-color-scheme: dark) {
+  .apple-section-white {
+    background-color: #000000;
+    color: #f5f5f7;
+  }
+
+  .apple-section-alt {
+    background-color: #1d1d1f;
+    color: #f5f5f7;
+  }
+
+  .apple-card-white {
+    background-color: #1d1d1f;
+    color: #f5f5f7;
+    border-color: #424245;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .apple-card-white h1,
+  .apple-card-white h2,
+  .apple-card-white h3,
+  .apple-card-white h4 {
+    color: #f5f5f7;
+  }
+
+  .apple-card-white p {
+    color: #86868b;
+  }
+
+  .apple-card-alt {
+    background-color: #161617;
+    color: #f5f5f7;
+    border-color: #424245;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .apple-card-alt h1,
+  .apple-card-alt h2,
+  .apple-card-alt h3,
+  .apple-card-alt h4 {
+    color: #f5f5f7;
+  }
+
+  .apple-card-alt p {
+    color: #86868b;
+  }
+
   .apple-glass-navbar {
     background: rgba(29, 29, 31, 0.72);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
