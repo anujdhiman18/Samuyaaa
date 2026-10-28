@@ -153,16 +153,16 @@ export default function FacultySection() {
           ))}
         </div>
 
-        {/* Join as Faculty Banner: Sleek Apple dark card (#1d1d1f) */}
-        <div className="mt-16 bg-[#1d1d1f] text-[#f5f5f7] rounded-[24px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 border border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+        {/* Join as Faculty Banner: Clean Apple light card */}
+        <div className="mt-16 bg-[#f5f5f7] text-[#1d1d1f] rounded-[24px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 border border-[#d2d2d7] shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
           <div className="space-y-2 text-center md:text-left">
-            <span className="bg-white/10 text-[#86868b] text-[11px] font-medium uppercase tracking-wider px-3 py-1 rounded-full inline-block">
+            <span className="bg-[#0071e3]/10 text-[#0071e3] border border-[#0071e3]/20 text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full inline-block">
               Career Opportunities
             </span>
-            <h3 className="text-2xl md:text-3xl text-[#f5f5f7]">
+            <h3 className="text-2xl md:text-3xl text-[#1d1d1f]">
               Are You a Passionate Educator? Join Our Faculty Team
             </h3>
-            <p className="text-xs md:text-sm text-[#86868b] max-w-xl font-normal leading-relaxed">
+            <p className="text-xs md:text-sm text-[#6e6e73] max-w-xl font-normal leading-relaxed">
               We are expanding our academic team. Apply today to teach top competitive JEE, NEET, Board &amp; Foundation batches with state-of-the-art facilities.
             </p>
           </div>

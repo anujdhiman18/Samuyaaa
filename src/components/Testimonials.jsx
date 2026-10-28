@@ -140,7 +140,7 @@ export default function Testimonials() {
       <div className="apple-container relative">
         {/* Toast Notification */}
         {successToast && (
-          <div className="fixed top-20 right-6 z-50 bg-[#1d1d1f] text-white px-5 py-3 rounded-full shadow-lg border border-[#424245] flex items-center gap-2 text-xs font-medium">
+          <div className="fixed top-20 right-6 z-50 bg-white/95 text-[#1d1d1f] px-5 py-3 rounded-full shadow-[0_12px_32px_rgba(0,0,0,0.12)] border border-[#d2d2d7] backdrop-blur-md flex items-center gap-2 text-xs font-medium animate-fadeIn">
             <span className="material-symbols-outlined text-[18px] text-[#0071e3]">check_circle</span>
             Thank you! Your feedback has been published.
           </div>

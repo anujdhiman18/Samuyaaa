@@ -10,23 +10,23 @@ export default function HomePage() {
 
   return (
     <div className="font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','SF_Pro_Display','Helvetica_Neue',Arial,sans-serif] animate-fade-in">
-      {/* 1. HERO SECTION: Apple Keynote Dark (#000000) */}
-      <section className="apple-section-dark">
+      {/* 1. HERO SECTION: Clean Apple Light Theme */}
+      <section className="apple-section-white border-b border-[#d2d2d7]/60">
         <div className="apple-container">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
             {/* Left Column: Heading & Value Proposition */}
             <div className="lg:col-span-7 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-[#2997ff] text-xs font-medium mb-6 border border-white/10">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2997ff] animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-xs font-medium mb-6 border border-[#0071e3]/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
                 <span>Admissions Open for Academic Session 2026-2027</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#f5f5f7] leading-[1.1] tracking-[-0.025em] mb-6">
-                Clarity Before Completion. <span className="text-[#2997ff]">Excellence</span> in Every Concept.
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#1d1d1f] leading-[1.08] tracking-[-0.025em] mb-6">
+                Clarity Before Completion. <span className="text-[#0071e3]">Excellence</span> in Every Concept.
               </h1>
 
-              <p className="text-base sm:text-lg text-[#86868b] leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
-                Welcome to <strong className="text-[#f5f5f7] font-semibold">Saumyaa Studies</strong> — Himachal's premier academic study center. We blend first-principles conceptual coaching, structured logic blueprints, and personalized mentorship from Class 6th to JEE/NEET.
+              <p className="text-base sm:text-lg text-[#6e6e73] leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
+                Welcome to <strong className="text-[#1d1d1f] font-semibold">Saumyaa Studies</strong> — Himachal's premier academic study center. We blend first-principles conceptual coaching, structured logic blueprints, and personalized mentorship from Class 6th to JEE/NEET.
               </p>
 
               {/* Action Buttons: Primary #0071e3 pill + Secondary transparent pill */}
@@ -41,61 +41,61 @@ export default function HomePage() {
 
                 <Link
                   to="/courses"
-                  className="apple-btn-secondary px-6 py-3 text-sm text-[#2997ff] border-[#2997ff] hover:bg-[#2997ff]/10"
+                  className="apple-btn-secondary px-6 py-3 text-sm"
                 >
                   Explore Programs &rarr;
                 </Link>
               </div>
 
-              {/* Fast Stats Row: #1d1d1f cards on dark section */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-[#424245] text-left">
-                <div className="p-4 bg-[#1d1d1f] rounded-[20px] border border-[#424245]">
-                  <p className="font-semibold text-xl sm:text-2xl text-[#f5f5f7]">15+ Years</p>
-                  <p className="text-[11px] text-[#86868b] uppercase tracking-wider mt-0.5">Proven Legacy</p>
+              {/* Fast Stats Row: #f5f5f7 cards on light section */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-[#d2d2d7] text-left">
+                <div className="p-4 bg-[#f5f5f7] rounded-[20px] border border-[#d2d2d7]/70">
+                  <p className="font-semibold text-xl sm:text-2xl text-[#1d1d1f]">15+ Years</p>
+                  <p className="text-[11px] text-[#6e6e73] uppercase tracking-wider mt-0.5">Proven Legacy</p>
                 </div>
-                <div className="p-4 bg-[#1d1d1f] rounded-[20px] border border-[#424245]">
-                  <p className="font-semibold text-xl sm:text-2xl text-[#2997ff]">95%+</p>
-                  <p className="text-[11px] text-[#86868b] uppercase tracking-wider mt-0.5">Top Board Scores</p>
+                <div className="p-4 bg-[#f5f5f7] rounded-[20px] border border-[#d2d2d7]/70">
+                  <p className="font-semibold text-xl sm:text-2xl text-[#0071e3]">95%+</p>
+                  <p className="text-[11px] text-[#6e6e73] uppercase tracking-wider mt-0.5">Top Board Scores</p>
                 </div>
-                <div className="p-4 bg-[#1d1d1f] rounded-[20px] border border-[#424245]">
-                  <p className="font-semibold text-xl sm:text-2xl text-[#f5f5f7]">1000+</p>
-                  <p className="text-[11px] text-[#86868b] uppercase tracking-wider mt-0.5">Students Mentored</p>
+                <div className="p-4 bg-[#f5f5f7] rounded-[20px] border border-[#d2d2d7]/70">
+                  <p className="font-semibold text-xl sm:text-2xl text-[#1d1d1f]">1000+</p>
+                  <p className="text-[11px] text-[#6e6e73] uppercase tracking-wider mt-0.5">Students Mentored</p>
                 </div>
-                <div className="p-4 bg-[#1d1d1f] rounded-[20px] border border-[#424245]">
-                  <p className="font-semibold text-xl sm:text-2xl text-[#2997ff]">2 Centers</p>
-                  <p className="text-[11px] text-[#86868b] uppercase tracking-wider mt-0.5">Bagru &amp; Daroh</p>
+                <div className="p-4 bg-[#f5f5f7] rounded-[20px] border border-[#d2d2d7]/70">
+                  <p className="font-semibold text-xl sm:text-2xl text-[#0071e3]">2 Centers</p>
+                  <p className="text-[11px] text-[#6e6e73] uppercase tracking-wider mt-0.5">Bagru &amp; Daroh</p>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Founder Snapshot Card */}
             <div className="lg:col-span-5 relative mt-4 lg:mt-0">
-              <div className="relative mx-auto max-w-md bg-[#1d1d1f] rounded-[24px] p-4 border border-[#424245] shadow-[0_20px_48px_rgba(0,0,0,0.5)]">
-                <div className="relative rounded-[18px] overflow-hidden aspect-[4/4.8] bg-[#000000]">
+              <div className="relative mx-auto max-w-md bg-white rounded-[24px] p-4 border border-[#d2d2d7] shadow-[0_12px_36px_rgba(0,0,0,0.06)]">
+                <div className="relative rounded-[18px] overflow-hidden aspect-[4/4.8] bg-[#f5f5f7]">
                   <img
                     src={founderImg}
                     alt="Jitender Sharma - Founder Saumyaa Studies"
                     className="w-full h-full object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-[11px] font-semibold text-[#2997ff] uppercase tracking-wider block">
+                    <span className="text-[11px] font-semibold text-[#52acff] uppercase tracking-wider block">
                       Founder &amp; Master Physics Mentor
                     </span>
-                    <h3 className="font-semibold text-xl text-[#f5f5f7] tracking-tight">Jitender Sharma</h3>
-                    <p className="text-xs text-[#86868b] line-clamp-2 mt-1">
+                    <h3 className="font-semibold text-xl text-white tracking-tight">Jitender Sharma</h3>
+                    <p className="text-xs text-white/80 line-clamp-2 mt-1">
                       M.Sc in Physics &bull; 15+ Years dedicated pedagogy &bull; Mentored multiple state toppers.
                     </p>
                   </div>
                 </div>
 
                 <div className="p-3 pt-4 flex items-center justify-between">
-                  <span className="text-xs text-[#86868b] italic">
+                  <span className="text-xs text-[#6e6e73] italic">
                     "Learn the 'Why' behind every formula."
                   </span>
                   <Link
                     to="/about"
-                    className="apple-link text-xs font-semibold text-[#2997ff] flex items-center gap-1 shrink-0"
+                    className="apple-link text-xs font-semibold text-[#0066cc] flex items-center gap-1 shrink-0"
                   >
                     Read Story &rarr;
                   </Link>

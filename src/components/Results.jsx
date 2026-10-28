@@ -117,41 +117,41 @@ export default function Results() {
   const featuredTopper = toppers[0] || defaultToppersList[0];
 
   return (
-    <section id="results" ref={sectionRef} className="apple-section-dark">
+    <section id="results" ref={sectionRef} className="apple-section-alt">
       <div className="apple-container">
         <div className="text-center mb-16">
-          <span className="text-[#2997ff] font-semibold text-xs tracking-wider uppercase mb-2 block">
+          <span className="text-[#0071e3] font-semibold text-xs tracking-wider uppercase mb-2 block">
             The Proof is in the Progress
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#f5f5f7] mb-3">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1d1d1f] mb-3">
             Wall of Excellence &amp; Board Toppers
           </h2>
-          <p className="text-sm sm:text-base text-[#86868b] max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-[#6e6e73] max-w-xl mx-auto">
             Decade-long legacy of academic milestones and top rankers coached by Jitender Sharma.
           </p>
         </div>
 
-        {/* Bento Grid: #1d1d1f cards on #000000, 22px radius, #424245 subtle borders */}
+        {/* Bento Grid: Clean White Cards on #f5f5f7 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[160px]">
           {/* Highlight Card */}
-          <div className="md:col-span-2 md:row-span-3 apple-card-dark p-8 flex flex-col justify-between">
+          <div className="md:col-span-2 md:row-span-3 apple-card-white p-8 flex flex-col justify-between">
             <div>
-              <span className="bg-white/10 text-[#86868b] text-[11px] font-medium uppercase tracking-wider px-3 py-1 rounded-full border border-white/10">
+              <span className="bg-[#0071e3]/10 text-[#0071e3] text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-[#0071e3]/20">
                 Center Record Topper
               </span>
             </div>
 
             <div className="mt-auto">
               <div className="flex items-baseline gap-1">
-                <span className="text-6xl md:text-7xl font-semibold leading-none tracking-[-0.03em] text-[#f5f5f7]">
+                <span className="text-6xl md:text-7xl font-semibold leading-none tracking-[-0.03em] text-[#1d1d1f]">
                   {mainStat}
                 </span>
-                <span className="text-3xl font-normal text-[#86868b]">%</span>
+                <span className="text-3xl font-normal text-[#6e6e73]">%</span>
               </div>
-              <h3 className="text-xl md:text-2xl mt-4 mb-2 text-[#f5f5f7]">
+              <h3 className="text-xl md:text-2xl mt-4 mb-2 text-[#1d1d1f]">
                 Highest HPBOSE Board Score
               </h3>
-              <p className="text-sm text-[#86868b] leading-relaxed max-w-sm">
+              <p className="text-sm text-[#6e6e73] leading-relaxed max-w-sm">
                 Our top student Aditya Sharma scored a spectacular 95.4% in HPBOSE Class 10 Boards, recording
                 100/100 in Mathematics.
               </p>
@@ -159,19 +159,19 @@ export default function Results() {
           </div>
 
           {/* Metric 1 */}
-          <div className="apple-card-dark p-6 flex flex-col items-center justify-center text-center">
-            <div className="flex items-baseline justify-center text-[#2997ff] text-4xl font-semibold mb-1">
+          <div className="apple-card-white p-6 flex flex-col items-center justify-center text-center">
+            <div className="flex items-baseline justify-center text-[#0071e3] text-4xl font-semibold mb-1">
               <span>{improveStat}</span>
               <span>%</span>
             </div>
-            <p className="text-xs text-[#86868b] uppercase tracking-wider font-medium">
+            <p className="text-xs text-[#6e6e73] uppercase tracking-wider font-semibold">
               Avg. Grade Boost in 3 Months
             </p>
           </div>
 
           {/* Topper Student Showcase */}
-          <div className="md:col-span-2 md:row-span-2 apple-card-dark p-6 flex flex-col md:flex-row items-center gap-6">
-            <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 border border-[#424245]">
+          <div className="md:col-span-2 md:row-span-2 apple-card-white p-6 flex flex-col md:flex-row items-center gap-6">
+            <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 border border-[#d2d2d7]">
               <img
                 className="w-full h-full object-cover"
                 alt={featuredTopper?.student_name || 'Topper Student'}
@@ -179,22 +179,22 @@ export default function Results() {
               />
             </div>
             <div className="flex-grow text-center md:text-left">
-              <span className="inline-flex items-center gap-1 bg-white/10 text-[#2997ff] px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider mb-2">
+              <span className="inline-flex items-center gap-1 bg-[#0071e3]/10 text-[#0071e3] px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider mb-2">
                 <span className="material-symbols-outlined text-[13px]">emoji_events</span>
                 Academic Achievers
               </span>
-              <div className="text-xs text-[#f5f5f7] mb-2 space-y-1">
+              <div className="text-xs text-[#1d1d1f] mb-2 space-y-1">
                 {toppers.slice(0, 4).map((t) => (
                   <div key={t._id || t.id} className="flex items-center gap-1.5 justify-center md:justify-start">
-                    <span className="material-symbols-outlined text-[14px] text-[#2997ff]">check</span>
+                    <span className="material-symbols-outlined text-[14px] text-[#0071e3]">check</span>
                     <span>
-                      <strong className="text-[#f5f5f7] font-semibold">{t.student_name}</strong> ({t.exam_name}) — <span className="text-[#2997ff]">{t.score}</span>
+                      <strong className="text-[#1d1d1f] font-semibold">{t.student_name}</strong> ({t.exam_name}) — <span className="text-[#0071e3] font-semibold">{t.score}</span>
                     </span>
                   </div>
                 ))}
               </div>
               {featuredTopper?.quote && (
-                <p className="text-xs text-[#86868b] italic leading-relaxed mt-2">
+                <p className="text-xs text-[#6e6e73] italic leading-relaxed mt-2">
                   "{featuredTopper.quote}"
                 </p>
               )}
@@ -202,24 +202,24 @@ export default function Results() {
           </div>
 
           {/* Metric 2 */}
-          <div className="apple-card-dark p-6 flex flex-col items-center justify-center text-center">
-            <div className="flex items-baseline justify-center text-[#f5f5f7] text-4xl font-semibold mb-1">
+          <div className="apple-card-white p-6 flex flex-col items-center justify-center text-center">
+            <div className="flex items-baseline justify-center text-[#1d1d1f] text-4xl font-semibold mb-1">
               <span>15</span>
-              <span className="text-xl text-[#86868b] font-normal mx-1">:</span>
+              <span className="text-xl text-[#6e6e73] font-normal mx-1">:</span>
               <span>1</span>
             </div>
-            <p className="text-xs text-[#86868b] uppercase tracking-wider font-medium">
+            <p className="text-xs text-[#6e6e73] uppercase tracking-wider font-semibold">
               Student-Teacher Ratio Max
             </p>
           </div>
 
           {/* Metric 3 */}
-          <div className="apple-card-dark p-6 flex flex-col items-center justify-center text-center">
-            <div className="flex items-baseline justify-center text-[#2997ff] text-4xl font-semibold mb-1">
+          <div className="apple-card-white p-6 flex flex-col items-center justify-center text-center">
+            <div className="flex items-baseline justify-center text-[#0071e3] text-4xl font-semibold mb-1">
               <span>{clearsStat}</span>
               <span>%</span>
             </div>
-            <p className="text-xs text-[#86868b] uppercase tracking-wider font-medium">
+            <p className="text-xs text-[#6e6e73] uppercase tracking-wider font-semibold">
               Board Exam Distinction
             </p>
           </div>

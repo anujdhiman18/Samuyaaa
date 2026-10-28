@@ -225,8 +225,8 @@ a.apple-link:hover, .apple-link:hover {
 }
 
 .apple-section-dark {
-  background-color: #000000;
-  color: #f5f5f7;
+  background-color: #f5f5f7;
+  color: #1d1d1f;
   padding-top: clamp(5rem, 8vw, 7.5rem);
   padding-bottom: clamp(5rem, 8vw, 7.5rem);
 }
@@ -279,21 +279,21 @@ a.apple-link:hover, .apple-link:hover {
 }
 
 .apple-card-dark {
-  background-color: #1d1d1f;
-  color: #f5f5f7;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  border: 1px solid #424245;
+  background-color: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .apple-card-dark h1,
 .apple-card-dark h2,
 .apple-card-dark h3,
 .apple-card-dark h4 {
-  color: #f5f5f7;
+  color: #1d1d1f;
 }
 
 .apple-card-dark p {
-  color: #86868b;
+  color: #6e6e73;
 }
 
 /* Apple Glass Header & Navbar: translucent glass with blur(20px) saturate(180%) */
