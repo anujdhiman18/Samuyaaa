@@ -213,7 +213,13 @@ export default function SubjectManagement() {
     const counts = { All: subjects.length, S1: 0, S2: 0, S3: 0, S4: 0, S5: 0 };
     subjects.forEach((sub) => {
       const cat = getSubjectCategory(sub);
-      if (counts[cat] !== undefined) {
+      if (cat === 'All') {
+        counts.S1++;
+        counts.S2++;
+        counts.S3++;
+        counts.S4++;
+        counts.S5++;
+      } else if (counts[cat] !== undefined) {
         counts[cat]++;
       }
     });
@@ -243,7 +249,7 @@ export default function SubjectManagement() {
   const filteredSubjects = useMemo(() => {
     return subjects.filter((sub) => {
       const cat = getSubjectCategory(sub);
-      const matchesCat = selectedCategory === 'All' || cat === selectedCategory;
+      const matchesCat = selectedCategory === 'All' || cat === selectedCategory || cat === 'All';
       if (!matchesCat) return false;
 
       const matchesStream = selectedStream === 'All' || sub.category === selectedStream;
@@ -275,7 +281,7 @@ export default function SubjectManagement() {
   const handleOpenAdd = (prefillCat = null) => {
     const targetCat = prefillCat || (selectedCategory !== 'All' ? selectedCategory : 'S3');
     const catConfig = getCategoryConfig(targetCat);
-    const defaultStream = catConfig.availableStreams?.[0] || 'Foundation';
+    const defaultStream = catConfig?.availableStreams?.[0] || 'Foundation';
 
     setEditingSubject(null);
     setCustomFacultyInput(false);
@@ -283,7 +289,7 @@ export default function SubjectManagement() {
       name: '',
       categoryCode: targetCat,
       category: defaultStream,
-      className: `Class ${targetCat}`,
+      className: targetCat === 'All' ? 'All Categories (S1-S5)' : `Class ${targetCat}`,
       description: '',
       teacherName: availableFacultyNames[0] || 'Jitender Sharma',
       batchTime: '5:00 PM – 6:30 PM',
@@ -300,7 +306,7 @@ export default function SubjectManagement() {
       ...subject,
       categoryCode: cat,
       category: subject.category || 'Foundation',
-      className: subject.className || `Class ${cat}`,
+      className: subject.className || (cat === 'All' ? 'All Categories (S1-S5)' : `Class ${cat}`),
       batchTime: subject.batchTime || '5:00 PM – 6:30 PM',
       teacherName: subject.teacherName || 'Jitender Sharma',
       description: subject.description || '',
@@ -315,8 +321,8 @@ export default function SubjectManagement() {
     setForm((prev) => ({
       ...prev,
       categoryCode: newCat,
-      className: `Class ${newCat}`,
-      category: catConfig.availableStreams?.[0] || 'Foundation',
+      className: newCat === 'All' ? 'All Categories (S1-S5)' : `Class ${newCat}`,
+      category: catConfig?.availableStreams?.[0] || 'Foundation',
     }));
   };
 
@@ -371,6 +377,8 @@ export default function SubjectManagement() {
   // Helper for category badge color styling on cards
   const getCategoryBadgeStyle = (catCode) => {
     switch (catCode) {
+      case 'All':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-300';
       case 'S1':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'S2':
@@ -846,11 +854,42 @@ export default function SubjectManagement() {
         <form onSubmit={handleSave} className="space-y-4 text-xs font-body max-h-[80vh] overflow-y-auto pr-1">
           {/* Category Selector in Modal */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-headings font-bold text-secondary flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px] text-primary">category</span>
-              Category Stage *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="flex items-center justify-between">
+              <label className="font-headings font-bold text-secondary flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px] text-primary">category</span>
+                Category Stage *
+              </label>
+              <button
+                type="button"
+                onClick={() => handleModalCategoryChange('All')}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                  form.categoryCode === 'All'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                    : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[15px]">select_all</span>
+                Select All Categories
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <button
+                type="button"
+                onClick={() => handleModalCategoryChange('All')}
+                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                  form.categoryCode === 'All'
+                    ? 'border-indigo-600 bg-indigo-50/90 ring-2 ring-indigo-500/20 shadow-sm'
+                    : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container-lowest'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span className="font-headings font-extrabold text-xs text-indigo-700">ALL</span>
+                  <span className="material-symbols-outlined text-[16px] text-indigo-600">select_all</span>
+                </div>
+                <span className="text-[10px] text-indigo-900 font-bold mt-1 truncate">
+                  All (S1–S5)
+                </span>
+              </button>
               {CLASS_CATEGORIES.map((cat) => {
                 const isSelected = form.categoryCode === cat.code;
                 return (
@@ -858,7 +897,7 @@ export default function SubjectManagement() {
                     key={cat.code}
                     type="button"
                     onClick={() => handleModalCategoryChange(cat.code)}
-                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                       isSelected
                         ? 'border-primary bg-primary/10 ring-2 ring-primary/20 shadow-sm'
                         : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container-lowest'
@@ -931,14 +970,16 @@ export default function SubjectManagement() {
               </label>
               <div className="relative">
                 <select
-                  value={form.className || `Class ${form.categoryCode}`}
+                  value={form.className || (form.categoryCode === 'All' ? 'All Categories (S1-S5)' : `Class ${form.categoryCode}`)}
                   onChange={(e) => setForm({ ...form, className: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-xs appearance-none pr-8 focus:border-primary focus:outline-none"
                 >
-                  <option value={`Class ${form.categoryCode}`}>Class {form.categoryCode} (All Grades)</option>
-                  {getCategoryConfig(form.categoryCode).classes?.map((cls) => (
-                    <option key={cls} value={cls.startsWith('Class') ? cls : `Class ${cls}`}>
-                      {cls.startsWith('Class') ? cls : `Class ${cls}`}
+                  <option value={form.categoryCode === 'All' ? 'All Categories (S1-S5)' : `Class ${form.categoryCode}`}>
+                    {form.categoryCode === 'All' ? 'All Categories (S1–S5)' : `Class ${form.categoryCode} (All Grades)`}
+                  </option>
+                  {getCategoryConfig(form.categoryCode)?.classes?.map((cls) => (
+                    <option key={cls} value={cls.startsWith('Class') || cls.includes('All') ? cls : `Class ${cls}`}>
+                      {cls.startsWith('Class') || cls.includes('All') ? cls : `Class ${cls}`}
                     </option>
                   ))}
                 </select>

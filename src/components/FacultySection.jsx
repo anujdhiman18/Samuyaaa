@@ -63,116 +63,115 @@ export default function FacultySection() {
       }
     });
 
-    fetchActiveFaculty();
+    fetchFacultyFromAPI();
     return () => unsubscribe();
   }, []);
 
-  const fetchActiveFaculty = async () => {
+  const fetchFacultyFromAPI = async () => {
     try {
-      const res = await facultyService.getFaculty({ activeOnly: true });
-      if (res && res.faculty && res.faculty.length > 0) {
-        setFaculty(res.faculty);
+      const data = await facultyService.getFaculty();
+      if (data && data.faculty && data.faculty.length > 0) {
+        const active = data.faculty.filter((f) => f.is_active !== false);
+        active.sort((a, b) => (Number(a.display_order) || 1) - (Number(b.display_order) || 1));
+        if (active.length > 0) {
+          setFaculty(active);
+        }
       }
     } catch (err) {
-      console.warn('Error fetching faculty for public website:', err);
+      console.error(err);
     }
   };
 
   const displayedFaculty = faculty && faculty.length > 0 ? faculty : defaultFacultyList;
 
   return (
-    <section id="faculty" className="py-16 md:py-24 bg-surface relative overflow-hidden font-body">
-      {/* Decorative accent blurs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0D47A1]/5 rounded-full blur-3xl -z-10 pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#1976D2]/5 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-      <div className="max-w-container-max mx-auto px-gutter">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="font-headings text-xs font-extrabold uppercase tracking-[0.2em] text-[#D97706] px-3.5 py-1 rounded-full bg-[#E3F2FD] border border-[#90CAF9]/40 inline-block mb-3">
-            Distinguished Educators
+    <section id="faculty" className="apple-section-alt">
+      <div className="apple-container">
+        {/* Section Heading */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="text-[#6e6e73] font-semibold text-xs tracking-wider uppercase mb-2 block">
+            Academic Mentors
           </span>
-          <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-[#0D47A1] tracking-tight">
-            Meet Our <span className="text-[#D97706]">Distinguished Faculty</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1d1d1f] mb-3">
+            Distinguished Faculty Team
           </h2>
-          <p className="text-sm text-[#1565C0] mt-3 leading-relaxed font-medium">
-            Learn from IITians, Ph.D. scholars, and veteran academic mentors dedicated to radiating knowledge and cognitive excellence.
+          <p className="text-[#6e6e73] text-sm md:text-base leading-relaxed">
+            Every faculty member is handpicked through our rigorous multi-stage evaluation protocol to ensure conceptual clarity and inspiring pedagogy.
           </p>
         </div>
 
-        {/* Faculty Responsive Card Grid (1 col Mobile, 2 col Tablet, 4 col Desktop) */}
+        {/* Faculty Card Grid: #ffffff on #f5f5f7, 22px radius, no hard borders */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {displayedFaculty.map((member) => (
             <div
               key={member.id || member._id}
-              className="group bg-white rounded-3xl p-6 border border-[#90CAF9]/30 shadow-premium hover:shadow-premium-hover hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full"
+              className="apple-card-white p-6 flex flex-col justify-between h-full"
             >
               <div>
-                {/* Circular Faculty Photo with Subtle Aura */}
+                {/* Circular Faculty Photo */}
                 <div className="relative w-24 h-24 mx-auto mb-5">
-                  <div className="absolute inset-0 rounded-full bg-[#1976D2]/15 blur-md group-hover:blur-lg transition-all duration-300" />
                   <img
                     src={member.photo_url}
                     alt={member.name}
                     loading="lazy"
-                    className="relative w-24 h-24 rounded-full object-cover border-2 border-[#BBDEFB] shadow-premium mx-auto group-hover:scale-105 transition-transform duration-300"
+                    className="w-24 h-24 rounded-full object-cover border border-[#d2d2d7] shadow-xs mx-auto"
                   />
                 </div>
 
                 {/* Name & Designation */}
                 <div className="text-center space-y-1">
-                  <h3 className="font-headings font-extrabold text-lg text-[#0D47A1] leading-snug group-hover:text-[#D97706] transition-colors duration-200">
+                  <h3 className="font-semibold text-lg text-[#1d1d1f] leading-snug">
                     {member.name}
                   </h3>
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#E3F2FD] text-[#1976D2] text-[11px] font-headings font-bold uppercase tracking-wider">
+                  <span className="inline-block px-3 py-0.5 rounded-full bg-[#f5f5f7] text-[#6e6e73] text-[11px] font-medium uppercase tracking-wider">
                     {member.designation}
                   </span>
                 </div>
 
                 {/* Subject Pill */}
                 <div className="mt-3 text-center">
-                  <span className="px-3 py-1 rounded-full bg-[#BBDEFB]/40 text-[#0D47A1] text-xs font-semibold inline-block">
+                  <span className="px-3 py-1 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-xs font-semibold inline-block">
                     {member.subject}
                   </span>
                 </div>
               </div>
 
-              {/* Qualification & Experience Details */}
-              <div className="mt-5 pt-4 border-t border-[#90CAF9]/30 space-y-2 text-xs text-[#1565C0] font-medium">
+              {/* Qualification & Experience */}
+              <div className="mt-6 pt-4 border-t border-[#d2d2d7]/50 space-y-2 text-xs text-[#6e6e73]">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-[#D97706] shrink-0">school</span>
-                  <span className="line-clamp-1 text-[#0D1B2A]" title={member.qualification}>
+                  <span className="material-symbols-outlined text-[16px] text-[#0071e3] shrink-0">school</span>
+                  <span className="line-clamp-1 text-[#1d1d1f]" title={member.qualification}>
                     {member.qualification}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-[#D97706] shrink-0">workspace_premium</span>
-                  <span className="text-[#0D1B2A]">{member.experience}</span>
+                  <span className="material-symbols-outlined text-[16px] text-[#0071e3] shrink-0">workspace_premium</span>
+                  <span className="text-[#6e6e73]">{member.experience}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Join as Faculty CTA Banner */}
-        <div className="mt-14 bg-gradient-to-r from-[#0D47A1] to-[#0A192F] text-white rounded-3xl p-8 shadow-premium flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden border border-[#90CAF9]/30">
-          <div className="space-y-2 text-center md:text-left z-10">
-            <span className="bg-white/10 text-[#E3F2FD] font-headings font-extrabold text-[11px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/20 inline-block">
+        {/* Join as Faculty Banner: Sleek Apple dark card (#1d1d1f) */}
+        <div className="mt-16 bg-[#1d1d1f] text-[#f5f5f7] rounded-[24px] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 border border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+          <div className="space-y-2 text-center md:text-left">
+            <span className="bg-white/10 text-[#86868b] text-[11px] font-medium uppercase tracking-wider px-3 py-1 rounded-full inline-block">
               Career Opportunities
             </span>
-            <h3 className="font-headings font-extrabold text-2xl md:text-3xl text-white">
-              Are You a Passionate Educator? <span className="text-[#FBBF24]">Join Our Faculty Team!</span>
+            <h3 className="text-2xl md:text-3xl text-[#f5f5f7]">
+              Are You a Passionate Educator? Join Our Faculty Team
             </h3>
-            <p className="text-xs md:text-sm text-white/90 max-w-xl font-normal">
+            <p className="text-xs md:text-sm text-[#86868b] max-w-xl font-normal leading-relaxed">
               We are expanding our academic team. Apply today to teach top competitive JEE, NEET, Board &amp; Foundation batches with state-of-the-art facilities.
             </p>
           </div>
-          <div className="z-10 shrink-0">
+          <div className="shrink-0">
             <Link
               to="/faculty-application"
-              className="bg-white text-[#0D47A1] hover:bg-[#E3F2FD] font-headings font-bold text-xs px-7 py-3.5 rounded-full shadow-premium hover:shadow-premium-hover transition-all duration-300 flex items-center gap-2 cursor-pointer"
+              className="apple-btn-primary px-7 py-3 text-xs"
             >
-              <span className="material-symbols-outlined text-[18px] text-[#0D47A1]">assignment_ind</span>
+              <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
               Fill Faculty Application Form
             </Link>
           </div>

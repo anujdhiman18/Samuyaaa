@@ -3,31 +3,30 @@ import { Link } from 'react-router-dom';
 
 export default function CtaHub() {
   return (
-    <section className="max-w-[1000px] mx-auto px-gutter py-8 mb-16 font-body">
-      <div className="bg-gradient-to-tr from-[#0D47A1] via-[#1565C0] to-[#0A192F] rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 text-white text-center relative overflow-hidden shadow-premium border border-[#90CAF9]/30">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-
-        <h2 className="font-headings font-extrabold text-3xl md:text-4xl mb-4 relative z-10 text-white">
-          Start Your Academic <span className="text-[#FBBF24]">Transformation</span>
-        </h2>
-        <p className="font-body text-sm md:text-base mb-8 text-white/90 max-w-xl mx-auto relative z-10 leading-relaxed font-normal">
-          Join a community where curiosity is rewarded and excellence is coached. Enquire about admissions and
-          upcoming batches with Jitender Sharma today.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
-          <Link
-            to="/student-application"
-            className="w-full sm:w-auto bg-white text-[#0D47A1] hover:bg-[#E3F2FD] px-8 py-4 rounded-full font-headings font-bold text-base shadow-premium hover:shadow-premium-hover hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer text-center inline-block"
-          >
-            Apply for Admission
-          </Link>
-          <a
-            href="#courses"
-            className="w-full sm:w-auto bg-transparent border-2 border-white/40 text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-headings font-semibold text-base transition-all duration-300 text-center"
-          >
-            View All Batches
-          </a>
+    <section className="apple-section-dark">
+      <div className="max-w-[960px] mx-auto px-6 text-center">
+        <div className="bg-[#1d1d1f] rounded-[28px] p-10 md:p-16 border border-[#424245] shadow-[0_20px_48px_rgba(0,0,0,0.4)]">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl mb-4 text-[#f5f5f7] tracking-[-0.02em]">
+            Start Your Academic Transformation
+          </h2>
+          <p className="text-sm md:text-base mb-8 text-[#86868b] max-w-xl mx-auto leading-relaxed">
+            Join a community where curiosity is rewarded and excellence is coached. Enquire about admissions and
+            upcoming batches with Jitender Sharma today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link
+              to="/student-application"
+              className="w-full sm:w-auto apple-btn-primary px-8 py-3.5 text-sm"
+            >
+              Apply for Admission
+            </Link>
+            <a
+              href="#courses"
+              className="w-full sm:w-auto apple-btn-secondary px-8 py-3 text-sm text-[#2997ff] border-[#2997ff] hover:bg-[#2997ff]/10"
+            >
+              View All Batches
+            </a>
+          </div>
         </div>
       </div>
     </section>

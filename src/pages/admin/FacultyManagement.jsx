@@ -2301,7 +2301,34 @@ export default function FacultyManagement() {
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="font-bold text-secondary text-[11px] block mb-1">Classes:</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-secondary text-[11px]">Categories / Classes:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedBulkClasses.length === CLASS_CATEGORIES.length) {
+                                setSelectedBulkClasses([]);
+                              } else {
+                                setSelectedBulkClasses(CLASS_CATEGORIES.map((c) => c.code));
+                              }
+                            }}
+                            className="text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                          >
+                            {selectedBulkClasses.length === CLASS_CATEGORIES.length ? 'Deselect All' : 'Select All Categories'}
+                          </button>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer py-1 font-bold text-primary border-b border-primary/15 mb-1.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedBulkClasses.length === CLASS_CATEGORIES.length}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedBulkClasses(CLASS_CATEGORIES.map((c) => c.code));
+                              else setSelectedBulkClasses([]);
+                            }}
+                            className="rounded text-primary focus:ring-primary"
+                          />
+                          <span>All Categories (S1–S5)</span>
+                        </label>
                         {CLASS_CATEGORIES.map((cat) => (
                           <label key={cat.code} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
                             <input
@@ -2340,12 +2367,13 @@ export default function FacultyManagement() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
-                      <label className="block font-bold text-secondary mb-1">Class</label>
+                      <label className="block font-bold text-secondary mb-1">Class / Category</label>
                       <select
                         value={className}
                         onChange={(e) => setClassName(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-outline-variant/30 font-bold text-secondary focus:outline-none focus:border-primary"
                       >
+                        <option value="All">All Categories (S1–S5)</option>
                         {CLASS_CATEGORIES.map((cat) => (
                           <option key={cat.code} value={cat.code}>
                             {cat.label}

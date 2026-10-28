@@ -3,7 +3,7 @@ import React from 'react';
 export default function WhatsAppFab() {
   return (
     <a
-      className="fixed bottom-6 right-6 bg-[#0D47A1] text-white hover:bg-[#1565C0] w-14 h-14 rounded-full shadow-premium hover:shadow-premium-hover flex items-center justify-center z-30 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20"
+      className="fixed bottom-6 right-6 bg-[#0071e3] text-white hover:bg-[#0077ed] active:bg-[#006edb] w-14 h-14 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.18)] flex items-center justify-center z-30 transition-all duration-200"
       href="https://wa.me/919816477341?text=Hi!%20I%20want%20to%20enquire%20about%20Saumyaa%20Studies%20classes."
       target="_blank"
       rel="noopener noreferrer"

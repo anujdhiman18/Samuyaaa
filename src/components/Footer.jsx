@@ -16,24 +16,25 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#0A192F] text-[#E3F2FD] border-t border-[#90CAF9]/20 font-body">
-      <div className="max-w-container-max mx-auto px-gutter py-12 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-[#f5f5f7] text-[#6e6e73] border-t border-[#d2d2d7] text-xs">
+      <div className="apple-container py-12 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Brand & Newsletter */}
         <div className="col-span-1 flex flex-col justify-start">
           <Link to="/" className="flex items-center gap-2.5 mb-4">
             <img
               src="/logo.jpg"
               alt="Saumyaa Studies Logo"
-              className="w-10 h-10 object-contain rounded-xl shadow-premium bg-white p-0.5 border border-[#90CAF9]/30"
+              className="w-9 h-9 object-contain rounded-xl bg-white p-0.5 border border-[#d2d2d7]"
             />
-            <span className="font-headings font-extrabold text-lg text-[#E3F2FD]">Saumyaa Studies</span>
+            <span className="font-semibold text-base text-[#1d1d1f]">Saumyaa Studies</span>
           </Link>
-          <p className="text-xs text-[#90CAF9] leading-relaxed mb-6 font-medium">
-            Nurturing grade-level academic achievements and competitive success through custom-planned logic
+          <p className="leading-relaxed mb-6 font-normal">
+            Nurturing academic achievements and competitive success through custom logic
             blueprints and dedicated cognitive instruction since 2010.
           </p>
 
           <div className="space-y-2">
-            <h5 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider">
+            <h5 className="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider">
               Academic Newsletter
             </h5>
             <form onSubmit={handleNewsletter} className="flex gap-2">
@@ -43,24 +44,25 @@ export default function Footer() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter parent email"
-                className="px-3 py-2 rounded-lg border border-[#90CAF9]/30 bg-[#0D1B2A] text-xs text-[#E3F2FD] placeholder:text-[#90CAF9]/60 w-full focus:outline-none focus:border-[#42A5F5] transition-colors duration-200"
+                className="px-3.5 py-2 rounded-full border border-[#d2d2d7] bg-white text-xs text-[#1d1d1f] placeholder:text-[#86868b] w-full focus:outline-none focus:border-[#0071e3]"
               />
               <button
                 type="submit"
-                className="bg-[#1976D2] hover:bg-[#0D47A1] text-white px-4 py-2 rounded-lg font-headings font-bold text-xs transition-colors duration-200 cursor-pointer shadow-premium"
+                className="apple-btn-primary px-4 py-2 text-xs"
               >
                 Join
               </button>
             </form>
-            {message && <p className="text-[10px] text-[#90CAF9] font-semibold">{message}</p>}
+            {message && <p className="text-[11px] text-[#0071e3] font-medium">{message}</p>}
           </div>
         </div>
 
+        {/* Quick Navigation */}
         <div>
-          <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
+          <h4 className="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">
             Quick Navigation
           </h4>
-          <ul className="space-y-2.5 text-xs text-[#90CAF9] font-medium">
+          <ul className="space-y-2.5 font-normal">
             {[
               { to: '/', label: 'Home Overview' },
               { to: '/about', label: 'About Founder & Vision' },
@@ -72,7 +74,7 @@ export default function Footer() {
               { to: '/contact', label: 'Contact Us & Centers' },
             ].map((link) => (
               <li key={link.label}>
-                <Link className="hover:text-[#E3F2FD] transition-colors duration-200" to={link.to}>
+                <Link className="hover:text-[#1d1d1f] hover:underline transition-colors" to={link.to}>
                   {link.label}
                 </Link>
               </li>
@@ -80,65 +82,68 @@ export default function Footer() {
           </ul>
         </div>
 
+        {/* Online Applications */}
         <div>
-          <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
+          <h4 className="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">
             Online Applications
           </h4>
-          <ul className="space-y-3 text-xs text-[#90CAF9] font-medium">
+          <ul className="space-y-3 font-normal">
             <li>
-              <Link to="/student-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1.5 transition-colors duration-200 bg-white/5 p-2 rounded-xl border border-white/10 hover:border-white/20">
-                <span className="material-symbols-outlined text-[16px] text-[#D97706]">school</span>
+              <Link to="/student-application" className="text-[#1d1d1f] font-semibold hover:text-[#0071e3] flex items-center gap-2 p-2.5 rounded-[16px] bg-white border border-[#d2d2d7]">
+                <span className="material-symbols-outlined text-[16px] text-[#0071e3]">school</span>
                 <span>Student Admission Application</span>
               </Link>
             </li>
             <li>
-              <Link to="/faculty-application" className="text-[#E3F2FD] font-bold hover:text-white flex items-center gap-1.5 transition-colors duration-200 bg-white/5 p-2 rounded-xl border border-white/10 hover:border-white/20">
-                <span className="material-symbols-outlined text-[16px] text-[#42A5F5]">work</span>
+              <Link to="/faculty-application" className="text-[#1d1d1f] font-semibold hover:text-[#0071e3] flex items-center gap-2 p-2.5 rounded-[16px] bg-white border border-[#d2d2d7]">
+                <span className="material-symbols-outlined text-[16px] text-[#0071e3]">work</span>
                 <span>Careers / Faculty Application</span>
               </Link>
             </li>
             <li>
-              <Link to="/login" className="hover:text-[#E3F2FD] flex items-center gap-1.5 pt-2">
-                <span className="material-symbols-outlined text-[14px] text-[#90CAF9]">lock</span>
+              <Link to="/login" className="hover:text-[#1d1d1f] flex items-center gap-1.5 pt-2">
+                <span className="material-symbols-outlined text-[14px]">lock</span>
                 <span>Portal Login (Students &amp; Faculty)</span>
               </Link>
             </li>
           </ul>
         </div>
 
+        {/* Academic Centers */}
         <div>
-          <h4 className="font-headings font-bold text-xs text-[#E3F2FD] uppercase tracking-wider mb-4">
+          <h4 className="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">
             Academic Centers
           </h4>
-          <div className="space-y-3 text-xs text-[#90CAF9] font-medium">
+          <div className="space-y-3 font-normal">
             <div>
-              <p className="font-bold text-[#E3F2FD] text-[11px] mb-0.5">Main Center (Bagru)</p>
-              <p className="flex items-start gap-1.5 leading-relaxed">
-                <span className="material-symbols-outlined text-[14px] text-[#42A5F5] mt-0.5 shrink-0">location_on</span>
-                <span>Saumyaa Studies, Bagru Garh, Jamula, Palaid, HP 176093</span>
+              <p className="font-semibold text-[#1d1d1f] text-[11px] mb-0.5">Main Center (Bagru)</p>
+              <p className="leading-relaxed">
+                Saumyaa Studies, Bagru Garh, Jamula, Palaid, HP 176093
               </p>
             </div>
             <div>
-              <p className="font-bold text-[#E3F2FD] text-[11px] mb-0.5">Branch (Daroh)</p>
-              <p className="flex items-start gap-1.5 leading-relaxed">
-                <span className="material-symbols-outlined text-[14px] text-[#42A5F5] mt-0.5 shrink-0">location_on</span>
-                <span>Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092</span>
+              <p className="font-semibold text-[#1d1d1f] text-[11px] mb-0.5">Branch (Daroh)</p>
+              <p className="leading-relaxed">
+                Saumyaa Studies, Daroh, PTC Road, Himachal Pradesh 176092
               </p>
             </div>
-            <p className="flex items-center gap-2 pt-1 border-t border-[#90CAF9]/20">
-              <span className="material-symbols-outlined text-[14px] text-[#42A5F5]">call</span>
-              <span className="text-[#E3F2FD]">+91 98164 77341</span>
+            <p className="flex items-center gap-2 pt-2 border-t border-[#d2d2d7]/50">
+              <span className="material-symbols-outlined text-[14px] text-[#0071e3]">call</span>
+              <span className="text-[#1d1d1f] font-medium">+91 98164 77341</span>
             </p>
             <p className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px] text-[#42A5F5]">mail</span>
-              <span className="text-[#E3F2FD]">Jitender0585@gmail.com</span>
+              <span className="material-symbols-outlined text-[14px] text-[#0071e3]">mail</span>
+              <span className="text-[#1d1d1f] font-medium">Jitender0585@gmail.com</span>
             </p>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-[#90CAF9]/15 py-6 text-center text-xs text-[#90CAF9]/80">
-        <p>&copy; {new Date().getFullYear()} Saumyaa Studies. All rights reserved. Transforming education in Himachal Pradesh.</p>
+      <div className="border-t border-[#d2d2d7] py-6 text-center text-[11px] text-[#86868b]">
+        <div className="apple-container flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p>&copy; {new Date().getFullYear()} Saumyaa Studies. All rights reserved.</p>
+          <p className="text-[#86868b]">Empowering Minds • Himachal Pradesh</p>
+        </div>
       </div>
     </footer>
   );

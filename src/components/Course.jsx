@@ -55,13 +55,10 @@ export default function Courses() {
           : sName.toLowerCase().includes('homework') || sName.toLowerCase().includes('home work')
           ? 'assignment'
           : 'school',
-        iconBg: 'bg-primary/10',
-        iconColor: 'text-primary',
       });
     }
   });
 
-  // Fallback to default catalog if live subjects haven't loaded
   const baseCourses = distinctSubjectsMap.size > 0
     ? Array.from(distinctSubjectsMap.values())
     : defaultCourses.map((c) => ({
@@ -71,8 +68,6 @@ export default function Courses() {
         description: c.description,
         program: c.program,
         icon: c.icon,
-        iconBg: 'bg-primary/10',
-        iconColor: 'text-primary',
       }));
 
   const visibleCourses = baseCourses.filter((course) => {
@@ -86,73 +81,83 @@ export default function Courses() {
   });
 
   return (
-    <section id="courses" className="bg-[#BBDEFB]/25 border-y border-[#90CAF9]/30 py-16 md:py-24 font-body">
-      <div className="max-w-container-max mx-auto px-gutter">
+    <section id="courses" className="apple-section-alt">
+      <div className="apple-container">
+        {/* Section Header & Filter Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
           <div className="max-w-2xl">
-            <span className="text-[#D97706] font-headings font-bold text-xs tracking-widest uppercase mb-2 block">
-              Empowering Every Grade &bull; Live Batches
+            <span className="text-[#6e6e73] font-semibold text-xs tracking-wider uppercase mb-2 block">
+              Empowering Every Grade • Active Batches
             </span>
-            <h2 className="font-headings font-extrabold text-3xl md:text-4xl text-[#0D47A1] mb-3">
-              Our Academic Programs &amp; <span className="text-[#D97706]">Active Courses</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl text-[#1d1d1f] mb-3">
+              Academic Programs &amp; Courses
             </h2>
-            <p className="text-[#1565C0] font-body text-sm md:text-base leading-relaxed">
-              Managed live from the Admin Control Panel. Small batch sizes with individual focus by Jitender Sharma &amp; Expert Faculty.
+            <p className="text-[#6e6e73] text-sm md:text-base leading-relaxed">
+              Personalized small batch sizes with conceptual clarity led by Jitender Sharma &amp; Expert Faculty.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 w-full md:w-auto bg-white p-1.5 rounded-2xl border border-[#90CAF9]/30 shadow-premium">
-            {courseFilters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setActiveFilter(filter.id)}
-                className={`px-4 py-2 rounded-xl font-headings font-semibold text-xs transition-all duration-200 cursor-pointer ${
-                  activeFilter === filter.id
-                    ? 'bg-[#0D47A1] text-white shadow-premium'
-                    : 'text-[#1976D2] hover:text-[#0D47A1]'
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+          {/* Filter Pills (Apple Segmented Style) */}
+          <div className="flex flex-wrap gap-1.5 p-1 bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-[#d2d2d7]">
+            {courseFilters.map((filter) => {
+              const active = activeFilter === filter.id;
+              return (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors duration-150 ${
+                    active
+                      ? 'bg-[#0071e3] text-white shadow-xs'
+                      : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
+        {/* Course Cards Grid: #ffffff on #f5f5f7, 22px radius, no hard borders, soft neutral shadows */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visibleCourses.map((course) => (
             <div
               key={course.id}
-              className="course-card bg-white rounded-2xl p-6 shadow-premium hover:shadow-premium-hover border border-[#90CAF9]/30 flex flex-col hover:-translate-y-1.5 transition-all duration-300"
+              className="apple-card-white p-7 flex flex-col justify-between"
             >
-              <div className="w-12 h-12 bg-[#E3F2FD] flex items-center justify-center rounded-xl mb-4 border border-[#90CAF9]/40">
-                <span className="material-symbols-outlined text-[#0D47A1] text-[24px]">
-                  {course.icon}
-                </span>
+              <div>
+                <div className="w-12 h-12 bg-[#f5f5f7] rounded-2xl flex items-center justify-center mb-5 text-[#0071e3]">
+                  <span className="material-symbols-outlined text-[24px]">
+                    {course.icon}
+                  </span>
+                </div>
+
+                <h3 className="font-semibold text-xl text-[#1d1d1f] mb-2 tracking-[-0.015em]">
+                  {course.title}
+                </h3>
+
+                {course.teacherName && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#6e6e73] font-medium mb-3">
+                    <span className="material-symbols-outlined text-[16px] text-[#6e6e73]">person</span>
+                    <span>{course.teacherName}</span>
+                  </div>
+                )}
+
+                <p className="text-[#6e6e73] text-sm leading-relaxed mb-6">
+                  {course.description}
+                </p>
               </div>
 
-              <h3 className="font-headings font-bold text-xl text-[#0D47A1] mb-2">{course.title}</h3>
-
-              {course.teacherName && (
-                <div className="flex items-center gap-1.5 text-xs text-[#1976D2] font-semibold mb-3">
-                  <span className="material-symbols-outlined text-[#1976D2] text-[16px]">person</span>
-                  <span>{course.teacherName}</span>
-                </div>
-              )}
-
-              <p className="text-[#0D1B2A] font-body text-sm leading-relaxed mb-6 flex-grow">
-                {course.description}
-              </p>
-
-              <div className="border-t border-[#90CAF9]/30 pt-4 mt-auto flex justify-between items-center">
-                <span className="text-[11px] font-bold text-on-surface-variant/70">
+              <div className="border-t border-[#d2d2d7]/50 pt-5 mt-auto flex justify-between items-center">
+                <span className="text-xs font-medium text-[#86868b]">
                   {course.program || 'Active Batch'}
                 </span>
                 <Link
                   to={`/student-application?subject=${encodeURIComponent(course.title)}`}
-                  className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-6 py-2.5 rounded-full font-headings font-bold text-xs transition-all duration-300 shadow-premium flex items-center gap-1.5"
+                  className="apple-btn-primary px-5 py-2 text-xs"
                 >
-                  <span>Enquire Now</span>
-                  <span className="material-symbols-outlined text-[16px] text-white">arrow_forward</span>
+                  <span>Enquire</span>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                 </Link>
               </div>
             </div>

@@ -72,6 +72,7 @@ export const getSubjectsForStage = (stageCode) => {
 export const getStageForClass = (val) => {
   if (!val) return '';
   const trimmed = String(val).trim();
+  if (trimmed.toLowerCase() === 'all') return 'All';
   if (CLASS_CODES.includes(trimmed)) return trimmed;
 
   for (const [stage, classes] of Object.entries(STAGE_CLASSES)) {
@@ -84,6 +85,7 @@ export const getStageForClass = (val) => {
 export const normalizeClassCode = (val) => {
   if (!val) return 'S2';
   const raw = String(val).trim();
+  if (raw.toLowerCase() === 'all') return 'All';
   if (CLASS_CODES.includes(raw.toUpperCase())) return raw.toUpperCase();
 
   const str = raw.toLowerCase();

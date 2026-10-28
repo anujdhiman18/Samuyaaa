@@ -509,6 +509,21 @@ export const getSubjectsForClass = (className) => {
  * Get category configuration object for a category code (S1, S2, S3, S4)
  */
 export const getCategoryConfig = (code) => {
+  if (code === 'All' || code === 'ALL') {
+    return {
+      code: 'All',
+      label: 'All Categories (S1–S5)',
+      shortLabel: 'All Categories',
+      title: 'Universal Across All Categories',
+      gradeSpan: 'Nursery to Higher Education',
+      description: 'Universal subject offering applicable across all academic categories (S1 to S5).',
+      badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      colorHex: '#4f46e5',
+      icon: 'select_all',
+      classes: ['All Classes'],
+      availableStreams: ['Universal', 'Foundation', 'Advanced', 'Skill Track', 'General'],
+    };
+  }
   const normalized = normalizeClassCode(code);
   return CLASS_CATEGORIES.find((c) => c.code === normalized) || CLASS_CATEGORIES[1];
 };
@@ -518,11 +533,18 @@ export const getCategoryConfig = (code) => {
  */
 export const getSubjectCategory = (sub) => {
   if (!sub) return 'S2';
+  if (sub.categoryCode === 'All' || sub.categoryCode === 'ALL') return 'All';
+  if (sub.categoryCode) {
+    const code = normalizeClassCode(sub.categoryCode);
+    if (code === 'All' || CLASS_CODES.includes(code)) return code;
+  }
   if (sub.className) {
+    if (String(sub.className).toLowerCase().includes('all')) return 'All';
     const code = normalizeClassCode(sub.className);
     if (CLASS_CODES.includes(code)) return code;
   }
   if (sub.category) {
+    if (String(sub.category).toLowerCase().includes('all')) return 'All';
     const code = normalizeClassCode(sub.category);
     if (CLASS_CODES.includes(code)) return code;
   }
@@ -535,6 +557,7 @@ export const getSubjectCategory = (sub) => {
 export const getStageForClass = (val) => {
   if (!val) return '';
   const trimmed = String(val).trim();
+  if (trimmed.toLowerCase() === 'all') return 'All';
   if (CLASS_CODES.includes(trimmed)) return trimmed;
 
   for (const [stage, classes] of Object.entries(STAGE_CLASSES)) {
@@ -546,10 +569,11 @@ export const getStageForClass = (val) => {
 
 export const isClassOrStageMatch = (studentClass, queryClass) => {
   if (!queryClass || queryClass === 'All') return true;
-  if (!studentClass) return true;
+  if (!studentClass || studentClass === 'All') return true;
   if (studentClass === queryClass) return true;
   const qStage = getStageForClass(queryClass);
   const sStage = getStageForClass(studentClass);
+  if (qStage === 'All' || sStage === 'All') return true;
   if (qStage && sStage && qStage === sStage) return true;
   return false;
 };
@@ -605,6 +629,7 @@ export const formatClassLabel = (code, currentClass) => {
 export const normalizeClassCode = (val) => {
   if (!val) return 'S2';
   const raw = String(val).trim();
+  if (raw.toLowerCase() === 'all') return 'All';
   if (CLASS_CODES.includes(raw.toUpperCase())) return raw.toUpperCase();
 
   const str = raw.toLowerCase();

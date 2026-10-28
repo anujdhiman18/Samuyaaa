@@ -1,9 +1,11 @@
+/* ==========================================================================
+   Apple Design Global Styles — App.css
+   ========================================================================== */
 
-/* ---------- Base ---------- */
 body {
-  font-family: 'Work Sans', sans-serif;
-  background-color: #faf9f6;
-  color: #1a1c1a;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--apple-bg, #ffffff);
+  color: var(--apple-text-primary, #1d1d1f);
 }
 
 h1,
@@ -12,10 +14,12 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
-/* ---------- Material Symbols ---------- */
+/* Material Symbols */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle;
@@ -26,84 +30,48 @@ h6 {
   vertical-align: middle;
 }
 
-/* ---------- Header glass effect ---------- */
+/* Apple §12: Glass material (blur 20px saturate 180%) */
 .glass-header {
-  background: rgba(250, 249, 246, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* ---------- Founder philosophy callout ---------- */
+@media (prefers-color-scheme: dark) {
+  .glass-header {
+    background: rgba(29, 29, 31, 0.72);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Philosophy Callout */
 .education-callout {
-  border-left: 4px solid #186777;
-  background: rgba(24, 103, 119, 0.04);
+  border-left: 3px solid #0071e3;
+  background: rgba(0, 113, 227, 0.05);
 }
 
-/* ---------- Scrollbars ---------- */
+/* Apple Neutral Scrollbars */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #faf9f6;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e3e2e0;
-  border-radius: 4px;
+  background: #d2d2d7;
+  border-radius: 980px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #dbdad7;
+  background: #86868b;
 }
 
-/* ---------- Generic transitions ---------- */
-.transition-all-300 {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ---------- Testimonial carousel track ---------- */
+/* Slide track */
 .slide-track {
   display: flex;
-  transition: transform 0.5s ease-in-out;
-}
-
-/* ---------- Booking modal step transitions ---------- */
-.modal-step {
-  display: none;
-}
-
-.modal-step.active {
-  display: block;
-  animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ---------- Founder "15+ Years" badge ---------- */
-@keyframes bounceSlow {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-bounce-slow {
-  animation: bounceSlow 3s ease-in-out infinite;
+  transition: transform var(--spring-duration-slow, 500ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1));
 }

@@ -13,6 +13,7 @@ export default function Navbar({ onOpenMobileMenu }) {
   const [scrolled, setScrolled] = useState(false);
   const [applyMenuOpen, setApplyMenuOpen] = useState(false);
   const applyDropdownRef = useRef(null);
+  const applyBtnRef = useRef(null);
   const { user, isAuthenticated, isAdmin, isFaculty, logout } = useAuth();
 
   useEffect(() => {
@@ -41,57 +42,44 @@ export default function Navbar({ onOpenMobileMenu }) {
   return (
     <nav
       id="navbar"
-      className={`fixed top-0 w-full z-40 border-b transition-all duration-300 ${
-        scrolled
-          ? 'shadow-md bg-white/95 backdrop-blur-md border-[#90CAF9]/30 py-2.5'
-          : 'bg-white/90 backdrop-blur-sm border-[#90CAF9]/20 py-3'
+      className={`fixed top-0 w-full z-40 border-b ${
+        scrolled ? 'py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)]' : 'py-3'
       }`}
+      style={{
+        background: 'var(--apple-nav-glass)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderColor: 'var(--apple-nav-border)',
+        transition: `background var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1)),
+                     border-color var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1)),
+                     padding var(--spring-duration, 350ms) var(--spring-ease, cubic-bezier(0.2, 1, 0.3, 1))`,
+      }}
     >
-      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-2 lg:gap-4">
+      <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
         {/* Brand Logo & Name */}
-        <Link to="/" className="flex items-center gap-2 group shrink-0">
+        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
           <img
             src="/logo.jpg"
             alt="Saumyaa Studies Logo"
-            className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300 bg-white p-0.5 border border-[#90CAF9]/30"
+            className="w-8 h-8 object-contain rounded-xl shadow-xs bg-white p-0.5 border border-[#d2d2d7]"
           />
-          <span className="font-headings font-extrabold text-sm sm:text-base xl:text-lg text-[#0D47A1] tracking-tight whitespace-nowrap">
+          <span className="font-semibold text-base sm:text-lg text-[var(--apple-text-primary)] tracking-[-0.02em] whitespace-nowrap">
             Saumyaa Studies
           </span>
         </Link>
 
-        {/* Center Nav Links (Visible on Large Screens) */}
-        <div className="hidden xl:flex items-center gap-2 2xl:gap-4 shrink">
+        {/* Center Nav Links (Desktop) */}
+        <div className="hidden md:flex items-center gap-6">
           {links.map((link) => (
             <NavLink
               key={link.label}
               to={link.to}
               end={link.to === '/'}
               className={({ isActive }) =>
-                `nav-link font-semibold transition-colors duration-200 text-xs 2xl:text-[13px] whitespace-nowrap px-2 py-1 rounded-lg relative ${
+                `text-xs sm:text-[13px] font-medium tracking-normal transition-colors duration-150 ${
                   isActive
-                    ? 'text-[#0D47A1] font-bold bg-[#E3F2FD]/60 after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-[#0D47A1]'
-                    : 'text-[#1976D2] hover:text-[#0D47A1] hover:bg-[#E3F2FD]/30'
-                }`
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        {/* Medium Screen Compact Nav Links (1024px - 1279px) */}
-        <div className="hidden lg:flex xl:hidden items-center gap-1 shrink">
-          {links.slice(0, 6).map((link) => (
-            <NavLink
-              key={link.label}
-              to={link.to}
-              end={link.to === '/'}
-              className={({ isActive }) =>
-                `nav-link font-semibold transition-colors duration-200 text-xs whitespace-nowrap px-2 py-1 rounded-lg ${
-                  isActive
-                    ? 'text-[#0D47A1] font-bold bg-[#E3F2FD]/60'
-                    : 'text-[#1976D2] hover:text-[#0D47A1]'
+                    ? 'text-[var(--apple-text-primary)] font-semibold'
+                    : 'text-[var(--apple-text-secondary)] hover:text-[#0066cc]'
                 }`
               }
             >
@@ -101,59 +89,70 @@ export default function Navbar({ onOpenMobileMenu }) {
         </div>
 
         {/* Action Buttons Container (Desktop) */}
-        <div className="hidden lg:flex items-center gap-2 shrink-0">
-          {/* Apply Dropdown */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          {/* Apply Dropdown (Secondary Button: transparent with #0071e3 outline/text) */}
           <div className="relative" ref={applyDropdownRef}>
             <button
+              ref={applyBtnRef}
               onClick={() => setApplyMenuOpen(!applyMenuOpen)}
-              className="bg-[#BBDEFB]/30 text-[#0D47A1] border border-[#90CAF9]/50 hover:bg-[#BBDEFB]/60 px-3 py-1.5 rounded-full font-headings font-bold transition-all duration-200 text-xs whitespace-nowrap flex items-center gap-1 cursor-pointer"
+              className="apple-btn-secondary px-3.5 py-1.5 text-xs font-medium cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px] text-[#1976D2]">description</span>
               <span>Apply</span>
               <span
-                className="material-symbols-outlined text-[14px] transition-transform duration-200"
-                style={{ transform: applyMenuOpen ? 'rotate(180deg)' : 'none' }}
+                className="material-symbols-outlined text-[14px]"
+                style={{
+                  transform: applyMenuOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform var(--spring-duration) var(--spring-ease)',
+                }}
               >
                 expand_more
               </span>
             </button>
 
-            {applyMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-[#90CAF9]/40 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                <Link
-                  to="/student-application"
-                  onClick={() => setApplyMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#0D1B2A] hover:bg-[#BBDEFB]/20 hover:text-[#0D47A1] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-[#1976D2]">school</span>
-                  <div>
-                    <div className="font-bold">Student Admission</div>
-                    <div className="text-[10px] text-[#555]">Online application form</div>
-                  </div>
-                </Link>
-                <div className="h-[1px] bg-[#90CAF9]/20 my-1"></div>
-                <Link
-                  to="/faculty-application"
-                  onClick={() => setApplyMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#0D1B2A] hover:bg-[#BBDEFB]/20 hover:text-[#0D47A1] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-[#1976D2]">work</span>
-                  <div>
-                    <div className="font-bold">Join Faculty</div>
-                    <div className="text-[10px] text-[#555]">Teaching opportunities</div>
-                  </div>
-                </Link>
-              </div>
-            )}
+            {/* Dropdown Menu */}
+            <div
+              style={{
+                transformOrigin: 'top right',
+                opacity: applyMenuOpen ? 1 : 0,
+                transform: applyMenuOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(-4px)',
+                pointerEvents: applyMenuOpen ? 'auto' : 'none',
+                transition: `transform var(--spring-duration) var(--spring-ease),
+                             opacity var(--spring-duration-fast) var(--spring-ease)`,
+              }}
+              className="absolute top-full right-0 mt-2 w-52 bg-white rounded-[18px] shadow-[0_12px_32px_rgba(0,0,0,0.12)] border border-[#d2d2d7] py-2 z-50 overflow-hidden"
+            >
+              <Link
+                to="/student-application"
+                onClick={() => setApplyMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px] text-[#0071e3]">school</span>
+                <div>
+                  <div className="font-semibold">Student Admission</div>
+                  <div className="text-[10px] text-[#6e6e73]">Online application</div>
+                </div>
+              </Link>
+              <div className="h-[1px] bg-[#d2d2d7] my-1 opacity-50"></div>
+              <Link
+                to="/faculty-application"
+                onClick={() => setApplyMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px] text-[#0071e3]">work</span>
+                <div>
+                  <div className="font-semibold">Join Faculty</div>
+                  <div className="text-[10px] text-[#6e6e73]">Teaching opportunities</div>
+                </div>
+              </Link>
+            </div>
           </div>
 
-
-          {/* Authenticated vs Guest Actions */}
+          {/* Primary Button: background #0071e3, white text, hover #0077ed, active #006edb, pill shape */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Link
                 to={getDashboardPath()}
-                className="bg-[#D97706] hover:bg-[#B45309] text-white px-3.5 py-1.5 rounded-full font-headings font-bold transition-all duration-200 text-xs whitespace-nowrap flex items-center gap-1.5 shadow-sm"
+                className="apple-btn-primary px-4 py-1.5 text-xs"
               >
                 <span className="material-symbols-outlined text-[15px]">dashboard</span>
                 <span>Dashboard</span>
@@ -161,7 +160,7 @@ export default function Navbar({ onOpenMobileMenu }) {
               <button
                 onClick={logout}
                 title="Logout"
-                className="p-1.5 rounded-full text-[#555] hover:text-[#c62828] hover:bg-red-50 transition-colors"
+                className="p-1.5 rounded-full text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-[#f5f5f7]"
               >
                 <span className="material-symbols-outlined text-[18px]">logout</span>
               </button>
@@ -170,7 +169,7 @@ export default function Navbar({ onOpenMobileMenu }) {
             <Link
               to="/login"
               id="navbar-login-btn"
-              className="bg-[#0D47A1] text-white hover:bg-[#1565C0] px-4 py-1.5 rounded-full font-headings font-bold transition-all duration-200 text-xs whitespace-nowrap flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="apple-btn-primary px-4 py-1.5 text-xs"
             >
               <span className="material-symbols-outlined text-[15px]">login</span>
               <span>Login</span>
@@ -178,30 +177,27 @@ export default function Navbar({ onOpenMobileMenu }) {
           )}
         </div>
 
-        {/* Mobile / Tablet Quick Controls (< 1024px) */}
-        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
+        {/* Mobile / Tablet Quick Controls */}
+        <div className="md:hidden flex items-center gap-2">
           {isAuthenticated ? (
             <Link
               to={getDashboardPath()}
-              className="bg-[#D97706] text-white px-2.5 py-1 rounded-full font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs"
+              className="apple-btn-primary px-3 py-1 text-[11px]"
             >
-              <span className="material-symbols-outlined text-[13px]">dashboard</span>
               <span>Dashboard</span>
             </Link>
           ) : (
             <Link
               to="/login"
-              className="bg-white border border-[#0D47A1] text-[#0D47A1] hover:bg-[#0D47A1] hover:text-white px-2.5 py-1 rounded-full font-headings font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+              className="apple-btn-secondary px-3 py-1 text-[11px]"
             >
-              <span className="material-symbols-outlined text-[14px]">login</span>
               <span>Login</span>
             </Link>
           )}
 
-
           <button
             onClick={onOpenMobileMenu}
-            className="p-1.5 rounded-xl text-[#0D47A1] hover:bg-[#BBDEFB]/20 transition-colors duration-200"
+            className="p-1.5 rounded-xl text-[var(--apple-text-primary)] hover:bg-[var(--apple-card-on-white)]"
             aria-label="Toggle Menu"
           >
             <span className="material-symbols-outlined text-[24px]">menu</span>

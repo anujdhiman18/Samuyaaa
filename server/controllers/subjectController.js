@@ -18,7 +18,7 @@ export const getSubjects = async (req, res) => {
     }
 
     if (categoryCode && categoryCode !== 'All') {
-      query.categoryCode = categoryCode;
+      query.$or = [{ categoryCode: categoryCode }, { categoryCode: 'All' }];
     }
 
     if (category && category !== 'All' && !categoryCode) {
@@ -84,13 +84,19 @@ export const getSubjectStats = async (req, res) => {
 
     const totalActiveSubjects = activeSubjects.length;
 
+    const isSubjectInStage = (s, stage) => {
+      if (s.categoryCode === 'All' || (s.className && s.className.toLowerCase().includes('all'))) return true;
+      return s.categoryCode === stage || (s.className && s.className.includes(stage));
+    };
+
     // S1, S2, S3, S4, S5 breakdown
     const stageCounts = {
-      S1: activeSubjects.filter((s) => s.categoryCode === 'S1' || (s.className && s.className.includes('S1'))).length,
-      S2: activeSubjects.filter((s) => s.categoryCode === 'S2' || (s.className && s.className.includes('S2'))).length,
-      S3: activeSubjects.filter((s) => s.categoryCode === 'S3' || (s.className && s.className.includes('S3'))).length,
-      S4: activeSubjects.filter((s) => s.categoryCode === 'S4' || (s.className && s.className.includes('S4'))).length,
-      S5: activeSubjects.filter((s) => s.categoryCode === 'S5' || (s.className && s.className.includes('S5'))).length,
+      All: activeSubjects.length,
+      S1: activeSubjects.filter((s) => isSubjectInStage(s, 'S1')).length,
+      S2: activeSubjects.filter((s) => isSubjectInStage(s, 'S2')).length,
+      S3: activeSubjects.filter((s) => isSubjectInStage(s, 'S3')).length,
+      S4: activeSubjects.filter((s) => isSubjectInStage(s, 'S4')).length,
+      S5: activeSubjects.filter((s) => isSubjectInStage(s, 'S5')).length,
     };
 
     // Calculate unique faculty assigned
