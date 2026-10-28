@@ -38,13 +38,6 @@ h6 {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass-header {
-    background: rgba(29, 29, 31, 0.72);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-}
-
 /* Philosophy Callout */
 .education-callout {
   border-left: 3px solid #0071e3;

@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { RBACProvider } from './context/RBACContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -126,9 +125,8 @@ class PortalErrorBoundary extends React.Component {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RBACProvider>
+    <AuthProvider>
+      <RBACProvider>
           <ToastProvider>
             <ForcePasswordChangeModal />
             <BrowserRouter>
@@ -288,6 +286,5 @@ export default function App() {
           </ToastProvider>
         </RBACProvider>
       </AuthProvider>
-    </ThemeProvider>
   );
 }

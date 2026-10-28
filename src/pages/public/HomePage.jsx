@@ -110,36 +110,36 @@ export default function HomePage() {
       <section className="apple-section-alt">
         <div className="apple-container">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-[#6e6e73] dark:text-[#86868b] font-semibold text-xs uppercase tracking-wider block mb-2">
+            <span className="text-[#6e6e73] font-semibold text-xs uppercase tracking-wider block mb-2">
               Explore Our Institution
             </span>
-            <h2 className="text-3xl sm:text-4xl text-[#1d1d1f] dark:text-[#f5f5f7] tracking-[-0.02em]">
+            <h2 className="text-3xl sm:text-4xl text-[#1d1d1f] tracking-[-0.02em]">
               Everything You Need for Academic Success
             </h2>
-            <p className="text-sm sm:text-base text-[#6e6e73] dark:text-[#86868b] mt-3 leading-relaxed">
+            <p className="text-sm sm:text-base text-[#6e6e73] mt-3 leading-relaxed">
               Explore our curriculum, faculty roster, admission journey, and top results in dedicated sections.
             </p>
           </div>
 
-          {/* 4 Shortcut Cards: High Contrast in Both Light and Dark Modes */}
+          {/* 4 Shortcut Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1: About */}
             <Link
               to="/about"
-              className="p-7 rounded-[22px] bg-white dark:bg-[#161617] border border-[#d2d2d7]/70 dark:border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex flex-col justify-between group transition-transform duration-200"
+              className="p-7 rounded-[22px] bg-white border border-[#d2d2d7]/70 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col justify-between group transition-transform duration-200"
             >
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] text-[#0071e3] flex items-center justify-center mb-5">
                   <span className="material-symbols-outlined text-[26px]">psychology</span>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2 tracking-[-0.015em]">
+                <h3 className="text-lg font-semibold text-[#1d1d1f] mb-2 tracking-[-0.015em]">
                   About Founder &amp; Philosophy
                 </h3>
-                <p className="text-xs sm:text-sm text-[#6e6e73] dark:text-[#86868b] leading-relaxed mb-6">
+                <p className="text-xs sm:text-sm text-[#6e6e73] leading-relaxed mb-6">
                   Learn about our core philosophy "Clarity Before Completion" and 15-year pedagogical background.
                 </p>
               </div>
-              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] dark:text-[#2997ff] group-hover:underline">
+              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] group-hover:underline">
                 <span>Meet Jitender Sharma</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </div>
@@ -148,20 +148,20 @@ export default function HomePage() {
             {/* Card 2: Academic Programs */}
             <Link
               to="/courses"
-              className="p-7 rounded-[22px] bg-white dark:bg-[#161617] border border-[#d2d2d7]/70 dark:border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex flex-col justify-between group transition-transform duration-200"
+              className="p-7 rounded-[22px] bg-white border border-[#d2d2d7]/70 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col justify-between group transition-transform duration-200"
             >
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] text-[#0071e3] flex items-center justify-center mb-5">
                   <span className="material-symbols-outlined text-[26px]">menu_book</span>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2 tracking-[-0.015em]">
+                <h3 className="text-lg font-semibold text-[#1d1d1f] mb-2 tracking-[-0.015em]">
                   Academic Programs (S1-S5)
                 </h3>
-                <p className="text-xs sm:text-sm text-[#6e6e73] dark:text-[#86868b] leading-relaxed mb-6">
+                <p className="text-xs sm:text-sm text-[#6e6e73] leading-relaxed mb-6">
                   Tailored foundation, board preparation, and competitive JEE/NEET tracks from Nursery to Higher Education.
                 </p>
               </div>
-              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] dark:text-[#2997ff] group-hover:underline">
+              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] group-hover:underline">
                 <span>Explore Courses</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </div>
@@ -170,20 +170,20 @@ export default function HomePage() {
             {/* Card 3: Admissions */}
             <Link
               to="/admissions"
-              className="p-7 rounded-[22px] bg-white dark:bg-[#161617] border border-[#d2d2d7]/70 dark:border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex flex-col justify-between group transition-transform duration-200"
+              className="p-7 rounded-[22px] bg-white border border-[#d2d2d7]/70 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col justify-between group transition-transform duration-200"
             >
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] text-[#0071e3] flex items-center justify-center mb-5">
                   <span className="material-symbols-outlined text-[26px]">assignment_turned_in</span>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2 tracking-[-0.015em]">
+                <h3 className="text-lg font-semibold text-[#1d1d1f] mb-2 tracking-[-0.015em]">
                   5-Step Admission Process
                 </h3>
-                <p className="text-xs sm:text-sm text-[#6e6e73] dark:text-[#86868b] leading-relaxed mb-6">
+                <p className="text-xs sm:text-sm text-[#6e6e73] leading-relaxed mb-6">
                   Transparent selection workflow: Registration, Entrance Assessment, Interview, and Enrollment.
                 </p>
               </div>
-              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] dark:text-[#2997ff] group-hover:underline">
+              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] group-hover:underline">
                 <span>View Admission Steps</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </div>
@@ -192,20 +192,20 @@ export default function HomePage() {
             {/* Card 4: Wall of Excellence */}
             <Link
               to="/results"
-              className="p-7 rounded-[22px] bg-white dark:bg-[#161617] border border-[#d2d2d7]/70 dark:border-[#424245] shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex flex-col justify-between group transition-transform duration-200"
+              className="p-7 rounded-[22px] bg-white border border-[#d2d2d7]/70 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col justify-between group transition-transform duration-200"
             >
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] text-[#0071e3] flex items-center justify-center mb-5">
                   <span className="material-symbols-outlined text-[26px]">emoji_events</span>
                 </div>
-                <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2 tracking-[-0.015em]">
+                <h3 className="text-lg font-semibold text-[#1d1d1f] mb-2 tracking-[-0.015em]">
                   Results &amp; Rank Holders
                 </h3>
-                <p className="text-xs sm:text-sm text-[#6e6e73] dark:text-[#86868b] leading-relaxed mb-6">
+                <p className="text-xs sm:text-sm text-[#6e6e73] leading-relaxed mb-6">
                   Celebrate our state toppers, 95%+ marks achievers, and top engineering &amp; medical selections.
                 </p>
               </div>
-              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] dark:text-[#2997ff] group-hover:underline">
+              <div className="mt-auto flex items-center gap-1 text-xs font-semibold text-[#0066cc] group-hover:underline">
                 <span>Wall of Excellence</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </div>
@@ -217,15 +217,15 @@ export default function HomePage() {
       {/* 3. FACULTY TEASER: Apple White Section */}
       <section className="apple-section-white">
         <div className="apple-container">
-          <div className="bg-[#f5f5f7] dark:bg-[#1d1d1f] rounded-[24px] p-8 md:p-12 border border-[#d2d2d7] dark:border-[#424245] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="bg-[#f5f5f7] rounded-[24px] p-8 md:p-12 border border-[#d2d2d7] flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-xs font-semibold text-[#6e6e73] dark:text-[#86868b] uppercase tracking-wider block mb-1">
+              <span className="text-xs font-semibold text-[#6e6e73] uppercase tracking-wider block mb-1">
                 Experienced Educators &amp; Expert Mentors
               </span>
-              <h3 className="text-2xl sm:text-3xl text-[#1d1d1f] dark:text-[#f5f5f7] tracking-tight">
+              <h3 className="text-2xl sm:text-3xl text-[#1d1d1f] tracking-tight">
                 Learn from the Best Mentors. Achieve Academic Excellence.
               </h3>
-              <p className="text-xs sm:text-sm text-[#6e6e73] dark:text-[#86868b] mt-2 max-w-xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#6e6e73] mt-2 max-w-xl leading-relaxed">
                 Our faculty members bring decades of coaching expertise to guide students toward exceptional results.
               </p>
             </div>

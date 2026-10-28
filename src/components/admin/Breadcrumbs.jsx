@@ -8,7 +8,7 @@ export default function Breadcrumbs() {
   if (pathnames.length === 0 || pathnames[0] !== 'admin') return null;
 
   return (
-    <nav className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant dark:text-zinc-400 mb-6">
+    <nav className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant mb-6">
       <Link to="/admin" className="hover:text-primary transition-colors flex items-center gap-1">
         <span className="material-symbols-outlined text-[16px]">home</span>
         Dashboard
@@ -23,7 +23,7 @@ export default function Breadcrumbs() {
           <React.Fragment key={to}>
             <span className="material-symbols-outlined text-[14px] opacity-40">chevron_right</span>
             {isLast ? (
-              <span className="text-secondary dark:text-teal-400 font-bold">{formatted}</span>
+              <span className="text-secondary font-bold">{formatted}</span>
             ) : (
               <Link to={to} className="hover:text-primary transition-colors">
                 {formatted}

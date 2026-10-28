@@ -50,10 +50,10 @@ export default function AboutPage() {
       <section className="apple-section-alt">
         <div className="apple-container">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-[#6e6e73] dark:text-[#86868b] font-semibold text-xs uppercase tracking-wider block mb-2">
+            <span className="text-[#6e6e73] font-semibold text-xs uppercase tracking-wider block mb-2">
               Core Principles
             </span>
-            <h2 className="text-3xl sm:text-4xl text-[#1d1d1f] dark:text-[#f5f5f7] tracking-[-0.02em]">
+            <h2 className="text-3xl sm:text-4xl text-[#1d1d1f] tracking-[-0.02em]">
               Why Students Excel with Saumyaa Studies
             </h2>
           </div>

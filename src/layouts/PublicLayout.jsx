@@ -37,10 +37,10 @@ export default function PublicLayout() {
       <main className="flex-grow pt-14 sm:pt-16">
         {/* Apple Style Announcement Ribbon */}
         {latestAnnouncement && (
-          <div className="bg-[#f5f5f7] dark:bg-[#1d1d1f] text-[#1d1d1f] dark:text-[#f5f5f7] text-xs py-2.5 px-4 text-center border-b border-[#d2d2d7] dark:border-[#424245] flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-[#0071e3] dark:text-[#2997ff]">campaign</span>
+          <div className="bg-[#f5f5f7] text-[#1d1d1f] text-xs py-2.5 px-4 text-center border-b border-[#d2d2d7] flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-[#0071e3]">campaign</span>
             <span>
-              <strong className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">NOTICE:</strong> {latestAnnouncement.title} — {latestAnnouncement.content}
+              <strong className="font-semibold text-[#1d1d1f]">NOTICE:</strong> {latestAnnouncement.title} — {latestAnnouncement.content}
             </span>
           </div>
         )}
